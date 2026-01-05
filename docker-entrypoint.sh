@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-BASE_PATH="/var/www/spec-code-verifier"
+BASE_PATH="/var/www/spec-code-ai-reviewer"
 
 # latestシンボリックリンクの作成（存在しない場合）
 if [ ! -L "$BASE_PATH/latest" ]; then

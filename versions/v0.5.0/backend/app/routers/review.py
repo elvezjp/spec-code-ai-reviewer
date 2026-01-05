@@ -14,7 +14,7 @@ from app.models.schemas import (
 from app.services.llm_service import get_llm_provider
 
 # pyproject.tomlからバージョンを取得
-APP_VERSION = version("spec-code-verifier-backend")
+APP_VERSION = version("spec-code-ai-reviewer-backend")
 
 router = APIRouter()
 

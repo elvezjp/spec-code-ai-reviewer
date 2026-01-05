@@ -32,7 +32,7 @@
 ```bash
 # リポジトリをクローン
 git clone <repository-url>
-cd spec-code-verifier
+cd spec-code-ai-reviewer
 ```
 
 ### AWS認証設定
@@ -171,7 +171,7 @@ python3 scripts/sync_version.py --no-versions-array
 ## ディレクトリ構成
 
 ```
-spec-code-verifier/
+spec-code-ai-reviewer/
 ├── docker-compose.yml           # Docker Compose設定（マルチバージョン開発用）
 ├── Dockerfile.dev               # 開発用Dockerfile（Ubuntu）
 ├── docker-entrypoint.sh         # Docker起動スクリプト
@@ -179,7 +179,7 @@ spec-code-verifier/
 ├── dev.ecosystem.config.js      # PM2設定（開発用）
 ├── nginx/
 │   ├── dev.conf                 # 開発用Nginx設定
-│   ├── spec-code-verifier.conf  # 本番用Nginx設定
+│   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
 ├── latest -> versions/v0.5.0    # シンボリックリンク（最新版を指す）
 │
@@ -276,12 +276,12 @@ VERSIONS配列に新バージョンを追加します。`latest`はシンボリ�
 ```javascript
 const VERSIONS = [
   // latestはシンボリックリンクのため、実体バージョンのみ起動
-  { name: 'spec-code-verifier-v0.6.0', cwd: 'versions/v0.6.0', port: 8060 },  // 追加
-  { name: 'spec-code-verifier-v0.5.0', cwd: 'versions/v0.5.0', port: 8050 },
-  { name: 'spec-code-verifier-v0.4.0', cwd: 'versions/v0.4.0', port: 8040 },
-  { name: 'spec-code-verifier-v0.3.0', cwd: 'versions/v0.3.0', port: 8030 },
-  { name: 'spec-code-verifier-v0.2.5', cwd: 'versions/v0.2.5', port: 8025 },
-  { name: 'spec-code-verifier-v0.1.1', cwd: 'versions/v0.1.1', port: 8011 },
+  { name: 'spec-code-ai-reviewer-v0.6.0', cwd: 'versions/v0.6.0', port: 8060 },  // 追加
+  { name: 'spec-code-ai-reviewer-v0.5.0', cwd: 'versions/v0.5.0', port: 8050 },
+  { name: 'spec-code-ai-reviewer-v0.4.0', cwd: 'versions/v0.4.0', port: 8040 },
+  { name: 'spec-code-ai-reviewer-v0.3.0', cwd: 'versions/v0.3.0', port: 8030 },
+  { name: 'spec-code-ai-reviewer-v0.2.5', cwd: 'versions/v0.2.5', port: 8025 },
+  { name: 'spec-code-ai-reviewer-v0.1.1', cwd: 'versions/v0.1.1', port: 8011 },
 ];
 ```
 
@@ -305,13 +305,13 @@ map $cookie_app_version $backend_port {
 
 # Cookie値に応じてフロントエンドを振り分け
 map $cookie_app_version $frontend_root {
-    "v0.6.0"  /var/www/spec-code-verifier/versions/v0.6.0/frontend;  # 追加
-    "v0.5.0"  /var/www/spec-code-verifier/versions/v0.5.0/frontend;
-    "v0.4.0"  /var/www/spec-code-verifier/versions/v0.4.0/frontend;
-    "v0.3.0"  /var/www/spec-code-verifier/versions/v0.3.0/frontend;
-    "v0.2.5"  /var/www/spec-code-verifier/versions/v0.2.5/frontend;
-    "v0.1.1"  /var/www/spec-code-verifier/versions/v0.1.1/frontend;
-    default   /var/www/spec-code-verifier/latest/frontend;
+    "v0.6.0"  /var/www/spec-code-ai-reviewer/versions/v0.6.0/frontend;  # 追加
+    "v0.5.0"  /var/www/spec-code-ai-reviewer/versions/v0.5.0/frontend;
+    "v0.4.0"  /var/www/spec-code-ai-reviewer/versions/v0.4.0/frontend;
+    "v0.3.0"  /var/www/spec-code-ai-reviewer/versions/v0.3.0/frontend;
+    "v0.2.5"  /var/www/spec-code-ai-reviewer/versions/v0.2.5/frontend;
+    "v0.1.1"  /var/www/spec-code-ai-reviewer/versions/v0.1.1/frontend;
+    default   /var/www/spec-code-ai-reviewer/latest/frontend;
 }
 ```
 
@@ -326,7 +326,7 @@ ssh-add ~/.ssh/id_rsa   # 鍵ファイル名が異なる場合は適宜変更
 ssh -A user@example.com
 
 # 新バージョンをデプロイ
-cd /var/www/spec-code-verifier
+cd /var/www/spec-code-ai-reviewer
 git pull origin main
 
 # 依存関係をインストール
@@ -334,7 +334,7 @@ cd versions/v0.5.0/backend
 uv sync
 
 # PM2でプロセスを再構成（新バージョンのプロセスを追加）
-cd /var/www/spec-code-verifier
+cd /var/www/spec-code-ai-reviewer
 pm2 delete all
 pm2 start ecosystem.config.js
 pm2 save
@@ -348,7 +348,7 @@ sudo nginx -s reload
 **補足:**
 - `latest` シンボリックリンクは `git pull` で自動更新される（Gitがシンボリックリンクを追跡）
 - `pm2 reload` は既存プロセスの再起動のみ。新バージョン追加時は `pm2 delete all && pm2 start` で再構成が必要
-- `spec-code-verifier.conf` は `$backend_port` 変数を使用するため、`version-map.conf` の更新のみでOK
+- `spec-code-ai-reviewer.conf` は `$backend_port` 変数を使用するため、`version-map.conf` の更新のみでOK
 
 
 ## ライセンス

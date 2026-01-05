@@ -21,7 +21,7 @@ RUN pip3 install --no-cache-dir --break-system-packages uv
 RUN npm install -g pm2
 
 # 作業ディレクトリ（本番と同じパス）
-WORKDIR /var/www/spec-code-verifier
+WORKDIR /var/www/spec-code-ai-reviewer
 
 # 起動スクリプト
 COPY docker-entrypoint.sh /usr/local/bin/

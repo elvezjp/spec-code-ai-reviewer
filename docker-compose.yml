@@ -7,12 +7,12 @@ services:
       - ./nginx/dev.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/version-map.conf:/etc/nginx/version-map.conf:ro
       # 本番と同じパスにマウント
-      - ./latest/frontend:/var/www/spec-code-verifier/latest/frontend:ro
-      - ./versions/v0.5.0/frontend:/var/www/spec-code-verifier/versions/v0.5.0/frontend:ro
-      - ./versions/v0.4.0/frontend:/var/www/spec-code-verifier/versions/v0.4.0/frontend:ro
-      - ./versions/v0.3.0/frontend:/var/www/spec-code-verifier/versions/v0.3.0/frontend:ro
-      - ./versions/v0.2.5/frontend:/var/www/spec-code-verifier/versions/v0.2.5/frontend:ro
-      - ./versions/v0.1.1/frontend:/var/www/spec-code-verifier/versions/v0.1.1/frontend:ro
+      - ./latest/frontend:/var/www/spec-code-ai-reviewer/latest/frontend:ro
+      - ./versions/v0.5.0/frontend:/var/www/spec-code-ai-reviewer/versions/v0.5.0/frontend:ro
+      - ./versions/v0.4.0/frontend:/var/www/spec-code-ai-reviewer/versions/v0.4.0/frontend:ro
+      - ./versions/v0.3.0/frontend:/var/www/spec-code-ai-reviewer/versions/v0.3.0/frontend:ro
+      - ./versions/v0.2.5/frontend:/var/www/spec-code-ai-reviewer/versions/v0.2.5/frontend:ro
+      - ./versions/v0.1.1/frontend:/var/www/spec-code-ai-reviewer/versions/v0.1.1/frontend:ro
     depends_on:
       - backend
 
@@ -32,6 +32,6 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
     volumes:
       # 本番と同じパスにマウント
-      - ./:/var/www/spec-code-verifier
+      - ./:/var/www/spec-code-ai-reviewer
       # AWS認証情報（~/.aws/credentials を使う場合はコメント解除）
       # - ~/.aws:/root/.aws:ro

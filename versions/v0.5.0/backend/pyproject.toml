@@ -1,5 +1,5 @@
 [project]
-name = "spec-code-verifier-backend"
+name = "spec-code-ai-reviewer-backend"
 version = "0.5.0"
 description = "設計書-Javaプログラム突合 AIレビュアー バックエンド"
 requires-python = ">=3.10"

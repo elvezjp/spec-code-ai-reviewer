@@ -11,7 +11,7 @@ from pathlib import Path
 from app.routers import convert, review
 
 # pyproject.tomlからバージョンを取得
-APP_VERSION = version("spec-code-verifier-backend")
+APP_VERSION = version("spec-code-ai-reviewer-backend")
 
 app = FastAPI(
     title="設計書-Javaプログラム突合 AIレビュアー API",

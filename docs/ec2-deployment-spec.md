@@ -1,6 +1,6 @@
 # EC2デプロイ仕様書
 
-本ドキュメントは、設計書-Javaプログラム突合 AIレビュアー（spec-code-verifier）のEC2デプロイに関する仕様を定義する。
+本ドキュメントは、設計書-Javaプログラム突合 AIレビュアー（spec-code-ai-reviewer）のEC2デプロイに関する仕様を定義する。
 
 **関連仕様書:**
 - [spec.md](../versions/v0.3.0/spec.md) - アプリケーション仕様書
@@ -82,7 +82,7 @@
 全バージョンを統一的に管理し、シンボリックリンクで最新版を参照する方式を採用。
 
 ```
-/var/www/spec-code-verifier/
+/var/www/spec-code-ai-reviewer/
 ├── latest -> versions/v0.2.5       # シンボリックリンク（最新版を指す）
 │
 ├── versions/                       # 全バージョン格納（統一構造）
@@ -98,7 +98,7 @@
 │
 ├── ecosystem.config.js             # PM2設定
 └── nginx/
-    ├── spec-code-verifier.conf     # nginx server設定
+    ├── spec-code-ai-reviewer.conf     # nginx server設定
     └── version-map.conf            # バージョン切替map設定
 ```
 
@@ -117,8 +117,8 @@
 
 | バージョン | ポート | 計算式 | PM2プロセス名 |
 |-----------|-------|--------|--------------|
-| v0.2.5 (latest) | 8025 | 8000 + 2×10 + 5 | spec-code-verifier |
-| v0.1.1 | 8011 | 8000 + 1×10 + 1 | spec-code-verifier-v0.1.1 |
+| v0.2.5 (latest) | 8025 | 8000 + 2×10 + 5 | spec-code-ai-reviewer |
+| v0.1.1 | 8011 | 8000 + 1×10 + 1 | spec-code-ai-reviewer-v0.1.1 |
 
 ### 4.3 注意事項
 
@@ -158,24 +158,24 @@ sudo mkdir -p /var/www
 cd /var/www
 
 # リポジトリのクローン（SSH URL）
-sudo -E git clone git@github.com:elvezjp/spec-code-verifier.git
-sudo chown -R ubuntu:ubuntu spec-code-verifier
+sudo -E git clone git@github.com:elvezjp/spec-code-ai-reviewer.git
+sudo chown -R ubuntu:ubuntu spec-code-ai-reviewer
 ```
 
 ### 5.3 バックエンドのセットアップ
 
 ```bash
-cd /var/www/spec-code-verifier
+cd /var/www/spec-code-ai-reviewer
 
 # 各バージョンの依存関係をインストール
 cd versions/v0.2.5/backend
 uv sync
 
-cd /var/www/spec-code-verifier/versions/v0.1.1/backend
+cd /var/www/spec-code-ai-reviewer/versions/v0.1.1/backend
 uv sync
 
 # 動作確認（最新版）
-cd /var/www/spec-code-verifier/latest/backend
+cd /var/www/spec-code-ai-reviewer/latest/backend
 uv run uvicorn app.main:app --host 127.0.0.1 --port 8025
 ```
 
@@ -192,7 +192,7 @@ sudo mkdir -p /var/log/pm2
 sudo chown ubuntu:ubuntu /var/log/pm2
 
 # PM2 でバックエンドを起動（設定ファイルを使用）
-cd /var/www/spec-code-verifier
+cd /var/www/spec-code-ai-reviewer
 pm2 start ecosystem.config.js
 
 # PM2 の自動起動設定
@@ -213,15 +213,15 @@ pm2 logs
 // 新バージョン追加時はここに1行追加するだけ
 // workers: 複数リクエスト同時処理に必要なワーカー数（省略時は1）
 const VERSIONS = [
-  { name: 'spec-code-verifier-v0.5.0', cwd: 'versions/v0.5.0', port: 8050, workers: 1 },
-  { name: 'spec-code-verifier-v0.4.0', cwd: 'versions/v0.4.0', port: 8040, workers: 1 },
-  { name: 'spec-code-verifier-v0.3.0', cwd: 'versions/v0.3.0', port: 8030, workers: 1 },
-  { name: 'spec-code-verifier-v0.2.5', cwd: 'versions/v0.2.5', port: 8025, workers: 1 },
-  { name: 'spec-code-verifier-v0.1.1', cwd: 'versions/v0.1.1', port: 8011, workers: 1 },
+  { name: 'spec-code-ai-reviewer-v0.5.0', cwd: 'versions/v0.5.0', port: 8050, workers: 1 },
+  { name: 'spec-code-ai-reviewer-v0.4.0', cwd: 'versions/v0.4.0', port: 8040, workers: 1 },
+  { name: 'spec-code-ai-reviewer-v0.3.0', cwd: 'versions/v0.3.0', port: 8030, workers: 1 },
+  { name: 'spec-code-ai-reviewer-v0.2.5', cwd: 'versions/v0.2.5', port: 8025, workers: 1 },
+  { name: 'spec-code-ai-reviewer-v0.1.1', cwd: 'versions/v0.1.1', port: 8011, workers: 1 },
 ];
 
 // 共通設定
-const BASE_PATH = '/var/www/spec-code-verifier';
+const BASE_PATH = '/var/www/spec-code-ai-reviewer';
 const commonConfig = {
   script: 'uv',
   interpreter: 'none',
@@ -274,7 +274,7 @@ Uvicornはデフォルトで1ワーカーで起動するため、同期的なブ
 | `pm2 restart all` | 全プロセス再起動 |
 | `pm2 reload ecosystem.config.js` | ダウンタイムなし再起動 |
 | `pm2 logs` | 全プロセスのログ表示 |
-| `pm2 logs spec-code-verifier` | 特定プロセスのログ表示 |
+| `pm2 logs spec-code-ai-reviewer` | 特定プロセスのログ表示 |
 | `pm2 status` | ステータス確認 |
 | `pm2 monit` | モニタリング |
 
@@ -295,11 +295,11 @@ sudo htpasswd -c /etc/nginx/.htpasswd <ユーザー名>
 sudo htpasswd /etc/nginx/.htpasswd <ユーザー名>
 
 # 設定ファイルのコピー
-sudo cp /var/www/spec-code-verifier/nginx/version-map.conf /etc/nginx/conf.d/
-sudo cp /var/www/spec-code-verifier/nginx/spec-code-verifier.conf /etc/nginx/sites-available/
+sudo cp /var/www/spec-code-ai-reviewer/nginx/version-map.conf /etc/nginx/conf.d/
+sudo cp /var/www/spec-code-ai-reviewer/nginx/spec-code-ai-reviewer.conf /etc/nginx/sites-available/
 
 # シンボリックリンク作成
-sudo ln -s /etc/nginx/sites-available/spec-code-verifier.conf /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/spec-code-ai-reviewer.conf /etc/nginx/sites-enabled/
 
 # 設定テスト
 sudo nginx -t
@@ -323,12 +323,12 @@ map $cookie_app_version $backend_port {
 
 # Cookie値に応じてフロントエンドを振り分け
 map $cookie_app_version $frontend_root {
-    "v0.1.1"  /var/www/spec-code-verifier/versions/v0.1.1/frontend;
-    default   /var/www/spec-code-verifier/latest/frontend;
+    "v0.1.1"  /var/www/spec-code-ai-reviewer/versions/v0.1.1/frontend;
+    default   /var/www/spec-code-ai-reviewer/latest/frontend;
 }
 ```
 
-**server設定（nginx/spec-code-verifier.conf）:**
+**server設定（nginx/spec-code-ai-reviewer.conf）:**
 
 ```nginx
 server {
@@ -404,10 +404,10 @@ EC2インスタンスにIAMロールをアタッチすることで、アクセ�
 
 1. **IAMロールを作成**
    - 信頼されたエンティティ: AWS サービス → EC2
-   - ロール名: `[日付]spec-code-verifier-ec2`
+   - ロール名: `[日付]spec-code-ai-reviewer-ec2`
 
 2. **カスタムポリシーをアタッチ**
-   - ポリシー名: `[日付]spec-code-verifier-ec2-allow-bedrock-invoke-model`
+   - ポリシー名: `[日付]spec-code-ai-reviewer-ec2-allow-bedrock-invoke-model`
 
 ```json
 {
@@ -442,7 +442,7 @@ aws sts get-caller-identity
 {
     "UserId": "AROA...:i-0123456789abcdef0",
     "Account": "123456789012",
-    "Arn": "arn:aws:sts::123456789012:assumed-role/[日付]spec-code-verifier-ec2/i-0123456789abcdef0"
+    "Arn": "arn:aws:sts::123456789012:assumed-role/[日付]spec-code-ai-reviewer-ec2/i-0123456789abcdef0"
 }
 ```
 
@@ -501,7 +501,7 @@ app.add_middleware(
 
 ```bash
 # EC2 にSSH接続後
-cd /var/www/spec-code-verifier
+cd /var/www/spec-code-ai-reviewer
 
 # 最新コードの取得
 git pull origin main
@@ -511,7 +511,7 @@ cd versions/v0.2.5/backend
 uv sync
 
 # バックエンドの再起動
-cd /var/www/spec-code-verifier
+cd /var/www/spec-code-ai-reviewer
 pm2 reload ecosystem.config.js
 
 # nginx の再読み込み（設定変更時）
@@ -526,7 +526,7 @@ sudo nginx -s reload
 
 ```bash
 # 1. 新バージョンのコードを配置
-cd /var/www/spec-code-verifier
+cd /var/www/spec-code-ai-reviewer
 git pull origin main
 
 # 2. 依存関係をインストール
@@ -534,7 +534,7 @@ cd versions/v0.3.0/backend
 uv sync
 
 # 3. PM2でプロセス再起動（VERSIONS配列の変更を反映）
-cd /var/www/spec-code-verifier
+cd /var/www/spec-code-ai-reviewer
 pm2 reload ecosystem.config.js
 pm2 save
 
@@ -548,7 +548,7 @@ sudo nginx -s reload
 
 ```bash
 # シンボリックリンクを新バージョンに切り替え
-cd /var/www/spec-code-verifier
+cd /var/www/spec-code-ai-reviewer
 rm latest
 ln -s versions/v0.3.0 latest
 
@@ -563,12 +563,12 @@ pm2 reload ecosystem.config.js
 pm2 logs
 
 # 特定プロセスのログ
-pm2 logs spec-code-verifier
-pm2 logs spec-code-verifier-v0.1.1
+pm2 logs spec-code-ai-reviewer
+pm2 logs spec-code-ai-reviewer-v0.1.1
 
 # ログファイル直接参照
-tail -f /var/log/pm2/spec-code-verifier-out.log
-tail -f /var/log/pm2/spec-code-verifier-error.log
+tail -f /var/log/pm2/spec-code-ai-reviewer-out.log
+tail -f /var/log/pm2/spec-code-ai-reviewer-error.log
 
 # nginx のアクセスログ
 sudo tail -f /var/log/nginx/access.log
