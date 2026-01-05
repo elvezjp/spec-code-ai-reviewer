@@ -15,9 +15,29 @@
 
 - **フロントエンド**: 単一HTMLファイル + Tailwind CSS (CDN)
 - **バックエンド**: Python / FastAPI
-  - MarkItDown (Excel→Markdown変換)
+  - MarkItDown / excel2md (Excel→Markdown変換)
   - add-line-numbers準拠 (行番号付与)
   - マルチLLMプロバイダー対応 (Bedrock / Anthropic / OpenAI)
+
+## 使い方
+
+1. **設計書をアップロード**: Excel (.xlsx, .xls) ファイルを選択（複数可）
+   - **役割**: メイン設計書を1つ選択（それ以外は参照資料として扱われる）
+   - **種別**: 設計書/要件定義書/コーディング規約など9種類から選択
+   - **変換ツール**: MarkItDown / excel2md (CSV) / excel2md (CSV+Mermaid) から選択
+2. **「マークダウンに変換」をクリック**: Markdown形式に変換されプレビュー表示
+3. **プログラムをアップロード**: 任意のソースコードファイルを選択（複数可）
+4. **「add-line-numbersで変換」をクリック**: 行番号が付与されプレビュー表示
+5. **「レビュー実行」をクリック**: AIが同じ設定で2回レビューを実行
+6. **結果を確認**: タブ切替で1回目・2回目の結果を個別に確認、コピーまたはダウンロード
+
+### LLMプロバイダー・認証情報の切り替え
+
+デフォルトではシステムLLM（サーバー側で設定されたAWS Bedrock）が使用されます。利用者自身のLLM認証情報を使用する場合は、設定ファイル（`reviewer-config.md`）をアップロードしてください。
+
+- Bedrock / Anthropic API / OpenAI API から選択可能
+- 設定ファイルは[設定ファイルジェネレーター](/config-file-generator/)画面で作成できます
+- 画面右上の「設定」ボタンから設定モーダルを開き、設定ファイルをアップロードします
 
 ## セットアップ
 
@@ -34,13 +54,13 @@
 
 ```bash
 # リポジトリをクローン
-git clone <repository-url>
+git clone git@github.com:elvezjp/spec-code-ai-reviewer.git
 cd spec-code-ai-reviewer
 ```
 
-### LLM認証設定
+### システムLLM認証設定
 
-使用するLLMプロバイダーに応じて認証を設定してください。プロバイダーの切り替えは設定ファイル（`reviewer-config.md`）で行います。
+設定ファイル（`reviewer-config.md`）でプロバイダーを指定しない場合に使用される、システムLLMの認証を設定します。デフォルトはAWS Bedrockです。
 
 #### AWS Bedrock（デフォルト）
 
@@ -138,16 +158,9 @@ python3 scripts/sync_version.py v0.5.0
 python3 scripts/sync_version.py --no-versions-array
 ```
 
-## 使い方
+## 環境変数（システムLLM用）
 
-1. **設計書をアップロード**: Excel (.xlsx, .xls) ファイルを選択
-2. **「MarkItDownで変換」をクリック**: Markdown形式に変換されプレビュー表示
-3. **プログラムをアップロード**: 任意のソースコードファイルを選択
-4. **「add-line-numbersで変換」をクリック**: 行番号が付与されプレビュー表示
-5. **「レビュー実行」をクリック**: AIが突合レビューを実行
-6. **結果を確認**: レポートをコピーまたはダウンロード
-
-## 環境変数
+設定ファイル（`reviewer-config.md`）でプロバイダーを指定しない場合に使用される、システムLLMの環境変数です。
 
 ### AWS Bedrock（デフォルト）
 
@@ -170,8 +183,6 @@ python3 scripts/sync_version.py --no-versions-array
 | 変数名 | 説明 | デフォルト値 |
 |--------|------|-------------|
 | `OPENAI_API_KEY` | OpenAI APIキー | - |
-
-**注意**: プロバイダーの選択・モデルの指定は設定ファイル（`reviewer-config.md`）で行います。設定ファイルは[設定ファイルジェネレーター](/config-file-generator/)画面で作成し、画面上の設定モーダルからアップロードして利用します。
 
 ## API エンドポイント
 
@@ -353,6 +364,7 @@ sudo nginx -s reload
 
 ## ライセンス
 
-- 本プロジェクト: MIT License
-- markitdown: MIT License (Microsoft)
-- add-line-numbers: MIT License
+- 本プロジェクト: [MIT License](LICENSE)
+- markitdown: [MIT License](markitdown/LICENSE) (Microsoft)
+- excel2md: [MIT License](excel2md/LICENSE)
+- add-line-numbers: [MIT License](add-line-numbers/LICENSE)
