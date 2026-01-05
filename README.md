@@ -351,3 +351,8 @@ sudo nginx -s reload
 - markitdown: [MIT License](markitdown/LICENSE) (Microsoft)
 - excel2md: [MIT License](excel2md/LICENSE)
 - add-line-numbers: [MIT License](add-line-numbers/LICENSE)
+
+## 問い合わせ先
+
+- **メールアドレス**: info@elvez.co.jp
+- **宛先**: 株式会社エルブズ
