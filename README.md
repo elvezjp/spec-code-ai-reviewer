@@ -184,38 +184,25 @@ spec-code-verifier/
 ├── latest -> versions/v0.5.0    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
-│   ├── v0.5.0/                  # 最新版
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   └── spec.md
-│   ├── v0.4.0/
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   └── spec.md
-│   ├── v0.3.0/
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   └── mock/
-│   ├── v0.2.5/
-│   │   ├── backend/
-│   │   └── frontend/
-│   └── v0.1.1/                  # 旧版
+│   ├── README.md                # バージョン管理説明
+│   └── v0.5.0/                  # 最新版
 │       ├── backend/
-│       └── frontend/
+│       ├── frontend/
+│       ├── config-file-generator-spec.md
+│       └── spec.md
 │
 ├── docs/                        # ドキュメント
-│   ├── 20251218version-switching-design.md  # バージョン切替機能設計書
 │   └── ec2-deployment-spec.md   # EC2デプロイ仕様書
 │
 ├── scripts/                     # ユーティリティスクリプト
 │   └── sync_version.py          # バージョン同期スクリプト
 │
 ├── tests/                       # 試験項目表
-│   └── YYYYMMDD###試験項目表.md # E2E試験結果
+│   └── README.md
 │
-├── markitdown/                  # サブツリー（Microsoft）
 ├── add-line-numbers/            # サブツリー（elvezjp）
-├── excel2md/                    # Excel→CSVマークダウン変換ツール
+├── excel2md/                    # サブツリー（elvezjp）
+├── markitdown/                  # サブツリー（Microsoft）
 └── README.md                    # 本ファイル
 ```
 
@@ -226,6 +213,7 @@ spec-code-verifier/
 | ディレクトリ | リポジトリ | 説明 |
 |-------------|-----------|------|
 | `add-line-numbers/` | https://github.com/elvezjp/add-line-numbers | ファイルに行番号を追加するツール |
+| `excel2md/` | https://github.com/elvezjp/excel2md | Excel→CSVマークダウン変換ツール |
 | `markitdown/` | https://github.com/microsoft/markitdown | 各種ファイル形式をMarkdownに変換するツール |
 
 ### Subtree の更新方法
@@ -233,6 +221,9 @@ spec-code-verifier/
 ```bash
 # add-line-numbers を更新
 git subtree pull --prefix=add-line-numbers https://github.com/elvezjp/add-line-numbers.git main --squash
+
+# excel2md を更新
+git subtree pull --prefix=excel2md https://github.com/elvezjp/excel2md.git main --squash
 
 # markitdown を更新
 git subtree pull --prefix=markitdown https://github.com/microsoft/markitdown.git main --squash
