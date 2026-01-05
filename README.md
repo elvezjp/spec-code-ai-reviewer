@@ -33,11 +33,12 @@
 
 ### LLMプロバイダー・認証情報の切り替え
 
-デフォルトではシステムLLM（サーバー側で設定されたAWS Bedrock）が使用されます。利用者自身のLLM認証情報を使用する場合は、設定ファイル（`reviewer-config.md`）をアップロードしてください。
+デフォルトではシステムLLM（サーバー側で設定されたAWS Bedrock）が使用されます。利用者自身のLLM認証情報を使用する場合は、以下の手順で設定ファイルをアップロードしてください。
 
-- Bedrock / Anthropic API / OpenAI API から選択可能
-- 設定ファイルは[設定ファイルジェネレーター](/config-file-generator/)画面で作成できます
-- 画面右上の「設定」ボタンから設定モーダルを開き、設定ファイルをアップロードします
+1. 画面右上の「設定」ボタンから設定モーダルを開く
+2. [設定ファイルジェネレーター](/config-file-generator/)画面でLLMプロバイダー（Bedrock / Anthropic API / OpenAI API）を選択し、APIキーなど必要な情報を入力して設定ファイルを作成
+3. 設定モーダルに戻って設定ファイルをアップロード
+4. 使用するLLMモデルを選択（複数指定した場合）
 
 ## セットアップ
 
@@ -45,10 +46,6 @@
 
 - Python 3.10以上
 - [uv](https://docs.astral.sh/uv/) (Python パッケージマネージャー)
-- LLMプロバイダーのAPIアクセス（以下のいずれか）
-  - AWS Bedrock（デフォルト）
-  - Anthropic API
-  - OpenAI API
 
 ### インストール
 
@@ -58,11 +55,9 @@ git clone git@github.com:elvezjp/spec-code-ai-reviewer.git
 cd spec-code-ai-reviewer
 ```
 
-### システムLLM認証設定
+### システムLLM認証設定（AWS Bedrock）
 
-設定ファイル（`reviewer-config.md`）でプロバイダーを指定しない場合に使用される、システムLLMの認証を設定します。デフォルトはAWS Bedrockです。
-
-#### AWS Bedrock（デフォルト）
+**注意**: AWS環境がない場合、この設定は不要です。Web画面から設定ファイルをアップロードすることで、利用者自身がLLM認証情報を設定して使用できます（「[使い方](#使い方)」セクション参照）。
 
 ```bash
 # 方法1: 環境変数
@@ -72,18 +67,6 @@ export AWS_REGION=ap-northeast-1
 
 # 方法2: AWS CLI でプロファイル設定
 aws configure
-```
-
-#### Anthropic API
-
-```bash
-export ANTHROPIC_API_KEY=your-api-key
-```
-
-#### OpenAI API
-
-```bash
-export OPENAI_API_KEY=your-api-key
 ```
 
 ### 起動（単一バージョン）
@@ -160,9 +143,9 @@ python3 scripts/sync_version.py --no-versions-array
 
 ## 環境変数（システムLLM用）
 
-設定ファイル（`reviewer-config.md`）でプロバイダーを指定しない場合に使用される、システムLLMの環境変数です。
+システムLLM（AWS Bedrock）を使用する場合に必要な環境変数です。
 
-### AWS Bedrock（デフォルト）
+**注意**: AWS環境がない場合、この設定は不要です。Web画面から設定ファイルをアップロードすることで、Anthropic APIやOpenAI APIを使用できます（「[使い方](#使い方)」セクション参照）。
 
 | 変数名 | 説明 | デフォルト値 |
 |--------|------|-------------|
@@ -171,18 +154,6 @@ python3 scripts/sync_version.py --no-versions-array
 | `AWS_REGION` | AWSリージョン | `ap-northeast-1` |
 | `BEDROCK_MODEL_ID` | 使用するモデルID | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `BEDROCK_MAX_TOKENS` | レスポンスの最大トークン数 | `16384` |
-
-### Anthropic API
-
-| 変数名 | 説明 | デフォルト値 |
-|--------|------|-------------|
-| `ANTHROPIC_API_KEY` | Anthropic APIキー | - |
-
-### OpenAI API
-
-| 変数名 | 説明 | デフォルト値 |
-|--------|------|-------------|
-| `OPENAI_API_KEY` | OpenAI APIキー | - |
 
 ## API エンドポイント
 
