@@ -50,6 +50,10 @@
 ### インストール
 
 ```bash
+# uv をインストール（未インストールの場合）
+# 詳細: https://docs.astral.sh/uv/getting-started/installation/
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
 # リポジトリをクローン
 git clone git@github.com:elvezjp/spec-code-ai-reviewer.git
 cd spec-code-ai-reviewer
@@ -69,7 +73,7 @@ export AWS_REGION=ap-northeast-1
 aws configure
 ```
 
-### 起動（単一バージョン）
+### コマンドで起動（単一バージョン）
 
 ```bash
 cd versions/v0.5.0/backend
@@ -79,15 +83,14 @@ uv run uvicorn app.main:app --reload --port 8000
 
 ブラウザで http://localhost:8000 にアクセス
 
-### 起動（Docker Compose / マルチバージョン）
+### Dockerで起動する場合（マルチバージョン対応）
 
 本番環境と同等のバージョン切替機能を含む開発環境を起動できます。
 
 ```bash
-# AWS認証情報を環境変数に設定（.envファイルでも可）
-export AWS_ACCESS_KEY_ID=your-access-key
-export AWS_SECRET_ACCESS_KEY=your-secret-key
-export AWS_REGION=ap-northeast-1
+# AWS認証情報を設定（システムLLMを使用する場合）
+cp .env.example .env
+# .env ファイルを編集してAWS認証情報を設定
 
 # 起動
 docker-compose up -d --build
@@ -101,6 +104,8 @@ docker-compose logs -f
 # 停止
 docker-compose down
 ```
+
+**注意**: AWS環境がない場合は `.env` ファイルの作成は不要です。Web画面から設定ファイルをアップロードすることで、Anthropic APIやOpenAI APIを使用できます。
 
 画面左上のバルーンでバージョン切替が可能です（Cookie + Nginx mapによるルーティング）。
 
@@ -143,9 +148,9 @@ python3 scripts/sync_version.py --no-versions-array
 
 ## 環境変数（システムLLM用）
 
-システムLLM（AWS Bedrock）を使用する場合に必要な環境変数です。
+システムLLM（AWS Bedrock）の実行に利用される環境変数です。
 
-**注意**: AWS環境がない場合、この設定は不要です。Web画面から設定ファイルをアップロードすることで、Anthropic APIやOpenAI APIを使用できます（「[使い方](#使い方)」セクション参照）。
+**注意**: Web画面から設定ファイルをアップロードして実行した場合、そちらの設定が優先されます。（「[使い方](#使い方)」セクション参照）。
 
 | 変数名 | 説明 | デフォルト値 |
 |--------|------|-------------|
