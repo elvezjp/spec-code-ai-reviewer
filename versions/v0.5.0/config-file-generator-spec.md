@@ -32,7 +32,7 @@ JSONスキーマを差し替えることで、様々なアプリケーション�
 
 ## 背景
 
-[マルチプロバイダー対応計画](docs/multi-provider-config-plan.md)において、ユーザーは `reviewer-config.md` ファイルを使用してLLMプロバイダーの認証情報や設計書種別を設定する。このファイルを簡単に作成できるツールが必要。
+ユーザーは `reviewer-config.md` ファイルを使用してLLMプロバイダーの認証情報や設計書種別を設定する。このファイルを簡単に作成できるツールが必要。
 
 ただし、このツールは spec-code-ai-reviewer 専用ではなく、**汎用的な設定ファイルジェネレーター**として設計し、以下に対応できるようにする：
 - 設定ファイル仕様のバージョンアップ
@@ -410,13 +410,9 @@ const SCHEMA = {
 
 `config-file-generator/index.html`
 
-## 関連ドキュメント
-
-- [docs/multi-provider-config-plan.md](docs/multi-provider-config-plan.md)
-
 ## 対象バージョン
 
-v0.4.0
+v0.5.0
 
 ## E2E試験項目
 

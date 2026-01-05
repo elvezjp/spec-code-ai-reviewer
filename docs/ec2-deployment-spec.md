@@ -3,8 +3,7 @@
 本ドキュメントは、設計書-Javaプログラム突合 AIレビュアー（spec-code-ai-reviewer）のEC2デプロイに関する仕様を定義する。
 
 **関連仕様書:**
-- [spec.md](../versions/v0.3.0/spec.md) - アプリケーション仕様書
-- [20251218version-switching-design.md](20251218version-switching-design.md) - バージョン切替機能設計書
+- [spec.md](../latest/spec.md)
 
 ---
 
