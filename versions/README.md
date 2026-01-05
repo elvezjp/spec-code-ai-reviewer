@@ -45,7 +45,7 @@ versions/
 
 ### v0.4.0 (2025-12-23)
 - **マルチLLMプロバイダー対応**: Bedrock / Anthropic / OpenAI を切り替えてレビュー実行が可能に（未指定時はBedrockにフォールバック）
-- **設定ファイル導入**: `verifier-config.md` でLLM設定（プロバイダー・認証・モデル一覧）と種別をMarkdownで管理
+- **設定ファイル導入**: `reviewer-config.md` でLLM設定（プロバイダー・認証・モデル一覧）と種別をMarkdownで管理
 - **設定モーダル刷新**: 設定ファイルアップロード方式へ移行、モデル選択の記憶・保存/クリア、接続テスト（`/api/health`）機能追加
 - **バックエンド拡張**: `llm_service`（抽象化）と `anthropic_service` / `openai_service` を追加
 - **excel2md拡張**: CSV+Mermaid形式に対応（フローチャートをMermaid記法で追記）

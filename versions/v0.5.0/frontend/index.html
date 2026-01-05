@@ -520,7 +520,7 @@
             <p class="text-gray-400 text-sm">または ここにドラッグ&ドロップ</p>
           </div>
           <div id="config-upload-success" class="hidden text-left">
-            <p class="text-gray-700 font-medium mb-1"><span id="config-filename">verifier-config.md</span></p>
+            <p class="text-gray-700 font-medium mb-1"><span id="config-filename">reviewer-config.md</span></p>
             <p id="config-llm-status" class="text-sm text-gray-600"></p>
             <p id="config-spec-status" class="text-sm text-gray-600"></p>
             <p id="config-prompts-status" class="text-sm text-gray-600"></p>
@@ -782,7 +782,7 @@
     let specTypesConfig = [];
 
     // 設定ファイル管理
-    let verifierConfig = null;  // パース済みの設定ファイル
+    let reviewerConfig = null;  // パース済みの設定ファイル
     let configModified = false;  // 設定が変更されたかどうか（保存済みと異なる場合true）
 
     // 設計書種別の設定を読み込む
@@ -810,8 +810,8 @@
 
     // システムプロンプトのプリセット一覧を取得
     function getSystemPromptPresets() {
-      if (verifierConfig && Array.isArray(verifierConfig.systemPrompts) && verifierConfig.systemPrompts.length > 0) {
-        return verifierConfig.systemPrompts;
+      if (reviewerConfig && Array.isArray(reviewerConfig.systemPrompts) && reviewerConfig.systemPrompts.length > 0) {
+        return reviewerConfig.systemPrompts;
       }
       return DEFAULT_SYSTEM_PROMPTS;
     }
@@ -1384,11 +1384,11 @@
 
     // LLMConfigを構築
     function buildLLMConfig() {
-      if (!verifierConfig || !verifierConfig.llm || !verifierConfig.llm.provider) {
+      if (!reviewerConfig || !reviewerConfig.llm || !reviewerConfig.llm.provider) {
         return null;  // システムLLMを使用
       }
 
-      const llm = verifierConfig.llm;
+      const llm = reviewerConfig.llm;
       const selectedModel = document.getElementById('llm-model-select').value;
       const parsedMaxTokens = Number(llm.maxTokens);
       const normalizedMaxTokens = Number.isFinite(parsedMaxTokens) && parsedMaxTokens > 0
@@ -1769,7 +1769,7 @@
 
     // ローカルストレージに保存済み設定があるかチェック
     function hasSavedConfig() {
-      return localStorage.getItem('verifier-config') !== null;
+      return localStorage.getItem('reviewer-config') !== null;
     }
 
     // 保存状態の表示を更新
@@ -1798,11 +1798,11 @@
 
     // ページ読込時に保存済み設定を復元
     function loadSavedConfig() {
-      const savedConfig = localStorage.getItem('verifier-config');
+      const savedConfig = localStorage.getItem('reviewer-config');
       if (!savedConfig) return;
 
       try {
-        verifierConfig = JSON.parse(savedConfig);
+        reviewerConfig = JSON.parse(savedConfig);
         configModified = false;
 
         // UI更新
@@ -1811,11 +1811,11 @@
         document.getElementById('config-filename').textContent = '保存済み設定';
 
         // LLM設定を更新
-        updateLLMSettingsUI(verifierConfig.llm);
+        updateLLMSettingsUI(reviewerConfig.llm);
 
         // 設計書種別を更新
-        if (verifierConfig.specTypes && verifierConfig.specTypes.length > 0) {
-          specTypesConfig = verifierConfig.specTypes;
+        if (reviewerConfig.specTypes && reviewerConfig.specTypes.length > 0) {
+          specTypesConfig = reviewerConfig.specTypes;
         }
 
         // 保存状態の表示を更新
@@ -1865,14 +1865,14 @@
       const reader = new FileReader();
       reader.onload = function(e) {
         const content = e.target.result;
-        const parsed = parseVerifierConfig(content);
+        const parsed = parseReviewerConfig(content);
 
         if (parsed.error) {
           alert('設定ファイルのパースに失敗しました: ' + parsed.error);
           return;
         }
 
-        verifierConfig = parsed;
+        reviewerConfig = parsed;
         configModified = true;  // 新規アップロードなので変更フラグを立てる
 
         // LLM設定の更新判定
@@ -1940,7 +1940,7 @@
     }
 
     // Markdown形式の設定ファイルをパース
-    function parseVerifierConfig(content) {
+    function parseReviewerConfig(content) {
       try {
         const result = {
           info: {},
@@ -2132,9 +2132,9 @@
         // リクエストボディを構築
         const requestBody = {};
 
-        if (verifierConfig && verifierConfig.llm && verifierConfig.llm.provider) {
+        if (reviewerConfig && reviewerConfig.llm && reviewerConfig.llm.provider) {
           // 設定ファイルがある場合：ユーザー指定のLLMをテスト
-          const llm = verifierConfig.llm;
+          const llm = reviewerConfig.llm;
           const selectedModel = document.getElementById('llm-model-select').value;
 
           requestBody.provider = llm.provider;
@@ -2177,15 +2177,15 @@
 
     // 設定をブラウザに保存
     function saveConfigToBrowser() {
-      if (!verifierConfig) {
+      if (!reviewerConfig) {
         alert('設定ファイルを読み込んでから保存してください。');
         return;
       }
 
-      localStorage.setItem('verifier-config', JSON.stringify(verifierConfig));
+      localStorage.setItem('reviewer-config', JSON.stringify(reviewerConfig));
       const selectedModel = document.getElementById('llm-model-select').value;
-      if (selectedModel && verifierConfig.llm && verifierConfig.llm.provider) {
-        localStorage.setItem('selected-model', `${verifierConfig.llm.provider}:${selectedModel}`);
+      if (selectedModel && reviewerConfig.llm && reviewerConfig.llm.provider) {
+        localStorage.setItem('selected-model', `${reviewerConfig.llm.provider}:${selectedModel}`);
       }
       configModified = false;
       updateSaveStatusDisplay();
@@ -2195,9 +2195,9 @@
     // 保存した設定をクリア
     function clearSavedConfig() {
       if (confirm('ブラウザに保存された設定をクリアしますか？')) {
-        localStorage.removeItem('verifier-config');
+        localStorage.removeItem('reviewer-config');
         localStorage.removeItem('selected-model');
-        verifierConfig = null;
+        reviewerConfig = null;
         configModified = false;
 
         // UI をリセット
@@ -2227,8 +2227,8 @@
     // モデル選択変更時の自動保存
     function onModelSelectChange() {
       const selectedModel = document.getElementById('llm-model-select').value;
-      if (selectedModel && verifierConfig && verifierConfig.llm && verifierConfig.llm.provider) {
-        localStorage.setItem('selected-model', `${verifierConfig.llm.provider}:${selectedModel}`);
+      if (selectedModel && reviewerConfig && reviewerConfig.llm && reviewerConfig.llm.provider) {
+        localStorage.setItem('selected-model', `${reviewerConfig.llm.provider}:${selectedModel}`);
       }
     }
 

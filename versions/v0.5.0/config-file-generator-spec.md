@@ -5,7 +5,7 @@
 Markdown形式の設定ファイルを生成するための**汎用的な**スタンドアロンアプリケーション。
 JSONスキーマを差し替えることで、様々なアプリケーション向けの設定ファイル生成に対応できる。
 
-現在はspec-code-ai-reviewer用の設定（`verifier-config.md`）を生成するスキーマが設定されている。
+現在はspec-code-ai-reviewer用の設定（`reviewer-config.md`）を生成するスキーマが設定されている。
 
 ## 使い方
 
@@ -23,7 +23,7 @@ JSONスキーマを差し替えることで、様々なアプリケーション�
 
 ### 出力ファイル
 
-`verifier-config.md` がダウンロードされる。
+`reviewer-config.md` がダウンロードされる。
 このファイルをspec-code-ai-reviewerにアップロードして利用する。
 
 ## カスタマイズ
@@ -32,7 +32,7 @@ JSONスキーマを差し替えることで、様々なアプリケーション�
 
 ## 背景
 
-[マルチプロバイダー対応計画](docs/multi-provider-config-plan.md)において、ユーザーは `verifier-config.md` ファイルを使用してLLMプロバイダーの認証情報や設計書種別を設定する。このファイルを簡単に作成できるツールが必要。
+[マルチプロバイダー対応計画](docs/multi-provider-config-plan.md)において、ユーザーは `reviewer-config.md` ファイルを使用してLLMプロバイダーの認証情報や設計書種別を設定する。このファイルを簡単に作成できるツールが必要。
 
 ただし、このツールは spec-code-ai-reviewer 専用ではなく、**汎用的な設定ファイルジェネレーター**として設計し、以下に対応できるようにする：
 - 設定ファイル仕様のバージョンアップ
@@ -146,7 +146,7 @@ JSONスキーマを差し替えることで、様々なアプリケーション�
 │                                                               │
 ├──────────────────────────────────────────────────────────────┤
 │                                                               │
-│                                 [📥 verifier-config.md をダウンロード] │
+│                                 [📥 reviewer-config.md をダウンロード] │
 │                                                               │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -186,7 +186,7 @@ const SCHEMA = {
   // メタ情報
   meta: {
     outputTitle: "設計書-Javaプログラム突合 AIレビュアー 設定ファイル",  // 出力ファイルの見出しタイトル（# で出力）
-    outputFileName: "verifier-config.md",
+    outputFileName: "reviewer-config.md",
     version: "v0.4.0"
   },
 
@@ -436,6 +436,6 @@ v0.4.0
 | E2E-GEN-010 | systemPromptsプリセット追加 | 画面表示済み | 「+ プリセットを追加」ボタン押下 | 新しいプリセット入力欄が追加される | |
 | E2E-GEN-011 | systemPromptsプリセット削除 | プリセットがある | プリセットの「×」ボタン押下 | 該当プリセットが削除される | |
 | E2E-GEN-012 | systemPromptsプリセット編集 | プリセットがある | role、purpose、format、notesを編集 | 入力内容が反映される | |
-| E2E-GEN-013 | ダウンロード | 必須項目入力済み | 「ダウンロード」ボタン押下 | verifier-config.mdがダウンロードされ、info、llm、specTypes、systemPromptsセクションが含まれる | |
+| E2E-GEN-013 | ダウンロード | 必須項目入力済み | 「ダウンロード」ボタン押下 | reviewer-config.mdがダウンロードされ、info、llm、specTypes、systemPromptsセクションが含まれる | |
 | E2E-GEN-014 | created_at自動生成 | - | ダウンロードボタン押下 | infoセクションのcreated_atにダウンロード時刻がISO8601形式で設定される | |
 | E2E-GEN-015 | 必須項目バリデーション | API Key未入力 | 「ダウンロード」ボタン押下 | エラー表示、ダウンロードされない | |
