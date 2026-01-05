@@ -4,10 +4,6 @@
 const VERSIONS = [
   // workers: 複数リクエスト同時処理用（LLM API呼び出しは同期ブロッキングのため複数ワーカーが必要）
   { name: 'spec-code-ai-reviewer-v0.5.0', cwd: 'versions/v0.5.0', port: 8050, workers: 1 },
-  { name: 'spec-code-ai-reviewer-v0.4.0', cwd: 'versions/v0.4.0', port: 8040, workers: 1 },
-  { name: 'spec-code-ai-reviewer-v0.3.0', cwd: 'versions/v0.3.0', port: 8030, workers: 1 },
-  { name: 'spec-code-ai-reviewer-v0.2.5', cwd: 'versions/v0.2.5', port: 8025, workers: 1 },
-  { name: 'spec-code-ai-reviewer-v0.1.1', cwd: 'versions/v0.1.1', port: 8011, workers: 1 },
 ];
 
 // 共通設定
