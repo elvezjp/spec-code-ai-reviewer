@@ -92,22 +92,6 @@ docker-compose down
 # v0.5.0 のテスト
 cd versions/v0.5.0/backend
 uv run pytest tests/ -v
-
-# v0.4.0 のテスト
-cd versions/v0.4.0/backend
-uv run pytest tests/ -v
-
-# v0.3.0 のテスト
-cd versions/v0.3.0/backend
-uv run pytest tests/ -v
-
-# v0.2.5 のテスト
-cd versions/v0.2.5/backend
-uv run pytest tests/ -v
-
-# v0.1.1 のテスト
-cd versions/v0.1.1/backend
-uv run pytest tests/ -v
 ```
 
 ### バージョン同期
@@ -131,10 +115,7 @@ python3 scripts/sync_version.py
 python3 scripts/sync_version.py
 
 # 指定バージョンのみ同期（VERSIONS配列更新なし）
-python3 scripts/sync_version.py v0.3.0
-
-# 複数バージョン指定
-python3 scripts/sync_version.py v0.2.5 v0.3.0
+python3 scripts/sync_version.py v0.5.0
 
 # VERSIONS配列の更新をスキップ
 python3 scripts/sync_version.py --no-versions-array
@@ -243,10 +224,6 @@ git subtree pull --prefix=markitdown https://github.com/microsoft/markitdown.git
 | バージョン | ポート |
 |-----------|-------|
 | v0.5.0 (latest) | 8050 |
-| v0.4.0          | 8040 |
-| v0.3.0          | 8030 |
-| v0.2.5          | 8025 |
-| v0.1.1          | 8011 |
 
 ### 新しいバージョンを追加する際の変更箇所
 
@@ -278,10 +255,6 @@ const VERSIONS = [
   // latestはシンボリックリンクのため、実体バージョンのみ起動
   { name: 'spec-code-ai-reviewer-v0.6.0', cwd: 'versions/v0.6.0', port: 8060 },  // 追加
   { name: 'spec-code-ai-reviewer-v0.5.0', cwd: 'versions/v0.5.0', port: 8050 },
-  { name: 'spec-code-ai-reviewer-v0.4.0', cwd: 'versions/v0.4.0', port: 8040 },
-  { name: 'spec-code-ai-reviewer-v0.3.0', cwd: 'versions/v0.3.0', port: 8030 },
-  { name: 'spec-code-ai-reviewer-v0.2.5', cwd: 'versions/v0.2.5', port: 8025 },
-  { name: 'spec-code-ai-reviewer-v0.1.1', cwd: 'versions/v0.1.1', port: 8011 },
 ];
 ```
 
@@ -296,21 +269,13 @@ const VERSIONS = [
 map $cookie_app_version $backend_port {
     "v0.6.0"  8060;  # 追加
     "v0.5.0"  8050;
-    "v0.4.0"  8040;
-    "v0.3.0"  8030;
-    "v0.2.5"  8025;
-    "v0.1.1"  8011;
-    default   8050;  # latest (v0.5.0)
+    default   8060;  # latest (v0.6.0)
 }
 
 # Cookie値に応じてフロントエンドを振り分け
 map $cookie_app_version $frontend_root {
     "v0.6.0"  /var/www/spec-code-ai-reviewer/versions/v0.6.0/frontend;  # 追加
     "v0.5.0"  /var/www/spec-code-ai-reviewer/versions/v0.5.0/frontend;
-    "v0.4.0"  /var/www/spec-code-ai-reviewer/versions/v0.4.0/frontend;
-    "v0.3.0"  /var/www/spec-code-ai-reviewer/versions/v0.3.0/frontend;
-    "v0.2.5"  /var/www/spec-code-ai-reviewer/versions/v0.2.5/frontend;
-    "v0.1.1"  /var/www/spec-code-ai-reviewer/versions/v0.1.1/frontend;
     default   /var/www/spec-code-ai-reviewer/latest/frontend;
 }
 ```
