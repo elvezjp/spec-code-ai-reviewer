@@ -6,7 +6,7 @@
 
 - **設計書変換**: Excel (.xlsx, .xls) → Markdown形式に変換（MarkItDown、excel2md使用）
 - **プログラム変換**: 任意のテキストファイルに行番号を付与（add-line-numbers準拠）
-- **突合レビュー**: AWS Bedrock (Claude) を使用して設計書とコードの整合性を検証
+- **突合レビュー**: LLM（Bedrock / Anthropic / OpenAI）を使用して設計書とコードの整合性を検証
 - **レポート出力**: マークダウン形式のレビューレポートを生成
 
 機能仕様の詳細については[latest/spec.md](latest/spec.md)を参照してください。
@@ -17,7 +17,7 @@
 - **バックエンド**: Python / FastAPI
   - MarkItDown (Excel→Markdown変換)
   - add-line-numbers準拠 (行番号付与)
-  - AWS Bedrock連携 (Claude Haiku 4.5)
+  - マルチLLMプロバイダー対応 (Bedrock / Anthropic / OpenAI)
 
 ## セットアップ
 
@@ -25,7 +25,10 @@
 
 - Python 3.10以上
 - [uv](https://docs.astral.sh/uv/) (Python パッケージマネージャー)
-- AWS アカウント（Bedrock へのアクセス権限）
+- LLMプロバイダーのAPIアクセス（以下のいずれか）
+  - AWS Bedrock（デフォルト）
+  - Anthropic API
+  - OpenAI API
 
 ### インストール
 
@@ -35,9 +38,11 @@ git clone <repository-url>
 cd spec-code-ai-reviewer
 ```
 
-### AWS認証設定
+### LLM認証設定
 
-AWS Bedrockを使用するため、以下のいずれかの方法で認証を設定してください：
+使用するLLMプロバイダーに応じて認証を設定してください。プロバイダーの切り替えは設定ファイル（`reviewer-config.md`）で行います。
+
+#### AWS Bedrock（デフォルト）
 
 ```bash
 # 方法1: 環境変数
@@ -47,6 +52,18 @@ export AWS_REGION=ap-northeast-1
 
 # 方法2: AWS CLI でプロファイル設定
 aws configure
+```
+
+#### Anthropic API
+
+```bash
+export ANTHROPIC_API_KEY=your-api-key
+```
+
+#### OpenAI API
+
+```bash
+export OPENAI_API_KEY=your-api-key
 ```
 
 ### 起動（単一バージョン）
@@ -132,11 +149,29 @@ python3 scripts/sync_version.py --no-versions-array
 
 ## 環境変数
 
+### AWS Bedrock（デフォルト）
+
 | 変数名 | 説明 | デフォルト値 |
 |--------|------|-------------|
+| `AWS_ACCESS_KEY_ID` | AWSアクセスキー | - |
+| `AWS_SECRET_ACCESS_KEY` | AWSシークレットキー | - |
 | `AWS_REGION` | AWSリージョン | `ap-northeast-1` |
 | `BEDROCK_MODEL_ID` | 使用するモデルID | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `BEDROCK_MAX_TOKENS` | レスポンスの最大トークン数 | `16384` |
+
+### Anthropic API
+
+| 変数名 | 説明 | デフォルト値 |
+|--------|------|-------------|
+| `ANTHROPIC_API_KEY` | Anthropic APIキー | - |
+
+### OpenAI API
+
+| 変数名 | 説明 | デフォルト値 |
+|--------|------|-------------|
+| `OPENAI_API_KEY` | OpenAI APIキー | - |
+
+**注意**: プロバイダーの選択・モデルの指定は設定ファイル（`reviewer-config.md`）で行います。設定ファイルは[設定ファイルジェネレーター](/config-file-generator/)画面で作成し、画面上の設定モーダルからアップロードして利用します。
 
 ## API エンドポイント
 
