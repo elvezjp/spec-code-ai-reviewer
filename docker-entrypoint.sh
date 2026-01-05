@@ -4,22 +4,24 @@ set -e
 BASE_PATH="/var/www/spec-code-ai-reviewer"
 
 # latestシンボリックリンクの作成（存在しない場合）
+# 最新バージョンを自動検出（バージョン番号でソートして最後のものを使用）
 if [ ! -L "$BASE_PATH/latest" ]; then
-    ln -sf versions/v0.3.0 "$BASE_PATH/latest"
+    LATEST_VERSION=$(ls -d "$BASE_PATH/versions"/v* 2>/dev/null | sort -V | tail -1 | xargs basename)
+    if [ -n "$LATEST_VERSION" ]; then
+        ln -sf "versions/$LATEST_VERSION" "$BASE_PATH/latest"
+        echo "Created symlink: latest -> versions/$LATEST_VERSION"
+    fi
 fi
 
-# 各バージョンの依存関係をインストール
-echo "Installing dependencies for latest version..."
-cd "$BASE_PATH/latest/backend"
-uv sync --frozen 2>/dev/null || uv sync
-
-echo "Installing dependencies for v0.3.0..."
-cd "$BASE_PATH/versions/v0.3.0/backend"
-uv sync --frozen 2>/dev/null || uv sync
-
-echo "Installing dependencies for v0.1.1..."
-cd "$BASE_PATH/versions/v0.1.1/backend"
-uv sync --frozen 2>/dev/null || uv sync
+# versions/配下の各バージョンの依存関係をインストール
+for VERSION_DIR in "$BASE_PATH/versions"/v*/; do
+    if [ -d "$VERSION_DIR/backend" ]; then
+        VERSION_NAME=$(basename "$VERSION_DIR")
+        echo "Installing dependencies for $VERSION_NAME..."
+        cd "$VERSION_DIR/backend"
+        uv sync --frozen 2>/dev/null || uv sync
+    fi
+done
 
 # 作業ディレクトリに戻る
 cd "$BASE_PATH"

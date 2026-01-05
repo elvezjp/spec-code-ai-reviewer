@@ -33,36 +33,42 @@
 
 ### LLMプロバイダー・認証情報の切り替え
 
-デフォルトではシステムLLM（サーバー側で設定されたAWS Bedrock）が使用されます。利用者自身のLLM認証情報を使用する場合は、設定ファイル（`reviewer-config.md`）をアップロードしてください。
+デフォルトではシステムLLM（サーバー側で設定されたAWS Bedrock）が使用されます。利用者自身のLLM認証情報を使用する場合は、以下の手順で設定ファイルをアップロードしてください。
 
-- Bedrock / Anthropic API / OpenAI API から選択可能
-- 設定ファイルは[設定ファイルジェネレーター](/config-file-generator/)画面で作成できます
-- 画面右上の「設定」ボタンから設定モーダルを開き、設定ファイルをアップロードします
+1. 画面右上の「設定」ボタンから設定モーダルを開く
+2. [設定ファイルジェネレーター](/config-file-generator/)画面でLLMプロバイダー（Bedrock / Anthropic API / OpenAI API）を選択し、APIキーなど必要な情報を入力して設定ファイルを作成
+3. 設定モーダルに戻って設定ファイルをアップロード
+4. 使用するLLMモデルを選択（複数指定した場合）
 
 ## セットアップ
+
+ローカル環境では以下の2通りの起動方法があります。
+
+- **単一バージョン起動**: uvicornで直接起動（開発向け）
+- **Docker Compose起動**: 本番環境と同等のマルチバージョン環境（動作確認向け）
+
+本番環境（EC2）へのデプロイについては [EC2デプロイ仕様書](docs/ec2-deployment-spec.md) を参照してください。
 
 ### 前提条件
 
 - Python 3.10以上
 - [uv](https://docs.astral.sh/uv/) (Python パッケージマネージャー)
-- LLMプロバイダーのAPIアクセス（以下のいずれか）
-  - AWS Bedrock（デフォルト）
-  - Anthropic API
-  - OpenAI API
 
 ### インストール
 
 ```bash
+# uv をインストール（未インストールの場合）
+# 詳細: https://docs.astral.sh/uv/getting-started/installation/
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
 # リポジトリをクローン
 git clone git@github.com:elvezjp/spec-code-ai-reviewer.git
 cd spec-code-ai-reviewer
 ```
 
-### システムLLM認証設定
+### システムLLM認証設定（AWS Bedrock）
 
-設定ファイル（`reviewer-config.md`）でプロバイダーを指定しない場合に使用される、システムLLMの認証を設定します。デフォルトはAWS Bedrockです。
-
-#### AWS Bedrock（デフォルト）
+**注意**: AWS環境がない場合、この設定は不要です。Web画面から設定ファイルをアップロードすることで、利用者自身がLLM認証情報を設定して使用できます（「[使い方](#使い方)」セクション参照）。
 
 ```bash
 # 方法1: 環境変数
@@ -74,19 +80,7 @@ export AWS_REGION=ap-northeast-1
 aws configure
 ```
 
-#### Anthropic API
-
-```bash
-export ANTHROPIC_API_KEY=your-api-key
-```
-
-#### OpenAI API
-
-```bash
-export OPENAI_API_KEY=your-api-key
-```
-
-### 起動（単一バージョン）
+### 単一バージョンで起動する場合
 
 ```bash
 cd versions/v0.5.0/backend
@@ -96,15 +90,14 @@ uv run uvicorn app.main:app --reload --port 8000
 
 ブラウザで http://localhost:8000 にアクセス
 
-### 起動（Docker Compose / マルチバージョン）
+### Docker Composeで起動する場合（マルチバージョン対応）
 
 本番環境と同等のバージョン切替機能を含む開発環境を起動できます。
 
 ```bash
-# AWS認証情報を環境変数に設定（.envファイルでも可）
-export AWS_ACCESS_KEY_ID=your-access-key
-export AWS_SECRET_ACCESS_KEY=your-secret-key
-export AWS_REGION=ap-northeast-1
+# AWS認証情報を設定（システムLLMを使用する場合）
+cp .env.example .env
+# .env ファイルを編集してAWS認証情報を設定
 
 # 起動
 docker-compose up -d --build
@@ -118,6 +111,8 @@ docker-compose logs -f
 # 停止
 docker-compose down
 ```
+
+**注意**: AWS環境がない場合は `.env` ファイルの作成は不要です。Web画面から設定ファイルをアップロードすることで、Anthropic APIやOpenAI APIを使用できます。
 
 画面左上のバルーンでバージョン切替が可能です（Cookie + Nginx mapによるルーティング）。
 
@@ -160,9 +155,9 @@ python3 scripts/sync_version.py --no-versions-array
 
 ## 環境変数（システムLLM用）
 
-設定ファイル（`reviewer-config.md`）でプロバイダーを指定しない場合に使用される、システムLLMの環境変数です。
+システムLLM（AWS Bedrock）の実行に利用される環境変数です。
 
-### AWS Bedrock（デフォルト）
+**注意**: Web画面から設定ファイルをアップロードして実行した場合、そちらの設定が優先されます。（「[使い方](#使い方)」セクション参照）。
 
 | 変数名 | 説明 | デフォルト値 |
 |--------|------|-------------|
@@ -171,18 +166,6 @@ python3 scripts/sync_version.py --no-versions-array
 | `AWS_REGION` | AWSリージョン | `ap-northeast-1` |
 | `BEDROCK_MODEL_ID` | 使用するモデルID | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `BEDROCK_MAX_TOKENS` | レスポンスの最大トークン数 | `16384` |
-
-### Anthropic API
-
-| 変数名 | 説明 | デフォルト値 |
-|--------|------|-------------|
-| `ANTHROPIC_API_KEY` | Anthropic APIキー | - |
-
-### OpenAI API
-
-| 変数名 | 説明 | デフォルト値 |
-|--------|------|-------------|
-| `OPENAI_API_KEY` | OpenAI APIキー | - |
 
 ## API エンドポイント
 
