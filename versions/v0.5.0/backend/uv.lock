@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.13' and sys_platform == 'win32'",
@@ -11,6 +11,11 @@ resolution-markers = [
     "python_full_version == '3.11.*' and sys_platform != 'win32'",
     "python_full_version < '3.11' and sys_platform != 'win32'",
 ]
+
+[[package]]
+name = "add-line-numbers"
+version = "0.1.0"
+source = { editable = "../../../add-line-numbers" }
 
 [[package]]
 name = "annotated-doc"
@@ -1237,6 +1242,7 @@ name = "spec-code-ai-reviewer-backend"
 version = "0.5.0"
 source = { editable = "." }
 dependencies = [
+    { name = "add-line-numbers" },
     { name = "anthropic" },
     { name = "boto3" },
     { name = "fastapi" },
@@ -1256,6 +1262,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "add-line-numbers", editable = "../../../add-line-numbers" },
     { name = "anthropic", specifier = ">=0.40.0" },
     { name = "boto3", specifier = ">=1.35.0" },
     { name = "fastapi", specifier = ">=0.115.0" },

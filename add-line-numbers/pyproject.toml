@@ -1,0 +1,13 @@
+[project]
+name = "add-line-numbers"
+version = "0.1.0"
+description = "ファイルに行番号を追加するツール"
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+include = ["add_line_numbers.py"]

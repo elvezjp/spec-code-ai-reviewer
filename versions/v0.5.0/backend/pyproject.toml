@@ -13,7 +13,11 @@ dependencies = [
     "anthropic>=0.40.0",
     "openai>=1.50.0",
     "python-dotenv>=1.0.0",
+    "add-line-numbers",
 ]
+
+[tool.uv.sources]
+add-line-numbers = { path = "../../../add-line-numbers", editable = true }
 
 [build-system]
 requires = ["hatchling"]
