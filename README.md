@@ -1,1 +1,1 @@
-# spec-code-ai-reviewer-
+# spec-code-ai-reviewer
