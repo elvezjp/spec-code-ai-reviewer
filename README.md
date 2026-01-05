@@ -42,6 +42,13 @@
 
 ## セットアップ
 
+ローカル環境では以下の2通りの起動方法があります。
+
+- **単一バージョン起動**: uvicornで直接起動（開発向け）
+- **Docker Compose起動**: 本番環境と同等のマルチバージョン環境（動作確認向け）
+
+本番環境（EC2）へのデプロイについては [EC2デプロイ仕様書](docs/ec2-deployment-spec.md) を参照してください。
+
 ### 前提条件
 
 - Python 3.10以上
@@ -73,7 +80,7 @@ export AWS_REGION=ap-northeast-1
 aws configure
 ```
 
-### コマンドで起動（単一バージョン）
+### 単一バージョンで起動する場合
 
 ```bash
 cd versions/v0.5.0/backend
@@ -83,7 +90,7 @@ uv run uvicorn app.main:app --reload --port 8000
 
 ブラウザで http://localhost:8000 にアクセス
 
-### Dockerで起動する場合（マルチバージョン対応）
+### Docker Composeで起動する場合（マルチバージョン対応）
 
 本番環境と同等のバージョン切替機能を含む開発環境を起動できます。
 
