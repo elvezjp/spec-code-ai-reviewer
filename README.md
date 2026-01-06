@@ -345,17 +345,14 @@ sudo nginx -s reload
 - `spec-code-ai-reviewer.conf` は `$backend_port` 変数を使用するため、`version-map.conf` の更新のみでOK
 
 ## 開発の背景
+
 本ツールは、日本語の開発文書・仕様書を対象とした開発支援AI **IXV（イクシブ）** の開発過程で生まれた小さな実用品です。
 
 IXVでは、システム開発における日本語の文書について、理解・構造化・活用という課題に取り組んでおり、本リポジトリでは、その一部を切り出して公開しています。
 
-
 ## ライセンス
 
-- 本プロジェクト: [MIT License](LICENSE)
-- markitdown: [MIT License](markitdown/LICENSE) (Microsoft)
-- excel2md: [MIT License](excel2md/LICENSE)
-- add-line-numbers: [MIT License](add-line-numbers/LICENSE)
+MIT License - 詳細は [LICENSE](LICENSE) を参照してください。
 
 ## 問い合わせ先
 
