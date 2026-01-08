@@ -195,7 +195,7 @@ python3 scripts/sync_version.py --no-versions-array
 
 **対処方法:**
 1. インターネット接続を確認する
-2. プロキシ環境の設定を設定する
+2. プロキシ環境の設定を確認する
 3. ファイアウォールで LLMプロバイダのAPI（`api.openai.com`等）への通信が許可されているか確認する
 
 ---
