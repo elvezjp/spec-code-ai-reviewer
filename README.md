@@ -176,6 +176,65 @@ python3 scripts/sync_version.py --no-versions-array
 | `BEDROCK_MODEL_ID` | 使用するモデルID | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `BEDROCK_MAX_TOKENS` | レスポンスの最大トークン数 | `16384` |
 
+## トラブルシューティング
+
+### 接続テストの実行方法
+
+LLM接続に問題がある場合は、画面右上の「設定」ボタンから設定モーダルを開き、「接続テスト」ボタンで接続状態を確認できます。
+
+### よくあるエラーと対処方法
+
+#### Connection error.（OpenAI API使用時の例）
+
+ネットワークの問題が原因で発生することが多いエラーです。
+
+**考えられる原因:**
+- インターネット接続が不安定
+- プロキシ環境でプロキシ設定がされていない
+- ファイアウォールによるAPI通信のブロック
+- VPN接続の問題
+
+**対処方法:**
+1. インターネット接続を確認する
+2. プロキシ環境の場合は環境変数を設定する:
+   ```bash
+   export HTTP_PROXY=http://proxy.example.com:8080
+   export HTTPS_PROXY=http://proxy.example.com:8080
+   ```
+3. ファイアウォールで `api.openai.com` への通信が許可されているか確認する
+
+#### 認証エラー（APIキーが無効です）
+
+APIキーに問題がある場合に発生します。
+
+**考えられる原因:**
+- APIキーが間違っている
+- APIキーの有効期限が切れている
+- APIキーに必要な権限がない
+
+**対処方法:**
+1. APIキーが正しくコピーされているか確認する（前後の空白に注意）
+2. 各プロバイダーの管理画面でAPIキーの状態を確認する:
+   - OpenAI: https://platform.openai.com/api-keys
+   - Anthropic: https://console.anthropic.com/settings/keys
+3. 新しいAPIキーを発行して再設定する
+
+#### AWS Bedrock認証エラー
+
+AWS認証情報に問題がある場合に発生します。
+
+**対処方法:**
+1. 環境変数が正しく設定されているか確認する:
+   ```bash
+   echo $AWS_ACCESS_KEY_ID
+   echo $AWS_REGION
+   ```
+2. AWS CLIで認証状態を確認する:
+   ```bash
+   aws sts get-caller-identity
+   ```
+3. IAMユーザー/ロールにBedrock関連の権限があるか確認する
+
 ## API エンドポイント
 
 | メソッド | パス | 説明 |
