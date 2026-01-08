@@ -178,9 +178,12 @@ python3 scripts/sync_version.py --no-versions-array
 
 ---
 
-## トラブルシューティング（よくある問題と解決方法）
+## よくある質問と回答/トラブルシューティング
 
-### 1. OpenAI API使用時に「Connection error.」と表示される
+### 1. APIキーを複数登録できますが、これは何に使われますか？
+APIキーを複数登録しておくことで、好きなAPIキーを画面から選択して使えるようになります。
+
+### 2. OpenAI API使用時に「Connection error.」と表示される
 
 ネットワークの問題が原因で発生することが多いエラーです。
 
