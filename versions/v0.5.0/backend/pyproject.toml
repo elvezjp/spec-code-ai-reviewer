@@ -11,7 +11,7 @@ dependencies = [
     "markitdown[xlsx]>=0.0.1a3",
     "openpyxl>=3.1.5",
     "anthropic>=0.40.0",
-    "openai>=1.50.0",
+    "openai>=2.14.0",
     "python-dotenv>=1.0.0",
     "add-line-numbers",
 ]

@@ -743,6 +743,10 @@ AIへの指示内容をユーザーがカスタマイズ可能。以下の4項�
 - apiKey: YOUR_OPENAI_API_KEY
 - maxTokens: 16384
 - models:
+  - gpt-5.2
+  - gpt-5.2-chat-latest
+  - gpt-5.2-pro
+  - gpt-5.1
   - gpt-4o
   - gpt-4o-mini
 ```
@@ -1399,7 +1403,7 @@ OpenAI:
 ```json
 {
   "provider": "openai",
-  "model": "gpt-4o",
+  "model": "gpt-5.2",
   "apiKey": "sk-...",
   "maxTokens": 16384
 }
