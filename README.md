@@ -362,6 +362,10 @@ sudo nginx -s reload
 - `pm2 reload` は既存プロセスの再起動のみ。新バージョン追加時は `pm2 delete all && pm2 start` で再構成が必要
 - `spec-code-ai-reviewer.conf` は `$backend_port` 変数を使用するため、`version-map.conf` の更新のみでOK
 
+## 更新履歴
+
+詳細な変更履歴は [CHANGELOG.md](CHANGELOG.md) を参照してください。
+
 ## 開発の背景
 
 本ツールは、日本語の開発文書・仕様書を対象とした開発支援AI **IXV（イクシブ）** の開発過程で生まれた小さな実用品です。
