@@ -261,28 +261,37 @@ git subtree pull --prefix=markitdown https://github.com/microsoft/markitdown.git
 
 | バージョン | ポート |
 |-----------|-------|
-| v0.5.0 (latest) | 8050 |
+| v0.5.1 (latest) | 8051 |
+| v0.5.0 | 8050 |
 
 ### 新しいバージョンを追加する際の変更箇所
 
 新バージョン（例: v0.6.0）を追加する場合、以下のファイルを修正します。
 
+#### バージョンディレクトリの追加と更新
+
 | ファイル | 変更内容 |
 |---------|---------|
 | `versions/v0.6.0/` | 新バージョンのコードを配置 |
-| `docker-compose.yml` | backendのexposeに新ポートを追加、nginxのvolumesに新フロントエンドを追加 |
-| `nginx/version-map.conf` | mapに新バージョンのルーティングを追加（dev/本番共通） |
-| `versions/v0.5.0/frontend/index.html` | VERSIONS配列に新バージョンを追加 |
-| `docs/20251218version-switching-design.md` | ポート割り当て表を更新 |
-| `ecosystem.config.js` | VERSIONS配列に新バージョンを追加（下記参照） |
-| `dev.ecosystem.config.js` | VERSIONS配列に新バージョンを追加 |
+| `versions/v0.6.0/spec.md` | バージョン番号を更新（冒頭、レビュー情報例、テスト項目） |
+| `versions/v0.6.0/config-file-generator-spec.md` | 対象バージョンを更新 |
+| `versions/v0.6.0/frontend/config-file-generator/index.html` | SCHEMAのversion、info.versionを更新 |
+| `versions/v0.6.0/backend/pyproject.toml` | versionを更新 |
+| `latest` シンボリックリンク | 新バージョンを指すように更新（`rm latest && ln -s versions/v0.6.0 latest`） |
+| `versions/v0.5.0/frontend/index.html` | VERSIONS配列を更新追加（`scripts/sync_version.py`実行） |
 
-最新版を切り替える場合は追加で以下も変更：
+#### 設定ファイルとドキュメントの更新
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `latest` シンボリックリンク | 新バージョンを指すように更新（`rm latest && ln -s versions/v0.6.0 latest`） |
-| `nginx/version-map.conf` | defaultのポートを新バージョンに変更 |
+| `docker-compose.yml` | backendのexposeに新ポートを追加、nginxのvolumesに新フロントエンドを追加 |
+| `nginx/version-map.conf` | 新バージョンのルーティングを追加、defaultポート変更 |
+| `ecosystem.config.js` | VERSIONS配列に新バージョンを追加（下記参照） |
+| `dev.ecosystem.config.js` | VERSIONS配列に新バージョンを追加 |
+| `docs/ec2-deployment-spec.md` | 設定例に新バージョンの記載を追加 |
+| `versions/README.md` | ディレクトリ構成、バージョン比較表、更新履歴を追加 |
+| `README.md` | ディレクトリ構成、ポート割り当て表を更新 |
+| `CHANGELOG.md` | 更新履歴を追記 |
 
 #### ecosystem.config.js への追加例
 
