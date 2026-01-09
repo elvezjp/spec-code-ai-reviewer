@@ -35,7 +35,7 @@
 
 デフォルトではシステムLLM（サーバー側で設定されたAWS Bedrock）が使用されます。利用者自身のLLM認証情報を使用する場合は、以下の手順で設定ファイルをアップロードしてください。
 
-1. 画面右上の「設定」ボタンから設定モーダルを開く
+1. 画面右上の「設定」アイコンから設定モーダルを開く
 2. [設定ファイルジェネレーター](/config-file-generator/)画面でLLMプロバイダー（Bedrock / Anthropic API / OpenAI API）を選択し、APIキーなど必要な情報を入力して設定ファイルを作成
 3. 設定モーダルに戻って設定ファイルをアップロード
 4. 使用するLLMモデルを選択（複数指定した場合）
@@ -91,13 +91,17 @@ aws configure
 
 ### 単一バージョンで起動する場合
 
+起動方法はバージョンごとに違いはありません（`uv sync` は各バージョンごとに実行が必要です）。
+
 ```bash
-cd versions/v0.5.0/backend
+cd versions/v0.5.1/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
 ブラウザで http://localhost:8000 にアクセス
+
+**注意**: 画面左上にバージョン切替バルーンが表示されますが、単一バージョン起動時は起動したバージョンでのみ動作します。画面右上「設定」アイコンから起動中のバージョン番号を確認できます。
 
 ### Docker Composeで起動する場合（マルチバージョン対応）
 
@@ -130,8 +134,8 @@ docker-compose down
 各バージョンのバックエンドディレクトリでテストを実行します。
 
 ```bash
-# v0.5.0 のテスト
-cd versions/v0.5.0/backend
+# v0.5.1 のテスト
+cd versions/v0.5.1/backend
 uv run pytest tests/ -v
 ```
 
@@ -200,11 +204,16 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # 開発用Nginx設定
 │   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.5.0    # シンボリックリンク（最新版を指す）
+├── latest -> versions/v0.5.1    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
-│   └── v0.5.0/                  # 最新版
+│   ├── v0.5.0/                  # 旧バージョン
+│   │   ├── backend/
+│   │   ├── frontend/
+│   │   ├── config-file-generator-spec.md
+│   │   └── spec.md
+│   └── v0.5.1/                  # 最新版
 │       ├── backend/
 │       ├── frontend/
 │       ├── config-file-generator-spec.md
@@ -342,7 +351,7 @@ cd /var/www/spec-code-ai-reviewer
 git pull origin main
 
 # 依存関係をインストール
-cd versions/v0.5.0/backend
+cd versions/v0.5.1/backend
 uv sync
 
 # PM2でプロセスを再構成（新バージョンのプロセスを追加）
