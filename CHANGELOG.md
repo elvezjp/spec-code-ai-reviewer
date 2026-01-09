@@ -5,6 +5,23 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/spec/v2.0.0.html) に準拠しています。
 
+## [0.5.1] - 2026-01-09
+
+### 追加
+- **OpenAI GPT-5.2対応**: GPT-5.2系モデルで必要な`max_completion_tokens`パラメータに対応
+- **設定ファイルジェネレーター更新**: OpenAIモデル選択肢にGPT-5.2系を追加
+
+### 変更
+- **OpenAI SDK更新**: `openai>=2.14.0` に依存バージョンを引き上げ
+- **設定ファイル更新**: v0.5.1をlatest版として設定
+  - `nginx/version-map.conf`: v0.5.1のルーティング追加、defaultポートを8051に変更
+  - `docker-compose.yml`: v0.5.1フロントエンド・ポート8051を追加
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: v0.5.1エントリ追加
+  - `docs/ec2-deployment-spec.md`: ポート表・VERSIONS配列を更新
+
+### 修正
+- OpenAI GPT-5.2で`max_tokens`パラメータが使用できない問題を修正（Issue #5）
+
 ## [0.5.0] - 2025-12-28
 
 ### 追加
@@ -72,6 +89,7 @@
 
 | バージョン | 主な機能 |
 |------------|----------|
+| 0.5.1      | OpenAI GPT-5.2対応 |
 | 0.5.0      | 複数回レビュー実行、一式ダウンロード |
 | 0.4.0      | マルチLLMプロバイダー、設定ファイル |
 | 0.3.0      | マルチ変換ツール、バージョン切替 |

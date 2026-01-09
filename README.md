@@ -35,7 +35,7 @@
 
 デフォルトではシステムLLM（サーバー側で設定されたAWS Bedrock）が使用されます。利用者自身のLLM認証情報を使用する場合は、以下の手順で設定ファイルをアップロードしてください。
 
-1. 画面右上の「設定」ボタンから設定モーダルを開く
+1. 画面右上の「設定」アイコンから設定モーダルを開く
 2. [設定ファイルジェネレーター](/config-file-generator/)画面でLLMプロバイダー（Bedrock / Anthropic API / OpenAI API）を選択し、APIキーなど必要な情報を入力して設定ファイルを作成
 3. 設定モーダルに戻って設定ファイルをアップロード
 4. 使用するLLMモデルを選択（複数指定した場合）
@@ -91,13 +91,17 @@ aws configure
 
 ### 単一バージョンで起動する場合
 
+起動方法はバージョンごとに違いはありません（`uv sync` は各バージョンごとに実行が必要です）。
+
 ```bash
-cd versions/v0.5.0/backend
+cd versions/v0.5.1/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
 ブラウザで http://localhost:8000 にアクセス
+
+**注意**: 画面左上にバージョン切替バルーンが表示されますが、単一バージョン起動時は起動したバージョンでのみ動作します。画面右上「設定」アイコンから起動中のバージョン番号を確認できます。
 
 ### Docker Composeで起動する場合（マルチバージョン対応）
 
@@ -130,8 +134,8 @@ docker-compose down
 各バージョンのバックエンドディレクトリでテストを実行します。
 
 ```bash
-# v0.5.0 のテスト
-cd versions/v0.5.0/backend
+# v0.5.1 のテスト
+cd versions/v0.5.1/backend
 uv run pytest tests/ -v
 ```
 
@@ -224,11 +228,16 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # 開発用Nginx設定
 │   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.5.0    # シンボリックリンク（最新版を指す）
+├── latest -> versions/v0.5.1    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
-│   └── v0.5.0/                  # 最新版
+│   ├── v0.5.0/                  # 旧バージョン
+│   │   ├── backend/
+│   │   ├── frontend/
+│   │   ├── config-file-generator-spec.md
+│   │   └── spec.md
+│   └── v0.5.1/                  # 最新版
 │       ├── backend/
 │       ├── frontend/
 │       ├── config-file-generator-spec.md
@@ -285,28 +294,37 @@ git subtree pull --prefix=markitdown https://github.com/microsoft/markitdown.git
 
 | バージョン | ポート |
 |-----------|-------|
-| v0.5.0 (latest) | 8050 |
+| v0.5.1 (latest) | 8051 |
+| v0.5.0 | 8050 |
 
 ### 新しいバージョンを追加する際の変更箇所
 
 新バージョン（例: v0.6.0）を追加する場合、以下のファイルを修正します。
 
+#### バージョンディレクトリの追加と更新
+
 | ファイル | 変更内容 |
 |---------|---------|
 | `versions/v0.6.0/` | 新バージョンのコードを配置 |
-| `docker-compose.yml` | backendのexposeに新ポートを追加、nginxのvolumesに新フロントエンドを追加 |
-| `nginx/version-map.conf` | mapに新バージョンのルーティングを追加（dev/本番共通） |
-| `versions/v0.5.0/frontend/index.html` | VERSIONS配列に新バージョンを追加 |
-| `docs/20251218version-switching-design.md` | ポート割り当て表を更新 |
-| `ecosystem.config.js` | VERSIONS配列に新バージョンを追加（下記参照） |
-| `dev.ecosystem.config.js` | VERSIONS配列に新バージョンを追加 |
+| `versions/v0.6.0/spec.md` | バージョン番号を更新（冒頭、レビュー情報例、テスト項目） |
+| `versions/v0.6.0/config-file-generator-spec.md` | 対象バージョンを更新 |
+| `versions/v0.6.0/frontend/config-file-generator/index.html` | SCHEMAのversion、info.versionを更新 |
+| `versions/v0.6.0/backend/pyproject.toml` | versionを更新 |
+| `latest` シンボリックリンク | 新バージョンを指すように更新（`rm latest && ln -s versions/v0.6.0 latest`） |
+| `versions/v0.5.0/frontend/index.html` | VERSIONS配列を更新追加（`scripts/sync_version.py`実行） |
 
-最新版を切り替える場合は追加で以下も変更：
+#### 設定ファイルとドキュメントの更新
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `latest` シンボリックリンク | 新バージョンを指すように更新（`rm latest && ln -s versions/v0.6.0 latest`） |
-| `nginx/version-map.conf` | defaultのポートを新バージョンに変更 |
+| `docker-compose.yml` | backendのexposeに新ポートを追加、nginxのvolumesに新フロントエンドを追加 |
+| `nginx/version-map.conf` | 新バージョンのルーティングを追加、defaultポート変更 |
+| `ecosystem.config.js` | VERSIONS配列に新バージョンを追加（下記参照） |
+| `dev.ecosystem.config.js` | VERSIONS配列に新バージョンを追加 |
+| `docs/ec2-deployment-spec.md` | 設定例に新バージョンの記載を追加 |
+| `versions/README.md` | ディレクトリ構成、バージョン比較表、更新履歴を追加 |
+| `README.md` | ディレクトリ構成、ポート割り当て表を更新 |
+| `CHANGELOG.md` | 更新履歴を追記 |
 
 #### ecosystem.config.js への追加例
 
@@ -357,7 +375,7 @@ cd /var/www/spec-code-ai-reviewer
 git pull origin main
 
 # 依存関係をインストール
-cd versions/v0.5.0/backend
+cd versions/v0.5.1/backend
 uv sync
 
 # PM2でプロセスを再構成（新バージョンのプロセスを追加）
@@ -376,6 +394,10 @@ sudo nginx -s reload
 - `latest` シンボリックリンクは `git pull` で自動更新される（Gitがシンボリックリンクを追跡）
 - `pm2 reload` は既存プロセスの再起動のみ。新バージョン追加時は `pm2 delete all && pm2 start` で再構成が必要
 - `spec-code-ai-reviewer.conf` は `$backend_port` 変数を使用するため、`version-map.conf` の更新のみでOK
+
+## 更新履歴
+
+詳細な変更履歴は [CHANGELOG.md](CHANGELOG.md) を参照してください。
 
 ## 開発の背景
 
