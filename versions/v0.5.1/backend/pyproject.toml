@@ -1,0 +1,36 @@
+[project]
+name = "spec-code-ai-reviewer-backend"
+version = "0.5.0"
+description = "設計書-Javaプログラム突合 AIレビュアー バックエンド"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "python-multipart>=0.0.12",
+    "boto3>=1.35.0",
+    "markitdown[xlsx]>=0.0.1a3",
+    "openpyxl>=3.1.5",
+    "anthropic>=0.40.0",
+    "openai>=2.14.0",
+    "python-dotenv>=1.0.0",
+    "add-line-numbers",
+]
+
+[tool.uv.sources]
+add-line-numbers = { path = "../../../add-line-numbers", editable = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0.0",
+    "httpx>=0.27.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["../../../add-line-numbers"]
