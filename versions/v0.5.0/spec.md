@@ -743,10 +743,6 @@ AIへの指示内容をユーザーがカスタマイズ可能。以下の4項�
 - apiKey: YOUR_OPENAI_API_KEY
 - maxTokens: 16384
 - models:
-  - gpt-5.2
-  - gpt-5.2-chat-latest
-  - gpt-5.2-pro
-  - gpt-5.1
   - gpt-4o
   - gpt-4o-mini
 ```
@@ -1403,7 +1399,7 @@ OpenAI:
 ```json
 {
   "provider": "openai",
-  "model": "gpt-5.2",
+  "model": "gpt-4o",
   "apiKey": "sk-...",
   "maxTokens": 16384
 }
@@ -1528,11 +1524,7 @@ OpenAI:
 
 ユーザー指定のLLM設定で接続テストを実行する。設定モーダルの「接続テスト」ボタンから呼び出される。
 
-接続テストでは、指定されたプロバイダーのAPIに対してごく短いメッセージでLLMを実行し、認証情報の有効性を検証する。
-
-**実装上の注意（トークン数制限）:**
-- Anthropic/Bedrock: `max_tokens=1` で接続テスト。
-- OpenAI: GPT-5.2系のモデルでは `max_completion_tokens=1` だと出力トークン数不足でエラーになるため、`max_completion_tokens=16` 程度の余裕を持たせる。
+接続テストでは、指定されたプロバイダーのAPIに対してごく短いメッセージ（`max_tokens=1`）でLLMを実行し、認証情報の有効性を検証する。
 
 **リクエスト:**
 

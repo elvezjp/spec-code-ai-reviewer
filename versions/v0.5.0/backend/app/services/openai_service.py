@@ -86,7 +86,7 @@ class OpenAIProvider(LLMProvider):
         try:
             response = self._client.chat.completions.create(
                 model=self._model_id,
-                max_completion_tokens=self._max_tokens,
+                max_tokens=self._max_tokens,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message},
@@ -149,11 +149,10 @@ class OpenAIProvider(LLMProvider):
         """
         try:
             # 最小限のトークンでAPIを呼び出して接続確認
-            # GPT-5.2系は出力トークン数が少なすぎるとエラーになるため、余裕を持たせる
             self._client.chat.completions.create(
                 model=self._model_id,
-                max_completion_tokens=16,
-                messages=[{"role": "user", "content": "Hi"}],
+                max_tokens=1,
+                messages=[{"role": "user", "content": "test"}],
             )
             return {"status": "connected"}
         except AuthenticationError:
