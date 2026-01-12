@@ -325,7 +325,8 @@
       <button onclick="executeReview()" id="review-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-lg shadow-md transition text-lg disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
         レビュー実行
       </button>
-      <p class="text-xs text-gray-400 mt-3 text-center">※ 同じ設定でレビューを2回実行します。それぞれ個別に結果を確認できます。</p>
+      <p id="review-btn-warning" class="text-xs text-orange-500 mt-3 text-center">※ レビューを実行するには、設計書とプログラムを両方変換してください。</p>
+      <p class="text-xs text-gray-400 mt-1 text-center">※ 同じ設定でレビューを2回実行します。それぞれ個別に結果を確認できます。</p>
     </div>
   </div>
 
@@ -734,10 +735,13 @@
     // レビューボタンの状態を更新する関数
     function updateReviewButtonState() {
       const reviewBtn = document.getElementById('review-btn');
+      const reviewBtnWarning = document.getElementById('review-btn-warning');
       if (specMarkdown && codeWithLineNumbers) {
         reviewBtn.disabled = false;
+        reviewBtnWarning.classList.add('hidden');
       } else {
         reviewBtn.disabled = true;
+        reviewBtnWarning.classList.remove('hidden');
       }
     }
 
