@@ -322,7 +322,7 @@
 
     <!-- レビュー実行ボタン -->
     <div class="bg-white rounded-lg shadow-md p-6">
-      <button onclick="executeReview()" id="review-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-lg shadow-md transition text-lg disabled:bg-gray-300 disabled:cursor-not-allowed">
+      <button onclick="executeReview()" id="review-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-lg shadow-md transition text-lg disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
         レビュー実行
       </button>
       <p class="text-xs text-gray-400 mt-3 text-center">※ 同じ設定でレビューを2回実行します。それぞれ個別に結果を確認できます。</p>
@@ -731,6 +731,16 @@
     let codeWithLineNumbers = null;
     let codeFilesWithLineNumbers = [];
 
+    // レビューボタンの状態を更新する関数
+    function updateReviewButtonState() {
+      const reviewBtn = document.getElementById('review-btn');
+      if (specMarkdown && codeWithLineNumbers) {
+        reviewBtn.disabled = false;
+      } else {
+        reviewBtn.disabled = true;
+      }
+    }
+
     // ツール選択
     let availableTools = [];
     const defaultTool = 'markitdown';  // デフォルトツール
@@ -1037,6 +1047,8 @@
         document.getElementById('spec-download-btn').disabled = true;
         renderSpecPriorityControls();
       }
+      // レビューボタンの状態を更新
+      updateReviewButtonState();
     }
 
     // 設計書の役割・種別・ツールUIを描画
@@ -1117,6 +1129,7 @@
             document.getElementById('spec-preview').classList.add('hidden');
             document.getElementById('spec-preview-icon').textContent = '▶';
             updateTokenEstimate();
+            updateReviewButtonState();
           }
         });
       });
@@ -1145,6 +1158,7 @@
             document.getElementById('spec-preview').classList.add('hidden');
             document.getElementById('spec-preview-icon').textContent = '▶';
             updateTokenEstimate();
+            updateReviewButtonState();
           }
         });
       });
@@ -1179,6 +1193,7 @@
         document.getElementById('spec-preview').classList.add('hidden');
         document.getElementById('spec-preview-icon').textContent = '▶';
         updateTokenEstimate();
+        updateReviewButtonState();
       }
     }
 
@@ -1202,6 +1217,8 @@
         document.getElementById('code-convert-btn').disabled = true;
         document.getElementById('code-download-btn').disabled = true;
       }
+      // レビューボタンの状態を更新
+      updateReviewButtonState();
     }
 
     // Excel → Markdown変換（API呼び出し版）
@@ -1270,6 +1287,8 @@
 
         // トークン数表示を更新
         updateTokenEstimate();
+        // レビューボタンの状態を更新
+        updateReviewButtonState();
       } catch (error) {
         document.getElementById('spec-status').textContent = '❌ ' + error.message;
       } finally {
@@ -1350,6 +1369,8 @@
 
         // トークン数表示を更新
         updateTokenEstimate();
+        // レビューボタンの状態を更新
+        updateReviewButtonState();
       } catch (error) {
         document.getElementById('code-status').textContent = '❌ ' + error.message;
       } finally {
@@ -1417,8 +1438,8 @@
 
     // レビュー実行（API呼び出し版）- 直列で2回実行
     async function executeReview() {
+      // ボタンがdisabledの場合は処理しない（変換が完了していない場合）
       if (!specMarkdown || !codeWithLineNumbers) {
-        alert('設計書とプログラムを両方変換してからレビューを実行してください。');
         return;
       }
 
