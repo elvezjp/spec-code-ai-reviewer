@@ -228,7 +228,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # 開発用Nginx設定
 │   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.5.1    # シンボリックリンク（最新版を指す）
+├── latest -> versions/v0.5.2    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
@@ -237,7 +237,12 @@ spec-code-ai-reviewer/
 │   │   ├── frontend/
 │   │   ├── config-file-generator-spec.md
 │   │   └── spec.md
-│   └── v0.5.1/                  # 最新版
+│   ├── v0.5.1/                  # 旧バージョン
+│   │   ├── backend/
+│   │   ├── frontend/
+│   │   ├── config-file-generator-spec.md
+│   │   └── spec.md
+│   └── v0.5.2/                  # 最新版
 │       ├── backend/
 │       ├── frontend/
 │       ├── config-file-generator-spec.md
@@ -294,7 +299,8 @@ git subtree pull --prefix=markitdown https://github.com/microsoft/markitdown.git
 
 | バージョン | ポート |
 |-----------|-------|
-| v0.5.1 (latest) | 8051 |
+| v0.5.2 (latest) | 8052 |
+| v0.5.1 | 8051 |
 | v0.5.0 | 8050 |
 
 ### 新しいバージョンを追加する際の変更箇所
