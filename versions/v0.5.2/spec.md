@@ -1,6 +1,6 @@
 # 設計書-Javaプログラム突合 AIレビュアー 仕様書
 
-**バージョン: 0.5.1**
+**バージョン: 0.5.2**
 
 ## 1. 概要
 
@@ -1742,9 +1742,9 @@ OpenAI:
    ※ 参照ルール（引用形式など）はシステムプロンプトの注意事項で指定
    ※ レビュー方針（メイン設計書を重点的に確認する指示）はシステムプロンプトの注意事項で設定
 
-7. Bedrock APIを呼び出し
+7. Bedrock Converse APIを呼び出し
    - boto3.client('bedrock-runtime')
-   - invoke_model() でClaude Haiku 4.5を呼び出し
+   - converse() でAnthropicモデル/Amazon Novaモデルを呼び出し
 
 8. レスポンスをパースして返却
 ```
@@ -1899,8 +1899,8 @@ async function executeReview() {
 
 | サービス | 説明 |
 |---------|------|
-| llm_service | プロバイダー抽象化レイヤー。リクエストの`llmConfig`に応じて適切なサービスを呼び出す |
-| bedrock_service | AWS Bedrock (Claude系) への接続 |
+| llm_service | プロバイダー抽象化レイヤー。リクエストの`llmConfig`に応じて適切なプロバイダーを選択。`get_system_llm_config()`でシステムLLM設定を生成 |
+| bedrock_service | AWS Bedrock (Converse API) への接続。Anthropic Claude系およびAmazon Novaモデルに対応 |
 | anthropic_service | Anthropic API への直接接続 |
 | openai_service | OpenAI API への接続 |
 
@@ -2181,11 +2181,12 @@ versions/v0.4.0/
 
 | ID | 関数 | テスト内容 | 期待結果 |
 |----|------|----------|---------|
-| UT-BED-001 | build_system_prompt() | 全項目指定時のプロンプト生成 | 4セクション含むプロンプト |
-| UT-BED-002 | build_user_message() | 単一ファイル | ファイル名とコードブロック含む |
-| UT-BED-003 | build_user_message() | 複数ファイル | 各ファイルのセクション含む |
-| UT-BED-004 | build_review_info_markdown() | 設計書・プログラム指定 | レビュー情報セクションのマークダウンを返す |
-| UT-BED-005 | build_review_meta() | 設計書・プログラム指定 | executedAt, designs, programsを含む辞書を返す |
+| UT-BED-PROVIDER-001 | BedrockProvider.__init__() | IAMロール認証（accessKeyId/secretAccessKeyがNone） | 認証情報なしでboto3クライアント作成 |
+| UT-BED-PROVIDER-002 | BedrockProvider.__init__() | ユーザー指定認証情報 | 認証情報付きでboto3クライアント作成 |
+| UT-BED-PROVIDER-003 | test_connection() | Converse API呼び出しで接続確認 | {"status": "connected"}を返す |
+| UT-BED-PROVIDER-004 | execute_review() | Converse APIでレビュー実行（モック） | ReviewResponseを返す |
+
+※ プロンプト組み立て等の共通ロジックは prompt_builder.py でテスト
 
 **line_numbers_service.py:**
 
@@ -2235,12 +2236,12 @@ versions/v0.4.0/
 
 | ID | 関数 | テスト内容 | 期待結果 |
 |----|------|----------|---------|
-| UT-LLM-001 | get_llm_service() | llmConfig未指定 | BedrockServiceを返す（システムLLM） |
-| UT-LLM-002 | get_llm_service() | provider="anthropic"指定 | AnthropicServiceを返す |
-| UT-LLM-003 | get_llm_service() | provider="openai"指定 | OpenAIServiceを返す |
-| UT-LLM-004 | get_llm_service() | provider="bedrock"指定 | BedrockServiceを返す |
-| UT-LLM-005 | get_llm_service() | 未知のprovider | ValueError例外 |
-| UT-LLM-006 | invoke_llm() | 正常なllmConfig | 対応するサービスで呼び出し成功 |
+| UT-LLM-001 | get_llm_provider() | llmConfig未指定 | BedrockProviderを返す（システムLLM設定を自動生成） |
+| UT-LLM-002 | get_llm_provider() | provider="anthropic"指定 | AnthropicProviderを返す |
+| UT-LLM-003 | get_llm_provider() | provider="openai"指定 | OpenAIProviderを返す |
+| UT-LLM-004 | get_llm_provider() | provider="bedrock"指定 | BedrockProviderを返す |
+| UT-LLM-005 | get_llm_provider() | 未知のprovider | ValueError例外 |
+| UT-LLM-006 | get_system_llm_config() | システムLLM設定生成 | Bedrock用LLMConfigを返す（IAMロール認証用） |
 
 **anthropic_service.py:**
 
