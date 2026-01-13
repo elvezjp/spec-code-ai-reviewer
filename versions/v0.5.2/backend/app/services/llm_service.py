@@ -4,11 +4,20 @@
 抽象インターフェースとプロバイダー選択ロジックを提供する。
 """
 
+import os
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.schemas import LLMConfig, ReviewRequest, ReviewResponse
+
+# システムLLM用のデフォルト設定（環境変数から取得）
+# 後方互換性のため、既存の環境変数名を維持
+_SYSTEM_LLM_REGION = os.environ.get("AWS_REGION", "ap-northeast-1")
+_SYSTEM_LLM_MODEL_ID = os.environ.get(
+    "BEDROCK_MODEL_ID", "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+)
+_SYSTEM_LLM_MAX_TOKENS = int(os.environ.get("BEDROCK_MAX_TOKENS", "16384"))
 
 
 class LLMProvider(ABC):
@@ -65,11 +74,31 @@ class LLMProvider(ABC):
         pass
 
 
+def get_system_llm_config() -> "LLMConfig":
+    """環境変数からシステムLLM用のLLMConfigを生成する
+
+    現在はBedrockのみサポート。将来的に環境変数で
+    プロバイダーを切り替え可能にすることも可能。
+
+    Returns:
+        LLMConfig: システムLLM用の設定
+    """
+    from app.models.schemas import LLMConfig
+
+    return LLMConfig(
+        provider="bedrock",
+        model=_SYSTEM_LLM_MODEL_ID,
+        region=_SYSTEM_LLM_REGION,
+        maxTokens=_SYSTEM_LLM_MAX_TOKENS,
+        # accessKeyId/secretAccessKey は None（IAMロール認証を使用）
+    )
+
+
 def get_llm_provider(llm_config: "LLMConfig | None") -> LLMProvider:
     """LLMConfigに基づいて適切なプロバイダーを返す
 
     Args:
-        llm_config: LLM設定。Noneの場合はシステムLLM（Bedrock）を使用。
+        llm_config: LLM設定。Noneの場合はシステムLLMを使用。
 
     Returns:
         LLMProvider: プロバイダーインスタンス
@@ -82,9 +111,9 @@ def get_llm_provider(llm_config: "LLMConfig | None") -> LLMProvider:
     from app.services.bedrock_service import BedrockProvider
     from app.services.openai_service import OpenAIProvider
 
+    # llm_configがNoneの場合はシステムLLM設定を使用
     if llm_config is None:
-        # システムLLM（環境変数で設定されたBedrock）を使用
-        return BedrockProvider()
+        llm_config = get_system_llm_config()
 
     if llm_config.provider == "anthropic":
         return AnthropicProvider(llm_config)

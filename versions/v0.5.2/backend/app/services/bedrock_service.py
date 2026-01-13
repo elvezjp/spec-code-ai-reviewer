@@ -1,13 +1,14 @@
-"""AWS Bedrock (Claude) 連携サービス"""
+"""AWS Bedrock 連携サービス
 
-import json
-import os
+Converse APIを使用してAnthropicおよびAmazon Novaモデルに対応。
+"""
+
 from typing import TYPE_CHECKING
 
 import boto3
 from botocore.exceptions import ClientError
 
-from app.models.schemas import ReviewMeta, ReviewResponse
+from app.models.schemas import LLMConfig, ReviewMeta, ReviewResponse
 from app.services.llm_service import LLMProvider
 from app.services.prompt_builder import (
     build_review_info_markdown,
@@ -17,44 +18,44 @@ from app.services.prompt_builder import (
 )
 
 if TYPE_CHECKING:
-    from app.models.schemas import LLMConfig, ReviewRequest
+    from app.models.schemas import ReviewRequest
 
-# デフォルト設定（システムLLM用）
-DEFAULT_REGION = os.environ.get("AWS_REGION", "ap-northeast-1")
-DEFAULT_MODEL_ID = os.environ.get(
-    "BEDROCK_MODEL_ID", "global.anthropic.claude-haiku-4-5-20251001-v1:0"
-)
-DEFAULT_MAX_TOKENS = int(os.environ.get("BEDROCK_MAX_TOKENS", "16384"))
+# IAMロール認証時のデフォルトリージョン
+_DEFAULT_REGION = "ap-northeast-1"
 
 
 class BedrockProvider(LLMProvider):
     """AWS Bedrock プロバイダー
 
-    システムLLM（環境変数で設定）またはユーザー指定の認証情報を使用して
-    AWS Bedrock APIを呼び出す。
+    Converse APIを使用してAnthropicおよびAmazon Novaモデルに対応。
     """
 
-    def __init__(self, llm_config: "LLMConfig | None" = None):
+    def __init__(self, llm_config: LLMConfig):
         """BedrockProviderを初期化する
 
         Args:
-            llm_config: LLM設定。Noneの場合はシステムLLM（環境変数）を使用。
+            llm_config: LLM設定（必須）
+
+        Note:
+            accessKeyId/secretAccessKeyがNoneの場合はIAMロール認証を使用する。
+            これはシステムLLM（EC2/Lambda等で実行）の場合に該当する。
         """
-        if llm_config:
-            # ユーザー指定の認証情報を使用
+        region = llm_config.region or _DEFAULT_REGION
+
+        # accessKeyId/secretAccessKeyがNoneの場合はIAMロール認証
+        if llm_config.accessKeyId and llm_config.secretAccessKey:
             self._client = boto3.client(
                 "bedrock-runtime",
-                region_name=llm_config.region or DEFAULT_REGION,
+                region_name=region,
                 aws_access_key_id=llm_config.accessKeyId,
                 aws_secret_access_key=llm_config.secretAccessKey,
             )
-            self._model_id = llm_config.model
-            self._max_tokens = llm_config.maxTokens
         else:
-            # システムLLM（環境変数から）
-            self._client = boto3.client("bedrock-runtime", region_name=DEFAULT_REGION)
-            self._model_id = DEFAULT_MODEL_ID
-            self._max_tokens = DEFAULT_MAX_TOKENS
+            # IAMロール認証（システムLLM用）
+            self._client = boto3.client("bedrock-runtime", region_name=region)
+
+        self._model_id = llm_config.model
+        self._max_tokens = llm_config.maxTokens
 
     @property
     def provider_name(self) -> str:
@@ -103,29 +104,24 @@ class BedrockProvider(LLMProvider):
             legacy_code_filename=request.codeFilename,
         )
 
-        # リクエストボディ
-        request_body = {
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": self._max_tokens,
-            "system": system_prompt,
-            "messages": [{"role": "user", "content": user_message}],
-        }
-
         try:
-            response = self._client.invoke_model(
+            # Converse APIを使用（Anthropic/Amazon Nova両対応）
+            response = self._client.converse(
                 modelId=self._model_id,
-                body=json.dumps(request_body),
-                contentType="application/json",
-                accept="application/json",
+                messages=[{
+                    "role": "user",
+                    "content": [{"text": user_message}],
+                }],
+                system=[{"text": system_prompt}],
+                inferenceConfig={"maxTokens": self._max_tokens},
             )
 
-            response_body = json.loads(response["body"].read())
-            llm_output = response_body["content"][0]["text"]
+            llm_output = response["output"]["message"]["content"][0]["text"]
 
             # トークン数を取得
-            usage = response_body.get("usage", {})
-            input_tokens = usage.get("input_tokens", 0)
-            output_tokens = usage.get("output_tokens", 0)
+            usage = response.get("usage", {})
+            input_tokens = usage.get("inputTokens", 0)
+            output_tokens = usage.get("outputTokens", 0)
 
             # ReviewMetaを構築
             review_meta_dict = build_review_meta(
@@ -168,24 +164,21 @@ class BedrockProvider(LLMProvider):
     def test_connection(self) -> dict:
         """Bedrock接続状態を確認する
 
-        最小限のトークン（max_tokens=1）でAPIを呼び出し、
+        最小限のトークン（maxTokens=1）でConverse APIを呼び出し、
         認証情報の有効性を検証する。
 
         Returns:
             dict: {"status": "connected"} または {"status": "error", "error": "..."}
         """
         try:
-            # 最小限のトークンでAPIを呼び出して接続確認
-            request_body = {
-                "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 1,
-                "messages": [{"role": "user", "content": "test"}],
-            }
-            self._client.invoke_model(
+            # Converse APIで接続確認（Anthropic/Amazon Nova両対応）
+            self._client.converse(
                 modelId=self._model_id,
-                body=json.dumps(request_body),
-                contentType="application/json",
-                accept="application/json",
+                messages=[{
+                    "role": "user",
+                    "content": [{"text": "test"}],
+                }],
+                inferenceConfig={"maxTokens": 1},
             )
             return {"status": "connected"}
         except ClientError as e:

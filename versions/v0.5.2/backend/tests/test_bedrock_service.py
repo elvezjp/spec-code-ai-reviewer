@@ -4,8 +4,8 @@ BedrockProviderクラスのテスト。
 プロンプト組み立て等の共通ロジックはtest_prompt_builder.pyでテストする。
 
 テストケース:
-- UT-BED-PROVIDER-001: BedrockProvider初期化（システムLLM）
-- UT-BED-PROVIDER-002: BedrockProvider初期化（ユーザー指定）
+- UT-BED-PROVIDER-001: BedrockProvider初期化（IAMロール認証）
+- UT-BED-PROVIDER-002: BedrockProvider初期化（ユーザー指定認証情報）
 - UT-BED-PROVIDER-003: test_connection() - 正常な接続
 - UT-BED-PROVIDER-004: execute_review() - 正常なリクエスト（モック）
 """
@@ -18,36 +18,57 @@ from app.models.schemas import LLMConfig, SystemPrompt
 from app.services.bedrock_service import BedrockProvider
 
 
+def _create_system_llm_config() -> LLMConfig:
+    """テスト用のシステムLLM設定を作成（IAMロール認証）"""
+    return LLMConfig(
+        provider="bedrock",
+        model="global.anthropic.claude-haiku-4-5-20251001-v1:0",
+        region="ap-northeast-1",
+        maxTokens=16384,
+        # accessKeyId/secretAccessKey は None（IAMロール認証）
+    )
+
+
+def _create_user_llm_config() -> LLMConfig:
+    """テスト用のユーザー指定LLM設定を作成"""
+    return LLMConfig(
+        provider="bedrock",
+        model="anthropic.claude-4-5-sonnet-20241022-v2:0",
+        accessKeyId="test-access-key",
+        secretAccessKey="test-secret-key",
+        region="us-east-1",
+        maxTokens=8192,
+    )
+
+
 class TestBedrockProviderInit:
     """BedrockProvider初期化のテスト"""
 
     @patch("app.services.bedrock_service.boto3")
-    def test_ut_bed_provider_001_system_llm(self, mock_boto3):
-        """UT-BED-PROVIDER-001: システムLLM使用時（llmConfig=None）"""
+    def test_ut_bed_provider_001_iam_role_auth(self, mock_boto3):
+        """UT-BED-PROVIDER-001: IAMロール認証（accessKeyId/secretAccessKeyがNone）"""
         mock_client = MagicMock()
         mock_boto3.client.return_value = mock_client
 
-        provider = BedrockProvider()
+        config = _create_system_llm_config()
+        provider = BedrockProvider(config)
 
         assert provider.provider_name == "bedrock"
-        assert provider.model_id is not None
-        mock_boto3.client.assert_called_once()
+        assert provider.model_id == "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+        assert provider._max_tokens == 16384
+        # IAMロール認証の場合、認証情報なしでクライアント作成
+        mock_boto3.client.assert_called_once_with(
+            "bedrock-runtime",
+            region_name="ap-northeast-1",
+        )
 
     @patch("app.services.bedrock_service.boto3")
     def test_ut_bed_provider_002_user_config(self, mock_boto3):
-        """UT-BED-PROVIDER-002: ユーザー指定設定"""
+        """UT-BED-PROVIDER-002: ユーザー指定認証情報"""
         mock_client = MagicMock()
         mock_boto3.client.return_value = mock_client
 
-        config = LLMConfig(
-            provider="bedrock",
-            model="anthropic.claude-4-5-sonnet-20241022-v2:0",
-            accessKeyId="test-access-key",
-            secretAccessKey="test-secret-key",
-            region="us-east-1",
-            maxTokens=8192,
-        )
-
+        config = _create_user_llm_config()
         provider = BedrockProvider(config)
 
         assert provider.provider_name == "bedrock"
@@ -66,20 +87,24 @@ class TestBedrockProviderTestConnection:
 
     @patch("app.services.bedrock_service.boto3")
     def test_ut_bed_provider_003_connection_success(self, mock_boto3):
-        """UT-BED-PROVIDER-003: 正常な接続（invoke_modelでAPIを呼び出して確認）"""
+        """UT-BED-PROVIDER-003: 正常な接続（Converse APIを呼び出して確認）"""
         mock_client = MagicMock()
         mock_boto3.client.return_value = mock_client
-        # invoke_modelが正常に返る
-        mock_client.invoke_model.return_value = {}
+        # converseが正常に返る
+        mock_client.converse.return_value = {
+            "output": {"message": {"content": [{"text": "ok"}]}},
+            "usage": {"inputTokens": 1, "outputTokens": 1},
+        }
 
-        provider = BedrockProvider()
+        config = _create_system_llm_config()
+        provider = BedrockProvider(config)
 
         result = provider.test_connection()
 
         assert result["status"] == "connected"
         assert "error" not in result
-        # invoke_modelが呼び出されたことを確認
-        mock_client.invoke_model.assert_called_once()
+        # converseが呼び出されたことを確認
+        mock_client.converse.assert_called_once()
 
     @patch("app.services.bedrock_service.boto3")
     def test_connection_failure_client_error(self, mock_boto3):
@@ -88,18 +113,19 @@ class TestBedrockProviderTestConnection:
 
         mock_client = MagicMock()
         mock_boto3.client.return_value = mock_client
-        # invoke_modelでClientErrorを発生させる
-        mock_client.invoke_model.side_effect = ClientError(
+        # converseでClientErrorを発生させる
+        mock_client.converse.side_effect = ClientError(
             error_response={
                 "Error": {
                     "Code": "UnrecognizedClientException",
                     "Message": "The security token included in the request is invalid.",
                 }
             },
-            operation_name="InvokeModel",
+            operation_name="Converse",
         )
 
-        provider = BedrockProvider()
+        config = _create_system_llm_config()
+        provider = BedrockProvider(config)
 
         result = provider.test_connection()
 
@@ -112,10 +138,11 @@ class TestBedrockProviderTestConnection:
         """接続失敗時（一般的な例外）"""
         mock_client = MagicMock()
         mock_boto3.client.return_value = mock_client
-        # invoke_modelで一般的な例外を発生させる
-        mock_client.invoke_model.side_effect = Exception("Connection failed")
+        # converseで一般的な例外を発生させる
+        mock_client.converse.side_effect = Exception("Connection failed")
 
-        provider = BedrockProvider()
+        config = _create_system_llm_config()
+        provider = BedrockProvider(config)
 
         result = provider.test_connection()
 
@@ -128,22 +155,22 @@ class TestBedrockProviderExecuteReview:
 
     @patch("app.services.bedrock_service.boto3")
     def test_ut_bed_provider_004_execute_review_success(self, mock_boto3):
-        """UT-BED-PROVIDER-004: 正常なリクエスト"""
-        import json
-
+        """UT-BED-PROVIDER-004: 正常なリクエスト（Converse API）"""
         # モックの設定
         mock_client = MagicMock()
         mock_boto3.client.return_value = mock_client
-        mock_response_body = MagicMock()
-        mock_response_body.read.return_value = json.dumps(
-            {
-                "content": [{"text": "## レビュー結果\n問題ありません。"}],
-                "usage": {"input_tokens": 1000, "output_tokens": 200},
-            }
-        ).encode()
-        mock_client.invoke_model.return_value = {"body": mock_response_body}
+        # Converse APIのレスポンス形式
+        mock_client.converse.return_value = {
+            "output": {
+                "message": {
+                    "content": [{"text": "## レビュー結果\n問題ありません。"}]
+                }
+            },
+            "usage": {"inputTokens": 1000, "outputTokens": 200},
+        }
 
-        provider = BedrockProvider()
+        config = _create_system_llm_config()
+        provider = BedrockProvider(config)
 
         # ReviewRequestのモック
         mock_request = MagicMock()
@@ -174,6 +201,8 @@ class TestBedrockProviderExecuteReview:
         assert result.reviewMeta.provider == "bedrock"
         assert result.reviewMeta.inputTokens == 1000
         assert result.reviewMeta.outputTokens == 200
+        # converseが呼び出されたことを確認
+        mock_client.converse.assert_called_once()
 
     @patch("app.services.bedrock_service.boto3")
     def test_execute_review_client_error(self, mock_boto3):
@@ -182,17 +211,18 @@ class TestBedrockProviderExecuteReview:
 
         mock_client = MagicMock()
         mock_boto3.client.return_value = mock_client
-        mock_client.invoke_model.side_effect = ClientError(
+        mock_client.converse.side_effect = ClientError(
             error_response={
                 "Error": {
                     "Code": "ValidationException",
                     "Message": "Invalid model ID",
                 }
             },
-            operation_name="InvokeModel",
+            operation_name="Converse",
         )
 
-        provider = BedrockProvider()
+        config = _create_system_llm_config()
+        provider = BedrockProvider(config)
 
         mock_request = MagicMock()
         mock_request.systemPrompt = SystemPrompt(

@@ -6,6 +6,7 @@
 - UT-LLM-003: get_llm_provider() - provider="openai"指定
 - UT-LLM-004: get_llm_provider() - provider="bedrock"指定
 - UT-LLM-005: get_llm_provider() - 未知のprovider
+- UT-LLM-006: get_system_llm_config() - システムLLM設定生成
 """
 
 import pytest
@@ -13,7 +14,7 @@ import pytest
 from app.models.schemas import LLMConfig
 from app.services.anthropic_service import AnthropicProvider
 from app.services.bedrock_service import BedrockProvider
-from app.services.llm_service import get_llm_provider
+from app.services.llm_service import get_llm_provider, get_system_llm_config
 from app.services.openai_service import OpenAIProvider
 
 
@@ -79,16 +80,38 @@ class TestGetLLMProvider:
         pass  # Pydanticのバリデーションで弾かれるためスキップ
 
 
+class TestGetSystemLLMConfig:
+    """get_system_llm_config() のテスト"""
+
+    def test_ut_llm_006_system_llm_config(self):
+        """UT-LLM-006: システムLLM設定の生成"""
+        config = get_system_llm_config()
+
+        assert isinstance(config, LLMConfig)
+        assert config.provider == "bedrock"
+        assert config.model is not None
+        assert config.region is not None
+        assert config.maxTokens > 0
+        # システムLLMはIAMロール認証を使用（accessKeyId/secretAccessKeyはNone）
+        assert config.accessKeyId is None
+        assert config.secretAccessKey is None
+
+
 class TestProviderProperties:
     """各プロバイダーのプロパティテスト"""
 
-    def test_bedrock_provider_system_llm(self):
-        """BedrockProvider: システムLLM使用時のデフォルト値"""
-        provider = BedrockProvider()
+    def test_bedrock_provider_with_llm_config(self):
+        """BedrockProvider: LLMConfig指定時"""
+        config = LLMConfig(
+            provider="bedrock",
+            model="test-model-id",
+            region="ap-northeast-1",
+            maxTokens=8192,
+        )
+        provider = BedrockProvider(config)
 
         assert provider.provider_name == "bedrock"
-        # モデルIDはデフォルト値（環境変数またはハードコード値）
-        assert provider.model_id is not None
+        assert provider.model_id == "test-model-id"
 
     def test_anthropic_provider_requires_api_key(self):
         """AnthropicProvider: APIキー必須"""
