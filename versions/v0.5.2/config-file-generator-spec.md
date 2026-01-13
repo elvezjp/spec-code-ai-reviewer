@@ -1,5 +1,7 @@
 # 設定ファイルジェネレーター（単一HTMLアプリ）
 
+**バージョン: 0.5.2**
+
 ## 概要
 
 Markdown形式の設定ファイルを生成するための**汎用的な**スタンドアロンアプリケーション。
@@ -238,12 +240,17 @@ const SCHEMA = {
             ]
           },
           bedrock: {
+            notes: [
+              "モデルIDにはリージョンプレフィックス（例: us., apac., global.）が必要です。",
+              "モデルによって設定可能な出力トークン上限が異なります（例: Nova系は10,000、Claude系は最大128,000）。",
+              "設定可能な上限値を超えた出力トークン数を指定した場合、エラーが発生します。"
+            ],
             fields: [
               { id: "provider", type: "fixed", value: "bedrock" },
               { id: "accessKeyId", label: "Access Key ID", type: "password", required: true },
               { id: "secretAccessKey", label: "Secret Access Key", type: "password", required: true },
               { id: "region", label: "Region", type: "text", default: "ap-northeast-1", required: true },
-              { id: "maxTokens", label: "Max Tokens", type: "number", default: 16384, required: true },
+              { id: "maxTokens", label: "Max Tokens", type: "number", default: 10000, required: true },
               {
                 id: "models",
                 label: "モデル",
@@ -375,6 +382,28 @@ const SCHEMA = {
 - `itemKey` で指定したフィールドが `###` 見出しとして出力される
 - 他のフィールドは `#### フィールドID` の形式で出力される
 - UIはアコーディオン形式のカードで表示（展開/折りたたみ可能）
+
+### 条件分岐（conditional）
+
+`conditional` プロパティを使用すると、選択値に応じてフィールドを動的に切り替えることができる。
+
+| プロパティ | 説明 | 例 |
+|-----------|------|-----|
+| `switchField` | 切り替えの基準となるフィールドID | `"provider"` |
+| `cases` | 各ケースの定義（キーは選択値） | `{ anthropic: {...}, bedrock: {...} }` |
+
+**各ケースのプロパティ:**
+
+| プロパティ | 説明 | 例 |
+|-----------|------|-----|
+| `fields` | そのケースで表示するフィールド配列 | `[{ id: "apiKey", ... }]` |
+| `notes` | プロバイダー固有の注意事項（オプション） | `["モデルIDには...", "トークン上限は..."]` |
+
+**notesの補足:**
+- `notes` はUI上でフィールドの前に警告ボックスとして表示される
+- 配列で複数の注意事項を指定可能
+- 省略可能（指定しない場合は注意事項ボックスは表示されない）
+- スキーマを差し替える際、アプリ固有の注意事項を設定できる
 
 ### 拡張性
 

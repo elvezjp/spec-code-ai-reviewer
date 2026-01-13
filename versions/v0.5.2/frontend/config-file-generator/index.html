@@ -93,19 +93,29 @@ const SCHEMA = {
             ]
           },
           bedrock: {
+            notes: [
+              "モデルIDにはリージョンプレフィックス（例: us., apac., global.）が必要です。",
+              "モデルによって設定可能な出力トークン上限が異なります（例: Nova系は10,000、Claude系は最大128,000）。",
+              "設定可能な上限値を超えた出力トークン数を指定した場合、エラーが発生します。"
+            ],
             fields: [
               { id: "provider", type: "fixed", value: "bedrock" },
               { id: "accessKeyId", label: "Access Key ID", type: "password", required: true },
               { id: "secretAccessKey", label: "Secret Access Key", type: "password", required: true },
               { id: "region", label: "Region", type: "text", default: "ap-northeast-1", required: true },
-              { id: "maxTokens", label: "Max Tokens", type: "number", default: 16384, required: true },
+              { id: "maxTokens", label: "Max Tokens", type: "number", default: 10000, required: true },
               {
                 id: "models",
                 label: "モデル",
                 type: "array",
                 itemType: "text",
                 placeholder: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
-                defaults: ["global.anthropic.claude-haiku-4-5-20251001-v1:0", "global.anthropic.claude-sonnet-4-5-20250929-v1:0"]
+                defaults: [
+                  "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+                  "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+                  "apac.amazon.nova-pro-v1:0",
+                  "apac.amazon.nova-micro-v1:0"
+                ]
               }
             ]
           },
@@ -330,6 +340,21 @@ function renderLlmSection() {
           `).join('')}
         </div>
       </div>
+
+      <!-- 注意事項（プロバイダー固有） -->
+      ${currentCase.notes && currentCase.notes.length > 0 ? `
+      <div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <div class="flex items-start gap-2">
+          <span class="text-amber-600 text-lg">⚠</span>
+          <div>
+            <p class="font-medium text-amber-800 mb-1">注意</p>
+            <ul class="text-sm text-amber-700 space-y-1">
+              ${currentCase.notes.map(note => `<li>• ${note}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+      </div>
+      ` : ''}
 
       <!-- プロバイダー固有フィールド -->
       <div id="llm-fields" class="space-y-4">
