@@ -202,6 +202,41 @@ python3 scripts/sync_version.py --no-versions-array
 2. プロキシ環境の設定を確認する
 3. ファイアウォールで LLMプロバイダのAPI（`api.openai.com`等）への通信が許可されているか確認する
 
+### 3. Bedrock使用時に「on-demand throughput isn't supported.」というエラーが表示される
+
+```
+ValidationException: Invocation of model ID amazon.nova-pro-v1:0 with on-demand throughput isn't supported.
+Retry your request with the ID or ARN of an inference profile that contains this model.
+```
+
+**原因:**
+- リージョンプレフィックス（`us.`や`apac.`）が付いていない
+- モデルID名が間違っている
+
+**対処方法:**
+- AWSのBedrockモデルIDを確認する
+- クロスリージョン推論の「推論プロファイルID」を指定する
+  - エラーになる例: `amazon.nova-pro-v1:0`
+  - 正しい例: `us.amazon.nova-pro-v1:0` または `apac.amazon.nova-pro-v1:0`
+
+### 4. Bedrock使用時に「maximum tokens you requested exceeds the model limit」と表示される
+
+出力トークン数の設定がモデルの上限を超えている場合に発生するエラーです。
+
+```
+The maximum tokens you requested exceeds the model limit of 10000.
+Try again with a maximum tokens value that is lower than 10000.
+```
+
+**原因:**
+- 設定ファイルの `max_tokens` がモデルの設定可能上限を超えている
+  - Amazon Nova Lite / Micro / Pro: 10,000
+  - Anthropic Claude Haiku 4.5: 16,384
+
+**対処方法:**
+- 設定ファイルジェネレータで設定ファイルを再作成する
+- 設定ファイルで `max_tokens` をモデルの上限以下に設定する
+
 ---
 
 ## API エンドポイント
