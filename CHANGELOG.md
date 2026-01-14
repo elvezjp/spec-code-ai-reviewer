@@ -5,6 +5,20 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/spec/v2.0.0.html) に準拠しています。
 
+## [0.5.2] - 2026-01-13
+
+### 追加
+- **Bedrock Converse API対応**: `invoke_model`から`converse`に移行し、Anthropic Claude系とAmazon Novaモデルの両方に対応
+- **Amazon Novaモデル対応**: Nova Pro、Nova Microなどのモデルが利用可能に
+- **プロバイダー設計の統一**: `get_system_llm_config()`関数を追加し、システムLLM設定の生成を`llm_service.py`に集約
+- **設定ファイルジェネレーター改善**: Bedrock選択時にリージョンプレフィックスとトークン上限の注意事項を表示
+
+### 変更
+- **設定ファイル更新**: v0.5.2をlatest版として設定
+  - `nginx/version-map.conf`: v0.5.2のルーティング追加、defaultポートを8052に変更
+  - `docker-compose.yml`: v0.5.2フロントエンド・ポート8052を追加
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: v0.5.2エントリ追加
+
 ## [0.5.1] - 2026-01-09
 
 ### 追加
@@ -89,6 +103,7 @@
 
 | バージョン | 主な機能 |
 |------------|----------|
+| 0.5.2      | Bedrock Converse API対応、Amazon Novaモデル対応 |
 | 0.5.1      | OpenAI GPT-5.2対応 |
 | 0.5.0      | 複数回レビュー実行、一式ダウンロード |
 | 0.4.0      | マルチLLMプロバイダー、設定ファイル |

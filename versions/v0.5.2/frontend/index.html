@@ -493,7 +493,7 @@
         <h3 class="text-sm font-medium text-gray-700 mb-2">プログラム情報</h3>
         <div class="p-4 bg-gray-50 rounded-lg text-sm text-gray-600 space-y-1">
           <p><span class="font-medium">プログラム名:</span> spec-code-ai-reviewer</p>
-          <p><span class="font-medium">バージョン:</span> v0.5.1</p>
+          <p><span class="font-medium">バージョン:</span> v0.5.2</p>
           <p class="text-xs text-gray-500 mt-2">© 株式会社エルブズ (<a href="https://elvez.co.jp" target="_blank" class="text-blue-500 hover:underline">elvez.co.jp</a>)</p>
         </div>
       </div>
@@ -559,6 +559,12 @@
         <div class="mb-4">
           <label class="block text-sm text-gray-600 mb-1">プロバイダー:</label>
           <div id="llm-provider-display" class="text-gray-500">-</div>
+        </div>
+
+        <!-- 出力最大トークン数（設定ファイル指定時のみ表示） -->
+        <div id="llm-max-tokens-display" class="mb-4 hidden">
+          <label class="block text-sm text-gray-600 mb-1">出力最大トークン数:</label>
+          <div id="llm-max-tokens-value" class="text-gray-800">-</div>
         </div>
 
         <!-- 使用モデル -->
@@ -2101,6 +2107,8 @@
       const systemNotice = document.getElementById('llm-system-fallback-notice');
       const providerDisplay = document.getElementById('llm-provider-display');
       const modelSelect = document.getElementById('llm-model-select');
+      const maxTokensDisplay = document.getElementById('llm-max-tokens-display');
+      const maxTokensValue = document.getElementById('llm-max-tokens-value');
 
       if (!llmConfig || !llmConfig.provider) {
         // 設定なし: システムLLMを使用
@@ -2113,6 +2121,8 @@
           modelSelect.innerHTML = '<option value="">システムのデフォルトモデルを使用</option>';
           modelSelect.disabled = true;
         }
+        // システムLLMの場合はmaxTokensを非表示
+        if (maxTokensDisplay) maxTokensDisplay.classList.add('hidden');
         return;
       }
 
@@ -2139,6 +2149,17 @@
           if (savedProvider === llmConfig.provider && llmConfig.models.includes(savedModel)) {
             modelSelect.value = savedModel;
           }
+        }
+      }
+
+      // 出力最大トークン数の表示（設定ファイルで指定されている場合のみ）
+      if (maxTokensDisplay && maxTokensValue) {
+        const parsedMaxTokens = Number(llmConfig.maxTokens);
+        if (Number.isFinite(parsedMaxTokens) && parsedMaxTokens > 0) {
+          maxTokensValue.textContent = parsedMaxTokens.toLocaleString();
+          maxTokensDisplay.classList.remove('hidden');
+        } else {
+          maxTokensDisplay.classList.add('hidden');
         }
       }
     }
