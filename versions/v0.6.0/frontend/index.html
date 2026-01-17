@@ -1,0 +1,2413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>設計書-Javaプログラム突合 AIレビュアー</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    /* オフライン時のフォールバックスタイル */
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+    /* ピル型バージョン選択ボタン */
+    .version-selector-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    .version-selector {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 9999px;  /* ピル型 */
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      transition: all 0.15s;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .version-selector:hover {
+      background: #f9fafb;
+      border-color: #d1d5db;
+    }
+
+    .dropdown-arrow {
+      color: #6b7280;
+    }
+
+    /* バージョン選択バルーン */
+    .version-balloon {
+      position: absolute;
+      top: calc(100% + 12px);
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 240px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+      z-index: 1000;
+      padding: 8px 0;
+    }
+
+    /* バルーンの三角形（ポインタ） */
+    .version-balloon::before {
+      content: '';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-bottom: 12px solid #e5e7eb;
+    }
+
+    .version-balloon::after {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 11px solid transparent;
+      border-right: 11px solid transparent;
+      border-bottom: 11px solid white;
+    }
+
+    .version-balloon.hidden {
+      display: none;
+    }
+
+    /* バージョン選択肢 */
+    .version-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .version-option:hover {
+      background: #f3f4f6;
+    }
+
+    .version-option-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #111827;
+    }
+
+    /* 選択中のチェックマーク */
+    .check-icon {
+      color: #111827;
+      margin-left: 12px;
+      flex-shrink: 0;
+    }
+
+    /* 区切り線 */
+    .version-divider {
+      height: 1px;
+      background: #e5e7eb;
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- メイン画面 -->
+  <div id="main-screen" class="max-w-4xl mx-auto p-6">
+    <!-- ヘッダー -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <!-- 上部バー: バージョン切替 + 設定ボタン -->
+      <div class="flex justify-between items-center mb-4">
+        <!-- バージョン切替ボタン（ピル型） -->
+        <div class="version-selector-wrapper">
+          <div class="version-selector" id="versionSelector" onclick="toggleVersionBalloon()">
+            <span id="currentVersion"></span>
+            <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 12 12">
+              <path d="M4.5 3L7.5 6L4.5 9" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            </svg>
+          </div>
+          <div id="versionBalloon" class="version-balloon hidden">
+            <!-- 動的に生成 -->
+          </div>
+        </div>
+
+        <!-- 設定ボタン（右上） -->
+        <button onclick="openSettings()" class="text-gray-500 hover:text-gray-700 text-2xl" title="設定">
+          ⚙️
+        </button>
+      </div>
+
+      <!-- タイトル -->
+      <div class="flex flex-col items-center gap-3">
+        <h1 class="text-xl font-bold text-gray-800">設計書-Javaプログラム突合 AIレビュアー</h1>
+      </div>
+    </div>
+
+    <!-- ファイルアップロード -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <!-- 設計書 (Excel) -->
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">設計書 (Excel)</label>
+        <div class="flex items-center gap-2 mb-2">
+          <label class="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition text-sm">
+            ファイルを選択
+            <input type="file" id="spec-file" class="hidden" accept=".xlsx,.xls" multiple onchange="handleSpecFileSelect(this)">
+          </label>
+          <span id="spec-filename" class="text-gray-600 text-sm">選択してください</span>
+        </div>
+        <div id="spec-priority-container" class="hidden mb-2">
+          <div class="flex justify-between items-center mb-1">
+            <p class="text-xs text-gray-500">詳細設定</p>
+            <!-- 一括設定 -->
+            <div id="spec-bulk-settings" class="hidden">
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500">一括設定:</span>
+                <div id="spec-bulk-tool-buttons" class="flex gap-1">
+                  <!-- 動的に生成 -->
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="spec-priority-list" class="space-y-2"></div>
+          <p class="text-xs text-gray-400 mt-2">※ メイン設計書を対象に突合し、それ以外は必要に応じて参照されます。種別ごとの注意事項が変換後マークダウンに付与されます。特別な処理を指示したい場合はシステムプロンプトを編集してください。</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="convertExcelToMarkdown()" id="spec-convert-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
+            マークダウンに変換
+          </button>
+          <button onclick="downloadSpecMarkdown()" id="spec-download-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
+            📥 ダウンロード
+          </button>
+          <span id="spec-status" class="text-sm text-gray-500"></span>
+        </div>
+        <ul class="text-xs text-gray-400 mt-2 list-disc list-inside space-y-0.5">
+          <li>MarkItDown: <a href="https://github.com/microsoft/markitdown" target="_blank" class="text-blue-500 hover:underline">Microsoft MarkItDown</a>の仕様に準拠した変換を行います</li>
+          <li>excel2md: シート全体をCSVブロックとして変換します</li>
+        </ul>
+        <!-- 設計書プレビュー -->
+        <div id="spec-preview-container" class="hidden mt-3">
+          <button onclick="toggleSpecPreview()" class="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800">
+            <span id="spec-preview-icon" class="transition-transform">▶</span>
+            <span>変換結果をプレビュー</span>
+          </button>
+          <div id="spec-preview" class="hidden mt-2">
+            <div class="bg-gray-50 border border-gray-200 rounded-md p-3 max-h-64 overflow-auto">
+              <pre id="spec-preview-content" class="text-xs text-gray-700 whitespace-pre-wrap font-mono"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- プログラム -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">プログラム</label>
+        <div class="flex items-center gap-2 mb-2">
+          <label class="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition text-sm">
+            ファイルを選択
+            <input type="file" id="code-file" class="hidden" multiple onchange="handleCodeFileSelect(this)">
+          </label>
+          <span id="code-filename" class="text-gray-600 text-sm">選択してください</span>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="addLineNumbers()" id="code-convert-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
+            add-line-numbersで変換
+          </button>
+          <button onclick="downloadCodeWithLineNumbers()" id="code-download-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
+            📥 ダウンロード
+          </button>
+          <span id="code-status" class="text-sm text-gray-500"></span>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">
+          ※ <a href="https://github.com/elvezjp/add-line-numbers" target="_blank" class="text-blue-500 hover:underline">add-line-numbers</a> の仕様に準拠した変換を行います
+        </p>
+        <!-- プログラムプレビュー -->
+        <div id="code-preview-container" class="hidden mt-3">
+          <button onclick="toggleCodePreview()" class="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800">
+            <span id="code-preview-icon" class="transition-transform">▶</span>
+            <span>変換結果をプレビュー</span>
+          </button>
+          <div id="code-preview" class="hidden mt-2">
+            <div class="bg-gray-50 border border-gray-200 rounded-md p-3 max-h-64 overflow-auto">
+              <pre id="code-preview-content" class="text-xs text-gray-700 whitespace-pre font-mono"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- システムプロンプト設定 -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <button onclick="togglePromptSettings()" class="w-full flex justify-between items-center text-lg font-semibold text-gray-800">
+        <span>システムプロンプト設定</span>
+        <span id="prompt-toggle-icon" class="text-gray-500 transition-transform">▼</span>
+      </button>
+      <p class="text-xs text-gray-400 mt-2">AIへの指示内容が設定されています。変更したい場合に編集してください。</p>
+
+      <div id="prompt-settings" class="hidden mt-4 space-y-4">
+        <!-- プリセット選択 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">プリセット</label>
+          <select
+            id="prompt-preset-select"
+            onchange="handlePromptPresetChange()"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          ></select>
+          <p class="text-xs text-gray-400 mt-1">選択したプリセットで各入力欄が更新されます</p>
+        </div>
+
+        <!-- 役割 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">役割</label>
+          <textarea
+            id="prompt-role"
+            rows="2"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          ></textarea>
+          <p class="text-xs text-gray-400 mt-1">AIの役割を簡潔に記載します</p>
+        </div>
+
+        <!-- 目的 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">目的</label>
+          <textarea
+            id="prompt-purpose"
+            rows="7"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          ></textarea>
+          <p class="text-xs text-gray-400 mt-1">どのようなタスクを行うか（レビュー観点を含む）</p>
+        </div>
+
+        <!-- 出力形式 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">出力形式</label>
+          <textarea
+            id="prompt-format"
+            rows="7"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          ></textarea>
+          <p class="text-xs text-gray-400 mt-1">出力のフォーマットを指定します</p>
+        </div>
+
+        <!-- 注意事項 -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">注意事項</label>
+          <textarea
+            id="prompt-notes"
+            rows="7"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          ></textarea>
+          <p class="text-xs text-gray-400 mt-1">実行上の制約、判断基準、例外時の対応を記載します</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 推定入力トークン数表示 -->
+    <div id="token-estimate-container" class="hidden bg-white rounded-lg shadow-md p-4 mb-6">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-medium text-gray-700">推定入力トークン数</span>
+        <span id="token-estimate" class="text-sm font-bold text-gray-800">-</span>
+      </div>
+      <p id="token-warning" class="hidden text-xs text-orange-600 mt-2"></p>
+      <p class="text-xs text-gray-400 mt-2">日本語: 約1.5文字/トークン、英数字: 約4文字/トークンで算出しています。</p>
+      <p class="text-xs text-gray-400">トークン数がAIの入力上限を超えると、エラーになる可能性があります。</p>
+    </div>
+
+    <!-- レビュー実行ボタン -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <button onclick="executeReview()" id="review-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-lg shadow-md transition text-lg disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
+        レビュー実行
+      </button>
+      <p id="review-btn-warning" class="text-xs text-orange-500 mt-3 text-center">※ レビューを実行するには、設計書とプログラムを両方変換してください。</p>
+      <p class="text-xs text-gray-400 mt-1 text-center">※ 同じ設定でレビューを2回実行します。それぞれ個別に結果を確認できます。</p>
+    </div>
+  </div>
+
+  <!-- ローディング画面 -->
+  <div id="loading-screen" class="hidden max-w-2xl mx-auto p-6">
+    <div class="bg-white rounded-lg shadow-md p-12 text-center">
+      <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-6"></div>
+      <p class="text-gray-600 text-lg">AIがレビューを実行中...</p>
+      <p id="loading-progress" class="text-gray-400 mt-2">1回目のレビューを実行しています</p>
+      <p class="text-gray-400 text-xs mt-4">※ 5分以上かかる場合はタイムアウトする可能性があります</p>
+    </div>
+  </div>
+
+  <!-- 結果画面 -->
+  <div id="result-screen" class="hidden max-w-4xl mx-auto p-6">
+    <!-- ヘッダー（タブ切り替え統合） -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div class="flex justify-between items-center mb-4">
+        <h1 class="text-xl font-bold text-gray-800">レビュー結果</h1>
+        <button onclick="backToMain()" class="text-blue-500 hover:text-blue-700">
+          ← 戻る
+        </button>
+      </div>
+      <!-- タブ切り替え -->
+      <div class="flex gap-2">
+        <button id="tab-btn-1" onclick="switchReviewTab(1)" class="flex-1 py-2 px-4 rounded-lg font-medium transition text-white bg-blue-500">
+          1回目
+        </button>
+        <button id="tab-btn-2" onclick="switchReviewTab(2)" class="flex-1 py-2 px-4 rounded-lg font-medium transition text-gray-600 bg-gray-100 hover:bg-gray-200">
+          2回目
+        </button>
+      </div>
+      <p class="text-xs text-gray-400 mt-2 text-center">※ 同じ設定で2回レビューを実行しました。それぞれ個別に結果を確認できます。</p>
+    </div>
+
+    <!-- 1回目のレビュー結果 -->
+    <div id="review-tab-1" class="review-tab-content">
+      <!-- 簡易判定 -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">簡易判定</h2>
+        <div id="simple-judgment-content-1">
+          <!-- 動的に生成 -->
+        </div>
+        <p class="text-xs text-gray-400 mt-3">※ この判定はキーワードに基づく簡易的なものです。AIの出力によっては正しく判定されない場合があります。詳細レポートを確認してください。</p>
+      </div>
+
+      <!-- レビュー情報 -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">レビュー情報</h2>
+        <div id="review-meta-content-1" class="space-y-4">
+          <!-- 動的に生成 -->
+        </div>
+      </div>
+
+      <!-- 詳細レポート -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">📝 詳細レポート</h2>
+        <div class="bg-gray-50 rounded-lg p-4 font-mono text-sm overflow-auto max-h-96 mb-4">
+          <pre id="report-content-1" class="whitespace-pre-wrap text-gray-700"></pre>
+        </div>
+        <!-- アクションボタン（詳細レポート枠内） -->
+        <div class="flex gap-4">
+          <button onclick="copyReport(1)" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded-lg shadow-md transition text-sm">
+            📋 コピー
+          </button>
+          <button onclick="downloadReport(1)" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg shadow-md transition text-sm">
+            💾 ダウンロード
+          </button>
+        </div>
+      </div>
+
+      <!-- レビュー実行データ一式ダウンロード -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">📦 レビュー実行データ一式ダウンロード</h2>
+        <p class="text-sm text-gray-600 mb-4">レビュー実行の入出力データを一式ダウンロードできます。</p>
+
+        <!-- ダウンロード対象の一覧 -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+          <h3 class="text-sm font-medium text-gray-700 mb-2">ダウンロード内容:</h3>
+          <table id="download-files-table-1" class="w-full text-sm text-gray-600">
+            <tbody>
+              <!-- 動的に生成 -->
+            </tbody>
+          </table>
+        </div>
+
+        <button onclick="downloadReviewData(1)" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg shadow-md transition">
+          📥 一式ダウンロード（ZIP）
+        </button>
+      </div>
+    </div>
+
+    <!-- 2回目のレビュー結果 -->
+    <div id="review-tab-2" class="review-tab-content hidden">
+      <!-- 簡易判定 -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">簡易判定</h2>
+        <div id="simple-judgment-content-2">
+          <!-- 動的に生成 -->
+        </div>
+        <p class="text-xs text-gray-400 mt-3">※ この判定はキーワードに基づく簡易的なものです。AIの出力によっては正しく判定されない場合があります。詳細レポートを確認してください。</p>
+      </div>
+
+      <!-- レビュー情報 -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">レビュー情報</h2>
+        <div id="review-meta-content-2" class="space-y-4">
+          <!-- 動的に生成 -->
+        </div>
+      </div>
+
+      <!-- 詳細レポート -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">📝 詳細レポート</h2>
+        <div class="bg-gray-50 rounded-lg p-4 font-mono text-sm overflow-auto max-h-96 mb-4">
+          <pre id="report-content-2" class="whitespace-pre-wrap text-gray-700"></pre>
+        </div>
+        <!-- アクションボタン（詳細レポート枠内） -->
+        <div class="flex gap-4">
+          <button onclick="copyReport(2)" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded-lg shadow-md transition text-sm">
+            📋 コピー
+          </button>
+          <button onclick="downloadReport(2)" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg shadow-md transition text-sm">
+            💾 ダウンロード
+          </button>
+        </div>
+      </div>
+
+      <!-- レビュー実行データ一式ダウンロード -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">📦 レビュー実行データ一式ダウンロード</h2>
+        <p class="text-sm text-gray-600 mb-4">レビュー実行の入出力データを一式ダウンロードできます。</p>
+
+        <!-- ダウンロード対象の一覧 -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+          <h3 class="text-sm font-medium text-gray-700 mb-2">ダウンロード内容:</h3>
+          <table id="download-files-table-2" class="w-full text-sm text-gray-600">
+            <tbody>
+              <!-- 動的に生成 -->
+            </tbody>
+          </table>
+        </div>
+
+        <button onclick="downloadReviewData(2)" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg shadow-md transition">
+          📥 一式ダウンロード（ZIP）
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 設定モーダル -->
+  <div id="settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center p-6 pb-4 border-b border-gray-200 flex-shrink-0">
+        <h2 class="text-xl font-bold text-gray-800">⚙️ 設定</h2>
+        <button onclick="closeSettings()" class="text-gray-500 hover:text-gray-700 text-2xl">
+          ×
+        </button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 p-6 pt-4">
+      <!-- プログラム情報 -->
+      <div class="mb-6">
+        <h3 class="text-sm font-medium text-gray-700 mb-2">プログラム情報</h3>
+        <div class="p-4 bg-gray-50 rounded-lg text-sm text-gray-600 space-y-1">
+          <p><span class="font-medium">プログラム名:</span> spec-code-ai-reviewer</p>
+          <p><span class="font-medium">バージョン:</span> v0.5.2</p>
+          <p class="text-xs text-gray-500 mt-2">© 株式会社エルブズ (<a href="https://elvez.co.jp" target="_blank" class="text-blue-500 hover:underline">elvez.co.jp</a>)</p>
+        </div>
+      </div>
+
+      <!-- 設定ファイル -->
+      <div class="mb-6 border-t border-gray-200 pt-6">
+        <h3 class="text-sm font-medium text-gray-700 mb-2">■ 設定ファイル</h3>
+
+        <!-- 設定ファイルジェネレーターへのリンク -->
+        <div class="mb-4">
+          <p class="text-sm text-gray-600 mb-2">マークダウンで設定を一括管理します。</p>
+          <a href="/config-file-generator/" target="_blank" rel="noopener noreferrer"
+             class="block w-full px-4 py-2 text-sm text-center bg-blue-500 hover:bg-blue-600 text-white rounded transition">
+            設定ファイルジェネレーターで作成
+          </a>
+        </div>
+
+        <!-- ファイルアップロード領域 -->
+        <div id="config-upload-area" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition cursor-pointer mb-3"
+             ondragover="handleConfigDragOver(event)" ondragleave="handleConfigDragLeave(event)" ondrop="handleConfigDrop(event)" onclick="document.getElementById('config-file-input').click()">
+          <input type="file" id="config-file-input" class="hidden" accept=".md" onchange="handleConfigFileSelect(this)">
+          <div id="config-upload-placeholder">
+            <p class="text-gray-600 mb-1">設定ファイルを選択</p>
+            <p class="text-gray-400 text-sm">または ここにドラッグ&ドロップ</p>
+          </div>
+          <div id="config-upload-success" class="hidden text-left">
+            <p class="text-gray-700 font-medium mb-1"><span id="config-filename">reviewer-config.md</span></p>
+            <p id="config-llm-status" class="text-sm text-gray-600"></p>
+            <p id="config-spec-status" class="text-sm text-gray-600"></p>
+            <p id="config-prompts-status" class="text-sm text-gray-600"></p>
+          </div>
+        </div>
+
+        <!-- 保存状態の表示 -->
+        <div id="config-save-status" class="hidden mb-3">
+          <p id="config-save-status-text" class="text-sm"></p>
+        </div>
+
+        <!-- ブラウザ保存ボタン -->
+        <div class="flex gap-2 mb-2">
+          <button onclick="saveConfigToBrowser()" class="flex-1 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition">
+            設定をブラウザに保存
+          </button>
+          <button onclick="clearSavedConfig()" class="flex-1 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition">
+            保存した設定をクリア
+          </button>
+        </div>
+        <p class="text-xs text-gray-500 mb-1">※ 保存しなくてもアップロードした設定で利用可能です。</p>
+        <p class="text-xs text-gray-500">※ 保存された設定はブラウザ拡張機能で読み込まれる場合があります。共有PCの場合は利用後に設定をクリアしてください。</p>
+      </div>
+
+      <!-- LLM設定 -->
+      <div class="mb-6 border-t border-gray-200 pt-6">
+        <h3 class="text-sm font-medium text-gray-700 mb-3">■ LLM設定</h3>
+
+        <!-- システムLLM使用時の表示 -->
+        <div id="llm-system-fallback-notice" class="mb-4 p-3 border border-gray-300 rounded-lg">
+          <p class="text-sm text-gray-700">LLM未設定のため、システムのデフォルトモデルを使用します。</p>
+          <p class="text-xs text-gray-500 mt-1">独自のAPIキーを使用する場合は、設定ファイルをアップロードしてください。</p>
+        </div>
+
+        <!-- プロバイダー表示 -->
+        <div class="mb-4">
+          <label class="block text-sm text-gray-600 mb-1">プロバイダー:</label>
+          <div id="llm-provider-display" class="text-gray-500">-</div>
+        </div>
+
+        <!-- 出力最大トークン数（設定ファイル指定時のみ表示） -->
+        <div id="llm-max-tokens-display" class="mb-4 hidden">
+          <label class="block text-sm text-gray-600 mb-1">出力最大トークン数:</label>
+          <div id="llm-max-tokens-value" class="text-gray-800">-</div>
+        </div>
+
+        <!-- 使用モデル -->
+        <div class="mb-4">
+          <label class="block text-sm text-gray-600 mb-1">使用モデル:</label>
+          <select id="llm-model-select" onchange="onModelSelectChange()" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500" disabled>
+            <option value="">システムのデフォルトモデルを使用</option>
+          </select>
+        </div>
+
+        <!-- 接続テスト -->
+        <div class="flex items-center gap-3">
+          <button onclick="testLLMConnection()" class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition">
+            接続テスト
+          </button>
+          <span id="llm-connection-status" class="text-sm text-green-600 hidden">接続成功</span>
+        </div>
+      </div>
+
+      <!-- 設計書種別と注意事項 -->
+      <div class="mb-6 border-t border-gray-200 pt-6">
+        <h3 class="text-sm font-medium text-gray-700 mb-3">■ 設計書種別と注意事項</h3>
+
+        <div class="overflow-x-auto">
+          <table id="spec-types-table" class="min-w-full text-sm border border-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-3 py-2 text-left text-gray-600 border-b w-1/4">種別</th>
+                <th class="px-3 py-2 text-left text-gray-600 border-b">注意事項</th>
+              </tr>
+            </thead>
+            <tbody id="spec-types-tbody">
+              <!-- 動的に生成 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- システムプロンプトプリセット一覧 -->
+      <div class="mb-6 border-t border-gray-200 pt-6">
+        <h3 class="text-sm font-medium text-gray-700 mb-3">■ システムプロンプトプリセット</h3>
+
+        <ul id="system-prompts-list" class="text-sm text-gray-700 space-y-1">
+          <!-- 動的に生成 -->
+        </ul>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- バージョン切替通知トースト -->
+  <div id="version-toast" class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+    <span id="toast-message"></span>
+  </div>
+
+  <script>
+    // バージョン情報
+    const VERSIONS = [
+      { value: 'v0.5.2', label: 'v0.5.2', isLatest: true },
+      { value: 'v0.5.1', label: 'v0.5.1', isLatest: false },
+      { value: 'v0.5.0', label: 'v0.5.0', isLatest: false }
+    ];
+
+    // 最新バージョンとデフォルトバージョンを取得
+    const LATEST_VERSION = VERSIONS.find(v => v.isLatest) || VERSIONS[0];
+    const DEFAULT_VERSION = LATEST_VERSION.value;
+
+    // Cookieヘルパー
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    }
+
+    function setCookie(name, value, days = 365) {
+      const expires = new Date(Date.now() + days * 864e5).toUTCString();
+      document.cookie = `${name}=${value}; expires=${expires}; path=/`;
+    }
+
+    // バージョン切替UI
+    function toggleVersionBalloon() {
+      const balloon = document.getElementById('versionBalloon');
+      if (balloon.classList.contains('hidden')) {
+        balloon.classList.remove('hidden');
+        renderVersionOptions();
+      } else {
+        closeVersionBalloon();
+      }
+    }
+
+    function closeVersionBalloon() {
+      document.getElementById('versionBalloon').classList.add('hidden');
+    }
+
+    function renderVersionOptions() {
+      const balloon = document.getElementById('versionBalloon');
+      const cookieVersion = getCookie('app_version');
+      // Cookieの値がVERSIONSリストに存在するかチェック、存在しない場合はデフォルト
+      const currentVersion = VERSIONS.find(v => v.value === cookieVersion) ? cookieVersion : DEFAULT_VERSION;
+
+      balloon.innerHTML = VERSIONS.map((v, index) => {
+        const isSelected = v.value === currentVersion;
+        const divider = index > 0 ? '<div class="version-divider"></div>' : '';
+        const checkIcon = isSelected
+          ? `<svg class="check-icon" width="16" height="16" viewBox="0 0 16 16">
+               <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" fill="none"/>
+             </svg>`
+          : '';
+        const label = v.isLatest ? `${v.label}（最新）` : v.label;
+
+        return `${divider}
+          <div class="version-option" onclick="switchVersion('${v.value}')">
+            <span class="version-option-title">${label}</span>
+            ${checkIcon}
+          </div>`;
+      }).join('');
+    }
+
+    function switchVersion(version) {
+      const versionInfo = VERSIONS.find(v => v.value === version);
+      const label = versionInfo ? versionInfo.label : version;
+
+      setCookie('app_version', version);
+      closeVersionBalloon();
+
+      // トースト表示後にリロード
+      showToast(`${label} に切り替えます...`);
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
+    }
+
+    function updateVersionDisplay() {
+      const cookieVersion = getCookie('app_version');
+      // Cookieの値がVERSIONSリストに存在するかチェック
+      const version = VERSIONS.find(v => v.value === cookieVersion);
+      // 存在しない場合はデフォルトバージョンを使用
+      const displayVersion = version || LATEST_VERSION;
+      document.getElementById('currentVersion').textContent = displayVersion.label;
+    }
+
+    // トースト表示
+    function showToast(message) {
+      const toast = document.getElementById('version-toast');
+      const toastMessage = document.getElementById('toast-message');
+      toastMessage.textContent = message;
+      toast.classList.remove('hidden');
+
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3000);
+    }
+
+    // バルーン外クリックで閉じる
+    document.addEventListener('click', function(e) {
+      const selector = document.getElementById('versionSelector');
+      const balloon = document.getElementById('versionBalloon');
+      if (selector && balloon && !selector.contains(e.target) && !balloon.contains(e.target)) {
+        closeVersionBalloon();
+      }
+    });
+
+    // 状態管理
+    let specFiles = [];
+    let specMarkdown = null;
+    let designFilesWithMarkdown = [];
+    let mainSpecFilename = null;  // メインに設定された設計書のファイル名
+    let specTypes = {};
+    let specTools = {};  // ファイルごとのツール選択
+    let codeFiles = [];
+    let codeWithLineNumbers = null;
+    let codeFilesWithLineNumbers = [];
+
+    // レビューボタンの状態を更新する関数
+    function updateReviewButtonState() {
+      const reviewBtn = document.getElementById('review-btn');
+      const reviewBtnWarning = document.getElementById('review-btn-warning');
+      if (specMarkdown && codeWithLineNumbers) {
+        reviewBtn.disabled = false;
+        reviewBtnWarning.classList.add('hidden');
+      } else {
+        reviewBtn.disabled = true;
+        reviewBtnWarning.classList.remove('hidden');
+      }
+    }
+
+    // ツール選択
+    let availableTools = [];
+    const defaultTool = 'markitdown';  // デフォルトツール
+
+    // 設計書種別の設定（デフォルト値）- 配列形式
+    const DEFAULT_SPEC_TYPES = [
+      { type: '設計書', note: '機能仕様が正しく実装されているかを確認してください' },
+      { type: '要件定義書', note: '要件が漏れなく実装されているかを確認してください' },
+      { type: '処理ロジック', note: '処理手順やアルゴリズムが正しく実装されているかを確認してください' },
+      { type: '処理フロー', note: '処理の流れが正しく実装されているかを確認してください' },
+      { type: 'コーディング規約', note: 'コードがこの規約に準拠しているかを確認してください' },
+      { type: 'ネーミングルール', note: '変数名・関数名・クラス名がこのルールに準拠しているかを確認してください' },
+      { type: '製造ガイド', note: 'このガイドラインに従って実装されているかを確認してください' },
+      { type: '設計ガイド', note: 'この設計方針に従って実装されているかを確認してください' },
+      { type: '設計書とソースのマッピング', note: 'このマッピングに基づいて突合を行ってください' }
+    ];
+
+    // システムプロンプトの設定（デフォルト値）
+    const DEFAULT_SYSTEM_PROMPTS = [
+      {
+        name: '標準レビュープリセット',
+        role: 'あなたは設計書とプログラムコードを突合し、整合性を検証するレビュアーです。',
+        purpose: `設計書の内容がプログラムに正しく実装されているかを検証し、差異や問題点を報告してください。
+
+以下の観点でレビューを行ってください：
+1. 機能網羅性: 設計書に記載された機能がコードに実装されているか
+2. 仕様整合性: 関数名・変数名・データ型・処理フローが設計書と一致しているか
+3. エラー処理: 設計書に記載されたエラー処理が実装されているか
+4. 境界値・制約: 設計書に記載された制約条件がコードに反映されているか`,
+        format: `マークダウン形式で、以下の順に出力してください：
+1. サマリー（突合日時、ファイル名、総合判定）
+2. 突合結果一覧（テーブル形式）
+3. 詳細（問題点と推奨事項）`,
+        notes: `- メイン設計書の内容について突合してください。
+- 判定は「OK」「NG」「要確認」の3段階で行ってください
+- 重要度が高い問題を優先して報告してください。
+- 設計書を引用する際は、見出し番号や項目番号を明示してください。
+- プログラムを引用する際は、行番号を必ず添えてください。
+- 各設計書の冒頭に記載されている役割、種別、注意事項を考慮してください。
+- メイン以外の設計書は必要な場合に参照してください。`
+      }
+    ];
+
+    // 設計書種別の設定（現在の設定）- 配列形式
+    let specTypesConfig = [];
+
+    // 設定ファイル管理
+    let reviewerConfig = null;  // パース済みの設定ファイル
+    let configModified = false;  // 設定が変更されたかどうか（保存済みと異なる場合true）
+
+    // 設計書種別の設定を読み込む
+    function loadSpecTypes() {
+      const saved = localStorage.getItem('spec-types');
+      if (saved) {
+        try {
+          specTypesConfig = JSON.parse(saved);
+          // 配列であることを確認
+          if (!Array.isArray(specTypesConfig)) {
+            specTypesConfig = [...DEFAULT_SPEC_TYPES];
+          }
+        } catch (e) {
+          specTypesConfig = [...DEFAULT_SPEC_TYPES];
+        }
+      } else {
+        specTypesConfig = [...DEFAULT_SPEC_TYPES];
+      }
+    }
+
+    // 設計書種別の設定を保存する
+    function saveSpecTypes() {
+      localStorage.setItem('spec-types', JSON.stringify(specTypesConfig));
+    }
+
+    // システムプロンプトのプリセット一覧を取得
+    function getSystemPromptPresets() {
+      if (reviewerConfig && Array.isArray(reviewerConfig.systemPrompts) && reviewerConfig.systemPrompts.length > 0) {
+        return reviewerConfig.systemPrompts;
+      }
+      return DEFAULT_SYSTEM_PROMPTS;
+    }
+
+    function normalizePromptText(text) {
+      if (!text) return '';
+      return String(text).replace(/<br\s*\/?>/gi, '\n');
+    }
+
+    // システムプロンプトのプリセット選択肢を描画
+    function renderSystemPromptPresets() {
+      const select = document.getElementById('prompt-preset-select');
+      if (!select) return;
+
+      const presets = getSystemPromptPresets();
+      select.innerHTML = presets.map(preset =>
+        `<option value="${preset.name}">${preset.name}</option>`
+      ).join('');
+    }
+
+    function applySystemPromptPreset(presetName, { persist = true } = {}) {
+      const presets = getSystemPromptPresets();
+      if (presets.length === 0) return;
+
+      const targetPreset = presets.find(preset => preset.name === presetName) || presets[0];
+      const select = document.getElementById('prompt-preset-select');
+      if (select) {
+        select.value = targetPreset.name;
+      }
+
+      document.getElementById('prompt-role').value = normalizePromptText(targetPreset.role);
+      document.getElementById('prompt-purpose').value = normalizePromptText(targetPreset.purpose);
+      document.getElementById('prompt-format').value = normalizePromptText(targetPreset.format);
+      document.getElementById('prompt-notes').value = normalizePromptText(targetPreset.notes);
+
+      if (persist) {
+        localStorage.setItem('selected-system-prompt', targetPreset.name);
+      }
+
+      updateTokenEstimate();
+    }
+
+    function loadSystemPromptPresetSelection() {
+      const presets = getSystemPromptPresets();
+      const savedPreset = localStorage.getItem('selected-system-prompt');
+      const selectedName = presets.find(preset => preset.name === savedPreset)?.name || presets[0]?.name;
+      if (selectedName) {
+        applySystemPromptPreset(selectedName, { persist: true });
+      }
+    }
+
+    function updateSystemPromptPresets() {
+      renderSystemPromptPresets();
+      loadSystemPromptPresetSelection();
+    }
+
+    function handlePromptPresetChange() {
+      const select = document.getElementById('prompt-preset-select');
+      if (select) {
+        applySystemPromptPreset(select.value, { persist: true });
+      }
+    }
+
+    // 設計書種別テーブルを描画
+    function renderSpecTypesTable() {
+      const tbody = document.getElementById('spec-types-tbody');
+      if (!tbody) return;
+
+      tbody.innerHTML = specTypesConfig.map(item => {
+        return `
+          <tr>
+            <td class="px-3 py-2 border-b text-gray-800">${item.type}</td>
+            <td class="px-3 py-2 border-b text-gray-600 text-xs">${item.note}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // システムプロンプトプリセット一覧を描画
+    function renderSystemPromptsListInModal() {
+      const list = document.getElementById('system-prompts-list');
+      if (!list) return;
+
+      const presets = getSystemPromptPresets();
+      if (presets.length === 0) {
+        list.innerHTML = '<li class="text-gray-500 text-sm">プリセットが設定されていません</li>';
+        return;
+      }
+
+      list.innerHTML = presets.map(preset => {
+        return `<li class="flex items-center gap-2">
+          <span class="text-gray-400">•</span>
+          <span>${preset.name}</span>
+        </li>`;
+      }).join('');
+    }
+
+    // 種別に応じた注意事項を取得
+    function getTypeNote(type) {
+      const found = specTypesConfig.find(item => item.type === type);
+      if (found) return found.note;
+      const defaultFound = DEFAULT_SPEC_TYPES.find(item => item.type === type);
+      return defaultFound ? defaultFound.note : '';
+    }
+
+    // 種別リストを取得
+    function getSpecTypesList() {
+      return specTypesConfig.map(item => item.type);
+    }
+
+    // トークン数推定関数
+    // 日本語: 約1.5文字/トークン、英数字: 約4文字/トークン
+    function estimateTokenCount(text) {
+      if (!text) return 0;
+
+      // 日本語文字（ひらがな、カタカナ、漢字）をカウント
+      const japaneseChars = (text.match(/[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g) || []).length;
+      // 英数字とその他の文字をカウント
+      const otherChars = text.length - japaneseChars;
+
+      // 日本語は約1.5文字/トークン、英数字は約4文字/トークン
+      const japaneseTokens = japaneseChars / 1.5;
+      const otherTokens = otherChars / 4;
+
+      return Math.round(japaneseTokens + otherTokens);
+    }
+
+    // トークン数表示を更新
+    function updateTokenEstimate() {
+      const container = document.getElementById('token-estimate-container');
+      const estimateEl = document.getElementById('token-estimate');
+      const warningEl = document.getElementById('token-warning');
+
+      // 両方変換済みの場合のみ表示
+      if (!specMarkdown && !codeWithLineNumbers) {
+        container.classList.add('hidden');
+        return;
+      }
+
+      // システムプロンプトも含めてトークン数を計算
+      const systemPromptText = [
+        document.getElementById('prompt-role').value,
+        document.getElementById('prompt-purpose').value,
+        document.getElementById('prompt-format').value,
+        document.getElementById('prompt-notes').value
+      ].join('\n');
+
+      const specTokens = estimateTokenCount(specMarkdown || '');
+      const codeTokens = estimateTokenCount(
+        (codeFilesWithLineNumbers.length
+          ? codeFilesWithLineNumbers.map(c => c.contentWithLineNumbers).join('\n')
+          : codeWithLineNumbers
+        ) || ''
+      );
+      const promptTokens = estimateTokenCount(systemPromptText);
+      const totalTokens = specTokens + codeTokens + promptTokens;
+
+      // 表示を更新
+      container.classList.remove('hidden');
+      estimateEl.textContent = totalTokens.toLocaleString() + ' トークン';
+
+      // 警告表示（100,000トークン以上で警告）
+      if (totalTokens >= 100000) {
+        warningEl.textContent = '⚠️ トークン数が多いため、処理に時間がかかったり、エラーになる可能性があります。';
+        warningEl.classList.remove('hidden');
+        estimateEl.classList.add('text-orange-600');
+        estimateEl.classList.remove('text-gray-800');
+      } else {
+        warningEl.classList.add('hidden');
+        estimateEl.classList.remove('text-orange-600');
+        estimateEl.classList.add('text-gray-800');
+      }
+    }
+
+    // バックエンドURL取得（常に同一オリジン）
+    function getBackendUrl() {
+      return '';
+    }
+
+    // 利用可能なツール一覧を取得
+    async function loadAvailableTools() {
+      try {
+        const response = await fetch(getBackendUrl() + '/api/convert/available-tools');
+        const result = await response.json();
+        availableTools = result.tools || [];
+      } catch (error) {
+        // デフォルトツールをフォールバックとして設定
+        availableTools = [
+          { name: 'markitdown', display_name: 'MarkItDown' },
+          { name: 'excel2md', display_name: 'excel2md' }
+        ];
+      }
+    }
+
+    // 画面切り替え
+    function showScreen(screenId) {
+      document.getElementById('main-screen').classList.add('hidden');
+      document.getElementById('loading-screen').classList.add('hidden');
+      document.getElementById('result-screen').classList.add('hidden');
+      document.getElementById(screenId).classList.remove('hidden');
+    }
+
+    // 設計書ファイル選択ハンドラ
+    function handleSpecFileSelect(input) {
+      specFiles = Array.from(input.files || []);
+      specMarkdown = null;
+      designFilesWithMarkdown = [];
+      // 最初のファイルをデフォルトでメインに設定
+      mainSpecFilename = specFiles.length > 0 ? specFiles[0].name : null;
+      specTypes = Object.fromEntries(specFiles.map(f => [f.name, '設計書']));
+      // デフォルトツールを使用
+      specTools = Object.fromEntries(specFiles.map(f => [f.name, defaultTool]));
+      if (specFiles.length > 0) {
+        const names = specFiles.map(f => f.name).join(', ');
+        document.getElementById('spec-filename').textContent = `📄 ${names}`;
+        document.getElementById('spec-convert-btn').disabled = false;
+        document.getElementById('spec-download-btn').disabled = true;
+        document.getElementById('spec-status').textContent = '';
+        renderSpecPriorityControls();
+        // プレビューをリセット
+        document.getElementById('spec-preview-container').classList.add('hidden');
+        document.getElementById('spec-preview').classList.add('hidden');
+        document.getElementById('spec-preview-icon').textContent = '▶';
+      } else {
+        document.getElementById('spec-filename').textContent = '選択してください';
+        document.getElementById('spec-convert-btn').disabled = true;
+        document.getElementById('spec-download-btn').disabled = true;
+        renderSpecPriorityControls();
+      }
+      // レビューボタンの状態を更新
+      updateReviewButtonState();
+    }
+
+    // 設計書の役割・種別・ツールUIを描画
+    function renderSpecPriorityControls() {
+      const container = document.getElementById('spec-priority-container');
+      const list = document.getElementById('spec-priority-list');
+      const bulkSettings = document.getElementById('spec-bulk-settings');
+
+      if (!specFiles.length) {
+        container.classList.add('hidden');
+        if (bulkSettings) bulkSettings.classList.add('hidden');
+        list.innerHTML = '';
+        return;
+      }
+
+      container.classList.remove('hidden');
+
+      // 一括設定UIを表示（ツールが1つ以上あれば表示）
+      if (bulkSettings) {
+        if (availableTools.length >= 1) {
+          bulkSettings.classList.remove('hidden');
+          renderBulkToolButtons();
+        } else {
+          bulkSettings.classList.add('hidden');
+        }
+      }
+
+      // 種別リストを取得（動的）
+      const typesList = getSpecTypesList();
+
+      list.innerHTML = specFiles.map(file => {
+        const isMain = mainSpecFilename === file.name;
+        const currentType = specTypes[file.name] || (typesList[0] || '設計書');
+        const currentTool = specTools[file.name] || 'markitdown';
+
+        // 種別選択オプションを動的に生成
+        const typeOptions = typesList.map(type =>
+          `<option value="${type}" ${type === currentType ? 'selected' : ''}>${type}</option>`
+        ).join('');
+
+        return `
+          <div class="flex flex-col gap-1 text-sm bg-gray-50 border border-gray-200 rounded px-3 py-2">
+            <span class="text-gray-700 break-words">${file.name}</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <label class="flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="main-spec" data-filename="${file.name}" ${isMain ? 'checked' : ''} class="w-4 h-4 text-blue-600 cursor-pointer">
+                <span class="text-xs text-gray-500 font-bold">メイン</span>
+              </label>
+              <span class="text-xs text-gray-500 ml-2">種別</span>
+              <select data-filename="${file.name}" data-kind="type" class="border border-gray-300 rounded px-2 py-1 text-sm">
+                ${typeOptions}
+              </select>
+              <span class="text-xs text-gray-500">ツール</span>
+              <select data-filename="${file.name}" data-kind="tool" class="border border-gray-300 rounded px-2 py-1 text-sm">
+                ${availableTools.map(t =>
+                  `<option value="${t.name}" ${t.name === currentTool ? 'selected' : ''}>${t.display_name}</option>`
+                ).join('')}
+              </select>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // ラジオボタンのイベントハンドラ
+      list.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', (event) => {
+          const filename = event.target.getAttribute('data-filename');
+          mainSpecFilename = filename;
+          // UIを再描画して役割ラベルを更新
+          renderSpecPriorityControls();
+          // 変換済みの場合、再変換を促す
+          if (specMarkdown) {
+            specMarkdown = null;
+            designFilesWithMarkdown = [];
+            document.getElementById('spec-download-btn').disabled = true;
+            document.getElementById('spec-status').textContent = '⚠️ メイン設計書が変更されました。再変換してください。';
+            document.getElementById('spec-preview-container').classList.add('hidden');
+            document.getElementById('spec-preview').classList.add('hidden');
+            document.getElementById('spec-preview-icon').textContent = '▶';
+            updateTokenEstimate();
+            updateReviewButtonState();
+          }
+        });
+      });
+
+      // セレクトボックスのイベントハンドラ
+      list.querySelectorAll('select').forEach(select => {
+        select.addEventListener('change', (event) => {
+          const filename = event.target.getAttribute('data-filename');
+          const kind = event.target.getAttribute('data-kind');
+          if (kind === 'type') {
+            specTypes[filename] = event.target.value;
+          }
+          if (kind === 'tool') {
+            specTools[filename] = event.target.value;
+          }
+          // 変換済みの場合、変換結果をクリアして再変換を促す
+          if (specMarkdown) {
+            specMarkdown = null;
+            designFilesWithMarkdown = [];
+            document.getElementById('spec-download-btn').disabled = true;
+            const changeMessage = kind === 'tool'
+              ? '⚠️ ツールが変更されました。再変換してください。'
+              : '⚠️ 種別が変更されました。再変換してください。';
+            document.getElementById('spec-status').textContent = changeMessage;
+            document.getElementById('spec-preview-container').classList.add('hidden');
+            document.getElementById('spec-preview').classList.add('hidden');
+            document.getElementById('spec-preview-icon').textContent = '▶';
+            updateTokenEstimate();
+            updateReviewButtonState();
+          }
+        });
+      });
+    }
+
+    // 一括設定ボタンのレンダリング
+    function renderBulkToolButtons() {
+      const container = document.getElementById('spec-bulk-tool-buttons');
+      if (!container || availableTools.length === 0) return;
+
+      container.innerHTML = availableTools.map(tool =>
+        `<button onclick="applyToolToAll('${tool.name}')"
+                class="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50">
+          ${tool.display_name}
+        </button>`
+      ).join('');
+    }
+
+    // 全ファイルにツールを一括適用
+    function applyToolToAll(toolName) {
+      specFiles.forEach(file => {
+        specTools[file.name] = toolName;
+      });
+      renderSpecPriorityControls();
+      // 変換済みの場合は再変換を促す
+      if (specMarkdown) {
+        specMarkdown = null;
+        designFilesWithMarkdown = [];
+        document.getElementById('spec-download-btn').disabled = true;
+        document.getElementById('spec-status').textContent = '⚠️ ツールが変更されました。再変換してください。';
+        document.getElementById('spec-preview-container').classList.add('hidden');
+        document.getElementById('spec-preview').classList.add('hidden');
+        document.getElementById('spec-preview-icon').textContent = '▶';
+        updateTokenEstimate();
+        updateReviewButtonState();
+      }
+    }
+
+    // プログラムファイル選択ハンドラ
+    function handleCodeFileSelect(input) {
+      codeFiles = Array.from(input.files || []);
+      codeWithLineNumbers = null;
+      codeFilesWithLineNumbers = [];
+      if (codeFiles.length > 0) {
+        const names = codeFiles.map(f => f.name).join(', ');
+        document.getElementById('code-filename').textContent = `📄 ${names}`;
+        document.getElementById('code-convert-btn').disabled = false;
+        document.getElementById('code-download-btn').disabled = true;
+        document.getElementById('code-status').textContent = '';
+        // プレビューをリセット
+        document.getElementById('code-preview-container').classList.add('hidden');
+        document.getElementById('code-preview').classList.add('hidden');
+        document.getElementById('code-preview-icon').textContent = '▶';
+      } else {
+        document.getElementById('code-filename').textContent = '選択してください';
+        document.getElementById('code-convert-btn').disabled = true;
+        document.getElementById('code-download-btn').disabled = true;
+      }
+      // レビューボタンの状態を更新
+      updateReviewButtonState();
+    }
+
+    // Excel → Markdown変換（API呼び出し版）
+    async function convertExcelToMarkdown() {
+      if (!specFiles.length) return;
+
+      document.getElementById('spec-status').textContent = '変換中...';
+      document.getElementById('spec-convert-btn').disabled = true;
+
+      try {
+        const results = [];
+
+        for (const file of specFiles) {
+          const formData = new FormData();
+          formData.append('file', file);
+          // ファイルごとのツールを使用
+          formData.append('tool', specTools[file.name] || defaultTool);
+
+          const response = await fetch(getBackendUrl() + '/api/convert/excel-to-markdown', {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (!result.success) {
+            throw new Error(`[${file.name}] ${result.error || '変換に失敗しました'}`);
+          }
+
+          results.push({
+            name: file.name,
+            markdown: result.markdown,
+            isMain: mainSpecFilename === file.name,
+            type: specTypes[file.name] || '設計書',
+            tool: specTools[file.name] || 'markitdown'
+          });
+        }
+
+        designFilesWithMarkdown = results.map(r => ({
+          filename: r.name,
+          content: r.markdown,
+          role: r.isMain ? 'メイン' : '参照',
+          isMain: r.isMain,
+          type: r.type,
+          tool: r.tool,
+          note: getTypeNote(r.type)
+        }));
+
+        specMarkdown = results
+          .map(r => {
+            const note = getTypeNote(r.type);
+            const role = r.isMain ? 'メイン' : '参照';
+            return `# 設計書: ${r.name}\n- 役割: ${role}\n- 種別: ${r.type}\n- 注意事項: ${note}\n\n${r.markdown}`;
+          })
+          .join('\n\n---\n\n');
+
+        document.getElementById('spec-download-btn').disabled = false;
+        document.getElementById('spec-status').textContent = '✅ 変換済み';
+
+        // プレビューを表示
+        document.getElementById('spec-preview-container').classList.remove('hidden');
+        document.getElementById('spec-preview-content').textContent = specMarkdown;
+        // プレビューを自動的に開く
+        document.getElementById('spec-preview').classList.remove('hidden');
+        document.getElementById('spec-preview-icon').textContent = '▼';
+
+        // トークン数表示を更新
+        updateTokenEstimate();
+        // レビューボタンの状態を更新
+        updateReviewButtonState();
+      } catch (error) {
+        document.getElementById('spec-status').textContent = '❌ ' + error.message;
+      } finally {
+        document.getElementById('spec-convert-btn').disabled = false;
+      }
+    }
+
+    // 設計書プレビューの開閉
+    function toggleSpecPreview() {
+      const preview = document.getElementById('spec-preview');
+      const icon = document.getElementById('spec-preview-icon');
+      preview.classList.toggle('hidden');
+      icon.textContent = preview.classList.contains('hidden') ? '▶' : '▼';
+    }
+
+    // 変換済みマークダウンのダウンロード
+    function downloadSpecMarkdown() {
+      if (!specMarkdown) return;
+
+      const blob = new Blob([specMarkdown], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'spec-markdown.md';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // 行番号付与（API呼び出し版）
+    async function addLineNumbers() {
+      if (!codeFiles.length) return;
+
+      document.getElementById('code-status').textContent = '変換中...';
+      document.getElementById('code-convert-btn').disabled = true;
+      codeFilesWithLineNumbers = [];
+
+      try {
+        const results = [];
+
+        for (const file of codeFiles) {
+          const formData = new FormData();
+          formData.append('file', file);
+
+          const response = await fetch(getBackendUrl() + '/api/convert/add-line-numbers', {
+            method: 'POST',
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (!result.success) {
+            throw new Error(`[${file.name}] ${result.error || '変換に失敗しました'}`);
+          }
+
+          results.push({ name: file.name, content: result.content });
+        }
+
+        codeFilesWithLineNumbers = results.map(r => ({
+          filename: r.name,
+          contentWithLineNumbers: r.content
+        }));
+
+        // add-line-numbers の結果はプレーンテキストなので、この段階ではコードフェンスを付けず
+        // ファイル見出し + 本文でまとめる。メッセージ生成時にバックエンド側でフェンスを付与する。
+        codeWithLineNumbers = results
+          .map(r => `# プログラム: ${r.name}\n\n${r.content}`)
+          .join('\n\n---\n\n');
+
+        document.getElementById('code-download-btn').disabled = false;
+        document.getElementById('code-status').textContent = '✅ 変換済み';
+
+        // プレビューを表示
+        document.getElementById('code-preview-container').classList.remove('hidden');
+        document.getElementById('code-preview-content').textContent = codeWithLineNumbers;
+        // プレビューを自動的に開く
+        document.getElementById('code-preview').classList.remove('hidden');
+        document.getElementById('code-preview-icon').textContent = '▼';
+
+        // トークン数表示を更新
+        updateTokenEstimate();
+        // レビューボタンの状態を更新
+        updateReviewButtonState();
+      } catch (error) {
+        document.getElementById('code-status').textContent = '❌ ' + error.message;
+      } finally {
+        document.getElementById('code-convert-btn').disabled = false;
+      }
+    }
+
+    // プログラムプレビューの開閉
+    function toggleCodePreview() {
+      const preview = document.getElementById('code-preview');
+      const icon = document.getElementById('code-preview-icon');
+      preview.classList.toggle('hidden');
+      icon.textContent = preview.classList.contains('hidden') ? '▶' : '▼';
+    }
+
+    // 行番号付きコードのダウンロード
+    function downloadCodeWithLineNumbers() {
+      if (!codeWithLineNumbers) return;
+
+      const blob = new Blob([codeWithLineNumbers], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'code-numbered.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // LLMConfigを構築
+    function buildLLMConfig() {
+      if (!reviewerConfig || !reviewerConfig.llm || !reviewerConfig.llm.provider) {
+        return null;  // システムLLMを使用
+      }
+
+      const llm = reviewerConfig.llm;
+      const selectedModel = document.getElementById('llm-model-select').value;
+      const parsedMaxTokens = Number(llm.maxTokens);
+      const normalizedMaxTokens = Number.isFinite(parsedMaxTokens) && parsedMaxTokens > 0
+        ? parsedMaxTokens
+        : null;
+
+      const config = {
+        provider: llm.provider,
+        model: selectedModel || llm.models?.[0] || '',
+        maxTokens: normalizedMaxTokens ?? 16384
+      };
+
+      // プロバイダーに応じた認証情報を追加
+      if (llm.provider === 'anthropic' || llm.provider === 'openai') {
+        config.apiKey = llm.apiKey;
+      } else if (llm.provider === 'bedrock') {
+        config.accessKeyId = llm.accessKeyId;
+        config.secretAccessKey = llm.secretAccessKey;
+        config.region = llm.region;
+      }
+
+      return config;
+    }
+
+    // レビュー実行データを保存する変数（一式ダウンロード用）- 2回分
+    let savedReviewData = [null, null];  // [1回目, 2回目]
+
+    // レビュー実行回数（将来的に変更可能）
+    const REVIEW_EXECUTION_COUNT = 2;
+
+    // レビュー実行（API呼び出し版）- 直列で2回実行
+    async function executeReview() {
+      // ボタンがdisabledの場合は処理しない（変換が完了していない場合）
+      if (!specMarkdown || !codeWithLineNumbers) {
+        return;
+      }
+
+      showScreen('loading-screen');
+
+      const systemPrompt = {
+        role: document.getElementById('prompt-role').value,
+        purpose: document.getElementById('prompt-purpose').value,
+        format: document.getElementById('prompt-format').value,
+        notes: document.getElementById('prompt-notes').value
+      };
+
+      const specFilename = specFiles.map(f => f.name).join(', ');
+      const codeFilename = codeFiles.map(f => f.name).join(', ');
+
+      // LLM設定を構築
+      const llmConfig = buildLLMConfig();
+
+      // APIリクエストを実行する関数
+      const executeReviewApi = async (executionNumber) => {
+        // APIリクエスト送信時の時刻（各回ごとに取得）
+        // 表示用にフォーマット済みの文字列として送信（YYYY/MM/DD HH:MM:SS形式）
+        const executedAt = new Date().toLocaleString('ja-JP', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+
+        const requestBody = {
+          specMarkdown: specMarkdown,
+          specFilename: specFilename,
+          codeWithLineNumbers: codeWithLineNumbers,
+          codeFilename: codeFilename,
+          designs: designFilesWithMarkdown,
+          codes: codeFilesWithLineNumbers,
+          systemPrompt: systemPrompt,
+          executedAt: executedAt,
+          executionNumber: executionNumber
+        };
+
+        // llmConfigがある場合のみ追加
+        if (llmConfig) {
+          requestBody.llmConfig = llmConfig;
+        }
+
+        const response = await fetch(getBackendUrl() + '/api/review', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.error || `レビュー実行に失敗しました（${executionNumber}回目）`);
+        }
+
+        return result;
+      };
+
+      try {
+        // 直列で2回実行
+        for (let i = 1; i <= REVIEW_EXECUTION_COUNT; i++) {
+          // ローディング画面の進捗を更新
+          document.getElementById('loading-progress').textContent = `${i}回目のレビューを実行しています`;
+
+          const result = await executeReviewApi(i);
+
+          // レポートを表示
+          document.getElementById(`report-content-${i}`).textContent = result.report;
+
+          // 簡易判定を表示
+          displaySimpleJudgment(result.report, i);
+
+          // レビュー情報を更新
+          displayReviewMeta(result.reviewMeta, i);
+
+          // 一式ダウンロード用にデータを保存
+          savedReviewData[i - 1] = {
+            systemPrompt: systemPrompt,
+            specMarkdown: specMarkdown,
+            codeWithLineNumbers: codeWithLineNumbers,
+            report: result.report,
+            reviewMeta: result.reviewMeta
+          };
+
+          // ダウンロードファイル一覧を更新
+          updateDownloadFilesTable(i);
+        }
+
+        // タブを1回目に設定
+        switchReviewTab(1);
+
+        showScreen('result-screen');
+      } catch (error) {
+        alert(error.message);
+        showScreen('main-screen');
+      }
+    }
+
+    // タブ切り替え
+    function switchReviewTab(tabNumber) {
+      // タブボタンのスタイルを更新
+      for (let i = 1; i <= REVIEW_EXECUTION_COUNT; i++) {
+        const btn = document.getElementById(`tab-btn-${i}`);
+        const content = document.getElementById(`review-tab-${i}`);
+
+        if (i === tabNumber) {
+          btn.className = 'flex-1 py-2 px-4 rounded-lg font-medium transition text-white bg-blue-500';
+          content.classList.remove('hidden');
+        } else {
+          btn.className = 'flex-1 py-2 px-4 rounded-lg font-medium transition text-gray-600 bg-gray-100 hover:bg-gray-200';
+          content.classList.add('hidden');
+        }
+      }
+    }
+
+    // ダウンロードファイル一覧テーブルを更新
+    function updateDownloadFilesTable(executionNumber = 1) {
+      const tbody = document.querySelector(`#download-files-table-${executionNumber} tbody`);
+      if (!tbody) return;
+
+      const files = [
+        { name: 'README.md', desc: 'レビュー情報と同梱ファイルの説明' },
+        { name: 'system-prompt.md', desc: 'システムプロンプト（役割・目的・出力形式・注意事項）' },
+        { name: 'spec-markdown.md', desc: '変換後の設計書（マークダウン形式）' },
+        { name: 'code-numbered.txt', desc: '行番号付きプログラム' },
+        { name: 'review-result.md', desc: 'AIレビュー結果' }
+      ];
+
+      tbody.innerHTML = files.map(f => `
+        <tr>
+          <td class="font-mono text-xs py-1 pr-2 align-top whitespace-nowrap">${f.name}</td>
+          <td class="py-1">${f.desc}</td>
+        </tr>
+      `).join('');
+    }
+
+    // レビュー情報の表示を更新
+    function displayReviewMeta(reviewMeta, executionNumber = 1) {
+      const container = document.getElementById(`review-meta-content-${executionNumber}`);
+
+      if (!reviewMeta) {
+        container.innerHTML = '<p class="text-gray-500">レビュー情報がありません</p>';
+        return;
+      }
+
+      // 基本情報（executedAtは既にフォーマット済み）
+      let html = `
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="text-gray-600">バージョン:</div>
+          <div class="text-gray-800">${reviewMeta.version || '-'}</div>
+          <div class="text-gray-600">モデルID:</div>
+          <div class="text-gray-800">${reviewMeta.modelId || '-'}</div>
+          <div class="text-gray-600">レビュー実行日時:</div>
+          <div class="text-gray-800">${reviewMeta.executedAt || '-'}</div>
+          <div class="text-gray-600">トークン数:</div>
+          <div class="text-gray-800">入力 ${(reviewMeta.inputTokens || 0).toLocaleString()} / 出力 ${(reviewMeta.outputTokens || 0).toLocaleString()}</div>
+        </div>
+      `;
+
+      // 設計書一覧
+      if (reviewMeta.designs && reviewMeta.designs.length > 0) {
+        html += `
+          <div class="mt-4">
+            <h3 class="text-sm font-medium text-gray-700 mb-2">設計書:</h3>
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm border border-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-3 py-2 text-left text-gray-600 border-b">ファイル名</th>
+                    <th class="px-3 py-2 text-left text-gray-600 border-b">役割</th>
+                    <th class="px-3 py-2 text-left text-gray-600 border-b">種別</th>
+                    <th class="px-3 py-2 text-left text-gray-600 border-b">ツール</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${reviewMeta.designs.map(d => `
+                    <tr>
+                      <td class="px-3 py-2 border-b text-gray-800">${d.filename}</td>
+                      <td class="px-3 py-2 border-b text-gray-800">${d.role}</td>
+                      <td class="px-3 py-2 border-b text-gray-800">${d.type}</td>
+                      <td class="px-3 py-2 border-b text-gray-800">${d.tool}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+
+      // プログラム一覧
+      if (reviewMeta.programs && reviewMeta.programs.length > 0) {
+        html += `
+          <div class="mt-4">
+            <h3 class="text-sm font-medium text-gray-700 mb-2">プログラム:</h3>
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm border border-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-3 py-2 text-left text-gray-600 border-b">ファイル名</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${reviewMeta.programs.map(p => `
+                    <tr>
+                      <td class="px-3 py-2 border-b text-gray-800">${p.filename}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    // 簡易判定を実行
+    function analyzeReviewResult(reportText) {
+      if (!reportText) {
+        return { status: 'unknown', ngCount: 0, warningCount: 0, okCount: 0 };
+      }
+
+      // キーワードを検出（大文字・小文字を区別しない）
+      const text = reportText;
+
+      // NGキーワードの検出（「NG」は単語境界を考慮）
+      const ngMatches = text.match(/\bNG\b/gi) || [];
+      const ngEmojiMatches = text.match(/❌/g) || [];
+      const ngCount = ngMatches.length + ngEmojiMatches.length;
+
+      // 要確認キーワードの検出
+      const warningMatches = text.match(/要確認/g) || [];
+      const warningEmojiMatches = text.match(/⚠️/g) || [];
+      const warningCount = warningMatches.length + warningEmojiMatches.length;
+
+      // OKキーワードの検出（「OK」は単語境界を考慮）
+      const okMatches = text.match(/\bOK\b/gi) || [];
+      const okEmojiMatches = text.match(/✅/g) || [];
+      const okCount = okMatches.length + okEmojiMatches.length;
+
+      // 判定ルール
+      let status;
+      if (ngCount > 0) {
+        status = 'ng'; // 問題あり
+      } else if (warningCount > 0) {
+        status = 'warning'; // 確認が必要
+      } else {
+        status = 'ok'; // 問題なし
+      }
+
+      return { status, ngCount, warningCount, okCount };
+    }
+
+    // 簡易判定の表示を更新
+    function displaySimpleJudgment(reportText, executionNumber = 1) {
+      const container = document.getElementById(`simple-judgment-content-${executionNumber}`);
+      const result = analyzeReviewResult(reportText);
+
+      // ステータスに応じた表示設定
+      const statusConfig = {
+        ng: {
+          label: '問題あり',
+          icon: '❌',
+          bgColor: 'bg-red-50',
+          borderColor: 'border-red-200',
+          textColor: 'text-red-700',
+          iconBg: 'bg-red-100'
+        },
+        warning: {
+          label: '確認が必要',
+          icon: '⚠️',
+          bgColor: 'bg-yellow-50',
+          borderColor: 'border-yellow-200',
+          textColor: 'text-yellow-700',
+          iconBg: 'bg-yellow-100'
+        },
+        ok: {
+          label: '問題なし',
+          icon: '✅',
+          bgColor: 'bg-green-50',
+          borderColor: 'border-green-200',
+          textColor: 'text-green-700',
+          iconBg: 'bg-green-100'
+        }
+      };
+
+      const config = statusConfig[result.status] || statusConfig.ok;
+
+      // 検出件数の表示テキストを生成
+      const countParts = [];
+      if (result.ngCount > 0) {
+        countParts.push(`NG: ${result.ngCount}件`);
+      }
+      if (result.warningCount > 0) {
+        countParts.push(`要確認: ${result.warningCount}件`);
+      }
+      if (result.okCount > 0) {
+        countParts.push(`OK: ${result.okCount}件`);
+      }
+      const countText = countParts.length > 0 ? countParts.join(' / ') : '検出なし';
+
+      container.innerHTML = `
+        <div class="${config.bgColor} ${config.borderColor} border rounded-lg p-4">
+          <div class="flex items-center gap-3">
+            <span class="${config.iconBg} rounded-full p-2 text-xl">${config.icon}</span>
+            <div>
+              <div class="font-bold ${config.textColor} text-lg">${config.label}</div>
+              <div class="text-sm text-gray-600">${countText}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // メイン画面に戻る
+    function backToMain() {
+      showScreen('main-screen');
+    }
+
+    // システムプロンプト設定の開閉
+    function togglePromptSettings() {
+      const settings = document.getElementById('prompt-settings');
+      const icon = document.getElementById('prompt-toggle-icon');
+      settings.classList.toggle('hidden');
+      icon.textContent = settings.classList.contains('hidden') ? '▼' : '▲';
+    }
+
+    // 設定モーダル
+    function openSettings() {
+      document.getElementById('settings-modal').classList.remove('hidden');
+      renderSpecTypesTable();
+    }
+
+    function closeSettings() {
+      document.getElementById('settings-modal').classList.add('hidden');
+    }
+
+    // ローカルストレージに保存済み設定があるかチェック
+    function hasSavedConfig() {
+      return localStorage.getItem('reviewer-config') !== null;
+    }
+
+    // 保存状態の表示を更新
+    function updateSaveStatusDisplay() {
+      const statusContainer = document.getElementById('config-save-status');
+      const statusText = document.getElementById('config-save-status-text');
+
+      if (!hasSavedConfig()) {
+        // 保存済み設定なし
+        statusContainer.classList.add('hidden');
+        return;
+      }
+
+      statusContainer.classList.remove('hidden');
+
+      if (configModified) {
+        // 保存済み設定あり + 新規アップロード後
+        statusText.textContent = '現在の設定はブラウザに保存されていません';
+        statusText.className = 'text-sm text-orange-600';
+      } else {
+        // 保存済み設定あり（変更なし）
+        statusText.textContent = 'ブラウザに設定が保存されています（次回自動読込）';
+        statusText.className = 'text-sm text-green-600';
+      }
+    }
+
+    // ページ読込時に保存済み設定を復元
+    function loadSavedConfig() {
+      const savedConfig = localStorage.getItem('reviewer-config');
+      if (!savedConfig) return;
+
+      try {
+        reviewerConfig = JSON.parse(savedConfig);
+        configModified = false;
+
+        // UI更新
+        document.getElementById('config-upload-placeholder').classList.add('hidden');
+        document.getElementById('config-upload-success').classList.remove('hidden');
+        document.getElementById('config-filename').textContent = '保存済み設定';
+
+        // LLM設定を更新
+        updateLLMSettingsUI(reviewerConfig.llm);
+
+        // 設計書種別を更新
+        if (reviewerConfig.specTypes && reviewerConfig.specTypes.length > 0) {
+          specTypesConfig = reviewerConfig.specTypes;
+        }
+
+        // 保存状態の表示を更新
+        updateSaveStatusDisplay();
+      } catch (e) {
+        console.error('保存済み設定の復元に失敗しました:', e);
+      }
+    }
+
+    // 設定ファイルのドラッグ&ドロップ処理
+    function handleConfigDragOver(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      document.getElementById('config-upload-area').classList.add('border-blue-400', 'bg-blue-50');
+    }
+
+    function handleConfigDragLeave(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      document.getElementById('config-upload-area').classList.remove('border-blue-400', 'bg-blue-50');
+    }
+
+    function handleConfigDrop(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      document.getElementById('config-upload-area').classList.remove('border-blue-400', 'bg-blue-50');
+
+      const files = event.dataTransfer.files;
+      if (files.length > 0) {
+        processConfigFile(files[0]);
+      }
+    }
+
+    function handleConfigFileSelect(input) {
+      if (input.files.length > 0) {
+        processConfigFile(input.files[0]);
+      }
+    }
+
+    // 設定ファイルの処理
+    function processConfigFile(file) {
+      if (!file.name.endsWith('.md')) {
+        alert('Markdownファイル (.md) を選択してください');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const content = e.target.result;
+        const parsed = parseReviewerConfig(content);
+
+        if (parsed.error) {
+          alert('設定ファイルのパースに失敗しました: ' + parsed.error);
+          return;
+        }
+
+        reviewerConfig = parsed;
+        configModified = true;  // 新規アップロードなので変更フラグを立てる
+
+        // LLM設定の更新判定
+        const llmUpdated = parsed.llm && parsed.llm.provider;
+
+        // 設計書種別の更新判定
+        const specUpdated = parsed.specTypes && parsed.specTypes.length > 0;
+
+        // システムプロンプトプリセットの更新判定
+        const promptsUpdated = parsed.systemPrompts && parsed.systemPrompts.length > 0;
+
+        // UI更新
+        document.getElementById('config-upload-placeholder').classList.add('hidden');
+        document.getElementById('config-upload-success').classList.remove('hidden');
+        document.getElementById('config-filename').textContent = file.name;
+
+        // 更新結果の表示
+        const llmStatusEl = document.getElementById('config-llm-status');
+        const specStatusEl = document.getElementById('config-spec-status');
+        const promptsStatusEl = document.getElementById('config-prompts-status');
+
+        if (llmUpdated) {
+          llmStatusEl.textContent = '・LLM設定を更新しました';
+          llmStatusEl.className = 'text-sm text-green-600';
+        } else {
+          llmStatusEl.textContent = '・LLM設定は更新されませんでした';
+          llmStatusEl.className = 'text-sm text-gray-500';
+        }
+
+        if (specUpdated) {
+          specStatusEl.textContent = '・設計書種別と注意事項を更新しました';
+          specStatusEl.className = 'text-sm text-green-600';
+        } else {
+          specStatusEl.textContent = '・設計書種別と注意事項は更新されませんでした';
+          specStatusEl.className = 'text-sm text-gray-500';
+        }
+
+        if (promptsUpdated) {
+          promptsStatusEl.textContent = '・システムプロンプトプリセットを更新しました（' + parsed.systemPrompts.length + '件）';
+          promptsStatusEl.className = 'text-sm text-green-600';
+        } else {
+          promptsStatusEl.textContent = '・システムプロンプトプリセットは更新されませんでした';
+          promptsStatusEl.className = 'text-sm text-gray-500';
+        }
+
+        // LLM設定を更新
+        updateLLMSettingsUI(parsed.llm);
+
+        // 設計書種別を更新
+        if (specUpdated) {
+          specTypesConfig = parsed.specTypes;
+          renderSpecTypesTable();
+        }
+
+        // システムプロンプトプリセットを更新
+        updateSystemPromptPresets();
+
+        // システムプロンプトプリセット一覧を描画
+        renderSystemPromptsListInModal();
+
+        // 保存状態の表示を更新
+        updateSaveStatusDisplay();
+      };
+      reader.readAsText(file);
+    }
+
+    // Markdown形式の設定ファイルをパース
+    function parseReviewerConfig(content) {
+      try {
+        const result = {
+          info: {},
+          llm: {},
+          specTypes: [],
+          systemPrompts: []
+        };
+        const llmKeyMap = {
+          api_key: 'apiKey',
+          access_key_id: 'accessKeyId',
+          secret_access_key: 'secretAccessKey',
+          max_tokens: 'maxTokens'
+        };
+        const normalizeLLMKey = (key) => llmKeyMap[key] || key;
+
+        // セクションを分割
+        const lines = content.split('\n');
+        let currentSection = null;
+        let currentSubSection = null;
+        let inModels = false;
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          const trimmed = line.trim();
+
+          // セクションヘッダーの検出
+          if (trimmed.startsWith('## ')) {
+            currentSection = trimmed.substring(3).toLowerCase().trim();
+            currentSubSection = null;
+            inModels = false;
+            continue;
+          }
+
+          // info セクション
+          if (currentSection === 'info') {
+            const match = trimmed.match(/^-\s*(\w+):\s*(.+)$/);
+            if (match) {
+              result.info[match[1]] = match[2];
+            }
+          }
+
+          // llm セクション
+          if (currentSection === 'llm') {
+            // models リストの処理
+            if (trimmed === '- models:') {
+              inModels = true;
+              result.llm.models = [];
+              continue;
+            }
+
+            if (inModels && trimmed.startsWith('- ')) {
+              result.llm.models.push(trimmed.substring(2).trim());
+              continue;
+            }
+
+            // 通常のプロパティ
+            const match = trimmed.match(/^-\s*(\w+):\s*(.+)$/);
+            if (match) {
+              inModels = false;
+              const normalizedKey = normalizeLLMKey(match[1]);
+              result.llm[normalizedKey] = match[2];
+            }
+          }
+
+          // specTypes セクション（テーブル形式）
+          if (currentSection === 'spectypes') {
+            // テーブル行の検出（| で始まり | で終わる）
+            if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+              // ヘッダー行やセパレータ行をスキップ
+              if (trimmed.includes('---') || trimmed.includes('type') || trimmed.includes('種別')) {
+                continue;
+              }
+
+              const cells = trimmed.split('|').filter(c => c.trim() !== '');
+              if (cells.length >= 2) {
+                result.specTypes.push({
+                  type: cells[0].trim(),
+                  note: cells[1].trim()
+                });
+              }
+            }
+          }
+
+          // systemPrompts セクション（見出し+セクション形式）
+          if (currentSection === 'systemprompts') {
+            // ### プリセット名 の検出
+            if (trimmed.startsWith('### ')) {
+              const presetName = trimmed.substring(4).trim();
+              result.systemPrompts.push({
+                name: presetName,
+                role: '',
+                purpose: '',
+                format: '',
+                notes: ''
+              });
+              continue;
+            }
+
+            // #### フィールド名 の検出
+            if (trimmed.startsWith('#### ')) {
+              currentSubSection = trimmed.substring(5).trim().toLowerCase();
+              continue;
+            }
+
+            // フィールド内容の収集
+            if (result.systemPrompts.length > 0 && currentSubSection) {
+              const currentPrompt = result.systemPrompts[result.systemPrompts.length - 1];
+              if (currentPrompt[currentSubSection] !== undefined) {
+                if (currentPrompt[currentSubSection]) {
+                  currentPrompt[currentSubSection] += '\n' + line;
+                } else {
+                  currentPrompt[currentSubSection] = line;
+                }
+              }
+            }
+          }
+        }
+
+        // systemPrompts の各フィールドをトリム
+        result.systemPrompts = result.systemPrompts.map(prompt => ({
+          name: prompt.name,
+          role: (prompt.role || '').trim(),
+          purpose: (prompt.purpose || '').trim(),
+          format: (prompt.format || '').trim(),
+          notes: (prompt.notes || '').trim()
+        }));
+
+        return result;
+      } catch (err) {
+        return { error: err.message };
+      }
+    }
+
+    // LLM設定UIを更新
+    function updateLLMSettingsUI(llmConfig) {
+      const systemNotice = document.getElementById('llm-system-fallback-notice');
+      const providerDisplay = document.getElementById('llm-provider-display');
+      const modelSelect = document.getElementById('llm-model-select');
+      const maxTokensDisplay = document.getElementById('llm-max-tokens-display');
+      const maxTokensValue = document.getElementById('llm-max-tokens-value');
+
+      if (!llmConfig || !llmConfig.provider) {
+        // 設定なし: システムLLMを使用
+        if (systemNotice) systemNotice.classList.remove('hidden');
+        if (providerDisplay) {
+          providerDisplay.textContent = '-';
+          providerDisplay.className = 'text-gray-500';
+        }
+        if (modelSelect) {
+          modelSelect.innerHTML = '<option value="">システムのデフォルトモデルを使用</option>';
+          modelSelect.disabled = true;
+        }
+        // システムLLMの場合はmaxTokensを非表示
+        if (maxTokensDisplay) maxTokensDisplay.classList.add('hidden');
+        return;
+      }
+
+      // 設定あり: ユーザー設定を使用
+      if (systemNotice) systemNotice.classList.add('hidden');
+
+      // プロバイダー表示
+      if (providerDisplay) {
+        providerDisplay.textContent = llmConfig.provider;
+        providerDisplay.className = 'text-gray-800 font-medium';
+      }
+
+      // モデル選択ドロップダウン
+      if (modelSelect && llmConfig.models && llmConfig.models.length > 0) {
+        modelSelect.innerHTML = llmConfig.models.map(model =>
+          `<option value="${model}">${model}</option>`
+        ).join('');
+        modelSelect.disabled = false;
+
+        // 保存済みのモデル選択を復元
+        const savedModelKey = localStorage.getItem('selected-model');
+        if (savedModelKey) {
+          const [savedProvider, savedModel] = savedModelKey.split(':');
+          if (savedProvider === llmConfig.provider && llmConfig.models.includes(savedModel)) {
+            modelSelect.value = savedModel;
+          }
+        }
+      }
+
+      // 出力最大トークン数の表示（設定ファイルで指定されている場合のみ）
+      if (maxTokensDisplay && maxTokensValue) {
+        const parsedMaxTokens = Number(llmConfig.maxTokens);
+        if (Number.isFinite(parsedMaxTokens) && parsedMaxTokens > 0) {
+          maxTokensValue.textContent = parsedMaxTokens.toLocaleString();
+          maxTokensDisplay.classList.remove('hidden');
+        } else {
+          maxTokensDisplay.classList.add('hidden');
+        }
+      }
+    }
+
+    // 接続テスト（実際のAPI呼び出し）
+    async function testLLMConnection() {
+      const statusEl = document.getElementById('llm-connection-status');
+      statusEl.textContent = '接続テスト中...';
+      statusEl.className = 'text-sm text-gray-600';
+      statusEl.classList.remove('hidden');
+
+      try {
+        // リクエストボディを構築
+        const requestBody = {};
+
+        if (reviewerConfig && reviewerConfig.llm && reviewerConfig.llm.provider) {
+          // 設定ファイルがある場合：ユーザー指定のLLMをテスト
+          const llm = reviewerConfig.llm;
+          const selectedModel = document.getElementById('llm-model-select').value;
+
+          requestBody.provider = llm.provider;
+          requestBody.model = selectedModel || llm.models?.[0] || '';
+
+          // プロバイダーに応じた認証情報を追加
+          if (llm.provider === 'anthropic' || llm.provider === 'openai') {
+            if (llm.apiKey) {
+              requestBody.apiKey = llm.apiKey;
+            }
+          } else if (llm.provider === 'bedrock') {
+            if (llm.accessKeyId) requestBody.accessKeyId = llm.accessKeyId;
+            if (llm.secretAccessKey) requestBody.secretAccessKey = llm.secretAccessKey;
+            if (llm.region) requestBody.region = llm.region;
+          }
+        }
+        // 設定がない場合：空のリクエストボディでシステムLLMをテスト
+
+        const response = await fetch(getBackendUrl() + '/api/test-connection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+        const result = await response.json();
+
+        if (result.status === 'connected') {
+          const label = result.model || result.provider;
+          statusEl.textContent = `接続成功 (${label})`;
+          statusEl.className = 'text-sm text-green-600';
+        } else {
+          const errorMsg = result.error || '接続に失敗しました';
+          statusEl.textContent = `接続失敗: ${errorMsg}`;
+          statusEl.className = 'text-sm text-red-600';
+        }
+      } catch (error) {
+        statusEl.textContent = `接続エラー: ${error.message}`;
+        statusEl.className = 'text-sm text-red-600';
+      }
+    }
+
+    // 設定をブラウザに保存
+    function saveConfigToBrowser() {
+      if (!reviewerConfig) {
+        alert('設定ファイルを読み込んでから保存してください。');
+        return;
+      }
+
+      localStorage.setItem('reviewer-config', JSON.stringify(reviewerConfig));
+      const selectedModel = document.getElementById('llm-model-select').value;
+      if (selectedModel && reviewerConfig.llm && reviewerConfig.llm.provider) {
+        localStorage.setItem('selected-model', `${reviewerConfig.llm.provider}:${selectedModel}`);
+      }
+      configModified = false;
+      updateSaveStatusDisplay();
+      showToast('設定をブラウザに保存しました');
+    }
+
+    // 保存した設定をクリア
+    function clearSavedConfig() {
+      if (confirm('ブラウザに保存された設定をクリアしますか？')) {
+        localStorage.removeItem('reviewer-config');
+        localStorage.removeItem('selected-model');
+        reviewerConfig = null;
+        configModified = false;
+
+        // UI をリセット
+        document.getElementById('config-upload-placeholder').classList.remove('hidden');
+        document.getElementById('config-upload-success').classList.add('hidden');
+        document.getElementById('llm-connection-status').classList.add('hidden');
+
+        // LLM設定UIをシステムLLM表示にリセット
+        updateLLMSettingsUI(null);
+
+        // 保存状態の表示を更新
+        updateSaveStatusDisplay();
+
+        // 設計書種別もデフォルトに戻す
+        specTypesConfig = [...DEFAULT_SPEC_TYPES];
+        saveSpecTypes();
+        renderSpecTypesTable();
+
+        // システムプロンプトもデフォルトに戻す
+        updateSystemPromptPresets();
+        renderSystemPromptsListInModal();
+
+        showToast('保存した設定をクリアしました');
+      }
+    }
+
+    // モデル選択変更時の自動保存
+    function onModelSelectChange() {
+      const selectedModel = document.getElementById('llm-model-select').value;
+      if (selectedModel && reviewerConfig && reviewerConfig.llm && reviewerConfig.llm.provider) {
+        localStorage.setItem('selected-model', `${reviewerConfig.llm.provider}:${selectedModel}`);
+      }
+    }
+
+    // レポートコピー
+    function copyReport(executionNumber = 1) {
+      const report = document.getElementById(`report-content-${executionNumber}`).textContent;
+      navigator.clipboard.writeText(report).then(() => {
+        alert(`レポート（${executionNumber}回目）をクリップボードにコピーしました`);
+      });
+    }
+
+    // レポートダウンロード
+    function downloadReport(executionNumber = 1) {
+      const report = document.getElementById(`report-content-${executionNumber}`).textContent;
+      const blob = new Blob([report], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `review-report-${executionNumber}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // レビュー実行データ一式ダウンロード（ZIP形式）
+    async function downloadReviewData(executionNumber = 1) {
+      const data = savedReviewData[executionNumber - 1];
+      if (!data) {
+        alert('レビュー結果がありません。先にレビューを実行してください。');
+        return;
+      }
+
+      try {
+        const zip = new JSZip();
+        // レビュー実行日時（YYYY/MM/DD HH:MM:SS形式）からYYYYMMDD-HHMMSS形式のタイムスタンプを生成
+        // 例: "2025/12/28 10:30:45" → "20251228-103045"
+        const timestamp = data.reviewMeta.executedAt.replace(/[\/\s:]/g, '').replace(/(\d{8})(\d{6})/, '$1-$2');
+        // 実行番号を3桁でフォーマット（001, 002, ...）
+        const executionNumberFormatted = String(executionNumber).padStart(3, '0');
+
+        // 1. システムプロンプト
+        const systemPromptContent = `# システムプロンプト
+
+## 役割
+
+${data.systemPrompt.role}
+
+## 目的
+
+${data.systemPrompt.purpose}
+
+## 出力形式
+
+${data.systemPrompt.format}
+
+## 注意事項
+
+${data.systemPrompt.notes}
+`;
+        zip.file('system-prompt.md', systemPromptContent);
+
+        // 2. 設計書（マークダウン変換後）
+        zip.file('spec-markdown.md', data.specMarkdown);
+
+        // 3. プログラム（行番号付き）
+        zip.file('code-numbered.txt', data.codeWithLineNumbers);
+
+        // 4. レビュー結果
+        zip.file('review-result.md', data.report);
+
+        // 5. README.md（レビュー情報とファイル説明）
+        const meta = data.reviewMeta;
+        const designsList = meta.designs?.map(d => `  - ${d.filename}（${d.role} / ${d.type} / ${d.tool}）`).join('\n') || '  - なし';
+        const programsList = meta.programs?.map(p => `  - ${p.filename}`).join('\n') || '  - なし';
+
+        const readmeContent = `# レビュー実行データ（${executionNumber}回目）
+
+このZIPファイルには、AIレビュー実行時の入出力データが含まれています。
+
+## レビュー情報
+
+| 項目 | 内容 |
+|------|------|
+| バージョン | ${meta.version || '-'} |
+| モデルID | ${meta.modelId || '-'} |
+| レビュー実行日時 | ${meta.executedAt || '-'} |
+| 実行回数 | ${executionNumber}回目 |
+| 入力トークン数 | ${(meta.inputTokens || 0).toLocaleString()} |
+| 出力トークン数 | ${(meta.outputTokens || 0).toLocaleString()} |
+
+### 設計書
+
+${designsList}
+
+### プログラム
+
+${programsList}
+
+## 同梱ファイル
+
+| ファイル名 | 説明 |
+|-----------|------|
+| README.md | このファイル（レビュー情報とファイル説明） |
+| system-prompt.md | システムプロンプト（役割・目的・出力形式・注意事項） |
+| spec-markdown.md | 変換後の設計書（マークダウン形式） |
+| code-numbered.txt | 行番号付きプログラム |
+| review-result.md | AIレビュー結果 |
+`;
+        zip.file('README.md', readmeContent);
+
+        // ZIPファイルを生成してダウンロード
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${timestamp}-${executionNumberFormatted}-review-data.zip`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        showToast('レビュー実行データをダウンロードしました');
+      } catch (error) {
+        console.error('ZIP生成エラー:', error);
+        alert('ダウンロードに失敗しました: ' + error.message);
+      }
+    }
+
+    // ページ読み込み時の初期化
+    document.addEventListener('DOMContentLoaded', () => {
+      updateVersionDisplay();
+      loadAvailableTools();
+      loadSpecTypes();
+      loadSavedConfig();  // 保存済み設定を復元
+      updateSystemPromptPresets();
+      renderSpecTypesTable();
+      renderSystemPromptsListInModal();
+      updateSaveStatusDisplay();  // 保存状態の表示を更新
+    });
+  </script>
+</body>
+</html>
