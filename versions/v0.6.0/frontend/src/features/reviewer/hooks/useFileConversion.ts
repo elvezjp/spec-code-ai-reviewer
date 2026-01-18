@@ -60,19 +60,15 @@ export function useFileConversion(): UseFileConversionReturn {
     const newFiles: DesignFile[] = files.map((file, index) => ({
       file,
       filename: file.name,
-      isMain: specFiles.length === 0 && index === 0,
+      isMain: index === 0,
       type: DEFAULT_TYPE,
       tool: DEFAULT_TOOL,
     }))
 
-    setSpecFiles((prev) => {
-      const existingNames = new Set(prev.map((f) => f.filename))
-      const unique = newFiles.filter((f) => !existingNames.has(f.filename))
-      return [...prev, ...unique]
-    })
+    setSpecFiles(newFiles)
     setSpecMarkdown(null)
     setSpecStatus('')
-  }, [specFiles.length])
+  }, [])
 
   const removeSpecFile = useCallback((filename: string) => {
     setSpecFiles((prev) => {
@@ -182,11 +178,7 @@ export function useFileConversion(): UseFileConversionReturn {
       filename: file.name,
     }))
 
-    setCodeFiles((prev) => {
-      const existingNames = new Set(prev.map((f) => f.filename))
-      const unique = newFiles.filter((f) => !existingNames.has(f.filename))
-      return [...prev, ...unique]
-    })
+    setCodeFiles(newFiles)
     setCodeWithLineNumbers(null)
     setCodeStatus('')
   }, [])
