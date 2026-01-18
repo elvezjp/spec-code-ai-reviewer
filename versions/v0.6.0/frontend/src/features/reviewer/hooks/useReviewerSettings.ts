@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import type { LlmConfig, SystemPromptValues } from '../types'
-import type { SpecType, SystemPromptPreset, ReviewerConfig, LlmSettings } from '@core/types'
+import type { SpecType, SystemPromptPreset, ReviewerConfig, LlmSettings, Preset } from '@core/types'
 import {
   DEFAULT_SPEC_TYPES,
   DEFAULT_SYSTEM_PROMPTS,
@@ -40,6 +40,7 @@ interface UseReviewerSettingsReturn {
   saveConfigToBrowser: () => void
   clearSavedConfig: () => void
   hasSavedConfig: () => boolean
+  applyPreset: (preset: Preset) => void
 }
 
 const STORAGE_KEY = 'reviewer-config'
@@ -379,6 +380,48 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
     setConfigModified(false)
   }, [reviewerConfig])
 
+  const applyPreset = useCallback(
+    (preset: Preset) => {
+      const systemPromptPreset: SystemPromptPreset = {
+        name: preset.name,
+        role: preset.systemPrompt.role,
+        purpose: preset.systemPrompt.purpose,
+        format: preset.systemPrompt.format,
+        notes: preset.systemPrompt.notes,
+      }
+
+      const nextConfig: ReviewerConfig = {
+        info: reviewerConfig?.info || { version: '', created_at: '' },
+        llm: reviewerConfig?.llm,
+        specTypes: preset.specTypes,
+        systemPrompts: [systemPromptPreset],
+      }
+
+      setReviewerConfig(nextConfig)
+      setConfigFilename(`プリセット: ${preset.name}`)
+      setConfigLoadStatus({
+        llm: nextConfig.llm?.provider
+          ? '・LLM設定は保持されました'
+          : '・LLM設定は設定されていません',
+        specTypes: `・設計書種別を更新しました（${preset.specTypes.length}件）`,
+        prompts: '・システムプロンプトをプリセットで更新しました',
+      })
+      setConfigModified(false)
+
+      setSelectedPreset(systemPromptPreset.name)
+      setCurrentPromptValues({
+        role: systemPromptPreset.role,
+        purpose: systemPromptPreset.purpose,
+        format: systemPromptPreset.format,
+        notes: systemPromptPreset.notes,
+      })
+
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextConfig))
+      localStorage.setItem(SELECTED_PROMPT_KEY, systemPromptPreset.name)
+    },
+    [reviewerConfig]
+  )
+
   const clearSavedConfig = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY)
     localStorage.removeItem(SELECTED_MODEL_KEY)
@@ -471,5 +514,6 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
     saveConfigToBrowser,
     clearSavedConfig,
     hasSavedConfig,
+    applyPreset,
   }
 }

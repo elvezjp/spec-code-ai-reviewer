@@ -42,3 +42,4 @@ export {
 } from './hooks/useSettings'
 export { useTokenEstimation, estimateTokenCount } from './hooks/useTokenEstimation'
 export { useVersions, DEFAULT_VERSIONS } from './hooks/useVersions'
+export { usePresetCatalog } from './hooks/usePresetCatalog'

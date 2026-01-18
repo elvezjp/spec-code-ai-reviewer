@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useCallback } from 'react'
-import { Settings, FileText } from 'lucide-react'
+import { useEffect, useMemo, useCallback, useState } from 'react'
+import { Settings, FileText, BookOpen } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import {
   Layout,
   Header,
@@ -33,6 +34,7 @@ export function Reviewer() {
   const settingsModal = useModal()
   const screenManager = useScreenManager()
   const { versions, currentVersion, switchVersion } = useVersions()
+  const [toastMessage, setToastMessage] = useState('')
 
   // File conversion
   const {
@@ -113,6 +115,16 @@ export function Reviewer() {
   useEffect(() => {
     loadTools()
   }, [loadTools])
+
+  useEffect(() => {
+    const message = sessionStorage.getItem('preset-toast')
+    if (!message) return
+
+    sessionStorage.removeItem('preset-toast')
+    setToastMessage(message)
+    const timer = window.setTimeout(() => setToastMessage(''), 3000)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   const isReviewEnabled = specMarkdown && codeWithLineNumbers
 
@@ -200,13 +212,22 @@ export function Reviewer() {
           />
         }
         rightContent={
-          <button
-            onClick={settingsModal.open}
-            className="text-gray-500 hover:text-gray-700"
-            title="設定"
-          >
-            <Settings className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/presets"
+              className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm"
+            >
+              <BookOpen className="w-4 h-4" />
+              プリセット
+            </Link>
+            <button
+              onClick={settingsModal.open}
+              className="text-gray-500 hover:text-gray-700"
+              title="設定"
+            >
+              <Settings className="w-6 h-6" />
+            </button>
+          </div>
         }
       />
 
@@ -360,11 +381,18 @@ export function Reviewer() {
   )
 
   return (
-    <ScreenContainer
-      currentScreen={screenManager.currentScreen as ScreenState}
-      mainScreen={mainScreen}
-      executingScreen={executingScreen}
-      resultScreen={resultScreen}
-    />
+    <>
+      {toastMessage && (
+        <div className="fixed right-6 top-6 z-50 rounded-md bg-gray-900 px-4 py-2 text-sm text-white shadow-lg">
+          {toastMessage}
+        </div>
+      )}
+      <ScreenContainer
+        currentScreen={screenManager.currentScreen as ScreenState}
+        mainScreen={mainScreen}
+        executingScreen={executingScreen}
+        resultScreen={resultScreen}
+      />
+    </>
   )
 }
