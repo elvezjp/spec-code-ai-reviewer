@@ -46,9 +46,7 @@ export function ConfigGenerator() {
       {/* ヘッダー */}
       <Header title="設定ファイルジェネレーター">
         <p className="text-gray-600 text-sm text-center">
-          {CONFIG_SCHEMA.meta.outputTitle}を作成します。
-        </p>
-        <p className="text-gray-600 text-sm text-center">
+          {CONFIG_SCHEMA.meta.outputTitle}を作成します。<br />
           各項目を入力して「ダウンロード」ボタンを押してください。
         </p>
       </Header>

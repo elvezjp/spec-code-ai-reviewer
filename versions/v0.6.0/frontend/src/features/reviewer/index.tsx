@@ -261,9 +261,8 @@ export function Reviewer() {
       {/* Review button */}
       <Card>
         <Button
-          variant="primary"
+          variant="success"
           size="lg"
-          className="w-full bg-green-500 hover:bg-green-600"
           disabled={!isReviewEnabled}
           onClick={handleReviewExecute}
         >
