@@ -225,33 +225,33 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
 
       // LLM section
       if (currentSection === 'llm') {
-        // インデントされたモデルリスト項目（  - model-name）
-        if (inModels && (trimmed.startsWith('- ') || line.startsWith('  - ') || line.startsWith('    - '))) {
-          const model = trimmed.startsWith('- ') ? trimmed.substring(2).trim() : trimmed.substring(2).trim()
-          if (model && llmData.models && !model.includes(':')) {
+        // モデルリスト項目の処理（  - model-name）
+        if (inModels && trimmed.startsWith('- ')) {
+          const model = trimmed.substring(2).trim()
+          if (model && llmData.models) {
             llmData.models.push(model)
           }
           continue
         }
 
-        if (trimmed.startsWith('- ')) {
-          const keyValue = trimmed.substring(2)
-          const colonIndex = keyValue.indexOf(':')
-          if (colonIndex !== -1) {
-            const key = normalizeLLMKey(keyValue.substring(0, colonIndex).trim())
-            let value: string | number = keyValue.substring(colonIndex + 1).trim()
+        // - models: の検出
+        if (trimmed === '- models:') {
+          inModels = true
+          llmData.models = []
+          continue
+        }
 
-            if (key === 'models') {
-              inModels = true
-              llmData.models = []
-            } else {
-              inModels = false
-              if (key === 'maxTokens') {
-                value = parseInt(value as string, 10)
-              }
-              (llmData as Record<string, unknown>)[key] = value
-            }
+        // 通常のプロパティ（- key: value）
+        const match = trimmed.match(/^-\s*(\w+):\s*(.+)$/)
+        if (match) {
+          inModels = false
+          const key = normalizeLLMKey(match[1])
+          let value: string | number = match[2]
+
+          if (key === 'maxTokens') {
+            value = parseInt(value as string, 10)
           }
+          (llmData as Record<string, unknown>)[key] = value
         }
       }
 
