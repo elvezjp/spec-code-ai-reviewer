@@ -5,6 +5,35 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/spec/v2.0.0.html) に準拠しています。
 
+## [0.6.0] - 2026-01-18
+
+### 追加
+- **React + Vite + TypeScript移行**: フロントエンドを単一HTMLファイルからモダンなSPA構成に全面刷新
+  - React 19.2.0 + TypeScript 5.9によるコンポーネントベース開発
+  - Vite 7.2.4による高速ビルド環境
+  - React Router v7によるルーティング（`/` と `/config-file-generator`）
+- **Tailwind CSS v4対応**: `@tailwindcss/vite`統合による最適化されたCSS生成
+- **テスト環境構築**: Vitest + React Testing Libraryによる単体テスト（8ファイル、20+テストケース）
+  - Core Hooks: useSettings, useModal, useScreenManager, useTokenEstimation
+  - Feature Hooks: useFileConversion, useZipExport, useConfigState, useValidation
+- **コンポーネント設計**: 再利用可能なUIコンポーネントライブラリ
+  - core/components/ui: Button, Modal, Table, Card等の基本UI部品
+  - core/components/shared: SettingsModal, VersionSelector等の共通機能
+- **React Hooks による状態管理**: localStorage統合、モーダル制御、画面状態管理を含む包括的なHooks実装
+
+### 変更
+- **フロントエンド起動方法**: バックエンドと分離して起動（開発時: Vite devサーバー ポート5173、本番: ビルド済みファイル配信）
+- **プロジェクト構造**: features/配下に機能別モジュール（reviewer, config-file-generator）を配置
+- **型安全性の向上**: すべてのコンポーネントとHooksにTypeScript型定義を適用
+- **設定ファイル更新**: v0.6.0をlatest版として設定
+  - `nginx/version-map.conf`: v0.6.0のルーティング追加、defaultポートを8060に変更
+  - `docker-compose.yml`: v0.6.0フロントエンド・ポート8060を追加
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: v0.6.0エントリ追加
+
+### 注意
+- **後方互換性**: v0.5.2以前のバージョンは引き続き利用可能（マルチバージョン構成維持）
+- **起動方法変更**: v0.6.0以降はフロントエンドとバックエンドを別々に起動する必要があります（詳細はREADME参照）
+
 ## [0.5.2] - 2026-01-13
 
 ### 追加
@@ -103,6 +132,7 @@
 
 | バージョン | 主な機能 |
 |------------|----------|
+| 0.6.0      | React + Vite + TypeScript移行、Tailwind v4、テスト環境構築 |
 | 0.5.2      | Bedrock Converse API対応、Amazon Novaモデル対応 |
 | 0.5.1      | OpenAI GPT-5.2対応 |
 | 0.5.0      | 複数回レビュー実行、一式ダウンロード |
