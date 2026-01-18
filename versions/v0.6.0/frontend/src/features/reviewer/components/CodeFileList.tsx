@@ -19,7 +19,7 @@ export function CodeFileList({
   onConvert,
   onDownload,
 }: CodeFileListProps) {
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(true)
 
   return (
     <div>

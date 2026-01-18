@@ -31,7 +31,7 @@ export function SpecFileList({
   onConvert,
   onDownload,
 }: SpecFileListProps) {
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(true)
 
   if (files.length === 0) return null
 
