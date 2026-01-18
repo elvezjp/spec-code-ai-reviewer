@@ -61,6 +61,14 @@
 
 uvが自動的に適切なPythonバージョンを使用します。システムにインストールされているPython 3.10以上のバージョンがそのまま利用されます。
 
+#### Node.js バージョン（v0.6.0以降）
+
+- **必須バージョン**: Node.js 18以上
+- **推奨バージョン**: Node.js 20 LTS または 22 LTS
+- **確認方法**: `node --version` で確認してください
+
+v0.6.0以降のフロントエンド（Vite + React + TypeScript）の開発・ビルドに必要です。v0.5.2以前のみ使用する場合は不要です。
+
 #### その他
 
 - [uv](https://docs.astral.sh/uv/) (Python パッケージマネージャー)
@@ -70,7 +78,11 @@ uvが自動的に適切なPythonバージョンを使用します。システム
 ```bash
 # uv をインストール（未インストールの場合）
 # 詳細: https://docs.astral.sh/uv/getting-started/installation/
-curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Node.js をインストール（v0.6.0以降を使用する場合）
+# 詳細: https://nodejs.org/
+# macOS (Homebrew): brew install node
+# Windows: https://nodejs.org/ からインストーラをダウンロード
 
 # リポジトリをクローン
 git clone git@github.com:elvezjp/spec-code-ai-reviewer.git
