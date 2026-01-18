@@ -13,7 +13,9 @@
 
 ## システム構成
 
-- **フロントエンド**: 単一HTMLファイル + Tailwind CSS (CDN)
+- **フロントエンド**:
+  - v0.6.0以降: Vite + React + TypeScript + Tailwind CSS
+  - v0.5.2以前: 単一HTMLファイル + Tailwind CSS (CDN)
 - **バックエンド**: Python / FastAPI
   - MarkItDown / excel2md (Excel→Markdown変換)
   - add-line-numbers準拠 (行番号付与)
@@ -59,6 +61,14 @@
 
 uvが自動的に適切なPythonバージョンを使用します。システムにインストールされているPython 3.10以上のバージョンがそのまま利用されます。
 
+#### Node.js バージョン（v0.6.0以降）
+
+- **必須バージョン**: Node.js 18以上
+- **推奨バージョン**: Node.js 20 LTS または 22 LTS
+- **確認方法**: `node --version` で確認してください
+
+v0.6.0以降のフロントエンド（Vite + React + TypeScript）の開発・ビルドに必要です。v0.5.2以前のみ使用する場合は不要です。
+
 #### その他
 
 - [uv](https://docs.astral.sh/uv/) (Python パッケージマネージャー)
@@ -68,7 +78,11 @@ uvが自動的に適切なPythonバージョンを使用します。システム
 ```bash
 # uv をインストール（未インストールの場合）
 # 詳細: https://docs.astral.sh/uv/getting-started/installation/
-curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Node.js をインストール（v0.6.0以降を使用する場合）
+# 詳細: https://nodejs.org/
+# macOS (Homebrew): brew install node
+# Windows: https://nodejs.org/ からインストーラをダウンロード
 
 # リポジトリをクローン
 git clone git@github.com:elvezjp/spec-code-ai-reviewer.git
@@ -91,10 +105,36 @@ aws configure
 
 ### 単一バージョンで起動する場合
 
-起動方法はバージョンごとに違いはありません（`uv sync` は各バージョンごとに実行が必要です）。
+#### v0.6.0以降（Vite + React版）
+
+v0.6.0以降はフロントエンドとバックエンドを別々に起動します。
+
+**ターミナル1: バックエンド起動**
 
 ```bash
-cd versions/v0.5.1/backend
+cd versions/v0.6.0/backend
+uv sync
+uv run uvicorn app.main:app --reload --port 8000
+```
+
+**ターミナル2: フロントエンド起動**
+
+```bash
+cd versions/v0.6.0/frontend
+npm install
+npm run dev
+```
+
+ブラウザで http://localhost:5173 にアクセス（Vite開発サーバー）
+
+**注意**: フロントエンドはViteの開発サーバー（ポート5173）で起動し、APIリクエストはバックエンド（ポート8000）にプロキシされます。
+
+#### v0.5.2以前（単一HTMLファイル版）
+
+v0.5.2以前はバックエンドのみ起動します（フロントエンドはバックエンドから配信）。
+
+```bash
+cd versions/v0.5.2/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -131,11 +171,19 @@ docker-compose down
 
 ### テスト実行
 
-各バージョンのバックエンドディレクトリでテストを実行します。
+各バージョンのディレクトリでテストを実行します。
 
 ```bash
-# v0.5.1 のテスト
-cd versions/v0.5.1/backend
+# v0.6.0 バックエンドのテスト
+cd versions/v0.6.0/backend
+uv run pytest tests/ -v
+
+# v0.6.0 フロントエンドのテスト
+cd versions/v0.6.0/frontend
+npm test
+
+# v0.5.2以前のテスト（バックエンドのみ）
+cd versions/v0.5.2/backend
 uv run pytest tests/ -v
 ```
 
@@ -263,7 +311,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # 開発用Nginx設定
 │   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.5.2    # シンボリックリンク（最新版を指す）
+├── latest -> versions/v0.6.0    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
@@ -277,9 +325,14 @@ spec-code-ai-reviewer/
 │   │   ├── frontend/
 │   │   ├── config-file-generator-spec.md
 │   │   └── spec.md
-│   └── v0.5.2/                  # 最新版
+│   ├── v0.5.2/                  # 旧バージョン
+│   │   ├── backend/
+│   │   ├── frontend/
+│   │   ├── config-file-generator-spec.md
+│   │   └── spec.md
+│   └── v0.6.0/                  # 最新版（Vite + React）
 │       ├── backend/
-│       ├── frontend/
+│       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
 │       └── spec.md
 │
@@ -334,25 +387,26 @@ git subtree pull --prefix=markitdown https://github.com/microsoft/markitdown.git
 
 | バージョン | ポート |
 |-----------|-------|
-| v0.5.2 (latest) | 8052 |
+| v0.6.0 (latest) | 8060 |
+| v0.5.2 | 8052 |
 | v0.5.1 | 8051 |
 | v0.5.0 | 8050 |
 
 ### 新しいバージョンを追加する際の変更箇所
 
-新バージョン（例: v0.6.0）を追加する場合、以下のファイルを修正します。
+新バージョン（例: v0.7.0）を追加する場合、以下のファイルを修正します。
 
 #### バージョンディレクトリの追加と更新
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `versions/v0.6.0/` | 新バージョンのコードを配置 |
-| `versions/v0.6.0/spec.md` | バージョン番号を更新（冒頭、レビュー情報例、テスト項目） |
-| `versions/v0.6.0/config-file-generator-spec.md` | 対象バージョンを更新 |
-| `versions/v0.6.0/frontend/config-file-generator/index.html` | SCHEMAのversion、info.versionを更新 |
-| `versions/v0.6.0/backend/pyproject.toml` | versionを更新 |
-| `latest` シンボリックリンク | 新バージョンを指すように更新（`rm latest && ln -s versions/v0.6.0 latest`） |
-| `versions/v0.5.0/frontend/index.html` | VERSIONS配列を更新追加（`scripts/sync_version.py`実行） |
+| `versions/v0.7.0/` | 新バージョンのコードを配置 |
+| `versions/v0.7.0/spec.md` | バージョン番号を更新（冒頭、レビュー情報例、テスト項目） |
+| `versions/v0.7.0/config-file-generator-spec.md` | 対象バージョンを更新 |
+| `versions/v0.7.0/frontend/package.json` | versionを更新（v0.6.0以降） |
+| `versions/v0.7.0/backend/pyproject.toml` | versionを更新 |
+| `latest` シンボリックリンク | 新バージョンを指すように更新（`rm latest && ln -s versions/v0.7.0 latest`） |
+| `versions/v0.5.x/frontend/index.html` | VERSIONS配列を更新追加（`scripts/sync_version.py`実行、v0.5.x以前のみ） |
 
 #### 設定ファイルとドキュメントの更新
 
@@ -374,7 +428,8 @@ VERSIONS配列に新バージョンを追加します。`latest`はシンボリ�
 ```javascript
 const VERSIONS = [
   // latestはシンボリックリンクのため、実体バージョンのみ起動
-  { name: 'spec-code-ai-reviewer-v0.6.0', cwd: 'versions/v0.6.0', port: 8060 },  // 追加
+  { name: 'spec-code-ai-reviewer-v0.7.0', cwd: 'versions/v0.7.0', port: 8070 },  // 追加
+  { name: 'spec-code-ai-reviewer-v0.6.0', cwd: 'versions/v0.6.0', port: 8060 },
   { name: 'spec-code-ai-reviewer-v0.5.0', cwd: 'versions/v0.5.0', port: 8050 },
 ];
 ```
@@ -388,14 +443,16 @@ const VERSIONS = [
 ```nginx
 # Cookie値に応じてバックエンドポートを振り分け
 map $cookie_app_version $backend_port {
-    "v0.6.0"  8060;  # 追加
+    "v0.7.0"  8070;  # 追加
+    "v0.6.0"  8060;
     "v0.5.0"  8050;
-    default   8060;  # latest (v0.6.0)
+    default   8070;  # latest (v0.7.0)
 }
 
 # Cookie値に応じてフロントエンドを振り分け
 map $cookie_app_version $frontend_root {
-    "v0.6.0"  /var/www/spec-code-ai-reviewer/versions/v0.6.0/frontend;  # 追加
+    "v0.7.0"  /var/www/spec-code-ai-reviewer/versions/v0.7.0/frontend;  # 追加
+    "v0.6.0"  /var/www/spec-code-ai-reviewer/versions/v0.6.0/frontend;
     "v0.5.0"  /var/www/spec-code-ai-reviewer/versions/v0.5.0/frontend;
     default   /var/www/spec-code-ai-reviewer/latest/frontend;
 }
