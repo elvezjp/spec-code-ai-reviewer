@@ -56,7 +56,7 @@ export function useZipExport(): UseZipExportReturn {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `review-result-${executionNumber}.md`
+    a.download = `review-report-${executionNumber}.md`
     a.click()
     URL.revokeObjectURL(url)
   }, [])
