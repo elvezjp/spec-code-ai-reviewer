@@ -16,9 +16,11 @@ export function useZipExport(): UseZipExportReturn {
     async (data: ReviewExecutionData, executionNumber: number) => {
       const zip = new JSZip()
 
-      // Add README
-      const readme = generateReadmeMarkdown(data.reviewMeta, executionNumber)
-      zip.file('README.md', readme)
+      // Generate timestamp from executedAt (YYYY/MM/DD HH:MM:SS → YYYYMMDD-HHMMSS)
+      const timestamp = data.reviewMeta.executedAt
+        .replace(/[\/\s:]/g, '')
+        .replace(/(\d{8})(\d{6})/, '$1-$2')
+      const executionNumberFormatted = String(executionNumber).padStart(3, '0')
 
       // Add system prompt
       const systemPromptMd = generateSystemPromptMarkdown(data.systemPrompt)
@@ -33,12 +35,16 @@ export function useZipExport(): UseZipExportReturn {
       // Add review result
       zip.file('review-result.md', data.report)
 
+      // Add README
+      const readme = generateReadmeMarkdown(data.reviewMeta, executionNumber)
+      zip.file('README.md', readme)
+
       // Generate and download
       const content = await zip.generateAsync({ type: 'blob' })
       const url = URL.createObjectURL(content)
       const a = document.createElement('a')
       a.href = url
-      a.download = `review-data-${executionNumber}.zip`
+      a.download = `${timestamp}-${executionNumberFormatted}-review-data.zip`
       a.click()
       URL.revokeObjectURL(url)
     },
