@@ -1,17 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Layout, Header, Card } from '@core/index'
 import { ReviewerPage } from '@/pages/ReviewerPage'
-
-function ConfigGeneratorDemo() {
-  return (
-    <Layout>
-      <Header title="設定ファイルジェネレーター" />
-      <Card>
-        <p className="text-gray-600">Phase 4で実装予定</p>
-      </Card>
-    </Layout>
-  )
-}
+import { ConfigGeneratorPage } from '@/pages/ConfigGeneratorPage'
 
 function NotFoundPage() {
   return (
@@ -29,7 +19,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<ReviewerPage />} />
-        <Route path="/config-generator" element={<ConfigGeneratorDemo />} />
+        <Route path="/config-generator" element={<ConfigGeneratorPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
