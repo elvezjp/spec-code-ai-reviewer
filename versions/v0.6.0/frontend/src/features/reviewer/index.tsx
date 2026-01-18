@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useCallback } from 'react'
 import { Settings, FileText } from 'lucide-react'
 import {
   Layout,
@@ -19,6 +19,7 @@ import {
 import type { ScreenState } from '@core/types'
 import { SpecTypesSection, SpecFileList, CodeFileList, ReviewResult, ExecutingScreen } from './components'
 import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport } from './hooks'
+import { testLlmConnection } from './services/api'
 
 const APP_INFO = {
   name: 'spec-code-ai-reviewer',
@@ -70,10 +71,12 @@ export function Reviewer() {
     updatePromptValue,
     reviewerConfig,
     configFilename,
+    configModified,
     configLoadStatus,
     loadConfigFile,
     saveConfigToBrowser,
     clearSavedConfig,
+    hasSavedConfig,
   } = useReviewerSettings()
 
   // Review execution
@@ -147,6 +150,30 @@ export function Reviewer() {
     const file = new File([content], filename, { type: 'text/markdown' })
     await loadConfigFile(file)
   }
+
+  // LLM connection test handler
+  const handleTestConnection = useCallback(async (): Promise<boolean> => {
+    try {
+      // Build request based on config
+      if (llmConfig) {
+        const result = await testLlmConnection({
+          provider: llmConfig.provider,
+          model: selectedModel || llmConfig.model,
+          apiKey: llmConfig.apiKey,
+          accessKeyId: llmConfig.accessKeyId,
+          secretAccessKey: llmConfig.secretAccessKey,
+          region: llmConfig.region,
+        })
+        return result.status === 'connected'
+      } else {
+        // No config - test system LLM
+        const result = await testLlmConnection({})
+        return result.status === 'connected'
+      }
+    } catch {
+      return false
+    }
+  }, [llmConfig, selectedModel])
 
   // Render main screen content
   const mainScreen = (
@@ -296,11 +323,10 @@ export function Reviewer() {
         onClearStorage={clearSavedConfig}
         loadedConfigFilename={configFilename || undefined}
         configLoadStatus={configLoadStatus || undefined}
-        onTestConnection={async () => {
-          // TODO: Implement connection test
-          return true
-        }}
-        isSystemFallback={!llmConfig}
+        isConfigSavedToBrowser={hasSavedConfig()}
+        isConfigModified={configModified}
+        onTestConnection={handleTestConnection}
+        isSystemFallback={!reviewerConfig?.llm}
         systemPromptPresets={systemPromptPresets}
         extensionSections={[<SpecTypesSection key="spec-types" specTypes={specTypesConfig} />]}
       />

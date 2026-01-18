@@ -30,6 +30,8 @@ interface SettingsModalProps {
     prompts?: string
   }
   configGeneratorUrl?: string
+  isConfigSavedToBrowser?: boolean
+  isConfigModified?: boolean
   // LLM設定セクション用
   llmSettings?: LlmSettings
   onModelChange?: (model: string) => void
@@ -59,6 +61,8 @@ export function SettingsModal({
   loadedConfigFilename,
   configLoadStatus,
   configGeneratorUrl,
+  isConfigSavedToBrowser,
+  isConfigModified,
   llmSettings,
   onModelChange,
   onTestConnection,
@@ -85,12 +89,13 @@ export function SettingsModal({
             loadedFilename={loadedConfigFilename}
             loadStatus={configLoadStatus}
             generatorUrl={configGeneratorUrl}
+            isSavedToBrowser={isConfigSavedToBrowser}
+            isModified={isConfigModified}
           />
         )}
 
       {/* LLM設定 */}
       {mergedSections.llmSettings &&
-        llmSettings &&
         onModelChange &&
         onTestConnection && (
           <LlmSettingsSection

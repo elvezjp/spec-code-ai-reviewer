@@ -66,13 +66,29 @@ export async function executeReview(
   return await response.json()
 }
 
+export interface TestConnectionRequest {
+  provider?: string
+  model?: string
+  apiKey?: string
+  accessKeyId?: string
+  secretAccessKey?: string
+  region?: string
+}
+
+export interface TestConnectionResponse {
+  status: 'connected' | 'error'
+  provider?: string
+  model?: string
+  error?: string
+}
+
 export async function testLlmConnection(
-  llmConfig: ReviewRequest['llmConfig']
-): Promise<{ success: boolean; error?: string }> {
-  const response = await fetch(`${getBackendUrl()}/api/llm/test`, {
+  config?: TestConnectionRequest
+): Promise<TestConnectionResponse> {
+  const response = await fetch(`${getBackendUrl()}/api/test-connection`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ llmConfig }),
+    body: JSON.stringify(config || {}),
   })
 
   return await response.json()

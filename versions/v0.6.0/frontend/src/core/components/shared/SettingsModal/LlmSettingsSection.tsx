@@ -2,10 +2,18 @@ import type { LlmSettings } from '../../../types'
 import { Button } from '../../ui/Button'
 
 interface LlmSettingsSectionProps {
-  settings: LlmSettings
+  settings?: LlmSettings
   onModelChange: (model: string) => void
   onTestConnection: () => Promise<boolean>
   isSystemFallback?: boolean
+}
+
+// デフォルト設定（設定ファイルがない場合に使用）
+const DEFAULT_SETTINGS: LlmSettings = {
+  provider: 'bedrock',
+  maxTokens: 0,
+  models: [],
+  selectedModel: undefined,
 }
 
 export function LlmSettingsSection({
@@ -14,6 +22,8 @@ export function LlmSettingsSection({
   onTestConnection,
   isSystemFallback = false,
 }: LlmSettingsSectionProps) {
+  // settingsがundefinedの場合はデフォルト値を使用
+  const effectiveSettings = settings || DEFAULT_SETTINGS
   const handleTestConnection = async () => {
     const statusEl = document.getElementById('llm-connection-status')
     if (!statusEl) return
@@ -62,21 +72,21 @@ export function LlmSettingsSection({
       {/* プロバイダー表示 */}
       <div className="mb-4">
         <label className="block text-sm text-gray-600 mb-1">プロバイダー:</label>
-        <div className="text-gray-800">
-          {settings.provider
-            ? providerDisplayName[settings.provider]
+        <div className={isSystemFallback ? 'text-gray-500' : 'text-gray-800'}>
+          {!isSystemFallback && effectiveSettings.provider
+            ? providerDisplayName[effectiveSettings.provider]
             : '-'}
         </div>
       </div>
 
       {/* 出力最大トークン数（設定ファイル指定時のみ表示） */}
-      {!isSystemFallback && settings.maxTokens > 0 && (
+      {!isSystemFallback && effectiveSettings.maxTokens > 0 && (
         <div className="mb-4">
           <label className="block text-sm text-gray-600 mb-1">
             出力最大トークン数:
           </label>
           <div className="text-gray-800">
-            {settings.maxTokens.toLocaleString()}
+            {effectiveSettings.maxTokens.toLocaleString()}
           </div>
         </div>
       )}
@@ -85,15 +95,15 @@ export function LlmSettingsSection({
       <div className="mb-4">
         <label className="block text-sm text-gray-600 mb-1">使用モデル:</label>
         <select
-          value={settings.selectedModel || ''}
+          value={effectiveSettings.selectedModel || ''}
           onChange={(e) => onModelChange(e.target.value)}
           className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
-          disabled={isSystemFallback || settings.models.length === 0}
+          disabled={isSystemFallback || effectiveSettings.models.length === 0}
         >
-          {isSystemFallback || settings.models.length === 0 ? (
+          {isSystemFallback || effectiveSettings.models.length === 0 ? (
             <option value="">システムのデフォルトモデルを使用</option>
           ) : (
-            settings.models.map((model) => (
+            effectiveSettings.models.map((model) => (
               <option key={model} value={model}>
                 {model}
               </option>

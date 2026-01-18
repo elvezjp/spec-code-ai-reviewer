@@ -12,6 +12,8 @@ interface ConfigFileSectionProps {
     prompts?: string
   }
   generatorUrl?: string
+  isSavedToBrowser?: boolean
+  isModified?: boolean
 }
 
 export function ConfigFileSection({
@@ -21,6 +23,8 @@ export function ConfigFileSection({
   loadedFilename,
   loadStatus,
   generatorUrl = '/config-generator',
+  isSavedToBrowser = false,
+  isModified = false,
 }: ConfigFileSectionProps) {
   // loadedFilenameがあれば読み込み済みとみなす
   const isLoaded = !!loadedFilename
@@ -32,6 +36,31 @@ export function ConfigFileSection({
     const content = await file.text()
     onFileLoad(content, file.name)
   }
+
+  const handleClearSaved = () => {
+    if (window.confirm('ブラウザに保存された設定をクリアしますか？')) {
+      onClearSaved()
+    }
+  }
+
+  // 保存ステータスメッセージを生成
+  const getSaveStatusMessage = (): { text: string; className: string } | null => {
+    if (!isSavedToBrowser) {
+      return null
+    }
+    if (isModified) {
+      return {
+        text: '設定が変更されています（保存していません）',
+        className: 'text-sm text-orange-600',
+      }
+    }
+    return {
+      text: 'ブラウザに設定が保存されています（次回自動読込）',
+      className: 'text-sm text-green-600',
+    }
+  }
+
+  const saveStatus = getSaveStatusMessage()
 
   return (
     <div className="mb-6 border-t border-gray-200 pt-6">
@@ -87,6 +116,13 @@ export function ConfigFileSection({
         )}
       </FileDropzone>
 
+      {/* 保存ステータス表示 */}
+      {saveStatus && (
+        <div className="mb-3">
+          <p className={saveStatus.className}>{saveStatus.text}</p>
+        </div>
+      )}
+
       {/* ブラウザ保存ボタン */}
       <div className="flex gap-2 mb-2">
         <Button
@@ -100,7 +136,7 @@ export function ConfigFileSection({
         <Button
           variant="secondary"
           size="sm"
-          onClick={onClearSaved}
+          onClick={handleClearSaved}
           className="flex-1"
         >
           保存した設定をクリア
