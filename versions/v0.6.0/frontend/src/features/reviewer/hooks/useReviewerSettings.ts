@@ -7,6 +7,12 @@ import {
   DEFAULT_LLM_SETTINGS,
 } from '@core/hooks/useSettings'
 
+export interface ConfigLoadStatus {
+  llm?: string
+  specTypes?: string
+  prompts?: string
+}
+
 interface UseReviewerSettingsReturn {
   // LLM settings
   llmConfig: LlmConfig | null
@@ -29,6 +35,7 @@ interface UseReviewerSettingsReturn {
   reviewerConfig: ReviewerConfig | null
   configFilename: string | null
   configModified: boolean
+  configLoadStatus: ConfigLoadStatus | null
   loadConfigFile: (file: File) => Promise<void>
   saveConfigToBrowser: () => void
   clearSavedConfig: () => void
@@ -42,6 +49,7 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
   const [reviewerConfig, setReviewerConfig] = useState<ReviewerConfig | null>(null)
   const [configFilename, setConfigFilename] = useState<string | null>(null)
   const [configModified, setConfigModified] = useState(false)
+  const [configLoadStatus, setConfigLoadStatus] = useState<ConfigLoadStatus | null>(null)
   const [selectedModel, setSelectedModel] = useState('')
   const [selectedPreset, setSelectedPreset] = useState('')
   const [currentPromptValues, setCurrentPromptValues] = useState<SystemPromptValues>({
@@ -217,6 +225,15 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
 
       // LLM section
       if (currentSection === 'llm') {
+        // インデントされたモデルリスト項目（  - model-name）
+        if (inModels && (trimmed.startsWith('- ') || line.startsWith('  - ') || line.startsWith('    - '))) {
+          const model = trimmed.startsWith('- ') ? trimmed.substring(2).trim() : trimmed.substring(2).trim()
+          if (model && llmData.models && !model.includes(':')) {
+            llmData.models.push(model)
+          }
+          continue
+        }
+
         if (trimmed.startsWith('- ')) {
           const keyValue = trimmed.substring(2)
           const colonIndex = keyValue.indexOf(':')
@@ -228,21 +245,12 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
               inModels = true
               llmData.models = []
             } else {
+              inModels = false
               if (key === 'maxTokens') {
                 value = parseInt(value as string, 10)
               }
               (llmData as Record<string, unknown>)[key] = value
             }
-          }
-        } else if (inModels && trimmed.startsWith('- ')) {
-          const model = trimmed.substring(2).trim()
-          if (model && llmData.models) {
-            llmData.models.push(model)
-          }
-        } else if (trimmed.startsWith('  - ') && inModels) {
-          const model = trimmed.substring(4).trim()
-          if (model && llmData.models) {
-            llmData.models.push(model)
           }
         }
       }
@@ -309,6 +317,23 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
     setConfigFilename(file.name)
     setConfigModified(true)
 
+    // 更新結果のステータスを生成
+    const llmUpdated = !!(parsed.llm && parsed.llm.provider)
+    const specUpdated = !!(parsed.specTypes && parsed.specTypes.length > 0)
+    const promptsUpdated = !!(parsed.systemPrompts && parsed.systemPrompts.length > 0)
+
+    setConfigLoadStatus({
+      llm: llmUpdated
+        ? '・LLM設定を更新しました'
+        : '・LLM設定は更新されませんでした',
+      specTypes: specUpdated
+        ? '・設計書種別と注意事項を更新しました'
+        : '・設計書種別と注意事項は更新されませんでした',
+      prompts: promptsUpdated
+        ? `・システムプロンプトプリセットを更新しました（${parsed.systemPrompts?.length}件）`
+        : '・システムプロンプトプリセットは更新されませんでした',
+    })
+
     // Set initial model if available
     if (parsed.llm?.models && parsed.llm.models.length > 0) {
       setSelectedModel(parsed.llm.models[0])
@@ -326,6 +351,7 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
     setReviewerConfig(null)
     setConfigFilename(null)
     setConfigModified(false)
+    setConfigLoadStatus(null)
     setSelectedModel('')
   }, [])
 
@@ -342,6 +368,23 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
         setReviewerConfig(parsed)
         setConfigFilename('保存済み設定')
         setConfigModified(false)
+
+        // 保存済み設定のステータスを生成
+        const llmUpdated = !!(parsed.llm && parsed.llm.provider)
+        const specUpdated = !!(parsed.specTypes && parsed.specTypes.length > 0)
+        const promptsUpdated = !!(parsed.systemPrompts && parsed.systemPrompts.length > 0)
+
+        setConfigLoadStatus({
+          llm: llmUpdated
+            ? '・LLM設定を読み込みました'
+            : '・LLM設定は設定されていません',
+          specTypes: specUpdated
+            ? '・設計書種別と注意事項を読み込みました'
+            : '・設計書種別と注意事項は設定されていません',
+          prompts: promptsUpdated
+            ? `・システムプロンプトプリセットを読み込みました（${parsed.systemPrompts?.length}件）`
+            : '・システムプロンプトプリセットは設定されていません',
+        })
 
         if (parsed.llm?.models && parsed.llm.models.length > 0) {
           setSelectedModel(parsed.llm.models[0])
@@ -378,6 +421,7 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
     reviewerConfig,
     configFilename,
     configModified,
+    configLoadStatus,
     loadConfigFile,
     saveConfigToBrowser,
     clearSavedConfig,

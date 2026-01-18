@@ -58,6 +58,7 @@ export function Reviewer() {
   // Settings
   const {
     llmConfig,
+    selectedModel,
     setSelectedModel,
     specTypesConfig,
     getTypeNote,
@@ -69,6 +70,7 @@ export function Reviewer() {
     updatePromptValue,
     reviewerConfig,
     configFilename,
+    configLoadStatus,
     loadConfigFile,
     saveConfigToBrowser,
     clearSavedConfig,
@@ -283,12 +285,17 @@ export function Reviewer() {
         isOpen={settingsModal.isOpen}
         onClose={settingsModal.close}
         appInfo={APP_INFO}
-        llmSettings={reviewerConfig?.llm}
+        llmSettings={
+          reviewerConfig?.llm
+            ? { ...reviewerConfig.llm, selectedModel }
+            : undefined
+        }
         onModelChange={setSelectedModel}
         onConfigFileLoad={handleConfigFileLoad}
         onSaveToStorage={saveConfigToBrowser}
         onClearStorage={clearSavedConfig}
         loadedConfigFilename={configFilename || undefined}
+        configLoadStatus={configLoadStatus || undefined}
         onTestConnection={async () => {
           // TODO: Implement connection test
           return true

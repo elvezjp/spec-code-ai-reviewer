@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { FileDropzone } from '../../ui/FileDropzone'
 import { Button } from '../../ui/Button'
 
@@ -23,7 +22,8 @@ export function ConfigFileSection({
   loadStatus,
   generatorUrl = '/config-generator',
 }: ConfigFileSectionProps) {
-  const [isLoaded, setIsLoaded] = useState(false)
+  // loadedFilenameがあれば読み込み済みとみなす
+  const isLoaded = !!loadedFilename
 
   const handleFilesSelect = async (files: File[]) => {
     if (files.length === 0) return
@@ -31,7 +31,6 @@ export function ConfigFileSection({
     const file = files[0]
     const content = await file.text()
     onFileLoad(content, file.name)
-    setIsLoaded(true)
   }
 
   return (
@@ -63,13 +62,19 @@ export function ConfigFileSection({
           <div className="text-left">
             <p className="text-gray-700 font-medium mb-1">{loadedFilename}</p>
             {loadStatus?.llm && (
-              <p className="text-sm text-gray-600">{loadStatus.llm}</p>
+              <p className={`text-sm ${loadStatus.llm.includes('更新しました') || loadStatus.llm.includes('読み込みました') ? 'text-green-600' : 'text-gray-500'}`}>
+                {loadStatus.llm}
+              </p>
             )}
             {loadStatus?.specTypes && (
-              <p className="text-sm text-gray-600">{loadStatus.specTypes}</p>
+              <p className={`text-sm ${loadStatus.specTypes.includes('更新しました') || loadStatus.specTypes.includes('読み込みました') ? 'text-green-600' : 'text-gray-500'}`}>
+                {loadStatus.specTypes}
+              </p>
             )}
             {loadStatus?.prompts && (
-              <p className="text-sm text-gray-600">{loadStatus.prompts}</p>
+              <p className={`text-sm ${loadStatus.prompts.includes('更新しました') || loadStatus.prompts.includes('読み込みました') ? 'text-green-600' : 'text-gray-500'}`}>
+                {loadStatus.prompts}
+              </p>
             )}
           </div>
         ) : (
