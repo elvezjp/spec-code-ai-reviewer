@@ -1,73 +1,95 @@
-# React + TypeScript + Vite
+# v0.6.0 フロントエンド
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Vite + React + TypeScript で構築されたフロントエンドアプリケーションです。
 
-Currently, two official plugins are available:
+## 技術スタック
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **フレームワーク**: React 19 + TypeScript
+- **ビルドツール**: Vite 7
+- **スタイリング**: Tailwind CSS v4
+- **アイコン**: lucide-react
+- **ルーティング**: React Router v7
+- **テスト**: Vitest + Testing Library
 
-## React Compiler
+## ディレクトリ構成
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── core/                    # 共通コンポーネント・フック
+│   ├── components/
+│   │   ├── ui/              # 汎用UIコンポーネント（Button, Card, Modal等）
+│   │   └── shared/          # 機能横断コンポーネント（SettingsModal等）
+│   ├── hooks/               # 共通カスタムフック
+│   └── types/               # 共通型定義
+├── features/                # 機能別モジュール
+│   ├── reviewer/            # レビュー機能
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── services/
+│   │   └── types/
+│   └── config-file-generator/  # 設定ファイルジェネレーター機能
+│       ├── components/
+│       ├── hooks/
+│       ├── schema/
+│       └── services/
+├── pages/                   # ページコンポーネント
+├── __tests__/               # テストファイル
+├── App.tsx                  # ルートコンポーネント
+└── main.tsx                 # エントリーポイント
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 起動方法
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 前提条件
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Node.js 20以上
+- npm
+
+### 開発サーバー起動
+
+```bash
+# 依存関係のインストール
+npm install
+
+# 開発サーバー起動（http://localhost:5173）
+npm run dev
 ```
+
+**注意**: バックエンドAPIを使用するため、別ターミナルでバックエンドも起動してください。
+
+```bash
+# バックエンド起動（別ターミナル）
+cd ../backend
+uv sync
+uv run uvicorn app.main:app --reload --port 8000
+```
+
+### 本番ビルド
+
+```bash
+# ビルド（dist/に出力）
+npm run build
+
+# ビルド結果のプレビュー
+npm run preview
+```
+
+## コマンド一覧
+
+| コマンド | 説明 |
+|---------|------|
+| `npm run dev` | 開発サーバー起動 |
+| `npm run build` | 本番ビルド |
+| `npm run preview` | ビルド結果のプレビュー |
+| `npm run lint` | ESLintによる静的解析 |
+| `npm test` | テスト実行（watchモード） |
+| `npm run test:run` | テスト実行（単発） |
+| `npm run test:coverage` | カバレッジ付きテスト実行 |
+
+## 環境変数
+
+| 変数名 | 説明 | デフォルト値 |
+|--------|------|-------------|
+| `VITE_API_URL` | バックエンドAPIのURL | `http://localhost:8000` |
+
+開発時は `vite.config.ts` のプロキシ設定により、`/api` へのリクエストは自動的にバックエンドに転送されます。

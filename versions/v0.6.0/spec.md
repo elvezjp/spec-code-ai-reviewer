@@ -1,6 +1,6 @@
 # 設計書-Javaプログラム突合 AIレビュアー 仕様書
 
-**バージョン: 0.5.2**
+**バージョン: 0.6.0**
 
 ## 1. 概要
 
@@ -20,7 +20,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                      フロントエンド                          │
-│              (単一HTMLファイル + Tailwind CSS)               │
+│           (Vite + React + TypeScript + Tailwind CSS)        │
 │                                                             │
 │  設定ファイル (reviewer-config.md) 管理                      │
 │  - ユーザーLLM設定（Bedrock/Anthropic/OpenAI）              │
@@ -466,7 +466,7 @@ AIへの指示内容をユーザーがカスタマイズ可能。以下の4項�
 
 | 項目 | 内容 |
 |------|------|
-| バージョン | v0.3.0 |
+| バージョン | v0.6.0 |
 | モデルID | claude-haiku-4-5-20251001 |
 | レビュー実行日時 | 2024/12/21 14:30 |
 | 入力トークン数 | 12,345 |
@@ -550,7 +550,7 @@ AIへの指示内容をユーザーがカスタマイズ可能。以下の4項�
 
 | 項目 | 内容 |
 |------|------|
-| バージョン | v0.5.1 |
+| バージョン | v0.6.0 |
 | モデルID | claude-3-5-sonnet-20241022 |
 | レビュー実行日時 | 2024/12/28 14:30 |
 | 実行回数 | 1回目 |
@@ -1101,7 +1101,7 @@ UIに現在の保存状態を表示する:
 ├─────────────────────────────────────────────────────────────┤
 │ ■ プログラム情報                                            │
 │   プログラム名: spec-code-ai-reviewer                          │
-│   バージョン: v0.4.0                                        │
+│   バージョン: v0.6.0                                        │
 │   © 株式会社エルブズ (elvez.co.jp)                          │
 ├─────────────────────────────────────────────────────────────┤
 │ ■ 設定ファイル                                              │
@@ -1446,7 +1446,7 @@ OpenAI:
 ```json
 {
   "success": true,
-  "report": "# 設計書-Javaプログラム突合 AIレビュアー レビューレポート\n\n## レビュー情報\n\n| 項目 | 内容 |\n|------|------|\n| バージョン | v0.3.0 |\n| レビュー実行日時 | 2024/12/21 14:30 |\n\n### 設計書\n\n...\n\n---\n\n## AIによるレビュー結果\n\n以下はAIが出力したレビュー結果です。\n\n（LLM出力）\n...",
+  "report": "# 設計書-Javaプログラム突合 AIレビュアー レビューレポート\n\n## レビュー情報\n\n| 項目 | 内容 |\n|------|------|\n| バージョン | v0.6.0 |\n| レビュー実行日時 | 2024/12/21 14:30 |\n\n### 設計書\n\n...\n\n---\n\n## AIによるレビュー結果\n\n以下はAIが出力したレビュー結果です。\n\n（LLM出力）\n...",
   "reviewMeta": {
     "version": "v0.3.0",
     "modelId": "claude-haiku-4-5-20251001",
@@ -1521,7 +1521,7 @@ OpenAI:
 ```json
 {
   "status": "healthy",
-  "version": "0.4.0"
+  "version": "0.6.0"
 }
 ```
 
@@ -1762,128 +1762,43 @@ OpenAI:
 
 | 項目 | 技術 |
 |------|------|
-| 構成 | 単一HTMLファイル（ビルド不要） |
-| スタイリング | Tailwind CSS (CDN) |
+| 構成 | Vite + React + TypeScript |
+| スタイリング | Tailwind CSS v4 |
 | HTTPクライアント | fetch API |
-| 状態管理 | JavaScript変数 |
+| 状態管理 | React Hooks (useState, useReducer) |
+| ルーティング | React Router v7 |
+| アイコン | lucide-react |
+| テスト | Vitest + Testing Library |
 
-※ 画面モック（mock/index.html）を修正して本番利用する
+#### フロントエンドのアーキテクチャ
 
-#### フロントエンドの修正箇所
+フロントエンドはfeature-basedアーキテクチャを採用し、以下の構成で実装する：
 
-画面モック（mock/index.html）に対して以下の修正を行う：
+| ディレクトリ | 説明 |
+|-------------|------|
+| `src/core/` | 共通コンポーネント・フック・型定義 |
+| `src/features/` | 機能別モジュール（reviewer, config-file-generator） |
+| `src/pages/` | ページコンポーネント |
+| `src/__tests__/` | テストファイル |
 
-| 修正対象 | 修正内容 |
-|----------|----------|
-| `convertExcelToMarkdown()` | SheetJSによるクライアント処理 → バックエンドAPI呼び出しに変更 |
-| `addLineNumbers()` | クライアント処理 → バックエンドAPI呼び出しに変更 |
-| `executeReview()` | モック表示 → バックエンドAPI呼び出しに変更 |
-| XLSX.js CDN | 削除（バックエンドで処理するため不要） |
-| 設定モーダル | APIキー入力欄を削除（バックエンドで認証） |
-| エラーハンドリング | API通信エラー時の表示を追加 |
+**主要なコンポーネント構成:**
 
-**修正後の関数例:**
+| コンポーネント | 説明 |
+|---------------|------|
+| `core/components/ui/` | Button, Card, Modal, Table等の汎用UIコンポーネント |
+| `core/components/shared/` | SettingsModal, TokenEstimator等の機能横断コンポーネント |
+| `features/reviewer/` | レビュー機能（ファイル変換、レビュー実行、結果表示） |
+| `features/config-file-generator/` | 設定ファイルジェネレーター機能 |
 
-```javascript
-// Excel→Markdown変換（API呼び出し版）
-async function convertExcelToMarkdown() {
-  if (!specFile) return;
+**主要なカスタムフック:**
 
-  document.getElementById('spec-status').textContent = '変換中...';
-
-  const formData = new FormData();
-  formData.append('file', specFile);
-
-  try {
-    const response = await fetch('/api/convert/excel-to-markdown', {
-      method: 'POST',
-      body: formData
-    });
-
-    if (!response.ok) {
-      throw new Error('変換に失敗しました');
-    }
-
-    const result = await response.json();
-    specMarkdown = result.markdown;
-
-    document.getElementById('spec-download-btn').disabled = false;
-    document.getElementById('spec-status').textContent = '✅ 変換済み';
-    document.getElementById('spec-preview-container').classList.remove('hidden');
-    document.getElementById('spec-preview-content').textContent = specMarkdown;
-  } catch (error) {
-    document.getElementById('spec-status').textContent = '❌ ' + error.message;
-  }
-}
-
-// 行番号付与（API呼び出し版）
-async function addLineNumbers() {
-  if (!codeFile) return;
-
-  document.getElementById('code-status').textContent = '変換中...';
-
-  const formData = new FormData();
-  formData.append('file', codeFile);
-
-  try {
-    const response = await fetch('/api/convert/add-line-numbers', {
-      method: 'POST',
-      body: formData
-    });
-
-    if (!response.ok) {
-      throw new Error('変換に失敗しました');
-    }
-
-    const result = await response.json();
-    codeWithLineNumbers = result.content;
-
-    document.getElementById('code-download-btn').disabled = false;
-    document.getElementById('code-status').textContent = '✅ 変換済み';
-    document.getElementById('code-preview-container').classList.remove('hidden');
-    document.getElementById('code-preview-content').textContent = codeWithLineNumbers;
-  } catch (error) {
-    document.getElementById('code-status').textContent = '❌ ' + error.message;
-  }
-}
-
-// レビュー実行（API呼び出し版）
-async function executeReview() {
-  showScreen('loading-screen');
-
-  const systemPrompt = {
-    role: document.getElementById('prompt-role').value,
-    purpose: document.getElementById('prompt-purpose').value,
-    format: document.getElementById('prompt-format').value,
-    notes: document.getElementById('prompt-notes').value
-  };
-
-  try {
-    const response = await fetch('/api/review', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        specMarkdown: specMarkdown,
-        specFilename: specFile.name,
-        codeWithLineNumbers: codeWithLineNumbers,
-        codeFilename: codeFile.name,
-        systemPrompt: systemPrompt
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error('レビュー実行に失敗しました');
-    }
-
-    const result = await response.json();
-    document.getElementById('report-content').textContent = result.report;
-    showScreen('result-screen');
-  } catch (error) {
-    alert(error.message);
-    showScreen('main-screen');
-  }
-}
-```
+| フック | 説明 |
+|--------|------|
+| `useSettings` | 設定ファイル・LLM設定の管理 |
+| `useTokenEstimation` | トークン数の推定 |
+| `useFileConversion` | ファイル変換処理 |
+| `useReviewExecution` | レビュー実行処理 |
+| `useZipExport` | ZIP形式でのエクスポート |
 
 ### 6.2 バックエンド
 
@@ -1982,12 +1897,38 @@ async function executeReview() {
 
 ## 8. ディレクトリ構成
 
-本バージョン（v0.4.0）のディレクトリ構成を示す。
+本バージョン（v0.6.0）のディレクトリ構成を示す。
 
 ```
-versions/v0.4.0/
-├── frontend/                    # フロントエンド
-│   └── index.html               # 単一HTMLファイル
+versions/v0.6.0/
+├── frontend/                    # フロントエンド（Vite + React + TypeScript）
+│   ├── package.json             # npm設定
+│   ├── vite.config.ts           # Vite設定
+│   ├── tsconfig.json            # TypeScript設定
+│   ├── index.html               # エントリーポイントHTML
+│   ├── src/
+│   │   ├── main.tsx             # Reactエントリーポイント
+│   │   ├── App.tsx              # ルートコンポーネント
+│   │   ├── core/                # 共通コンポーネント・フック
+│   │   │   ├── components/
+│   │   │   │   ├── ui/          # Button, Card, Modal等
+│   │   │   │   └── shared/      # SettingsModal, TokenEstimator等
+│   │   │   ├── hooks/           # useSettings, useTokenEstimation等
+│   │   │   └── types/           # 共通型定義
+│   │   ├── features/            # 機能別モジュール
+│   │   │   ├── reviewer/        # レビュー機能
+│   │   │   │   ├── components/
+│   │   │   │   ├── hooks/
+│   │   │   │   ├── services/
+│   │   │   │   └── types/
+│   │   │   └── config-file-generator/  # 設定ファイルジェネレーター
+│   │   │       ├── components/
+│   │   │       ├── hooks/
+│   │   │       ├── schema/
+│   │   │       └── services/
+│   │   ├── pages/               # ページコンポーネント
+│   │   └── __tests__/           # テストファイル
+│   └── dist/                    # ビルド出力（git管理外）
 │
 ├── backend/                     # バックエンド
 │   ├── pyproject.toml           # uv用プロジェクト設定
@@ -1995,9 +1936,9 @@ versions/v0.4.0/
 │   ├── tests/                   # 単体テスト
 │   │   ├── test_schemas.py
 │   │   ├── test_bedrock_service.py
-│   │   ├── test_anthropic_service.py    # 新規
-│   │   ├── test_openai_service.py       # 新規
-│   │   ├── test_llm_service.py          # 新規
+│   │   ├── test_anthropic_service.py
+│   │   ├── test_openai_service.py
+│   │   ├── test_llm_service.py
 │   │   ├── test_line_numbers_service.py
 │   │   ├── test_markitdown_service.py
 │   │   ├── test_markdown_tool_registry.py
@@ -2015,36 +1956,34 @@ versions/v0.4.0/
 │       │   ├── __init__.py
 │       │   ├── markitdown_service.py
 │       │   ├── line_numbers_service.py
-│       │   ├── llm_service.py           # 新規: プロバイダー抽象化
-│       │   ├── bedrock_service.py       # 既存（システムLLM用）
-│       │   ├── anthropic_service.py     # 新規
-│       │   ├── openai_service.py        # 新規
+│       │   ├── llm_service.py           # プロバイダー抽象化
+│       │   ├── bedrock_service.py       # Bedrock (Converse API)
+│       │   ├── anthropic_service.py     # Anthropic API
+│       │   ├── openai_service.py        # OpenAI API
 │       │   └── prompt_builder.py        # プロンプト組み立て
 │       ├── markdown_tools/          # Markdown変換ツール
 │       │   ├── __init__.py
-│       │   ├── base.py              # 抽象基底クラス（MarkdownTool）
+│       │   ├── base.py              # 抽象基底クラス
 │       │   ├── registry.py          # ツールレジストリ
 │       │   ├── markitdown_tool.py   # MarkItDown実装
 │       │   ├── excel2md_tool.py     # excel2md (CSV) 実装
 │       │   └── excel2md_mermaid_tool.py  # excel2md (CSV+Mermaid) 実装
 │       └── models/
 │           ├── __init__.py
-│           └── schemas.py       # Pydanticスキーマ（LLMConfig追加）
+│           └── schemas.py       # Pydanticスキーマ
 │
 └── spec.md                      # 本仕様書
 ```
 
-**v0.4.0での新規ファイル:**
+**v0.6.0での変更点:**
 
-| ファイル | 説明 |
-|---------|------|
-| services/llm_service.py | プロバイダー抽象化レイヤー。`llmConfig` に応じてプロバイダーを選択 |
-| services/anthropic_service.py | Anthropic API への接続処理 |
-| services/openai_service.py | OpenAI API への接続処理 |
-| tests/test_anthropic_service.py | Anthropicサービスの単体テスト |
-| tests/test_openai_service.py | OpenAIサービスの単体テスト |
-| tests/test_llm_service.py | LLMサービスの単体テスト（プロバイダー分岐） |
-| tests/test_prompt_builder.py | プロンプト組み立ての単体テスト |
+| 項目 | 変更内容 |
+|------|----------|
+| フロントエンド | 単一HTMLファイルからVite + React + TypeScriptに移行 |
+| コンポーネント設計 | feature-basedアーキテクチャを採用 |
+| スタイリング | Tailwind CSS CDNからTailwind CSS v4（ビルド統合）に移行 |
+| アイコン | 絵文字からlucide-reactに統一 |
+| テスト | フロントエンドにVitest + Testing Libraryを追加 |
 
 ※ リポジトリ全体の構成（マルチバージョン構成、共有リソース等）については [README.md](../../README.md) を参照
 
@@ -2054,15 +1993,15 @@ versions/v0.4.0/
 
 | 項目 | 内容 |
 |------|------|
-| 管理場所 | `backend/pyproject.toml` の `version` フィールド |
-| バックエンド | `importlib.metadata.version()` で取得し、FastAPI・ヘルスチェックAPIで使用 |
-| フロントエンド | HTMLにハードコード（バックエンド未接続時も表示可能にするため） |
-| 同期方法 | `scripts/sync_version.py` でフロントエンドのバージョン表記を更新 |
+| 管理場所（バックエンド） | `backend/pyproject.toml` の `version` フィールド |
+| 管理場所（フロントエンド） | `frontend/package.json` の `version` フィールド |
+| バックエンド取得方法 | `importlib.metadata.version()` で取得し、FastAPI・ヘルスチェックAPIで使用 |
+| フロントエンド取得方法 | 設定モーダルにハードコード（バックエンド未接続時も表示可能にするため） |
 
 **バージョン更新手順:**
 
 1. `backend/pyproject.toml` の `version` を更新
-2. `python3 scripts/sync_version.py` を実行してフロントエンドに同期
+2. `frontend/package.json` の `version` を更新
 3. `spec.md` 冒頭のバージョン番号を手動で更新
 
 ※ マルチバージョン運用（ポート割り当て、PM2設定、新バージョン追加手順等）については [README.md](../../README.md) を参照
@@ -2149,14 +2088,15 @@ versions/v0.4.0/
 
 | 種別 | 目的 | 実行方法 |
 |------|------|---------|
-| 単体テスト | 各モジュールの関数レベルの動作検証 | pytest（自動） |
+| バックエンド単体テスト | 各モジュールの関数レベルの動作検証 | pytest（自動） |
+| フロントエンド単体テスト | カスタムフック・ユーティリティの動作検証 | Vitest（自動） |
 | 試験項目表 | E2Eシナリオの手動確認 | 手動実行 |
 
 ※ LLM連携（Bedrock / Anthropic / OpenAI）は単体テストではモック化し、実環境テストは試験項目表で実施する
 
 ### 13.2 単体テスト
 
-#### 13.2.1 テスト対象モジュール
+#### 13.2.1 バックエンド テスト対象モジュール
 
 | モジュール | パス |
 |-----------|------|
@@ -2168,6 +2108,19 @@ versions/v0.4.0/
 | Anthropicサービス | backend/app/services/anthropic_service.py |
 | OpenAIサービス | backend/app/services/openai_service.py |
 | プロンプトビルダー | backend/app/services/prompt_builder.py |
+
+#### 13.2.1b フロントエンド テスト対象モジュール
+
+| モジュール | パス |
+|-----------|------|
+| useModal | frontend/src/core/hooks/useModal.ts |
+| useScreenManager | frontend/src/core/hooks/useScreenManager.ts |
+| useSettings | frontend/src/core/hooks/useSettings.ts |
+| useTokenEstimation | frontend/src/core/hooks/useTokenEstimation.ts |
+| useFileConversion | frontend/src/features/reviewer/hooks/useFileConversion.ts |
+| useZipExport | frontend/src/features/reviewer/hooks/useZipExport.ts |
+| useConfigState | frontend/src/features/config-file-generator/hooks/useConfigState.ts |
+| useValidation | frontend/src/features/config-file-generator/hooks/useValidation.ts |
 
 #### 13.2.2 テストケース一覧
 
@@ -2280,9 +2233,20 @@ versions/v0.4.0/
 
 #### 13.2.3 テスト実行方法
 
+**バックエンド:**
+
 ```bash
 cd backend
 uv run pytest tests/ -v
+```
+
+**フロントエンド:**
+
+```bash
+cd frontend
+npm test           # watchモード
+npm run test:run   # 単発実行
+npm run test:coverage  # カバレッジ付き
 ```
 
 ### 13.3 試験項目表
@@ -2363,17 +2327,17 @@ AIエディタに指示して、以下の試験項目からファイルを作成
 
 | # | 試験項目 | 前提条件 | 操作手順 | 期待結果 | 結果 |
 |---|---------|---------|---------|---------|------|
-| E2E-VS-001 | バージョンボタン表示 | サーバー起動済み | ページにアクセス | 左上にピル型の「v0.5.1」ボタンが表示される | |
-| E2E-VS-002 | バージョン切替 | v0.5.1表示中 | バルーンからv0.4.0をクリック | トースト表示後、ページリロード、v0.4.0のUIが表示される | |
-| E2E-VS-003 | Cookie永続化確認 | E2E-VS-002完了 | ブラウザを閉じて再アクセス | v0.4.0が表示される（Cookieが保持されている） | |
-| E2E-VS-004 | 無効なCookie時のフォールバック | - | DevToolsでCookieを「v9.9.9」に設定してアクセス | v0.5.1（デフォルト）が表示される | |
+| E2E-VS-001 | バージョンボタン表示 | サーバー起動済み | ページにアクセス | 左上にピル型の「v0.6.0」ボタンが表示される | |
+| E2E-VS-002 | バージョン切替 | v0.6.0表示中 | バルーンからv0.5.2をクリック | トースト表示後、ページリロード、v0.5.2のUIが表示される | |
+| E2E-VS-003 | Cookie永続化確認 | E2E-VS-002完了 | ブラウザを閉じて再アクセス | v0.5.2が表示される（Cookieが保持されている） | |
+| E2E-VS-004 | 無効なCookie時のフォールバック | - | DevToolsでCookieを「v9.9.9」に設定してアクセス | v0.6.0（デフォルト）が表示される | |
 
 #### 13.3.5 旧バージョン動作確認テスト
 
 | # | 試験項目 | 前提条件 | 操作手順 | 期待結果 | 結果 |
 |---|---------|---------|---------|---------|------|
-| E2E-OLD-001 | v0.5.0 画面表示確認 | v0.5.0に切替済み | 画面を確認 | v0.5.0固有のUI（設定ファイル機能あり、複数回実行あり）が表示される | |
-| E2E-OLD-002 | v0.5.0 レビュー実行 | v0.5.0表示中、設計書・コード変換済み | レビュー実行ボタン押下 | レビューレポートが正常に表示される | |
+| E2E-OLD-001 | v0.5.2 画面表示確認 | v0.5.2に切替済み | 画面を確認 | v0.5.2固有のUI（単一HTMLファイル版、設定ファイル機能あり、複数回実行あり）が表示される | |
+| E2E-OLD-002 | v0.5.2 レビュー実行 | v0.5.2表示中、設計書・コード変換済み | レビュー実行ボタン押下 | レビューレポートが正常に表示される | |
 
 #### 13.3.6 設定ファイル管理テスト
 

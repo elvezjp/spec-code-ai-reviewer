@@ -1,17 +1,19 @@
-# 設定ファイルジェネレーター（単一HTMLアプリ）
+# 設定ファイルジェネレーター
 
-**バージョン: 0.5.2**
+**バージョン: 0.6.0**
 
 ## 概要
 
-Markdown形式の設定ファイルを生成するための**汎用的な**スタンドアロンアプリケーション。
-JSONスキーマを差し替えることで、様々なアプリケーション向けの設定ファイル生成に対応できる。
+Markdown形式の設定ファイルを生成するための**汎用的な**Reactアプリケーション。
+TypeScriptで型安全に実装され、スキーマ定義を差し替えることで様々なアプリケーション向けの設定ファイル生成に対応できる。
 
 現在はspec-code-ai-reviewer用の設定（`reviewer-config.md`）を生成するスキーマが設定されている。
 
+v0.6.0でフロントエンド全体がVite + React + TypeScriptに移行したため、本機能もReactコンポーネントとして再実装された。
+
 ## 使い方
 
-1. `index.html` をブラウザで開く
+1. ブラウザで `/config-file-generator` にアクセス（またはメイン画面の設定モーダルからリンク）
 2. 各セクションの項目を入力・編集
 3. 「ダウンロード」ボタンをクリック
 
@@ -30,7 +32,7 @@ JSONスキーマを差し替えることで、様々なアプリケーション�
 
 ## カスタマイズ
 
-`index.html` 内の `SCHEMA` オブジェクトを編集することで、別のアプリケーション向けの設定ファイル生成に対応できる。
+`frontend/src/features/config-file-generator/schema/configSchema.ts` を編集することで、別のアプリケーション向けの設定ファイル生成に対応できる。
 
 ## 背景
 
@@ -47,8 +49,8 @@ JSONスキーマを差し替えることで、様々なアプリケーション�
 
 ## info
 
-- version: v0.4.0
-- created_at: 2025-01-15T10:30:00+09:00
+- version: v0.6.0
+- created_at: 2026-01-18T10:30:00+09:00
 
 ## llm
 
@@ -56,10 +58,12 @@ JSONスキーマを差し替えることで、様々なアプリケーション�
 - accessKeyId: YOUR_ACCESS_KEY_ID
 - secretAccessKey: YOUR_SECRET_ACCESS_KEY
 - region: ap-northeast-1
-- maxTokens: 16384
+- maxTokens: 10000
 - models:
   - global.anthropic.claude-haiku-4-5-20251001-v1:0
   - global.anthropic.claude-sonnet-4-5-20250929-v1:0
+  - apac.amazon.nova-pro-v1:0
+  - apac.amazon.nova-micro-v1:0
 
 ## specTypes
 
@@ -108,16 +112,17 @@ JSONスキーマを差し替えることで、様々なアプリケーション�
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  設定ファイルジェネレーター                          v0.4.0  │
+│  設定ファイルジェネレーター                          v0.6.0  │
 ├──────────────────────────────────────────────────────────────┤
 │                                                               │
-│  spec-code-ai-reviewer の設定ファイルを作成します。              │
-│  各項目を入力して「ダウンロード」ボタンを押してください。      │
+│  設計書-Javaプログラム突合 AIレビュアー 設定ファイルを作成   │
+│  します。各項目を入力して「ダウンロード」ボタンを押して      │
+│  ください。                                                   │
 │                                                               │
 ├──────────────────────────────────────────────────────────────┤
 │ ■ info（設定ファイル情報）                                    │
 │                                                               │
-│   version:    v0.4.0（固定）                                  │
+│   version:    v0.6.0（固定）                                  │
 │   created_at: ダウンロード時に自動生成                        │
 │                                                               │
 ├──────────────────────────────────────────────────────────────┤
@@ -125,14 +130,22 @@ JSONスキーマを差し替えることで、様々なアプリケーション�
 │                                                               │
 │   プロバイダー: ( ) Anthropic  (●) Bedrock  ( ) OpenAI       │
 │                                                               │
+│   ┌─────────────────────────────────────────────────────┐    │
+│   │ ⚠ 注意                                               │    │
+│   │ • モデルIDにはリージョンプレフィックスが必要です     │    │
+│   │ • モデルによって出力トークン上限が異なります         │    │
+│   └─────────────────────────────────────────────────────┘    │
+│                                                               │
 │   Access Key ID:     [________________________]               │
 │   Secret Access Key: [________________________]               │
-│   Region:            [ap-northeast-1_______________]               │
-│   Max Tokens:        [16384___________________]               │
+│   Region:            [ap-northeast-1__________]               │
+│   Max Tokens:        [10000___________________]               │
 │                                                               │
 │   モデル:                                                     │
-│   [anthropic.claude-4-5-sonnet-20241022-v2:0] [×]            │
-│   [anthropic.claude-4-5-haiku-20241022-v1:0 ] [×]            │
+│   [global.anthropic.claude-haiku-4-5-20251001-v1:0] [×]      │
+│   [global.anthropic.claude-sonnet-4-5-20250929-v1:0] [×]     │
+│   [apac.amazon.nova-pro-v1:0                       ] [×]     │
+│   [apac.amazon.nova-micro-v1:0                     ] [×]     │
 │   [+ モデルを追加]                                            │
 │                                                               │
 ├──────────────────────────────────────────────────────────────┤
@@ -147,8 +160,20 @@ JSONスキーマを差し替えることで、様々なアプリケーション�
 │   [+ 行を追加]                                                │
 │                                                               │
 ├──────────────────────────────────────────────────────────────┤
+│ ■ systemPrompts（システムプロンプト）                         │
 │                                                               │
-│                                 [📥 reviewer-config.md をダウンロード] │
+│   ┌─ 標準レビュープリセット ─────────────────────────[×]─┐   │
+│   │ プリセット名: [標準レビュープリセット_____________]   │   │
+│   │ 役割:        [あなたは設計書とプログラム...________]   │   │
+│   │ 目的:        [設計書の内容がプログラムに正しく...  ]   │   │
+│   │ フォーマット: [マークダウン形式で、以下の順に...   ]   │   │
+│   │ 注意事項:    [- メイン設計書の内容について...      ]   │   │
+│   └────────────────────────────────────────────────────┘   │
+│   [+ プリセットを追加]                                        │
+│                                                               │
+├──────────────────────────────────────────────────────────────┤
+│                                                               │
+│                   [📥 reviewer-config.md をダウンロード]      │
 │                                                               │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -157,184 +182,232 @@ JSONスキーマを差し替えることで、様々なアプリケーション�
 
 ### アーキテクチャ
 
+v0.6.0ではReact + TypeScriptで実装され、以下の構成となる。
+
+```
+frontend/src/features/config-file-generator/
+├── index.tsx                    # メインコンポーネント
+├── schema/
+│   └── configSchema.ts          # スキーマ定義（差し替え可能）
+├── types/
+│   └── index.ts                 # TypeScript型定義
+├── hooks/
+│   ├── useConfigState.ts        # フォーム状態管理
+│   └── useValidation.ts         # バリデーション
+├── components/
+│   ├── InfoSection.tsx          # info セクション
+│   ├── LlmSection.tsx           # LLM設定セクション
+│   ├── ProviderSelector.tsx     # プロバイダー選択
+│   ├── DynamicFieldArray.tsx    # 動的配列フィールド
+│   ├── SpecTypesTable.tsx       # 設計書種別テーブル
+│   ├── SystemPromptsSection.tsx # システムプロンプトセクション
+│   └── DownloadButton.tsx       # ダウンロードボタン
+└── services/
+    └── markdownGenerator.ts     # Markdown生成・ダウンロード
+```
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      index.html                              │
+│                ConfigFileGenerator (React)                   │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │              Generator Engine (汎用)                    │ │
-│  │  - JSONスキーマのパース                                 │ │
-│  │  - 動的フォーム生成                                     │ │
-│  │  - Markdownテンプレート展開                            │ │
-│  │  - バリデーション                                       │ │
+│  │                 hooks/useConfigState                    │ │
+│  │  - フォーム状態管理（useState/useReducer）              │ │
+│  │  - プロバイダー切替、フィールド更新                      │ │
+│  └────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │                 hooks/useValidation                     │ │
+│  │  - スキーマに基づくバリデーション                        │ │
+│  │  - 必須チェック、型チェック                              │ │
+│  └────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │             services/markdownGenerator                  │ │
+│  │  - フォーム状態からMarkdown生成                          │ │
+│  │  - ファイルダウンロード処理                              │ │
 │  └────────────────────────────────────────────────────────┘ │
 │                           ↑                                  │
 │                    スキーマ定義を読み込み                      │
 │                           ↓                                  │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │           Schema Definition (差し替え可能)              │ │
+│  │           schema/configSchema.ts (差し替え可能)         │ │
 │  │  - 出力タイトル、バージョン                               │ │
 │  │  - セクション定義（フィールド、型、デフォルト値）          │ │
-│  │  - 出力Markdownテンプレート                             │ │
+│  │  - TypeScript型による型安全性                            │ │
 │  └────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### JSONスキーマ定義仕様
+### スキーマ定義仕様
 
-HTMLファイル内にJSONとしてスキーマを埋め込む。スキーマを差し替えるだけで別の設定ファイル形式に対応可能。
+`configSchema.ts` でTypeScriptオブジェクトとしてスキーマを定義する。スキーマを差し替えるだけで別の設定ファイル形式に対応可能。
 
 アプリケーションのバージョン更新時は、スキーマのバージョン番号も更新する。
 
-```javascript
-const SCHEMA = {
+```typescript
+import type { ConfigSchema } from '../types'
+
+export const CONFIG_SCHEMA: ConfigSchema = {
   // メタ情報
   meta: {
-    outputTitle: "設計書-Javaプログラム突合 AIレビュアー 設定ファイル",  // 出力ファイルの見出しタイトル（# で出力）
-    outputFileName: "reviewer-config.md",
-    version: "v0.4.0"
+    outputTitle: '設計書-Javaプログラム突合 AIレビュアー 設定ファイル',
+    outputFileName: 'reviewer-config.md',
+    version: 'v0.6.0',
   },
 
   // セクション定義（配列順にUIに表示）
   sections: [
     {
-      id: "info",
-      title: "info",
-      description: "設定ファイル情報",
-      outputFormat: "list",  // "list" | "table" | "custom"
+      id: 'info',
+      title: 'info',
+      description: '設定ファイル情報',
+      outputFormat: 'list',
       fields: [
         {
-          id: "version",
-          label: "version",
-          type: "fixed",  // 固定値（編集不可）
-          value: "v0.4.0"
+          id: 'version',
+          label: 'version',
+          type: 'fixed',
+          value: 'v0.6.0',
         },
         {
-          id: "created_at",
-          label: "created_at",
-          type: "auto",  // 自動生成（ダウンロード時にISO8601形式で生成）
-          generator: "timestamp_iso8601"
-        }
-      ]
+          id: 'created_at',
+          label: 'created_at',
+          type: 'auto',
+          generator: 'timestamp_iso8601',
+        },
+      ],
     },
     {
-      id: "llm",
-      title: "LLMプロバイダー設定",
-      outputFormat: "list",
-      // 条件分岐（プロバイダー選択に応じてフィールドが変わる）
+      id: 'llm',
+      title: 'llm',
+      description: 'LLMプロバイダー設定',
+      outputFormat: 'list',
       conditional: {
-        switchField: "provider",
+        switchField: 'provider',
         cases: {
           anthropic: {
             fields: [
-              { id: "provider", type: "fixed", value: "anthropic" },
-              { id: "apiKey", label: "API Key", type: "password", required: true },
-              { id: "maxTokens", label: "Max Tokens", type: "number", default: 16384, required: true },
+              { id: 'provider', type: 'fixed', value: 'anthropic' },
+              { id: 'apiKey', label: 'API Key', type: 'password', required: true },
+              { id: 'maxTokens', label: 'Max Tokens', type: 'number', default: 16384, required: true },
               {
-                id: "models",
-                label: "モデル",
-                type: "array",
-                itemType: "text",
-                placeholder: "claude-sonnet-4-5-20250929",
-                defaults: ["claude-sonnet-4-5-20250929", "claude-haiku-4-5-20251001"]
-              }
-            ]
+                id: 'models',
+                label: 'モデル',
+                type: 'array',
+                itemType: 'text',
+                placeholder: 'claude-sonnet-4-5-20250929',
+                defaults: ['claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'],
+              },
+            ],
           },
           bedrock: {
             notes: [
-              "モデルIDにはリージョンプレフィックス（例: us., apac., global.）が必要です。",
-              "モデルによって設定可能な出力トークン上限が異なります（例: Nova系は10,000、Claude系は最大128,000）。",
-              "設定可能な上限値を超えた出力トークン数を指定した場合、エラーが発生します。"
+              'モデルIDにはリージョンプレフィックス（例: us., apac., global.）が必要です。',
+              'モデルによって設定可能な出力トークン上限が異なります（例: Nova系は10,000、Claude系は最大128,000）。',
+              '設定可能な上限値を超えた出力トークン数を指定した場合、エラーが発生します。',
             ],
             fields: [
-              { id: "provider", type: "fixed", value: "bedrock" },
-              { id: "accessKeyId", label: "Access Key ID", type: "password", required: true },
-              { id: "secretAccessKey", label: "Secret Access Key", type: "password", required: true },
-              { id: "region", label: "Region", type: "text", default: "ap-northeast-1", required: true },
-              { id: "maxTokens", label: "Max Tokens", type: "number", default: 10000, required: true },
+              { id: 'provider', type: 'fixed', value: 'bedrock' },
+              { id: 'accessKeyId', label: 'Access Key ID', type: 'password', required: true },
+              { id: 'secretAccessKey', label: 'Secret Access Key', type: 'password', required: true },
+              { id: 'region', label: 'Region', type: 'text', default: 'ap-northeast-1', required: true },
+              { id: 'maxTokens', label: 'Max Tokens', type: 'number', default: 10000, required: true },
               {
-                id: "models",
-                label: "モデル",
-                type: "array",
-                itemType: "text",
-                placeholder: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
-                defaults: ["global.anthropic.claude-haiku-4-5-20251001-v1:0", "global.anthropic.claude-sonnet-4-5-20250929-v1:0"]
-              }
-            ]
+                id: 'models',
+                label: 'モデル',
+                type: 'array',
+                itemType: 'text',
+                placeholder: 'global.anthropic.claude-haiku-4-5-20251001-v1:0',
+                defaults: [
+                  'global.anthropic.claude-haiku-4-5-20251001-v1:0',
+                  'global.anthropic.claude-sonnet-4-5-20250929-v1:0',
+                  'apac.amazon.nova-pro-v1:0',
+                  'apac.amazon.nova-micro-v1:0',
+                ],
+              },
+            ],
           },
           openai: {
             fields: [
-              { id: "provider", type: "fixed", value: "openai" },
-              { id: "apiKey", label: "API Key", type: "password", required: true },
-              { id: "maxTokens", label: "Max Tokens", type: "number", default: 16384, required: true },
+              { id: 'provider', type: 'fixed', value: 'openai' },
+              { id: 'apiKey', label: 'API Key', type: 'password', required: true },
+              { id: 'maxTokens', label: 'Max Tokens', type: 'number', default: 16384, required: true },
               {
-                id: "models",
-                label: "モデル",
-                type: "array",
-                itemType: "text",
-                placeholder: "gpt-5.2",
-                defaults: [
-                  "gpt-5.2",
-                  "gpt-5.2-chat-latest",
-                  "gpt-5.2-pro",
-                  "gpt-5.1",
-                  "gpt-4o",
-                  "gpt-4o-mini"
-                ]
-              }
-            ]
-          }
-        }
-      }
+                id: 'models',
+                label: 'モデル',
+                type: 'array',
+                itemType: 'text',
+                placeholder: 'gpt-5.2',
+                defaults: ['gpt-5.2', 'gpt-5.2-chat-latest', 'gpt-5.2-pro', 'gpt-5.1', 'gpt-4o', 'gpt-4o-mini'],
+              },
+            ],
+          },
+        },
+      },
     },
     {
-      id: "specTypes",
-      title: "設計書種別",
-      outputFormat: "table",
+      id: 'specTypes',
+      title: 'specTypes',
+      description: '設計書種別',
+      outputFormat: 'table',
       columns: [
-        { id: "type", label: "種別", type: "text", width: "30%" },
-        { id: "note", label: "注意事項", type: "text", width: "70%" }
+        { id: 'type', label: '種別', type: 'text', width: '30%' },
+        { id: 'note', label: '注意事項', type: 'text', width: '70%' },
       ],
       defaults: [
-        { type: "設計書", note: "機能仕様が正しく実装されているかを確認してください" },
-        { type: "要件定義書", note: "要件が漏れなく実装されているかを確認してください" },
-        { type: "処理ロジック", note: "処理手順やアルゴリズムが正しく実装されているかを確認してください" },
-        { type: "処理フロー", note: "処理の流れが正しく実装されているかを確認してください" },
-        { type: "コーディング規約", note: "コードがこの規約に準拠しているかを確認してください" },
-        { type: "ネーミングルール", note: "命名規則に従っているかを確認してください" },
-        { type: "製造ガイド", note: "このガイドラインに従って実装されているかを確認してください" },
-        { type: "設計ガイド", note: "この設計方針に従って実装されているかを確認してください" },
-        { type: "設計書とソースのマッピング", note: "このマッピングに基づいて突合を行ってください" }
+        { type: '設計書', note: '機能仕様が正しく実装されているかを確認してください' },
+        { type: '要件定義書', note: '要件が漏れなく実装されているかを確認してください' },
+        { type: '処理ロジック', note: '処理手順やアルゴリズムが正しく実装されているかを確認してください' },
+        { type: '処理フロー', note: '処理の流れが正しく実装されているかを確認してください' },
+        { type: 'コーディング規約', note: 'コードがこの規約に準拠しているかを確認してください' },
+        { type: 'ネーミングルール', note: '命名規則に従っているかを確認してください' },
+        { type: '製造ガイド', note: 'このガイドラインに従って実装されているかを確認してください' },
+        { type: '設計ガイド', note: 'この設計方針に従って実装されているかを確認してください' },
+        { type: '設計書とソースのマッピング', note: 'このマッピングに基づいて突合を行ってください' },
       ],
-      editable: true,  // 行の追加・編集・削除可能
-      minRows: 0
+      editable: true,
+      minRows: 0,
     },
     {
-      id: "systemPrompts",
-      title: "systemPrompts",
-      description: "システムプロンプトのプリセット定義",
-      outputFormat: "sections",  // 見出し+セクション形式
-      itemKey: "name",           // 各アイテムの識別キー（### 見出しに使用）
+      id: 'systemPrompts',
+      title: 'systemPrompts',
+      description: 'システムプロンプトのプリセット定義',
+      outputFormat: 'sections',
+      itemKey: 'name',
       fields: [
-        { id: "name", label: "プリセット名" },
-        { id: "role", label: "役割", rows: 2 },
-        { id: "purpose", label: "目的", rows: 6 },
-        { id: "format", label: "フォーマット", rows: 4 },
-        { id: "notes", label: "注意事項", rows: 6 }
+        { id: 'name', label: 'プリセット名' },
+        { id: 'role', label: '役割', rows: 2 },
+        { id: 'purpose', label: '目的', rows: 6 },
+        { id: 'format', label: 'フォーマット', rows: 4 },
+        { id: 'notes', label: '注意事項', rows: 6 },
       ],
       defaults: [
         {
-          name: "標準レビュープリセット",
-          role: "あなたは設計書とプログラムコードを突合し、整合性を検証するレビュアーです。",
-          purpose: "設計書の内容がプログラムに正しく実装されているかを検証し、...",
-          format: "マークダウン形式で、以下の順に出力してください：...",
-          notes: "- メイン設計書の内容について突合してください。..."
-        }
+          name: '標準レビュープリセット',
+          role: 'あなたは設計書とプログラムコードを突合し、整合性を検証するレビュアーです。',
+          purpose: `設計書の内容がプログラムに正しく実装されているかを検証し、差異や問題点を報告してください。
+
+以下の観点でレビューを行ってください：
+1. 機能網羅性: 設計書に記載された機能がコードに実装されているか
+2. 仕様整合性: 関数名・変数名・データ型・処理フローが設計書と一致しているか
+3. エラー処理: 設計書に記載されたエラー処理が実装されているか
+4. 境界値・制約: 設計書に記載された制約条件がコードに反映されているか`,
+          format: `マークダウン形式で、以下の順に出力してください：
+1. サマリー（突合日時、ファイル名、総合判定）
+2. 突合結果一覧（テーブル形式）
+3. 詳細（問題点と推奨事項）`,
+          notes: `- メイン設計書の内容について突合してください。
+- 判定は「OK」「NG」「要確認」の3段階で行ってください
+- 重要度が高い問題を優先して報告してください。
+- 設計書を引用する際は、見出し番号や項目番号を明示してください。
+- プログラムを引用する際は、行番号を必ず添えてください。
+- 各設計書の冒頭に記載されている役割、種別、注意事項を考慮してください。
+- メイン以外の設計書は必要な場合に参照してください。`,
+        },
       ],
       editable: true,
-      minRows: 0
-    }
-  ]
-};
+      minRows: 0,
+    },
+  ],
+}
 ```
 
 ### フィールドタイプ
@@ -347,7 +420,6 @@ const SCHEMA = {
 | `textarea` | 複数行テキスト入力 | `rows`, `default`, `placeholder`, `required`, `width` |
 | `password` | パスワード入力（マスク表示） | `required` |
 | `number` | 数値入力 | `default`, `min`, `max`, `required` |
-| `select` | セレクトボックス | `options`, `default` |
 | `array` | 複数値入力（追加・削除可能） | `itemType`, `defaults`, `placeholder` |
 
 **textareaの補足:**
@@ -367,7 +439,7 @@ const SCHEMA = {
 
 | generator | 説明 | 出力例 |
 |-----------|------|--------|
-| `timestamp_iso8601` | ISO 8601形式のタイムスタンプ | `2025-01-15T10:30:00+09:00` |
+| `timestamp_iso8601` | ISO 8601形式のタイムスタンプ | `2026-01-18T10:30:00+09:00` |
 
 ### 出力フォーマット
 
@@ -381,7 +453,7 @@ const SCHEMA = {
 - 複数行テキストを含む構造化データに適している
 - `itemKey` で指定したフィールドが `###` 見出しとして出力される
 - 他のフィールドは `#### フィールドID` の形式で出力される
-- UIはアコーディオン形式のカードで表示（展開/折りたたみ可能）
+- UIはカード形式で表示
 
 ### 条件分岐（conditional）
 
@@ -400,7 +472,7 @@ const SCHEMA = {
 | `notes` | プロバイダー固有の注意事項（オプション） | `["モデルIDには...", "トークン上限は..."]` |
 
 **notesの補足:**
-- `notes` はUI上でフィールドの前に警告ボックスとして表示される
+- `notes` はUI上でフィールドの前に警告ボックス（lucide-react AlertTriangle アイコン付き）として表示される
 - 配列で複数の注意事項を指定可能
 - 省略可能（指定しない場合は注意事項ボックスは表示されない）
 - スキーマを差し替える際、アプリ固有の注意事項を設定できる
@@ -410,27 +482,26 @@ const SCHEMA = {
 **バージョンアップ時**: `meta.version` とフィールド定義を更新
 
 **別アプリへの転用時**:
-- `SCHEMA` オブジェクト全体を差し替え
-- 例: 別アプリ用に `sections` を再定義するだけで対応可能
+- `configSchema.ts` のスキーマオブジェクト全体を差し替え
+- TypeScript型定義により、スキーマ変更時にコンパイルエラーで不整合を検出可能
 
 ## 技術要件
 
-- **単一HTMLファイル**で完結（`index.html` 1ファイル）
-- 開発環境がない利用者のPC上でも動作可能
-- TailwindCSS（CDN経由）を使用してスタイリング
+- **Vite + React + TypeScript**で実装
+- Tailwind CSS v4でスタイリング
 - ブラウザ上で完結、サーバー通信なし
+- lucide-reactでアイコン表示
 
 ## 機能要件
 
 ### 1. 動的フォーム生成
-- JSONスキーマに基づいてUIを自動生成
+- TypeScriptスキーマに基づいてUIを自動生成
 - 条件分岐（`conditional`）に対応（プロバイダー選択で入力欄が切り替わる）
 - 配列フィールドの追加・削除
 - 数値フィールドの入力サポート
 
 ### 2. テーブル編集
 - 行の追加・編集・削除
-- ドラッグ&ドロップでの並び替え（オプション）
 
 ### 3. 自動生成フィールド
 - `auto` タイプのフィールドはダウンロード時に自動生成
@@ -440,17 +511,22 @@ const SCHEMA = {
 - 必須フィールドチェック
 - スキーマ定義に基づく型チェック
 - 数値フィールドの範囲チェック（min/max指定時）
+- エラー時はアラート表示
 
 ### 5. 出力
 - 「ダウンロード」ボタンで設定ファイルをダウンロード
 
 ## 配置場所
 
-`config-file-generator/index.html`
+```
+frontend/src/features/config-file-generator/
+```
+
+React Routerにより `/config-file-generator` でアクセス可能。
 
 ## 対象バージョン
 
-v0.5.1
+v0.6.0
 
 ## E2E試験項目
 
@@ -458,9 +534,9 @@ v0.5.1
 
 | # | 試験項目 | 前提条件 | 操作手順 | 期待結果 | 結果 |
 |---|---------|---------|---------|---------|------|
-| E2E-GEN-001 | 画面表示 | - | /config-file-generator/ にアクセス | 設定ファイルジェネレーター画面が表示される | |
+| E2E-GEN-001 | 画面表示 | - | /config-file-generator にアクセス | 設定ファイルジェネレーター画面が表示される | |
 | E2E-GEN-002 | プロバイダー切替（Anthropic） | 画面表示済み | プロバイダーで「Anthropic」を選択 | API Key入力欄が表示される | |
-| E2E-GEN-003 | プロバイダー切替（Bedrock） | 画面表示済み | プロバイダーで「Bedrock」を選択 | Access Key ID、Secret Access Key、Region入力欄が表示される | |
+| E2E-GEN-003 | プロバイダー切替（Bedrock） | 画面表示済み | プロバイダーで「Bedrock」を選択 | Access Key ID、Secret Access Key、Region入力欄と注意事項ボックスが表示される | |
 | E2E-GEN-004 | プロバイダー切替（OpenAI） | 画面表示済み | プロバイダーで「OpenAI」を選択 | API Key入力欄が表示される | |
 | E2E-GEN-005 | モデル追加 | プロバイダー選択済み | 「+ モデルを追加」ボタン押下 | モデル入力欄が追加される | |
 | E2E-GEN-006 | モデル削除 | モデルが2つ以上ある | モデルの「×」ボタン押下 | 該当モデルが削除される | |
