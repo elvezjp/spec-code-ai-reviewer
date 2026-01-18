@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import type { LlmConfig, SystemPromptValues } from '../types'
 import type { SpecType, SystemPromptPreset, ReviewerConfig, LlmSettings, Preset } from '@core/types'
 import {
@@ -77,10 +77,23 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
       ? reviewerConfig.specTypes
       : DEFAULT_SPEC_TYPES
 
-  const systemPromptPresets: SystemPromptPreset[] =
-    reviewerConfig?.systemPrompts && reviewerConfig.systemPrompts.length > 0
+  // システムプロンプトプリセット: 常に「標準レビュープリセット」を含める
+  const systemPromptPresets: SystemPromptPreset[] = useMemo(() => {
+    const configPrompts = reviewerConfig?.systemPrompts && reviewerConfig.systemPrompts.length > 0
       ? reviewerConfig.systemPrompts
-      : DEFAULT_SYSTEM_PROMPTS
+      : []
+    
+    // 設定ファイルのプリセットに「標準レビュープリセット」が含まれていない場合は追加
+    const standardPreset = DEFAULT_SYSTEM_PROMPTS.find(p => p.name === '標準レビュープリセット')
+    const hasStandardPreset = configPrompts.some(p => p.name === '標準レビュープリセット')
+    
+    if (standardPreset && !hasStandardPreset) {
+      // 「標準レビュープリセット」が含まれていない場合のみ追加（末尾に追加）
+      return [...configPrompts, standardPreset]
+    }
+    // 設定ファイルのプリセットの順序を保持
+    return configPrompts.length > 0 ? configPrompts : DEFAULT_SYSTEM_PROMPTS
+  }, [reviewerConfig?.systemPrompts])
 
   const llmConfig: LlmConfig | null = reviewerConfig?.llm?.provider
     ? {
@@ -390,11 +403,23 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
         notes: preset.systemPrompt.notes,
       }
 
+      // 「標準レビュープリセット」を必ず保持
+      const standardPreset = DEFAULT_SYSTEM_PROMPTS.find(p => p.name === '標準レビュープリセット')
+      const basePrompts =
+        reviewerConfig?.systemPrompts && reviewerConfig.systemPrompts.length > 0
+          ? reviewerConfig.systemPrompts.filter(p => p.name !== '標準レビュープリセット')
+          : []
+      
+      // 適用するプリセットを先頭に、「標準レビュープリセット」を2番目に配置
+      const mergedPrompts = standardPreset
+        ? [systemPromptPreset, standardPreset, ...basePrompts]
+        : [systemPromptPreset, ...basePrompts]
+
       const nextConfig: ReviewerConfig = {
         info: reviewerConfig?.info || { version: '', created_at: '' },
         llm: reviewerConfig?.llm,
         specTypes: preset.specTypes,
-        systemPrompts: [systemPromptPreset],
+        systemPrompts: mergedPrompts,
       }
 
       setReviewerConfig(nextConfig)
@@ -404,7 +429,7 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
           ? '・LLM設定は保持されました'
           : '・LLM設定は設定されていません',
         specTypes: `・設計書種別を更新しました（${preset.specTypes.length}件）`,
-        prompts: '・システムプロンプトをプリセットで更新しました',
+        prompts: `・システムプロンプトをプリセットで更新しました（${mergedPrompts.length}件）`,
       })
       setConfigModified(false)
 
@@ -484,15 +509,21 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
   }, [])
 
   // Load saved preset selection and apply default preset
+  // selectedPresetが既に設定されている場合は、それを保持する
   useEffect(() => {
-    if (systemPromptPresets.length > 0) {
-      const savedPreset = localStorage.getItem(SELECTED_PROMPT_KEY)
-      const presetToSelect =
-        systemPromptPresets.find((p) => p.name === savedPreset)?.name ||
-        systemPromptPresets[0].name
-      selectPreset(presetToSelect)
+    if (systemPromptPresets.length === 0 || selectedPreset) return
+
+    const savedPreset = localStorage.getItem(SELECTED_PROMPT_KEY)
+    if (savedPreset) {
+      const exists = systemPromptPresets.some((p) => p.name === savedPreset)
+      if (exists) {
+        selectPreset(savedPreset)
+      }
+      return
     }
-  }, [systemPromptPresets, selectPreset])
+
+    selectPreset(systemPromptPresets[0].name)
+  }, [systemPromptPresets, selectPreset, selectedPreset])
 
   return {
     llmConfig,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback, useState } from 'react'
+import { useEffect, useMemo, useCallback, useState, useRef, type ChangeEvent } from 'react'
 import { Settings, FileText, BookOpen } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import {
@@ -17,7 +17,8 @@ import {
   useTokenEstimation,
   useVersions,
 } from '@core/index'
-import type { ScreenState } from '@core/types'
+import { PRESET_CATALOG } from '@core/data/presetCatalog'
+import type { ScreenState, SystemPromptPreset } from '@core/types'
 import { SpecTypesSection, SpecFileList, CodeFileList, ReviewResult, ExecutingScreen } from './components'
 import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport } from './hooks'
 import { testLlmConnection } from './services/api'
@@ -35,6 +36,7 @@ export function Reviewer() {
   const screenManager = useScreenManager()
   const { versions, currentVersion, switchVersion } = useVersions()
   const [toastMessage, setToastMessage] = useState('')
+  const toastTimerRef = useRef<number | null>(null)
 
   // File conversion
   const {
@@ -79,6 +81,7 @@ export function Reviewer() {
     saveConfigToBrowser,
     clearSavedConfig,
     hasSavedConfig,
+    applyPreset,
   } = useReviewerSettings()
 
   // Review execution
@@ -116,15 +119,58 @@ export function Reviewer() {
     loadTools()
   }, [loadTools])
 
+  const showToast = useCallback((message: string) => {
+    setToastMessage(message)
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current)
+    }
+    toastTimerRef.current = window.setTimeout(() => setToastMessage(''), 3000)
+  }, [])
+
   useEffect(() => {
     const message = sessionStorage.getItem('preset-toast')
     if (!message) return
 
     sessionStorage.removeItem('preset-toast')
-    setToastMessage(message)
-    const timer = window.setTimeout(() => setToastMessage(''), 3000)
-    return () => window.clearTimeout(timer)
-  }, [])
+    showToast(message)
+    return () => {
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current)
+      }
+    }
+  }, [showToast])
+
+  // プリセットカタログのプリセットをSystemPromptPresetに変換して統合
+  const allPresets = useMemo(() => {
+    const catalogPresets: SystemPromptPreset[] = PRESET_CATALOG.map((preset) => ({
+      name: preset.name,
+      role: preset.systemPrompt.role,
+      purpose: preset.systemPrompt.purpose,
+      format: preset.systemPrompt.format,
+      notes: preset.systemPrompt.notes,
+    }))
+    
+    // 設定ファイルのプリセットと統合（重複を避ける）
+    const existingNames = new Set(catalogPresets.map(p => p.name))
+    const configPresets = systemPromptPresets.filter(p => !existingNames.has(p.name))
+    
+    return [...catalogPresets, ...configPresets]
+  }, [systemPromptPresets])
+
+  // プリセット選択時の処理
+  const handlePresetChange = useCallback((presetName: string) => {
+    // プリセットカタログのプリセットかどうかを判定
+    const catalogPreset = PRESET_CATALOG.find((p) => p.name === presetName)
+    
+    if (catalogPreset) {
+      // プリセットカタログのプリセットの場合は、設計書種別も含めて適用
+      applyPreset(catalogPreset)
+      showToast(`プリセット「${catalogPreset.name}」を適用しました（設計書種別も更新されました）`)
+    } else {
+      // 設定ファイルのプリセットの場合は、従来通り
+      selectPreset(presetName)
+    }
+  }, [applyPreset, selectPreset, showToast])
 
   const isReviewEnabled = specMarkdown && codeWithLineNumbers
 
@@ -303,10 +349,10 @@ export function Reviewer() {
 
       {/* System prompt settings */}
       <SystemPromptEditor
-        presets={systemPromptPresets}
+        presets={allPresets}
         selectedPreset={selectedPreset}
         currentValues={currentPromptValues}
-        onPresetChange={selectPreset}
+        onPresetChange={handlePresetChange}
         onValueChange={updatePromptValue}
         isCollapsible={true}
         defaultExpanded={false}
