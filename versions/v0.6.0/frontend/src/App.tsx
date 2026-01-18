@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ReviewerPage } from '@/pages/ReviewerPage'
-import { ConfigGeneratorPage } from '@/pages/ConfigGeneratorPage'
+import { ConfigFileGeneratorPage } from '@/pages/ConfigFileGeneratorPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 
 function App() {
@@ -8,7 +8,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<ReviewerPage />} />
-        <Route path="/config-generator" element={<ConfigGeneratorPage />} />
+        <Route path="/config-file-generator" element={<ConfigFileGeneratorPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>

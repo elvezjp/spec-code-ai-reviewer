@@ -22,7 +22,7 @@ export function ConfigFileSection({
   onClearSaved,
   loadedFilename,
   loadStatus,
-  generatorUrl = '/config-generator',
+  generatorUrl = '/config-file-generator',
   isSavedToBrowser = false,
   isModified = false,
 }: ConfigFileSectionProps) {

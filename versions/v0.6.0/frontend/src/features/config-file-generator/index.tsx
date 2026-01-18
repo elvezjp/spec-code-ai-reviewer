@@ -12,7 +12,7 @@ import {
 import { generateMarkdown, downloadMarkdown } from './services/markdownGenerator'
 import { CONFIG_SCHEMA } from './schema/configSchema'
 
-export function ConfigGenerator() {
+export function ConfigFileGenerator() {
   const {
     formState,
     handleProviderChange,
@@ -87,4 +87,4 @@ export function ConfigGenerator() {
   )
 }
 
-export default ConfigGenerator
+export default ConfigFileGenerator

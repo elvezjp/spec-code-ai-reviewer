@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useConfigState } from '@features/config-generator/hooks/useConfigState'
+import { useConfigState } from '@features/config-file-generator/hooks/useConfigState'
 
 describe('useConfigState', () => {
   describe('初期状態', () => {

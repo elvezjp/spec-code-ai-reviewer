@@ -29,7 +29,7 @@ interface SettingsModalProps {
     specTypes?: string
     prompts?: string
   }
-  configGeneratorUrl?: string
+  configFileGeneratorUrl?: string
   isConfigSavedToBrowser?: boolean
   isConfigModified?: boolean
   // LLM設定セクション用
@@ -60,7 +60,7 @@ export function SettingsModal({
   onClearStorage,
   loadedConfigFilename,
   configLoadStatus,
-  configGeneratorUrl,
+  configFileGeneratorUrl,
   isConfigSavedToBrowser,
   isConfigModified,
   llmSettings,
@@ -88,7 +88,7 @@ export function SettingsModal({
             onClearSaved={onClearStorage}
             loadedFilename={loadedConfigFilename}
             loadStatus={configLoadStatus}
-            generatorUrl={configGeneratorUrl}
+            generatorUrl={configFileGeneratorUrl}
             isSavedToBrowser={isConfigSavedToBrowser}
             isModified={isConfigModified}
           />

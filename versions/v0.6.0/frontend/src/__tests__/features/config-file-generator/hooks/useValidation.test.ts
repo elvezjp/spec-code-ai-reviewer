@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useValidation } from '@features/config-generator/hooks/useValidation'
-import type { ConfigFormState } from '@features/config-generator/types'
+import { useValidation } from '@features/config-file-generator/hooks/useValidation'
+import type { ConfigFormState } from '@features/config-file-generator/types'
 
 // テスト用のformState作成ヘルパー
 function createFormState(overrides: Partial<ConfigFormState> = {}): ConfigFormState {

@@ -48,8 +48,6 @@ versions/
 - **Tailwind CSS v4対応**: 最新のTailwind CSSを採用
 - **lucide-react導入**: 絵文字をlucide-reactアイコンに統一し、UIの一貫性を向上
 - **Vitest導入**: フロントエンドの単体テスト環境を構築
-- **設定ファイルジェネレーター移行**: React Routerによるルーティングで `/config-generator` に配置
-- **開発体験向上**: Viteによるホットリロード、TypeScriptによる型安全性
 
 ### v0.5.2 (2026-01-13)
 - **Bedrock Converse API対応**: `invoke_model`から`converse`に移行し、Anthropic Claude系とAmazon Novaモデルの両方に対応
