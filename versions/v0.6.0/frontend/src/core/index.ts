@@ -9,6 +9,14 @@ export { Button } from './components/ui/Button'
 export { Modal } from './components/ui/Modal'
 export { FileInputButton } from './components/ui/FileInputButton'
 export { FileDropzone } from './components/ui/FileDropzone'
+export {
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+} from './components/ui/Table'
 
 // Shared Components
 export {

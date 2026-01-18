@@ -1,6 +1,14 @@
 import { X, Plus } from 'lucide-react'
 import type { SpecType } from '@core/types'
-import { Card } from '@core/index'
+import {
+  Card,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+} from '@core/index'
 import { CONFIG_SCHEMA } from '../schema/configSchema'
 
 interface SpecTypesTableProps {
@@ -30,35 +38,37 @@ export function SpecTypesTable({
       <p className="text-sm text-gray-500 mb-4">{section.description}</p>
 
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse table-fixed">
-          <thead>
-            <tr className="bg-gray-50">
+        <Table bordered>
+          <TableHead>
+            <TableRow>
               {columns.map((col) => (
-                <th
+                <TableHeaderCell
                   key={col.id}
-                  className="px-4 py-2 text-left text-sm font-medium text-gray-700 border border-gray-200"
+                  bordered
                   style={col.width ? { width: col.width } : undefined}
                 >
                   {col.label}
-                </th>
+                </TableHeaderCell>
               ))}
-              <th className="w-10 border border-gray-200"></th>
-            </tr>
-          </thead>
-          <tbody>
+              <TableHeaderCell bordered className="w-10" />
+            </TableRow>
+          </TableHead>
+          <TableBody>
             {specTypes.map((row, index) => (
-              <tr key={index} className="align-top">
+              <TableRow key={index} className="align-top">
                 {columns.map((col) => (
-                  <td key={col.id} className="border border-gray-200 p-0">
+                  <TableCell key={col.id} bordered className="p-0">
                     <input
                       type="text"
                       value={row[col.id as keyof SpecType] || ''}
-                      onChange={(e) => onSpecTypeChange(index, col.id as keyof SpecType, e.target.value)}
+                      onChange={(e) =>
+                        onSpecTypeChange(index, col.id as keyof SpecType, e.target.value)
+                      }
                       className="w-full px-4 py-2 border-0 focus:ring-2 focus:ring-blue-500"
                     />
-                  </td>
+                  </TableCell>
                 ))}
-                <td className="border border-gray-200 text-center">
+                <TableCell bordered className="text-center">
                   <button
                     type="button"
                     onClick={() => onSpecTypeRemove(index)}
@@ -67,11 +77,11 @@ export function SpecTypesTable({
                   >
                     <X className="w-4 h-4" />
                   </button>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       <button

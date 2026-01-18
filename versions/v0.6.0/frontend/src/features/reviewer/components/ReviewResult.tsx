@@ -9,6 +9,7 @@ import {
   Package,
   Download,
 } from 'lucide-react'
+import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@core/index'
 import type { ReviewExecutionData, SimpleJudgment, ReviewMeta } from '../types'
 
 interface ReviewResultProps {
@@ -117,26 +118,26 @@ export function ReviewResult({
           <div className="mt-4">
             <h3 className="text-sm font-medium text-gray-700 mb-2">設計書:</h3>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm border border-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-3 py-2 text-left text-gray-600 border-b">ファイル名</th>
-                    <th className="px-3 py-2 text-left text-gray-600 border-b">役割</th>
-                    <th className="px-3 py-2 text-left text-gray-600 border-b">種別</th>
-                    <th className="px-3 py-2 text-left text-gray-600 border-b">ツール</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table className="min-w-full text-sm">
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>ファイル名</TableHeaderCell>
+                    <TableHeaderCell>役割</TableHeaderCell>
+                    <TableHeaderCell>種別</TableHeaderCell>
+                    <TableHeaderCell>ツール</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {meta.designs.map((d) => (
-                    <tr key={d.filename}>
-                      <td className="px-3 py-2 border-b text-gray-800">{d.filename}</td>
-                      <td className="px-3 py-2 border-b text-gray-800">{d.role}</td>
-                      <td className="px-3 py-2 border-b text-gray-800">{d.type}</td>
-                      <td className="px-3 py-2 border-b text-gray-800">{d.tool}</td>
-                    </tr>
+                    <TableRow key={d.filename}>
+                      <TableCell>{d.filename}</TableCell>
+                      <TableCell>{d.role}</TableCell>
+                      <TableCell>{d.type}</TableCell>
+                      <TableCell>{d.tool}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
         )}
@@ -145,20 +146,20 @@ export function ReviewResult({
           <div className="mt-4">
             <h3 className="text-sm font-medium text-gray-700 mb-2">プログラム:</h3>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm border border-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-3 py-2 text-left text-gray-600 border-b">ファイル名</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table className="min-w-full text-sm">
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>ファイル名</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {meta.programs.map((p) => (
-                    <tr key={p.filename}>
-                      <td className="px-3 py-2 border-b text-gray-800">{p.filename}</td>
-                    </tr>
+                    <TableRow key={p.filename}>
+                      <TableCell>{p.filename}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
         )}
@@ -260,18 +261,18 @@ export function ReviewResult({
             {/* Download file list */}
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
               <h3 className="text-sm font-medium text-gray-700 mb-2">ダウンロード内容:</h3>
-              <table className="w-full text-sm text-gray-600">
-                <tbody>
+              <Table className="text-sm text-gray-600">
+                <TableBody>
                   {downloadFiles.map((f) => (
-                    <tr key={f.name}>
-                      <td className="font-mono text-xs py-1 pr-2 align-top whitespace-nowrap">
+                    <TableRow key={f.name}>
+                      <TableCell className="font-mono text-xs py-1 pr-2 align-top whitespace-nowrap border-0">
                         {f.name}
-                      </td>
-                      <td className="py-1">{f.desc}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="py-1 border-0">{f.desc}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             <button
