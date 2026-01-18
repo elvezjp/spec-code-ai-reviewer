@@ -87,12 +87,15 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
     const standardPreset = DEFAULT_SYSTEM_PROMPTS.find(p => p.name === '標準レビュープリセット')
     const hasStandardPreset = configPrompts.some(p => p.name === '標準レビュープリセット')
     
-    if (standardPreset && !hasStandardPreset) {
-      // 「標準レビュープリセット」が含まれていない場合のみ追加（末尾に追加）
-      return [...configPrompts, standardPreset]
-    }
-    // 設定ファイルのプリセットの順序を保持
-    return configPrompts.length > 0 ? configPrompts : DEFAULT_SYSTEM_PROMPTS
+    const basePrompts = configPrompts.length > 0 ? configPrompts : DEFAULT_SYSTEM_PROMPTS
+    const merged = standardPreset && !hasStandardPreset
+      ? [...basePrompts, standardPreset]
+      : basePrompts
+
+    // 同名プリセットは先勝ちで重複排除
+    return merged.filter((item, index, array) => {
+      return array.findIndex(entry => entry.name === item.name) === index
+    })
   }, [reviewerConfig?.systemPrompts])
 
   const llmConfig: LlmConfig | null = reviewerConfig?.llm?.provider
@@ -407,13 +410,18 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
       const standardPreset = DEFAULT_SYSTEM_PROMPTS.find(p => p.name === '標準レビュープリセット')
       const basePrompts =
         reviewerConfig?.systemPrompts && reviewerConfig.systemPrompts.length > 0
-          ? reviewerConfig.systemPrompts.filter(p => p.name !== '標準レビュープリセット')
+          ? reviewerConfig.systemPrompts.filter(
+              p => p.name !== '標準レビュープリセット' && p.name !== systemPromptPreset.name
+            )
           : []
       
       // 適用するプリセットを先頭に、「標準レビュープリセット」を2番目に配置
-      const mergedPrompts = standardPreset
+      const mergedPrompts = (standardPreset
         ? [systemPromptPreset, standardPreset, ...basePrompts]
         : [systemPromptPreset, ...basePrompts]
+      ).filter((item, index, array) => {
+        return array.findIndex(entry => entry.name === item.name) === index
+      })
 
       const nextConfig: ReviewerConfig = {
         info: reviewerConfig?.info || { version: '', created_at: '' },
