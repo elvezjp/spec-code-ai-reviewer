@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 interface HeaderProps {
   title: string
   subtitle?: string
+  children?: ReactNode
   leftContent?: ReactNode
   rightContent?: ReactNode
   className?: string
@@ -11,6 +12,7 @@ interface HeaderProps {
 export function Header({
   title,
   subtitle,
+  children,
   leftContent,
   rightContent,
   className = '',
@@ -28,6 +30,7 @@ export function Header({
         {subtitle && (
           <p className="text-gray-600 text-sm text-center">{subtitle}</p>
         )}
+        {children}
       </div>
     </div>
   )

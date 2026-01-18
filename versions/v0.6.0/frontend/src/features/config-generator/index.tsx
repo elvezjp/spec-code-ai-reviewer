@@ -44,10 +44,14 @@ export function ConfigGenerator() {
   return (
     <Layout>
       {/* ヘッダー */}
-      <Header
-        title="設定ファイルジェネレーター"
-        subtitle={`${CONFIG_SCHEMA.meta.outputTitle}を作成します。各項目を入力して「ダウンロード」ボタンを押してください。`}
-      />
+      <Header title="設定ファイルジェネレーター">
+        <p className="text-gray-600 text-sm text-center">
+          {CONFIG_SCHEMA.meta.outputTitle}を作成します。
+        </p>
+        <p className="text-gray-600 text-sm text-center">
+          各項目を入力して「ダウンロード」ボタンを押してください。
+        </p>
+      </Header>
 
       {/* info セクション */}
       <InfoSection />

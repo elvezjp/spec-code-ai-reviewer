@@ -150,13 +150,16 @@ export function Reviewer() {
   const mainScreen = (
     <Layout>
       {/* Header */}
-      <Card className="mb-6">
-        <div className="flex justify-between items-center mb-4">
+      <Header
+        title={APP_INFO.description}
+        leftContent={
           <VersionSelector
             versions={versions}
             currentVersion={currentVersion}
             onVersionSelect={switchVersion}
           />
+        }
+        rightContent={
           <button
             onClick={settingsModal.open}
             className="text-gray-500 hover:text-gray-700"
@@ -164,9 +167,8 @@ export function Reviewer() {
           >
             <Settings className="w-6 h-6" />
           </button>
-        </div>
-        <Header title={APP_INFO.description} />
-      </Card>
+        }
+      />
 
       {/* File upload section */}
       <Card className="mb-6">
