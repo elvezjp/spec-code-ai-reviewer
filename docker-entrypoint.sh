@@ -17,9 +17,17 @@ fi
 for VERSION_DIR in "$BASE_PATH/versions"/v*/; do
     if [ -d "$VERSION_DIR/backend" ]; then
         VERSION_NAME=$(basename "$VERSION_DIR")
-        echo "Installing dependencies for $VERSION_NAME..."
+        echo "Installing backend dependencies for $VERSION_NAME..."
         cd "$VERSION_DIR/backend"
         uv sync --frozen 2>/dev/null || uv sync
+    fi
+    # v0.6.0以降: フロントエンドのビルド（package.jsonが存在する場合）
+    if [ -f "$VERSION_DIR/frontend/package.json" ]; then
+        VERSION_NAME=$(basename "$VERSION_DIR")
+        echo "Building frontend for $VERSION_NAME..."
+        cd "$VERSION_DIR/frontend"
+        npm ci --prefer-offline 2>/dev/null || npm install
+        npm run build
     fi
 done
 
