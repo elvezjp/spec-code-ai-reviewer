@@ -20,6 +20,7 @@
   - core/components/ui: Button, Modal, Table, Card等の基本UI部品
   - core/components/shared: SettingsModal, VersionSelector等の共通機能
 - **React Hooks による状態管理**: localStorage統合、モーダル制御、画面状態管理を含む包括的なHooks実装
+- **lucide-react導入**: 絵文字をlucide-reactアイコンに統一し、UIの一貫性を向上
 
 ### 変更
 - **フロントエンド起動方法**: バックエンドと分離して起動（開発時: Vite devサーバー ポート5173、本番: ビルド済みファイル配信）
