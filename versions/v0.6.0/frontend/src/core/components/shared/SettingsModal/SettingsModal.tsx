@@ -3,7 +3,7 @@ import { Settings } from 'lucide-react'
 import { Modal } from '../../ui/Modal'
 import { ProgramInfoSection } from './ProgramInfoSection'
 import { ConfigFileSection } from './ConfigFileSection'
-import { LlmSettingsSection } from './LlmSettingsSection'
+import { LlmSettingsSection, type TestConnectionResult } from './LlmSettingsSection'
 import { PromptPresetsSection } from './PromptPresetsSection'
 import type { AppInfo, LlmSettings, SystemPromptPreset } from '../../../types'
 
@@ -35,7 +35,7 @@ interface SettingsModalProps {
   // LLM設定セクション用
   llmSettings?: LlmSettings
   onModelChange?: (model: string) => void
-  onTestConnection?: () => Promise<boolean>
+  onTestConnection?: () => Promise<TestConnectionResult>
   isSystemFallback?: boolean
   // プロンプトプリセットセクション用
   systemPromptPresets?: SystemPromptPreset[]

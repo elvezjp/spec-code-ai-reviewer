@@ -1,10 +1,17 @@
 import type { LlmSettings } from '../../../types'
 import { Button } from '../../ui/Button'
 
+export interface TestConnectionResult {
+  success: boolean
+  model?: string
+  provider?: string
+  error?: string
+}
+
 interface LlmSettingsSectionProps {
   settings?: LlmSettings
   onModelChange: (model: string) => void
-  onTestConnection: () => Promise<boolean>
+  onTestConnection: () => Promise<TestConnectionResult>
   isSystemFallback?: boolean
 }
 
@@ -33,16 +40,19 @@ export function LlmSettingsSection({
     statusEl.classList.remove('hidden')
 
     try {
-      const success = await onTestConnection()
-      if (success) {
-        statusEl.textContent = '接続成功'
+      const result = await onTestConnection()
+      if (result.success) {
+        const label = result.model || result.provider || ''
+        statusEl.textContent = label ? `接続成功 (${label})` : '接続成功'
         statusEl.className = 'text-sm text-green-600'
       } else {
-        statusEl.textContent = '接続失敗'
+        const errorMsg = result.error || '接続に失敗しました'
+        statusEl.textContent = `接続失敗: ${errorMsg}`
         statusEl.className = 'text-sm text-red-600'
       }
-    } catch {
-      statusEl.textContent = '接続エラー'
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : '不明なエラー'
+      statusEl.textContent = `接続エラー: ${errorMsg}`
       statusEl.className = 'text-sm text-red-600'
     }
   }

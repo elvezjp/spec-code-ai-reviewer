@@ -152,7 +152,7 @@ export function Reviewer() {
   }
 
   // LLM connection test handler
-  const handleTestConnection = useCallback(async (): Promise<boolean> => {
+  const handleTestConnection = useCallback(async () => {
     try {
       // Build request based on config
       if (llmConfig) {
@@ -164,14 +164,27 @@ export function Reviewer() {
           secretAccessKey: llmConfig.secretAccessKey,
           region: llmConfig.region,
         })
-        return result.status === 'connected'
+        return {
+          success: result.status === 'connected',
+          model: result.model,
+          provider: result.provider,
+          error: result.error,
+        }
       } else {
         // No config - test system LLM
         const result = await testLlmConnection({})
-        return result.status === 'connected'
+        return {
+          success: result.status === 'connected',
+          model: result.model,
+          provider: result.provider,
+          error: result.error,
+        }
       }
-    } catch {
-      return false
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '接続エラー',
+      }
     }
   }, [llmConfig, selectedModel])
 
