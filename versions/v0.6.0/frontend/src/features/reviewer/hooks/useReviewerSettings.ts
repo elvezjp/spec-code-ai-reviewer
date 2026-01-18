@@ -43,14 +43,25 @@ interface UseReviewerSettingsReturn {
 }
 
 const STORAGE_KEY = 'reviewer-config'
+const SELECTED_MODEL_KEY = 'selected-model'
 const SELECTED_PROMPT_KEY = 'selected-system-prompt'
+
+// 最初の:でのみ分割（モデル名に:が含まれる場合に対応）
+const parseSelectedModelKey = (key: string): { provider: string; model: string } | null => {
+  const firstColonIndex = key.indexOf(':')
+  if (firstColonIndex === -1) return null
+  return {
+    provider: key.substring(0, firstColonIndex),
+    model: key.substring(firstColonIndex + 1),
+  }
+}
 
 export function useReviewerSettings(): UseReviewerSettingsReturn {
   const [reviewerConfig, setReviewerConfig] = useState<ReviewerConfig | null>(null)
   const [configFilename, setConfigFilename] = useState<string | null>(null)
   const [configModified, setConfigModified] = useState(false)
   const [configLoadStatus, setConfigLoadStatus] = useState<ConfigLoadStatus | null>(null)
-  const [selectedModel, setSelectedModel] = useState('')
+  const [selectedModel, setSelectedModelState] = useState('')
   const [selectedPreset, setSelectedPreset] = useState('')
   const [currentPromptValues, setCurrentPromptValues] = useState<SystemPromptValues>({
     role: '',
@@ -81,6 +92,18 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
         region: reviewerConfig.llm.region,
       }
     : null
+
+  // モデル選択変更時にlocalStorageにも保存
+  const setSelectedModel = useCallback(
+    (model: string) => {
+      setSelectedModelState(model)
+      // プロバイダーとモデルをセットで保存（v0.5.2互換）
+      if (model && reviewerConfig?.llm?.provider) {
+        localStorage.setItem(SELECTED_MODEL_KEY, `${reviewerConfig.llm.provider}:${model}`)
+      }
+    },
+    [reviewerConfig?.llm?.provider]
+  )
 
   const getTypeNote = useCallback(
     (type: string): string => {
@@ -334,9 +357,19 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
         : '・システムプロンプトプリセットは更新されませんでした',
     })
 
-    // Set initial model if available
+    // 保存済みのモデル選択を復元、なければ最初のモデルを選択
     if (parsed.llm?.models && parsed.llm.models.length > 0) {
-      setSelectedModel(parsed.llm.models[0])
+      const savedModelKey = localStorage.getItem(SELECTED_MODEL_KEY)
+      let modelToSelect = parsed.llm.models[0] // デフォルトは最初のモデル
+
+      if (savedModelKey) {
+        const parsed_model = parseSelectedModelKey(savedModelKey)
+        // プロバイダーが一致し、モデルリストに含まれている場合のみ復元
+        if (parsed_model && parsed_model.provider === parsed.llm.provider && parsed.llm.models.includes(parsed_model.model)) {
+          modelToSelect = parsed_model.model
+        }
+      }
+      setSelectedModelState(modelToSelect)
     }
   }, [])
 
@@ -348,11 +381,12 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
 
   const clearSavedConfig = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(SELECTED_MODEL_KEY)
     setReviewerConfig(null)
     setConfigFilename(null)
     setConfigModified(false)
     setConfigLoadStatus(null)
-    setSelectedModel('')
+    setSelectedModelState('')
   }, [])
 
   const hasSavedConfig = useCallback((): boolean => {
@@ -386,8 +420,19 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
             : '・システムプロンプトプリセットは設定されていません',
         })
 
+        // 保存済みのモデル選択を復元
         if (parsed.llm?.models && parsed.llm.models.length > 0) {
-          setSelectedModel(parsed.llm.models[0])
+          const savedModelKey = localStorage.getItem(SELECTED_MODEL_KEY)
+          let modelToSelect = parsed.llm.models[0] // デフォルトは最初のモデル
+
+          if (savedModelKey) {
+            const parsed_model = parseSelectedModelKey(savedModelKey)
+            // プロバイダーが一致し、モデルリストに含まれている場合のみ復元
+            if (parsed_model && parsed_model.provider === parsed.llm.provider && parsed.llm.models.includes(parsed_model.model)) {
+              modelToSelect = parsed_model.model
+            }
+          }
+          setSelectedModelState(modelToSelect)
         }
       } catch {
         // Ignore parse errors

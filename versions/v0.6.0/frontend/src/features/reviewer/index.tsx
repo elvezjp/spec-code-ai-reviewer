@@ -83,7 +83,6 @@ export function Reviewer() {
   const {
     reviewResults,
     currentTab,
-    reviewError,
     executeReview,
     setCurrentTab,
     getSimpleJudgment,
@@ -132,11 +131,10 @@ export function Reviewer() {
         llmConfig: llmConfig || undefined,
       })
       screenManager.showResult()
-    } catch {
+    } catch (error) {
       screenManager.showMain()
-      if (reviewError) {
-        alert(reviewError)
-      }
+      const errorMessage = error instanceof Error ? error.message : 'レビュー実行に失敗しました'
+      alert(errorMessage)
     }
   }
 
