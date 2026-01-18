@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Download, ChevronDown, ChevronRight } from 'lucide-react'
 import type { DesignFile, ConversionTool } from '../types'
 
 interface SpecFileListProps {
@@ -125,7 +126,8 @@ export function SpecFileList({
           disabled={!specMarkdown}
           className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
-          📥 ダウンロード
+          <Download className="w-4 h-4 inline mr-1" />
+          ダウンロード
         </button>
         <span className="text-sm text-gray-500">{specStatus}</span>
       </div>
@@ -153,9 +155,11 @@ export function SpecFileList({
             onClick={() => setIsPreviewOpen(!isPreviewOpen)}
             className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800"
           >
-            <span className={`transition-transform ${isPreviewOpen ? '' : ''}`}>
-              {isPreviewOpen ? '▼' : '▶'}
-            </span>
+            {isPreviewOpen ? (
+              <ChevronDown className="w-4 h-4" />
+            ) : (
+              <ChevronRight className="w-4 h-4" />
+            )}
             <span>変換結果をプレビュー</span>
           </button>
           {isPreviewOpen && (

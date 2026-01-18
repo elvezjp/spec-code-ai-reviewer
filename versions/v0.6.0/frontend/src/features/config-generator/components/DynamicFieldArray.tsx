@@ -1,3 +1,5 @@
+import { X, Plus } from 'lucide-react'
+
 interface DynamicFieldArrayProps {
   label: string
   items: string[]
@@ -31,10 +33,10 @@ export function DynamicFieldArray({
             <button
               type="button"
               onClick={() => onItemRemove(index)}
-              className="text-red-500 hover:text-red-700 px-2 py-1 text-lg"
+              className="text-red-500 hover:text-red-700 px-2 py-1"
               title="削除"
             >
-              ×
+              <X className="w-5 h-5" />
             </button>
           </div>
         ))}
@@ -44,7 +46,7 @@ export function DynamicFieldArray({
         onClick={onItemAdd}
         className="mt-2 text-blue-500 hover:text-blue-700 text-sm flex items-center gap-1"
       >
-        <span>+</span> モデルを追加
+        <Plus className="w-4 h-4" /> モデルを追加
       </button>
     </div>
   )

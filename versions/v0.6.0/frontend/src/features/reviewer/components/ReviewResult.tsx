@@ -1,3 +1,14 @@
+import {
+  XCircle,
+  AlertTriangle,
+  CheckCircle,
+  HelpCircle,
+  FileText,
+  Clipboard,
+  Save,
+  Package,
+  Download,
+} from 'lucide-react'
 import type { ReviewExecutionData, SimpleJudgment, ReviewMeta } from '../types'
 
 interface ReviewResultProps {
@@ -26,7 +37,7 @@ export function ReviewResult({
   const statusConfig = {
     ng: {
       label: '問題あり',
-      icon: '❌',
+      icon: <XCircle className="w-6 h-6 text-red-600" />,
       bgColor: 'bg-red-50',
       borderColor: 'border-red-200',
       textColor: 'text-red-700',
@@ -34,7 +45,7 @@ export function ReviewResult({
     },
     warning: {
       label: '確認が必要',
-      icon: '⚠️',
+      icon: <AlertTriangle className="w-6 h-6 text-yellow-600" />,
       bgColor: 'bg-yellow-50',
       borderColor: 'border-yellow-200',
       textColor: 'text-yellow-700',
@@ -42,7 +53,7 @@ export function ReviewResult({
     },
     ok: {
       label: '問題なし',
-      icon: '✅',
+      icon: <CheckCircle className="w-6 h-6 text-green-600" />,
       bgColor: 'bg-green-50',
       borderColor: 'border-green-200',
       textColor: 'text-green-700',
@@ -50,7 +61,7 @@ export function ReviewResult({
     },
     unknown: {
       label: '不明',
-      icon: '❓',
+      icon: <HelpCircle className="w-6 h-6 text-gray-600" />,
       bgColor: 'bg-gray-50',
       borderColor: 'border-gray-200',
       textColor: 'text-gray-700',
@@ -75,7 +86,7 @@ export function ReviewResult({
     return (
       <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4`}>
         <div className="flex items-center gap-3">
-          <span className={`${config.iconBg} rounded-full p-2 text-xl`}>{config.icon}</span>
+          <span className={`${config.iconBg} rounded-full p-2`}>{config.icon}</span>
           <div>
             <div className={`font-bold ${config.textColor} text-lg`}>{config.label}</div>
             <div className="text-sm text-gray-600">{countText}</div>
@@ -214,7 +225,9 @@ export function ReviewResult({
 
           {/* Detailed report */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">📝 詳細レポート</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <FileText className="w-5 h-5" /> 詳細レポート
+            </h2>
             <div className="bg-gray-50 rounded-lg p-4 font-mono text-sm overflow-auto max-h-96 mb-4">
               <pre className="whitespace-pre-wrap text-gray-700">{currentResult.report}</pre>
             </div>
@@ -222,23 +235,23 @@ export function ReviewResult({
             <div className="flex gap-4">
               <button
                 onClick={() => onCopyReport(currentResult.report)}
-                className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded-lg shadow-md transition text-sm"
+                className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 rounded-lg shadow-md transition text-sm flex items-center justify-center gap-2"
               >
-                📋 コピー
+                <Clipboard className="w-4 h-4" /> コピー
               </button>
               <button
                 onClick={() => onDownloadReport(currentResult.report, currentTab)}
-                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg shadow-md transition text-sm"
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg shadow-md transition text-sm flex items-center justify-center gap-2"
               >
-                💾 ダウンロード
+                <Save className="w-4 h-4" /> ダウンロード
               </button>
             </div>
           </div>
 
           {/* Zip download */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">
-              📦 レビュー実行データ一式ダウンロード
+            <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <Package className="w-5 h-5" /> レビュー実行データ一式ダウンロード
             </h2>
             <p className="text-sm text-gray-600 mb-4">
               レビュー実行の入出力データを一式ダウンロードできます。
@@ -263,9 +276,9 @@ export function ReviewResult({
 
             <button
               onClick={() => onDownloadZip(currentResult, currentTab)}
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg shadow-md transition"
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg shadow-md transition flex items-center justify-center gap-2"
             >
-              📥 一式ダウンロード（ZIP）
+              <Download className="w-5 h-5" /> 一式ダウンロード（ZIP）
             </button>
           </div>
         </>

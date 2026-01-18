@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
 import { useEffect } from 'react'
+import { X } from 'lucide-react'
 
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
-  title: string
+  title: ReactNode
   children: ReactNode
   className?: string
 }
@@ -55,10 +56,10 @@ export function Modal({
           <h2 className="text-xl font-bold text-gray-800">{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+            className="text-gray-500 hover:text-gray-700"
             aria-label="閉じる"
           >
-            ×
+            <X className="w-6 h-6" />
           </button>
         </div>
         <div className="overflow-y-auto flex-1 p-6 pt-4">{children}</div>

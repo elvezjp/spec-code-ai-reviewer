@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import type { SystemPromptPreset } from '../../types'
 
 interface SystemPromptEditorProps {
@@ -140,13 +141,11 @@ export function SystemPromptEditor({
         className="w-full flex justify-between items-center text-lg font-semibold text-gray-800"
       >
         <span>システムプロンプト設定</span>
-        <span
-          className={`text-gray-500 transition-transform ${
+        <ChevronDown
+          className={`w-5 h-5 text-gray-500 transition-transform ${
             isExpanded ? 'rotate-180' : ''
           }`}
-        >
-          ▼
-        </span>
+        />
       </button>
       <p className="text-xs text-gray-400 mt-2">
         AIへの指示内容が設定されています。変更したい場合に編集してください。

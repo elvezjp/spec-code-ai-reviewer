@@ -1,3 +1,4 @@
+import { AlertTriangle } from 'lucide-react'
 import type { LlmProvider } from '@core/types'
 import { Card } from '@core/index'
 import type { ConfigFormState, LlmSectionDefinition, FieldDefinition, ArrayFieldDefinition } from '../types'
@@ -109,7 +110,7 @@ export function LlmSection({
       {currentCase.notes && currentCase.notes.length > 0 && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <div className="flex items-start gap-2">
-            <span className="text-amber-600 text-lg">⚠</span>
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
               <p className="font-medium text-amber-800 mb-1">注意</p>
               <ul className="text-sm text-amber-700 space-y-1">

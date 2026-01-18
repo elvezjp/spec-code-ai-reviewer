@@ -1,3 +1,4 @@
+import { X, Plus } from 'lucide-react'
 import type { SpecType } from '@core/types'
 import { Card } from '@core/index'
 import { CONFIG_SCHEMA } from '../schema/configSchema'
@@ -64,7 +65,7 @@ export function SpecTypesTable({
                     className="text-red-500 hover:text-red-700 px-2 py-1"
                     title="削除"
                   >
-                    ×
+                    <X className="w-4 h-4" />
                   </button>
                 </td>
               </tr>
@@ -78,7 +79,7 @@ export function SpecTypesTable({
         onClick={onSpecTypeAdd}
         className="mt-3 text-blue-500 hover:text-blue-700 text-sm flex items-center gap-1"
       >
-        <span>+</span> 行を追加
+        <Plus className="w-4 h-4" /> 行を追加
       </button>
     </Card>
   )

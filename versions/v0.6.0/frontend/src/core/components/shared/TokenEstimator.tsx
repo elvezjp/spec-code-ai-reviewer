@@ -1,3 +1,5 @@
+import { AlertTriangle } from 'lucide-react'
+
 interface TokenEstimatorProps {
   totalTokens: number
   isWarning: boolean
@@ -26,8 +28,8 @@ export function TokenEstimator({
         </span>
       </div>
       {isWarning && (
-        <p className="text-xs text-orange-600 mt-2">
-          ⚠️
+        <p className="text-xs text-orange-600 mt-2 flex items-center gap-1">
+          <AlertTriangle className="w-4 h-4 inline shrink-0" />
           トークン数が多いため、処理に時間がかかったり、エラーになる可能性があります。
         </p>
       )}

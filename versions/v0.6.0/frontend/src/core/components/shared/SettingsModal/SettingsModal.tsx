@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Settings } from 'lucide-react'
 import { Modal } from '../../ui/Modal'
 import { ProgramInfoSection } from './ProgramInfoSection'
 import { ConfigFileSection } from './ConfigFileSection'
@@ -68,7 +69,7 @@ export function SettingsModal({
   const mergedSections = { ...defaultSections, ...sections }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="⚙️ 設定">
+    <Modal isOpen={isOpen} onClose={onClose} title={<span className="flex items-center gap-2"><Settings className="w-5 h-5" /> 設定</span>}>
       {/* プログラム情報 */}
       {mergedSections.programInfo && <ProgramInfoSection appInfo={appInfo} />}
 

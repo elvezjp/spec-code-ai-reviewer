@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChevronDown, ChevronRight, X, Plus } from 'lucide-react'
 import type { SystemPromptPreset } from '@core/types'
 import { Card } from '@core/index'
 import { CONFIG_SCHEMA } from '../schema/configSchema'
@@ -58,7 +59,11 @@ export function SystemPromptsSection({
                     onClick={() => toggleCollapse(index)}
                     className="text-gray-500 hover:text-gray-700 transition"
                   >
-                    {isCollapsed ? '▶' : '▼'}
+                    {isCollapsed ? (
+                      <ChevronRight className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
                   </button>
                   <input
                     type="text"
@@ -71,10 +76,10 @@ export function SystemPromptsSection({
                 <button
                   type="button"
                   onClick={() => onSystemPromptRemove(index)}
-                  className="text-red-500 hover:text-red-700 px-2 py-1 text-lg ml-2"
+                  className="text-red-500 hover:text-red-700 px-2 py-1 ml-2"
                   title="削除"
                 >
-                  ×
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
@@ -106,7 +111,7 @@ export function SystemPromptsSection({
         onClick={onSystemPromptAdd}
         className="mt-4 text-blue-500 hover:text-blue-700 text-sm flex items-center gap-1"
       >
-        <span>+</span> プリセットを追加
+        <Plus className="w-4 h-4" /> プリセットを追加
       </button>
     </Card>
   )

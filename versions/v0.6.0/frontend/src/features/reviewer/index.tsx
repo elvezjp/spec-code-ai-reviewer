@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import { Settings, FileText } from 'lucide-react'
 import {
   Layout,
   Header,
@@ -158,10 +159,10 @@ export function Reviewer() {
           />
           <button
             onClick={settingsModal.open}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
+            className="text-gray-500 hover:text-gray-700"
             title="設定"
           >
-            ⚙️
+            <Settings className="w-6 h-6" />
           </button>
         </div>
         <Header title={APP_INFO.description} />
@@ -179,10 +180,15 @@ export function Reviewer() {
               onFilesSelect={addSpecFiles}
               label="ファイルを選択"
             />
-            <span className="text-gray-600 text-sm">
-              {specFiles.length > 0
-                ? `📄 ${specFiles.map((f) => f.filename).join(', ')}`
-                : '選択してください'}
+            <span className="text-gray-600 text-sm flex items-center gap-1">
+              {specFiles.length > 0 ? (
+                <>
+                  <FileText className="w-4 h-4" />
+                  {specFiles.map((f) => f.filename).join(', ')}
+                </>
+              ) : (
+                '選択してください'
+              )}
             </span>
           </div>
           <SpecFileList
@@ -210,10 +216,15 @@ export function Reviewer() {
               onFilesSelect={addCodeFiles}
               label="ファイルを選択"
             />
-            <span className="text-gray-600 text-sm">
-              {codeFiles.length > 0
-                ? `📄 ${codeFiles.map((f) => f.filename).join(', ')}`
-                : '選択してください'}
+            <span className="text-gray-600 text-sm flex items-center gap-1">
+              {codeFiles.length > 0 ? (
+                <>
+                  <FileText className="w-4 h-4" />
+                  {codeFiles.map((f) => f.filename).join(', ')}
+                </>
+              ) : (
+                '選択してください'
+              )}
             </span>
           </div>
           <CodeFileList
