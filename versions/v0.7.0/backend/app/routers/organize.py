@@ -20,8 +20,8 @@ from app.services.markdown_organizer import (
 router = APIRouter()
 
 _MAX_INPUT_TOKENS = int(os.environ.get("ORGANIZE_MAX_INPUT_TOKENS", "20000"))
-_TIMEOUT_SECONDS = int(os.environ.get("ORGANIZE_TIMEOUT_SECONDS", "60"))
-_MAX_RETRIES = int(os.environ.get("ORGANIZE_MAX_RETRIES", "3"))
+_TIMEOUT_SECONDS = int(os.environ.get("ORGANIZE_TIMEOUT_SECONDS", "180"))
+_MAX_RETRIES = int(os.environ.get("ORGANIZE_MAX_RETRIES", "2"))
 
 
 @router.post("/organize-markdown", response_model=OrganizeMarkdownResponse)
@@ -46,7 +46,9 @@ async def organize_markdown_api(request: OrganizeMarkdownRequest):
 
     async def run_with_retry(markdown: str) -> tuple[bool, str | None, str | None, str | None]:
         last_error: str | None = None
+        total_attempts = 0
         for attempt in range(_MAX_RETRIES):
+            total_attempts = attempt + 1
             try:
                 result = await asyncio.wait_for(
                     asyncio.to_thread(provider.organize_markdown, markdown, request.policy),
@@ -54,11 +56,11 @@ async def organize_markdown_api(request: OrganizeMarkdownRequest):
                 )
                 return True, result, None, None
             except asyncio.TimeoutError:
-                last_error = "タイムアウトしました。再試行してください。"
+                last_error = f"タイムアウトしました（{total_attempts}回実行）。入力を短くするか、再試行してください。"
                 if attempt == _MAX_RETRIES - 1:
                     return False, None, "timeout", last_error
             except Exception as e:
-                last_error = str(e)
+                last_error = f"{str(e)}（{total_attempts}回実行）"
                 if attempt == _MAX_RETRIES - 1:
                     return False, None, "api_error", last_error
         return False, None, "api_error", last_error
