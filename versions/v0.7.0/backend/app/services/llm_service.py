@@ -8,8 +8,20 @@ import os
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
+from app.models.schemas import ReviewMeta, ReviewResponse
+from app.services.prompt_builder import (
+    build_review_info_markdown,
+    build_review_meta,
+    build_system_prompt,
+    build_user_message,
+)
+from app.services.markdown_organizer import (
+    build_markdown_organize_system_prompt,
+    build_markdown_organize_user_message,
+)
+
 if TYPE_CHECKING:
-    from app.models.schemas import LLMConfig, ReviewRequest, ReviewResponse
+    from app.models.schemas import LLMConfig, ReviewRequest
 
 # システムLLM用のデフォルト設定（環境変数から取得）
 # 後方互換性のため、既存の環境変数名を維持
@@ -77,6 +89,95 @@ class LLMProvider(ABC):
             dict: {"status": "connected"} または {"status": "error", "error": "エラーメッセージ"}
         """
         pass
+
+    def _build_prompts(self, request: "ReviewRequest") -> tuple[str, str]:
+        """プロンプトを構築する（共通処理）
+
+        Args:
+            request: レビューリクエスト
+
+        Returns:
+            tuple: (system_prompt, user_message)
+        """
+        system_prompt = build_system_prompt(
+            role=request.systemPrompt.role,
+            purpose=request.systemPrompt.purpose,
+            format=request.systemPrompt.format,
+            notes=request.systemPrompt.notes,
+        )
+        user_message = build_user_message(
+            spec_markdown=request.specMarkdown,
+            spec_filename=request.specFilename,
+            designs=request.get_design_blocks(),
+            codes=request.get_code_blocks(),
+            legacy_code_with_line_numbers=request.codeWithLineNumbers,
+            legacy_code_filename=request.codeFilename,
+        )
+        return system_prompt, user_message
+
+    def _build_markdown_organize_prompts(
+        self, markdown: str, policy: str
+    ) -> tuple[str, str]:
+        """Markdown整理用のプロンプトを構築する（共通処理）
+
+        Args:
+            markdown: 整理対象のMarkdown
+            policy: 整理ポリシー
+
+        Returns:
+            tuple: (system_prompt, user_message)
+        """
+        system_prompt = build_markdown_organize_system_prompt(policy)
+        user_message = build_markdown_organize_user_message(markdown)
+        return system_prompt, user_message
+
+    def _build_success_response(
+        self,
+        request: "ReviewRequest",
+        version: str,
+        llm_output: str,
+        input_tokens: int,
+        output_tokens: int,
+    ) -> ReviewResponse:
+        """成功レスポンスを構築する（共通処理）
+
+        Args:
+            request: レビューリクエスト
+            version: アプリケーションのバージョン番号
+            llm_output: LLMからの出力テキスト
+            input_tokens: 入力トークン数
+            output_tokens: 出力トークン数
+
+        Returns:
+            ReviewResponse: 成功レスポンス
+        """
+        designs = request.get_design_blocks()
+        codes = request.get_code_blocks()
+        review_meta_dict = build_review_meta(
+            version=version,
+            model_id=self.model_id,
+            provider=self.provider_name,
+            designs=designs,
+            codes=codes,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            executed_at=request.executedAt,
+        )
+        review_info_markdown = build_review_info_markdown(review_meta_dict)
+        report = review_info_markdown + llm_output
+        review_meta = ReviewMeta(**review_meta_dict)
+        return ReviewResponse(success=True, report=report, reviewMeta=review_meta)
+
+    def _build_error_response(self, error_message: str) -> ReviewResponse:
+        """エラーレスポンスを構築する（共通処理）
+
+        Args:
+            error_message: エラーメッセージ
+
+        Returns:
+            ReviewResponse: エラーレスポンス
+        """
+        return ReviewResponse(success=False, error=error_message)
 
 
 def get_system_llm_config() -> "LLMConfig":

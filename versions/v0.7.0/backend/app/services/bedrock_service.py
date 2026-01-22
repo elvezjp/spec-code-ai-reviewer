@@ -8,18 +8,8 @@ from typing import TYPE_CHECKING
 import boto3
 from botocore.exceptions import ClientError
 
-from app.models.schemas import LLMConfig, ReviewMeta, ReviewResponse
+from app.models.schemas import LLMConfig, ReviewResponse
 from app.services.llm_service import LLMProvider
-from app.services.prompt_builder import (
-    build_review_info_markdown,
-    build_review_meta,
-    build_system_prompt,
-    build_user_message,
-)
-from app.services.markdown_organizer import (
-    build_markdown_organize_system_prompt,
-    build_markdown_organize_user_message,
-)
 
 if TYPE_CHECKING:
     from app.models.schemas import ReviewRequest
@@ -86,27 +76,7 @@ class BedrockProvider(LLMProvider):
         Raises:
             RuntimeError: Bedrock API呼び出しに失敗した場合
         """
-        # システムプロンプトを組み立て
-        system_prompt = build_system_prompt(
-            role=request.systemPrompt.role,
-            purpose=request.systemPrompt.purpose,
-            format=request.systemPrompt.format,
-            notes=request.systemPrompt.notes,
-        )
-
-        # 設計書とコードのブロックを取得
-        designs = request.get_design_blocks()
-        codes = request.get_code_blocks()
-
-        # ユーザーメッセージを組み立て
-        user_message = build_user_message(
-            spec_markdown=request.specMarkdown,
-            spec_filename=request.specFilename,
-            designs=designs,
-            codes=codes,
-            legacy_code_with_line_numbers=request.codeWithLineNumbers,
-            legacy_code_filename=request.codeFilename,
-        )
+        system_prompt, user_message = self._build_prompts(request)
 
         try:
             # Converse APIを使用（Anthropic/Amazon Nova両対応）
@@ -120,49 +90,25 @@ class BedrockProvider(LLMProvider):
                 inferenceConfig={"maxTokens": self._max_tokens},
             )
 
-            llm_output = response["output"]["message"]["content"][0]["text"]
-
-            # トークン数を取得
             usage = response.get("usage", {})
-            input_tokens = usage.get("inputTokens", 0)
-            output_tokens = usage.get("outputTokens", 0)
 
-            # ReviewMetaを構築
-            review_meta_dict = build_review_meta(
+            return self._build_success_response(
+                request=request,
                 version=version,
-                model_id=self._model_id,
-                provider=self.provider_name,
-                designs=designs,
-                codes=codes,
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-                executed_at=request.executedAt,
-            )
-
-            # レビュー情報セクションを構築してLLM出力と結合
-            review_info_markdown = build_review_info_markdown(review_meta_dict)
-            report = review_info_markdown + llm_output
-
-            # ReviewMetaオブジェクトを作成
-            review_meta = ReviewMeta(**review_meta_dict)
-
-            return ReviewResponse(
-                success=True,
-                report=report,
-                reviewMeta=review_meta,
+                llm_output=response["output"]["message"]["content"][0]["text"],
+                input_tokens=usage.get("inputTokens", 0),
+                output_tokens=usage.get("outputTokens", 0),
             )
 
         except ClientError as e:
             error_code = e.response["Error"]["Code"]
             error_message = e.response["Error"]["Message"]
-            return ReviewResponse(
-                success=False,
-                error=f"Bedrock API エラー ({error_code}): {error_message}",
+            return self._build_error_response(
+                f"Bedrock API エラー ({error_code}): {error_message}"
             )
         except Exception as e:
-            return ReviewResponse(
-                success=False,
-                error=f"レビュー実行中にエラーが発生しました: {str(e)}",
+            return self._build_error_response(
+                f"レビュー実行中にエラーが発生しました: {str(e)}"
             )
 
     def test_connection(self) -> dict:
@@ -194,8 +140,9 @@ class BedrockProvider(LLMProvider):
 
     def organize_markdown(self, markdown: str, policy: str) -> str:
         """Bedrock APIを呼び出してMarkdown整理を実行する"""
-        system_prompt = build_markdown_organize_system_prompt(policy)
-        user_message = build_markdown_organize_user_message(markdown)
+        system_prompt, user_message = self._build_markdown_organize_prompts(
+            markdown, policy
+        )
 
         try:
             response = self._client.converse(
