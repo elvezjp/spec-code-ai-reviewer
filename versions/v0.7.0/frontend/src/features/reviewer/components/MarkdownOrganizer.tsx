@@ -78,6 +78,25 @@ export function MarkdownOrganizer({ specMarkdown, llmConfig, onAdopt }: Markdown
       : organizedMarkdown
   }, [organizedMarkdown, viewMode])
 
+  const diffViewerStyles = useMemo(
+    () => ({
+      gutter: {
+        fontSize: '0.75rem',
+        lineHeight: '1.25rem',
+        padding: '0 4px',
+      },
+      marker: {
+        fontSize: '0.75rem',
+        padding: '0 4px',
+      },
+      contentText: {
+        fontSize: '0.75rem',
+        lineHeight: '1.25rem',
+      },
+    }),
+    []
+  )
+
   const handleOrganize = async () => {
     if (!specMarkdown || !policy.trim()) return
 
@@ -216,6 +235,7 @@ export function MarkdownOrganizer({ specMarkdown, llmConfig, onAdopt }: Markdown
                   showDiffOnly={false}
                   leftTitle="整理前Markdown"
                   rightTitle="整理後Markdown"
+                  styles={diffViewerStyles}
                 />
               </div>
               <div className="flex items-center gap-2 mt-3">
