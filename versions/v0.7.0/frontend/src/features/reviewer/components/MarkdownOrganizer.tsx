@@ -64,6 +64,9 @@ export function MarkdownOrganizer({ specMarkdown, llmConfig, onAdopt }: Markdown
     setWarnings([])
     setError(null)
     setSourceMarkdown(specMarkdown)
+    if (specMarkdown) {
+      setIsOpen(true)
+    }
   }, [specMarkdown])
 
   const oldValue = useMemo(() => {
@@ -160,7 +163,7 @@ export function MarkdownOrganizer({ specMarkdown, llmConfig, onAdopt }: Markdown
           {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         </button>
         {!specMarkdown && (
-          <span className="text-xs text-gray-400">※ 変換済みMarkdownが必要です</span>
+          <span className="text-xs text-gray-400">※ 先に設計書を選択してMarkdownに変換してください</span>
         )}
       </div>
 
@@ -174,7 +177,8 @@ export function MarkdownOrganizer({ specMarkdown, llmConfig, onAdopt }: Markdown
               value={policy}
               onChange={(e) => setPolicy(e.target.value)}
               rows={6}
-              className="w-full text-xs border border-gray-300 rounded-md p-2 font-mono"
+              disabled={!specMarkdown}
+              className="w-full text-xs border border-gray-300 rounded-md p-2 font-mono disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="整理方針を入力してください"
             />
           </div>
