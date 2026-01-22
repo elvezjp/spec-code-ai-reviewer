@@ -218,79 +218,76 @@ export function Reviewer() {
         }
       />
 
-      {/* File upload section */}
+      {/* Spec files section */}
       <Card className="mb-6">
-        {/* Spec files */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">設計書 (Excel)</label>
-          <div className="flex items-center gap-2 mb-2">
-            <FileInputButton
-              accept=".xlsx,.xls"
-              multiple
-              onFilesSelect={addSpecFiles}
-              label="ファイルを選択"
-            />
-            <span className="text-gray-600 text-sm flex items-center gap-1">
-              {specFiles.length > 0 ? (
-                <>
-                  <FileText className="w-4 h-4" />
-                  {specFiles.map((f) => f.filename).join(', ')}
-                </>
-              ) : (
-                '選択してください'
-              )}
-            </span>
-          </div>
-          <SpecFileList
-            files={specFiles}
-            availableTools={availableTools}
-            specTypesList={getSpecTypesList()}
-            specMarkdown={specMarkdown}
-            specStatus={specStatus}
-            isConverting={isSpecConverting}
-            onMainChange={setMainSpec}
-            onTypeChange={setSpecType}
-            onToolChange={setSpecTool}
-            onApplyToolToAll={applyToolToAll}
-            onConvert={handleConvertSpecs}
-            onDownload={() => specMarkdown && downloadSpecMarkdown(specMarkdown)}
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">設計書 (Excel)</h2>
+        <div className="flex items-center gap-2 mb-2">
+          <FileInputButton
+            accept=".xlsx,.xls"
+            multiple
+            onFilesSelect={addSpecFiles}
+            label="ファイルを選択"
           />
-          <MarkdownOrganizer
-            specMarkdown={specMarkdown}
-            llmConfig={llmConfig || undefined}
-            onAdopt={applyOrganizedMarkdown}
-          />
+          <span className="text-gray-600 text-sm flex items-center gap-1">
+            {specFiles.length > 0 ? (
+              <>
+                <FileText className="w-4 h-4" />
+                {specFiles.map((f) => f.filename).join(', ')}
+              </>
+            ) : (
+              '選択してください'
+            )}
+          </span>
         </div>
+        <SpecFileList
+          files={specFiles}
+          availableTools={availableTools}
+          specTypesList={getSpecTypesList()}
+          specMarkdown={specMarkdown}
+          specStatus={specStatus}
+          isConverting={isSpecConverting}
+          onMainChange={setMainSpec}
+          onTypeChange={setSpecType}
+          onToolChange={setSpecTool}
+          onApplyToolToAll={applyToolToAll}
+          onConvert={handleConvertSpecs}
+          onDownload={() => specMarkdown && downloadSpecMarkdown(specMarkdown)}
+        />
+        <MarkdownOrganizer
+          specMarkdown={specMarkdown}
+          llmConfig={llmConfig || undefined}
+          onAdopt={applyOrganizedMarkdown}
+        />
+      </Card>
 
-        {/* Code files */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">プログラム</label>
-          <div className="flex items-center gap-2 mb-2">
-            <FileInputButton
-              multiple
-              onFilesSelect={addCodeFiles}
-              label="ファイルを選択"
-            />
-            <span className="text-gray-600 text-sm flex items-center gap-1">
-              {codeFiles.length > 0 ? (
-                <>
-                  <FileText className="w-4 h-4" />
-                  {codeFiles.map((f) => f.filename).join(', ')}
-                </>
-              ) : (
-                '選択してください'
-              )}
-            </span>
-          </div>
-          <CodeFileList
-            files={codeFiles}
-            codeWithLineNumbers={codeWithLineNumbers}
-            codeStatus={codeStatus}
-            isConverting={isCodeConverting}
-            onConvert={convertCodes}
-            onDownload={() => codeWithLineNumbers && downloadCodeWithLineNumbers(codeWithLineNumbers)}
+      {/* Code files section */}
+      <Card className="mb-6">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">プログラム</h2>
+        <div className="flex items-center gap-2 mb-2">
+          <FileInputButton
+            multiple
+            onFilesSelect={addCodeFiles}
+            label="ファイルを選択"
           />
+          <span className="text-gray-600 text-sm flex items-center gap-1">
+            {codeFiles.length > 0 ? (
+              <>
+                <FileText className="w-4 h-4" />
+                {codeFiles.map((f) => f.filename).join(', ')}
+              </>
+            ) : (
+              '選択してください'
+            )}
+          </span>
         </div>
+        <CodeFileList
+          files={codeFiles}
+          codeWithLineNumbers={codeWithLineNumbers}
+          codeStatus={codeStatus}
+          isConverting={isCodeConverting}
+          onConvert={convertCodes}
+          onDownload={() => codeWithLineNumbers && downloadCodeWithLineNumbers(codeWithLineNumbers)}
+        />
       </Card>
 
       {/* System prompt settings */}
