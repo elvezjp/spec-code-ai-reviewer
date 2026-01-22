@@ -16,7 +16,7 @@
     "jszip": "^3.10.1",
     "lucide-react": "^0.562.0",
     "react": "^19.2.0",
-    "react-diff-viewer": "^3.1.1",
+    "react-diff-viewer-continued": "^4.0.4",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.12.0"
   },

@@ -1239,7 +1239,7 @@ wheels = [
 
 [[package]]
 name = "spec-code-ai-reviewer-backend"
-version = "0.6.0"
+version = "0.7.0"
 source = { editable = "." }
 dependencies = [
     { name = "add-line-numbers" },

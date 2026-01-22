@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Sparkles, ChevronDown, ChevronRight } from 'lucide-react'
-import ReactDiffViewer from 'react-diff-viewer'
+import ReactDiffViewer from 'react-diff-viewer-continued'
 import type { LlmConfig, OrganizeMarkdownWarning } from '../types'
 import { organizeMarkdown } from '../services/api'
 import { OrganizerAlerts } from './OrganizerAlerts'
