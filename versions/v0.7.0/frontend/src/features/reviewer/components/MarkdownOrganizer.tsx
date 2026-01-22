@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Sparkles, ChevronDown, ChevronRight } from 'lucide-react'
 import ReactDiffViewer from 'react-diff-viewer-continued'
 import type { LlmConfig, OrganizeMarkdownWarning } from '../types'
@@ -57,14 +57,20 @@ export function MarkdownOrganizer({ specMarkdown, llmConfig, onAdopt }: Markdown
   const [viewMode, setViewMode] = useState<'section' | 'line'>('section')
   const [splitView, setSplitView] = useState(true)
   const [sourceMarkdown, setSourceMarkdown] = useState<string | null>(specMarkdown)
+  const prevSpecMarkdownRef = useRef<string | null>(specMarkdown)
 
   useEffect(() => {
+    const prevSpecMarkdown = prevSpecMarkdownRef.current
+    prevSpecMarkdownRef.current = specMarkdown
+
     setOrganizedMarkdown(null)
     setStatus('')
     setWarnings([])
     setError(null)
     setSourceMarkdown(specMarkdown)
-    if (specMarkdown) {
+
+    // nullから値に変わった場合のみ自動で開く
+    if (specMarkdown && !prevSpecMarkdown) {
       setIsOpen(true)
     }
   }, [specMarkdown])
@@ -140,7 +146,7 @@ export function MarkdownOrganizer({ specMarkdown, llmConfig, onAdopt }: Markdown
   const handleAdopt = () => {
     if (!organizedMarkdown) return
     onAdopt(organizedMarkdown)
-    setStatus('✅ 整理結果を採用しました')
+    setIsOpen(false)
   }
 
   const handleDiscard = () => {
@@ -247,7 +253,7 @@ export function MarkdownOrganizer({ specMarkdown, llmConfig, onAdopt }: Markdown
                   onClick={handleAdopt}
                   className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition"
                 >
-                  採用
+                  採用してMarkdownに反映
                 </button>
                 <button
                   onClick={handleDiscard}
