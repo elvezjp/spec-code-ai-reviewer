@@ -121,7 +121,7 @@ v0.6.0以降はフロントエンドとバックエンドを別々に起動し�
 **ターミナル1: バックエンド起動**
 
 ```bash
-cd versions/v0.6.0/backend
+cd versions/v0.7.0/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -129,7 +129,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **ターミナル2: フロントエンド起動**
 
 ```bash
-cd versions/v0.6.0/frontend
+cd versions/v0.7.0/frontend
 npm install
 npm run dev
 ```
@@ -183,12 +183,12 @@ docker-compose down
 各バージョンのディレクトリでテストを実行します。
 
 ```bash
-# v0.6.0 バックエンドのテスト
-cd versions/v0.6.0/backend
+# v0.7.0 バックエンドのテスト
+cd versions/v0.7.0/backend
 uv run pytest tests/ -v
 
-# v0.6.0 フロントエンドのテスト
-cd versions/v0.6.0/frontend
+# v0.7.0 フロントエンドのテスト
+cd versions/v0.7.0/frontend
 npm test
 
 # v0.5.2以前のテスト（バックエンドのみ）
@@ -320,7 +320,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # 開発用Nginx設定
 │   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.6.0    # シンボリックリンク（最新版を指す）
+├── latest -> versions/v0.7.0    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
@@ -339,7 +339,12 @@ spec-code-ai-reviewer/
 │   │   ├── frontend/
 │   │   ├── config-file-generator-spec.md
 │   │   └── spec.md
-│   └── v0.6.0/                  # 最新版（Vite + React）
+│   ├── v0.6.0/                  # 旧バージョン（Vite + React）
+│   │   ├── backend/
+│   │   ├── frontend/            # Vite + React + TypeScript
+│   │   ├── config-file-generator-spec.md
+│   │   └── spec.md
+│   └── v0.7.0/                  # 最新版（Vite + React）
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -396,7 +401,8 @@ git subtree pull --prefix=markitdown https://github.com/microsoft/markitdown.git
 
 | バージョン | ポート |
 |-----------|-------|
-| v0.6.0 (latest) | 8060 |
+| v0.7.0 (latest) | 8070 |
+| v0.6.0 | 8060 |
 | v0.5.2 | 8052 |
 | v0.5.1 | 8051 |
 | v0.5.0 | 8050 |
