@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Sparkles, ChevronDown, ChevronRight } from 'lucide-react'
 import ReactDiffViewer from 'react-diff-viewer-continued'
-import type { LlmConfig, OrganizeMarkdownWarning } from '../types'
+import type { DesignFile, LlmConfig, OrganizeMarkdownWarning } from '../types'
 import { organizeMarkdown } from '../services/api'
 import { OrganizerAlerts } from './OrganizerAlerts'
 
 interface MarkdownOrganizerProps {
   specMarkdown: string | null
+  specFiles: DesignFile[]
   llmConfig?: LlmConfig
   onAdopt: (markdown: string) => void
 }
@@ -46,7 +47,7 @@ const normalizeForSectionDiff = (markdown: string): string => {
   return sections.join('\n\n---\n\n')
 }
 
-export function MarkdownOrganizer({ specMarkdown, llmConfig, onAdopt }: MarkdownOrganizerProps) {
+export function MarkdownOrganizer({ specMarkdown, specFiles, llmConfig, onAdopt }: MarkdownOrganizerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [policy, setPolicy] = useState(DEFAULT_POLICY)
   const [organizedMarkdown, setOrganizedMarkdown] = useState<string | null>(null)
@@ -116,9 +117,14 @@ export function MarkdownOrganizer({ specMarkdown, llmConfig, onAdopt }: Markdown
     setSourceMarkdown(specMarkdown)
 
     try {
+      const sources = specFiles
+        .filter((f) => f.markdown)
+        .map((f) => ({ filename: f.filename, tool: f.tool }))
+
       const result = await organizeMarkdown({
         markdown: specMarkdown,
         policy,
+        sources: sources.length > 0 ? sources : undefined,
         llmConfig,
       })
 

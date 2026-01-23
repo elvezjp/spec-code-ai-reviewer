@@ -236,11 +236,19 @@ class TestConnectionResponse(BaseModel):
     error: str | None = None
 
 
+class MarkdownSourceInfo(BaseModel):
+    """Markdown整理対象のソース情報"""
+
+    filename: str
+    tool: str = "markitdown"
+
+
 class OrganizeMarkdownRequest(BaseModel):
     """Markdown整理APIのリクエスト"""
 
     markdown: str
     policy: str
+    sources: list[MarkdownSourceInfo] | None = None
     llmConfig: LLMConfig | None = None
 
 

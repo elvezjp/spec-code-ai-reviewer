@@ -208,3 +208,38 @@
 - 章構成の変更で参照IDが変わる場合があるため、同一ドキュメント内での安定運用を優先する
 - 変更検知のため、整理後Markdownには生成日時と元Markdownのハッシュを埋め込む
 - 将来的に差分レビューを行う場合は、旧IDから新IDへの簡易マップを保持する（保存先は運用で決定）
+
+## 前処理フェーズ（追加）
+### 背景
+excel2md利用時に自動追加される説明文が、設計書の内容と混同して整理されてしまう問題がある。
+将来的にツールに応じた前処理を実行できるようにするため、前処理フェーズを追加した。
+
+### 設計
+- Markdown整理APIにツール情報（sources）を渡す
+  - ファイルごとに異なるツール（markitdown, excel2md等）を指定可能
+- バックエンドで前処理関数を呼び出し、ツールに応じた前処理を実行する
+  - 現時点では何もせずそのまま返す（将来の拡張ポイント）
+
+### API変更
+```python
+class MarkdownSourceInfo(BaseModel):
+    filename: str
+    tool: str = "markitdown"
+
+class OrganizeMarkdownRequest(BaseModel):
+    markdown: str
+    policy: str
+    sources: list[MarkdownSourceInfo] | None = None  # 追加
+    llmConfig: LLMConfig | None = None
+```
+
+### 前処理関数
+```python
+def preprocess_markdown(markdown: str, tools: list[str] | None = None) -> str:
+    # 将来的にツールに応じた前処理を追加
+    return markdown
+```
+
+### 将来の拡張例
+- excel2md: 自動追加される説明文（概要セクション）の削除
+- markitdown: 画像参照のプレースホルダー置換

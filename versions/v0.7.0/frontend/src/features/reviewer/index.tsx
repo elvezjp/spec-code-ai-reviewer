@@ -255,6 +255,7 @@ export function Reviewer() {
         />
         <MarkdownOrganizer
           specMarkdown={specMarkdown}
+          specFiles={specFiles}
           llmConfig={llmConfig || undefined}
           onAdopt={applyOrganizedMarkdown}
         />

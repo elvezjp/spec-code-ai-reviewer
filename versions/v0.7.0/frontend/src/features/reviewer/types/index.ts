@@ -79,9 +79,15 @@ export interface LlmConfig {
   region?: string
 }
 
+export interface MarkdownSourceInfo {
+  filename: string
+  tool: string
+}
+
 export interface OrganizeMarkdownRequest {
   markdown: string
   policy: string
+  sources?: MarkdownSourceInfo[]
   llmConfig?: LlmConfig
 }
 

@@ -24,6 +24,20 @@ _TIMEOUT_SECONDS = int(os.environ.get("ORGANIZE_TIMEOUT_SECONDS", "180"))
 _MAX_RETRIES = int(os.environ.get("ORGANIZE_MAX_RETRIES", "2"))
 
 
+def preprocess_markdown(markdown: str, tools: list[str] | None = None) -> str:
+    """Markdownに対して前処理を実行する
+
+    Args:
+        markdown: 前処理対象のMarkdown
+        tools: 使用されたツールのリスト
+
+    Returns:
+        str: 前処理後のMarkdown
+    """
+    # 将来的にツールに応じた前処理を追加
+    return markdown
+
+
 @router.post("/organize-markdown", response_model=OrganizeMarkdownResponse)
 async def organize_markdown_api(request: OrganizeMarkdownRequest):
     """Markdown整理API"""
@@ -41,6 +55,10 @@ async def organize_markdown_api(request: OrganizeMarkdownRequest):
             error="整理方針が空です。",
             errorCode="policy_empty",
         )
+
+    # 前処理フェーズ
+    tools = [source.tool for source in request.sources] if request.sources else None
+    preprocessed_markdown = preprocess_markdown(request.markdown, tools)
 
     provider = get_llm_provider(request.llmConfig)
 
@@ -65,9 +83,9 @@ async def organize_markdown_api(request: OrganizeMarkdownRequest):
                     return False, None, "api_error", last_error
         return False, None, "api_error", last_error
 
-    estimated_tokens = estimate_tokens(request.markdown + "\n" + request.policy)
+    estimated_tokens = estimate_tokens(preprocessed_markdown + "\n" + request.policy)
     if estimated_tokens > _MAX_INPUT_TOKENS:
-        sections = split_markdown_by_section(request.markdown)
+        sections = split_markdown_by_section(preprocessed_markdown)
         if len(sections) <= 1:
             return OrganizeMarkdownResponse(
                 success=False,
@@ -96,7 +114,7 @@ async def organize_markdown_api(request: OrganizeMarkdownRequest):
 
         organized = "\n\n".join([section for section in organized_sections if section])
     else:
-        ok, organized, error_code, error_message = await run_with_retry(request.markdown)
+        ok, organized, error_code, error_message = await run_with_retry(preprocessed_markdown)
         if not ok or organized is None:
             return OrganizeMarkdownResponse(
                 success=False,
@@ -112,7 +130,7 @@ async def organize_markdown_api(request: OrganizeMarkdownRequest):
         )
 
     organized_with_refs = assign_reference_ids(organized)
-    warnings = detect_warnings(request.markdown, organized_with_refs)
+    warnings = detect_warnings(preprocessed_markdown, organized_with_refs)
 
     return OrganizeMarkdownResponse(
         success=True,
