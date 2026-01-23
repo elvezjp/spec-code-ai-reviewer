@@ -361,7 +361,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # 開発用Nginx設定
 │   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.6.0    # シンボリックリンク（最新版を指す）
+├── latest -> versions/v0.7.0    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
@@ -380,7 +380,12 @@ spec-code-ai-reviewer/
 │   │   ├── frontend/
 │   │   ├── config-file-generator-spec.md
 │   │   └── spec.md
-│   └── v0.6.0/                  # 最新版（Vite + React）
+│   ├── v0.6.0/                  # 旧バージョン（Vite + React）
+│   │   ├── backend/
+│   │   ├── frontend/            # Vite + React + TypeScript
+│   │   ├── config-file-generator-spec.md
+│   │   └── spec.md
+│   └── v0.7.0/                  # 最新版（Vite + React）
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -437,7 +442,8 @@ git subtree pull --prefix=markitdown https://github.com/microsoft/markitdown.git
 
 | バージョン | ポート |
 |-----------|-------|
-| v0.6.0 (latest) | 8060 |
+| v0.7.0 (latest) | 8070 |
+| v0.6.0 | 8060 |
 | v0.5.2 | 8052 |
 | v0.5.1 | 8051 |
 | v0.5.0 | 8050 |
