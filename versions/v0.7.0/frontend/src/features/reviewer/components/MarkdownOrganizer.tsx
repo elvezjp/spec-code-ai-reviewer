@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Sparkles, ChevronDown, ChevronRight } from 'lucide-react'
 import ReactDiffViewer from 'react-diff-viewer-continued'
+import { estimateTokenCount } from '@core/index'
 import type { DesignFile, LlmConfig, OrganizeMarkdownWarning } from '../types'
 import { organizeMarkdown } from '../services/api'
 import { OrganizerAlerts } from './OrganizerAlerts'
@@ -121,6 +122,11 @@ export function MarkdownOrganizer({
       ? normalizeForSectionDiff(organizedMarkdown)
       : organizedMarkdown
   }, [organizedMarkdown, viewMode])
+
+  const estimatedTokens = useMemo(() => {
+    if (!specMarkdown) return 0
+    return estimateTokenCount(specMarkdown)
+  }, [specMarkdown])
 
   const diffViewerStyles = useMemo(
     () => ({
@@ -266,8 +272,15 @@ export function MarkdownOrganizer({
             >
               整理を実行
             </button>
-            <span className="text-sm text-gray-500">{status}</span>
+            <span className="text-xs text-gray-500">
+              {isProcessing
+                ? status
+                : `推定入力トークン数: ${estimatedTokens.toLocaleString()} トークン（日本語: 約1.5文字/トークン、英数字: 約4文字/トークンで算出）`}
+            </span>
           </div>
+          <p className="text-xs text-gray-400">
+            ※ 設計書が大きい場合は、処理に時間が掛かったり、タイムアウトや制限等でエラーになる可能性があります。
+          </p>
 
           <OrganizerAlerts error={error} warnings={warnings} />
 
