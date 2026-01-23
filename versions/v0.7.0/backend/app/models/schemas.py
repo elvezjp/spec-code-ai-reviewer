@@ -248,7 +248,7 @@ class OrganizeMarkdownRequest(BaseModel):
 
     markdown: str
     policy: str
-    sources: list[MarkdownSourceInfo] | None = None
+    source: MarkdownSourceInfo | None = None
     llmConfig: LLMConfig | None = None
 
 

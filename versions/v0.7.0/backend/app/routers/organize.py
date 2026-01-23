@@ -24,12 +24,12 @@ _TIMEOUT_SECONDS = int(os.environ.get("ORGANIZE_TIMEOUT_SECONDS", "180"))
 _MAX_RETRIES = int(os.environ.get("ORGANIZE_MAX_RETRIES", "2"))
 
 
-def preprocess_markdown(markdown: str, tools: list[str] | None = None) -> str:
+def preprocess_markdown(markdown: str, tool: str | None = None) -> str:
     """Markdownに対して前処理を実行する
 
     Args:
         markdown: 前処理対象のMarkdown
-        tools: 使用されたツールのリスト
+        tool: 使用されたツール名
 
     Returns:
         str: 前処理後のMarkdown
@@ -57,8 +57,8 @@ async def organize_markdown_api(request: OrganizeMarkdownRequest):
         )
 
     # 前処理フェーズ
-    tools = [source.tool for source in request.sources] if request.sources else None
-    preprocessed_markdown = preprocess_markdown(request.markdown, tools)
+    tool = request.source.tool if request.source else None
+    preprocessed_markdown = preprocess_markdown(request.markdown, tool)
 
     provider = get_llm_provider(request.llmConfig)
 

@@ -87,7 +87,7 @@ export interface MarkdownSourceInfo {
 export interface OrganizeMarkdownRequest {
   markdown: string
   policy: string
-  sources?: MarkdownSourceInfo[]
+  source?: MarkdownSourceInfo
   llmConfig?: LlmConfig
 }
 

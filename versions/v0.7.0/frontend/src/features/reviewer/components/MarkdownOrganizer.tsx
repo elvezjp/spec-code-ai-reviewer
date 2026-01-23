@@ -164,7 +164,7 @@ export function MarkdownOrganizer({
         const result = await organizeMarkdown({
           markdown: file.markdown!,
           policy,
-          sources: [{ filename: file.filename, tool: file.tool }],
+          source: { filename: file.filename, tool: file.tool },
           llmConfig,
         })
 
