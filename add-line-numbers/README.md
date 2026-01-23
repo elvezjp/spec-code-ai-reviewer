@@ -1,73 +1,80 @@
 # add-line-numbers
+[English](./README.md) | [日本語](./README_ja.md)
 
-テキストファイルに「4桁右揃えの行番号」を自動で付けるPythonスクリプトです。コードレビューやAI解析で「〇行目を見て」と指し示しやすくなります。外部ライブラリ不要で、Python 3.8+ だけあれば動きます。
+[![Elvez](https://img.shields.io/badge/Elvez-Product-3F61A7?style=flat-square)](https://elvez.co.jp/)
+[![IXV Ecosystem](https://img.shields.io/badge/IXV-Ecosystem-3F61A7?style=flat-square)](https://elvez.co.jp/ixv/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.8+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Stars](https://img.shields.io/github/stars/elvezjp/add-line-numbers?style=social)](https://github.com/elvezjp/add-line-numbers/stargazers)
 
-## まずはクイックスタート
+A Python script that automatically adds 4-digit right-aligned line numbers to text files. It makes code reviews and AI analysis easier by letting you point to “line X.” No external libraries required—just Python 3.8+.
 
-1. リポジトリを取得して移動する
+## Quick Start
+
+1. Clone and move into the repo
    ```bash
    git clone https://github.com/elvezjp/add-line-numbers.git
    cd add-line-numbers
    ```
-2. そのまま実行（`inputs/` → `outputs/`）
+2. Run as-is (`inputs/` → `outputs/`)
    ```bash
    python add_line_numbers.py
    ```
-3. 結果を確認  
-   - 変換後のファイルが `outputs/` に生成されます  
-   - `outputs/README.md` が自動で作られ、構造と使い方がまとまります
+3. Check the results
+   - Converted files are generated in `outputs/`
+   - `outputs/README.md` is auto-generated with structure and usage notes
 
-## もう少し詳しく（初心者向け）
+## A Bit More Detail (Beginner Friendly)
 
-- 何をするツール？
-  - テキストファイルの各行頭に行番号（例: `   1: `）を付けます
-  - 入力ディレクトリの構造を保ったまま出力にコピーします
-  - 出力先に説明用 README を自動生成します
+- What does it do?
+  - Adds a line number prefix (e.g., `   1: `) to each line of text files
+  - Copies files to the output while preserving the input directory structure
+  - Automatically generates a README in the output directory
 
-- 対応するファイル
-  - UTF-8のテキストファイル全般（.py, .java, .js, .json, .xml, .md, .txt など）
-  - 画像などのバイナリやUTF-8で読めないファイルは自動スキップします
+- Supported files
+  - General UTF-8 text files (.py, .java, .js, .json, .xml, .md, .txt, etc.)
+  - Binary files or non-UTF-8 files are automatically skipped
 
-- 必要なもの
-  - Python 3.8以上
-  - 追加のpipインストールは不要です
+- Requirements
+  - Python 3.8 or later
+  - No extra pip installs needed
 
-## 使い方
+## Usage
 
-### デフォルト（何も指定しない）
+### Default (no arguments)
 ```bash
 python add_line_numbers.py
-# inputs/ を読み、outputs/ に書き出します
+# Reads inputs/ and writes to outputs/
 ```
 
-### 入出力を自分で指定する
+### Specify input and output
 ```bash
-python add_line_numbers.py <入力ディレクトリ> <出力ディレクトリ>
+python add_line_numbers.py <input_dir> <output_dir>
 ```
-例:
+Example:
 ```bash
 python add_line_numbers.py my_project numbered_output
 ```
 
-### 実行時の出力イメージ
+### Sample output log
 ```
-処理中: 64 個のファイル
-入力: inputs
-出力: outputs
+Processing: 64 files
+Input: inputs
+Output: outputs
 ------------------------------------------------------------
 ✓ src/main.py
 ✓ config/settings.json
 ✓ docs/README.md
 ------------------------------------------------------------
-完了: 64 個のファイルを処理しました
-✓ README.md を生成しました: outputs/README.md
+Done: processed 64 files
+✓ README.md generated: outputs/README.md
 ```
 
-## 行番号はこう付きます
+## How the Line Numbers Look
 
-- フォーマット: `   1: `（行番号は4桁右揃え＋コロン＋スペース）
+- Format: `   1: ` (4-digit right-aligned + colon + space)
 
-変換前:
+Before:
 ```python
 def hello():
     print("Hello, World!")
@@ -76,7 +83,7 @@ if __name__ == "__main__":
     hello()
 ```
 
-変換後:
+After:
 ```
    1: def hello():
    2:     print("Hello, World!")
@@ -85,38 +92,37 @@ if __name__ == "__main__":
    5:     hello()
 ```
 
-## つまずきポイントとヒント
+## Tips and Gotchas
 
-- 入力ディレクトリが存在しないとエラー終了します。パスを確認してください。
-- 非UTF-8やバイナリはスキップされます。必要なら事前にUTF-8へ変換してください。
-- 大量ファイルでは少し時間がかかります。出力ログで進捗を確認できます。
+- If the input directory does not exist, the script exits with an error. Double-check the path.
+- Non-UTF-8 or binary files are skipped. Convert them to UTF-8 if needed.
+- Large folders can take some time; check the console log for progress.
 
-## テストしたいとき
+## Running Tests
 ```bash
-pip install pytest   # 未インストールなら
+pip install pytest   # if not installed
 pytest test.py -v
 ```
 
-## ファイル構成
+## File Layout
 ```
 add-line-numbers/
-├── add_line_numbers.py   # メインスクリプト
-├── test.py               # ユニットテスト
-├── spec.md               # 詳細仕様書
-├── LICENSE               # MITライセンス
-└── README.md             # このファイル
+├── add_line_numbers.py   # main script
+├── test.py               # unit tests
+├── spec.md               # detailed specification
+├── LICENSE               # MIT license
+└── README.md             # this file
 ```
-### 開発の背景
-本ツールは、日本語の開発文書・仕様書を対象とした開発支援AI **IXV（イクシブ）** の開発過程で生まれた小さな実用品です。
+### Background
+This tool originated during the development of **IXV**, a development-support AI for Japanese technical documents and specifications.
 
-IXVでは、システム開発における日本語の文書について、理解・構造化・活用という課題に取り組んでおり、本リポジトリでは、その一部を切り出して公開しています。
+IXV focuses on understanding, structuring, and utilizing Japanese documents in system development. This repository publishes a small, practical piece of that effort.
 
-## ライセンス
+## License
 
-MIT License - 詳細は [LICENSE](LICENSE) を参照してください。
+MIT License - see [LICENSE](LICENSE) for details.
 
-## 問い合わせ先
+## Contact
 
-- **メールアドレス**: info@elvez.co.jp
-- **宛先**: 株式会社エルブズ
-
+- **Email**: info@elvez.co.jp
+- **Company**: Elvez Inc.
