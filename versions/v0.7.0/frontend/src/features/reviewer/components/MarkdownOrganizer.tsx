@@ -5,11 +5,18 @@ import type { DesignFile, LlmConfig, OrganizeMarkdownWarning } from '../types'
 import { organizeMarkdown } from '../services/api'
 import { OrganizerAlerts } from './OrganizerAlerts'
 
+interface OrganizedFileResult {
+  filename: string
+  markdown: string
+  warnings: OrganizeMarkdownWarning[]
+}
+
 interface MarkdownOrganizerProps {
   specMarkdown: string | null
   specFiles: DesignFile[]
   llmConfig?: LlmConfig
-  onAdopt: (markdown: string) => void
+  getTypeNote: (type: string) => string
+  onAdopt: (organizedFiles: Map<string, string>) => void
 }
 
 const DEFAULT_POLICY = `以下のルールでMarkdownを構造化してください。
@@ -47,9 +54,35 @@ const normalizeForSectionDiff = (markdown: string): string => {
   return sections.join('\n\n---\n\n')
 }
 
-export function MarkdownOrganizer({ specMarkdown, specFiles, llmConfig, onAdopt }: MarkdownOrganizerProps) {
+/**
+ * 整理済みファイルからメタ情報付きの結合Markdownを生成
+ */
+const generateCombinedMarkdown = (
+  specFiles: DesignFile[],
+  organizedFiles: Map<string, string>,
+  getTypeNote: (type: string) => string
+): string => {
+  return specFiles
+    .filter((f) => f.markdown)
+    .map((f) => {
+      const note = getTypeNote(f.type)
+      const role = f.isMain ? 'メイン' : '参照'
+      const markdown = organizedFiles.get(f.filename) || f.markdown || ''
+      return `# 設計書: ${f.filename}\n- 役割: ${role}\n- 種別: ${f.type}\n- 注意事項: ${note}\n\n${markdown}`
+    })
+    .join('\n\n---\n\n')
+}
+
+export function MarkdownOrganizer({
+  specMarkdown,
+  specFiles,
+  llmConfig,
+  getTypeNote,
+  onAdopt,
+}: MarkdownOrganizerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [policy, setPolicy] = useState(DEFAULT_POLICY)
+  const [organizedFiles, setOrganizedFiles] = useState<Map<string, string>>(new Map())
   const [organizedMarkdown, setOrganizedMarkdown] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [status, setStatus] = useState('')
@@ -64,6 +97,7 @@ export function MarkdownOrganizer({ specMarkdown, specFiles, llmConfig, onAdopt 
     const prevSpecMarkdown = prevSpecMarkdownRef.current
     prevSpecMarkdownRef.current = specMarkdown
 
+    setOrganizedFiles(new Map())
     setOrganizedMarkdown(null)
     setStatus('')
     setWarnings([])
@@ -110,38 +144,66 @@ export function MarkdownOrganizer({ specMarkdown, specFiles, llmConfig, onAdopt 
   const handleOrganize = async () => {
     if (!specMarkdown || !policy.trim()) return
 
+    const filesWithMarkdown = specFiles.filter((f) => f.markdown)
+    if (filesWithMarkdown.length === 0) return
+
     setIsProcessing(true)
-    setStatus('整理中...')
     setWarnings([])
     setError(null)
     setSourceMarkdown(specMarkdown)
 
+    const results: OrganizedFileResult[] = []
+    const allWarnings: OrganizeMarkdownWarning[] = []
+
     try {
-      const sources = specFiles
-        .filter((f) => f.markdown)
-        .map((f) => ({ filename: f.filename, tool: f.tool }))
+      // ファイルごとにAPI実行
+      for (let i = 0; i < filesWithMarkdown.length; i++) {
+        const file = filesWithMarkdown[i]
+        setStatus(`整理中... (${i + 1}/${filesWithMarkdown.length}) ${file.filename}`)
 
-      const result = await organizeMarkdown({
-        markdown: specMarkdown,
-        policy,
-        sources: sources.length > 0 ? sources : undefined,
-        llmConfig,
-      })
-
-      if (!result.success) {
-        setError({
-          code: result.errorCode,
-          message: result.error || '整理に失敗しました',
+        const result = await organizeMarkdown({
+          markdown: file.markdown!,
+          policy,
+          sources: [{ filename: file.filename, tool: file.tool }],
+          llmConfig,
         })
-        setStatus('❌ 整理に失敗しました')
-        return
+
+        if (!result.success) {
+          throw new Error(`[${file.filename}] ${result.error || '整理に失敗しました'}`)
+        }
+
+        results.push({
+          filename: file.filename,
+          markdown: result.organizedMarkdown || '',
+          warnings: result.warnings || [],
+        })
+
+        // 警告を集約
+        if (result.warnings) {
+          allWarnings.push(
+            ...result.warnings.map((w) => ({
+              ...w,
+              message: `[${file.filename}] ${w.message}`,
+            }))
+          )
+        }
       }
 
-      setOrganizedMarkdown(result.organizedMarkdown || '')
-      setWarnings(result.warnings || [])
+      // 結果をMapに格納
+      const newOrganizedFiles = new Map<string, string>()
+      for (const r of results) {
+        newOrganizedFiles.set(r.filename, r.markdown)
+      }
+      setOrganizedFiles(newOrganizedFiles)
+
+      // 結合済みMarkdownを生成（Diff表示用）
+      const combined = generateCombinedMarkdown(specFiles, newOrganizedFiles, getTypeNote)
+      setOrganizedMarkdown(combined)
+
+      setWarnings(allWarnings)
       setStatus('✅ 整理済み')
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '整理に失敗しました'
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '整理に失敗しました'
       setError({ message })
       setStatus(`❌ ${message}`)
     } finally {
@@ -150,12 +212,13 @@ export function MarkdownOrganizer({ specMarkdown, specFiles, llmConfig, onAdopt 
   }
 
   const handleAdopt = () => {
-    if (!organizedMarkdown) return
-    onAdopt(organizedMarkdown)
+    if (organizedFiles.size === 0) return
+    onAdopt(organizedFiles)
     setIsOpen(false)
   }
 
   const handleDiscard = () => {
+    setOrganizedFiles(new Map())
     setOrganizedMarkdown(null)
     setWarnings([])
     setError(null)

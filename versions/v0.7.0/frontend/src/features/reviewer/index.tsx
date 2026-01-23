@@ -257,7 +257,8 @@ export function Reviewer() {
           specMarkdown={specMarkdown}
           specFiles={specFiles}
           llmConfig={llmConfig || undefined}
-          onAdopt={applyOrganizedMarkdown}
+          getTypeNote={getTypeNote}
+          onAdopt={(organizedFiles) => applyOrganizedMarkdown(organizedFiles, getTypeNote)}
         />
       </Card>
 

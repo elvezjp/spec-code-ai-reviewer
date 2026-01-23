@@ -16,7 +16,10 @@ interface UseFileConversionReturn {
   applyToolToAll: (tool: string) => void
   convertSpecs: (getTypeNote: (type: string) => string) => Promise<void>
   clearSpecs: () => void
-  applyOrganizedMarkdown: (markdown: string) => void
+  applyOrganizedMarkdown: (
+    organizedFiles: Map<string, string>,
+    getTypeNote: (type: string) => string
+  ) => void
 
   // Code files
   codeFiles: CodeFile[]
@@ -173,10 +176,34 @@ export function useFileConversion(): UseFileConversionReturn {
     setSpecStatus('')
   }, [])
 
-  const applyOrganizedMarkdown = useCallback((markdown: string) => {
-    setSpecMarkdown(markdown)
-    setSpecStatus('✅ AI整理済み')
-  }, [])
+  const applyOrganizedMarkdown = useCallback(
+    (organizedFiles: Map<string, string>, getTypeNote: (type: string) => string) => {
+      // 各ファイルのmarkdownを更新
+      setSpecFiles((prev) =>
+        prev.map((f) => {
+          const organized = organizedFiles.get(f.filename)
+          return organized ? { ...f, markdown: organized } : f
+        })
+      )
+
+      // 結合済みMarkdownを再生成
+      setSpecFiles((prev) => {
+        const markdown = prev
+          .filter((f) => f.markdown)
+          .map((f) => {
+            const note = getTypeNote(f.type)
+            const role = f.isMain ? 'メイン' : '参照'
+            return `# 設計書: ${f.filename}\n- 役割: ${role}\n- 種別: ${f.type}\n- 注意事項: ${note}\n\n${f.markdown}`
+          })
+          .join('\n\n---\n\n')
+        setSpecMarkdown(markdown)
+        return prev
+      })
+
+      setSpecStatus('✅ AI整理済み')
+    },
+    []
+  )
 
   const addCodeFiles = useCallback((files: File[]) => {
     const newFiles: CodeFile[] = files.map((file) => ({

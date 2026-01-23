@@ -209,18 +209,32 @@
 - 変更検知のため、整理後Markdownには生成日時と元Markdownのハッシュを埋め込む
 - 将来的に差分レビューを行う場合は、旧IDから新IDへの簡易マップを保持する（保存先は運用で決定）
 
-## 前処理フェーズ（追加）
+## ファイル単位の整理実行（追加）
 ### 背景
-excel2md利用時に自動追加される説明文が、設計書の内容と混同して整理されてしまう問題がある。
-将来的にツールに応じた前処理を実行できるようにするため、前処理フェーズを追加した。
+- excel2md利用時に自動追加される説明文が、設計書の内容と混同して整理されてしまう問題がある
+- 結合済みMarkdownを整理すると、メタ情報（ファイル名、役割、種別等）もAI整理の対象になってしまう
+- 整理結果をレビューに反映するには、各ファイルのmarkdownプロパティを更新する必要がある
 
 ### 設計
-- Markdown整理APIにツール情報（sources）を渡す
-  - ファイルごとに異なるツール（markitdown, excel2md等）を指定可能
-- バックエンドで前処理関数を呼び出し、ツールに応じた前処理を実行する
-  - 現時点では何もせずそのまま返す（将来の拡張ポイント）
+フロントエンドで設計書1ファイルごとにAPIを実行し、完了後に再結合する方式を採用。
 
-### API変更
+#### 処理フロー
+```
+1. 整理実行ボタン押下
+2. specFiles の各ファイルに対して順次 organize-markdown API を実行
+   - 各ファイルの markdown（メタ情報なし）を送信
+   - tool は1ファイル分のみ送信
+3. 全ファイル完了後、整理済みMarkdownを再結合してDiff表示
+4. 採用時、各 specFiles[].markdown を整理後の内容で上書き
+5. specMarkdown（結合済み）も再生成
+```
+
+#### メリット
+- メタ情報（ファイル名、役割、種別、注意事項）がAI整理の対象にならない
+- 各ファイルの整理結果が specFiles[].markdown に反映され、レビュー実行に正しく渡される
+- ファイルごとに異なるツール（markitdown, excel2md等）に応じた前処理が可能
+
+### API（変更後）
 ```python
 class MarkdownSourceInfo(BaseModel):
     filename: str
@@ -229,7 +243,7 @@ class MarkdownSourceInfo(BaseModel):
 class OrganizeMarkdownRequest(BaseModel):
     markdown: str
     policy: str
-    sources: list[MarkdownSourceInfo] | None = None  # 追加
+    sources: list[MarkdownSourceInfo] | None = None  # 1ファイル分のみ
     llmConfig: LLMConfig | None = None
 ```
 
