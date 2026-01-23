@@ -1,253 +1,257 @@
 # excel2md
 
-Excel → Markdown 変換ツール。Excelブック（.xlsx/.xlsm）を読み取り、Markdown形式で自動生成します。
+[English](./README.md) | [日本語](./README_ja.md)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Elvez](https://img.shields.io/badge/Elvez-Product-3F61A7?style=flat-square)](https://elvez.co.jp/)
+[![IXV Ecosystem](https://img.shields.io/badge/IXV-Ecosystem-3F61A7?style=flat-square)](https://elvez.co.jp/ixv/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.9+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Stars](https://img.shields.io/github/stars/elvezjp/excel2md?style=social)](https://github.com/elvezjp/excel2md/stargazers)
 
-## 特徴
+Excel to Markdown converter. Reads Excel workbooks (.xlsx/.xlsm) and automatically generates Markdown format output.
 
-- **スマートテーブル検出**: Excel印刷領域を自動検出してMarkdownテーブルに変換
-- **CSVマークダウン出力**: シート全体をCSV形式で出力（検証用メタデータ付き）
-- **Mermaidフローチャート**: Excel図形やテーブルからMermaid図を生成
-- **ハイパーリンク対応**: 複数の出力モード（インライン、脚注、平文）
-- **シート分割出力**: シートごとに個別ファイルを生成可能
-- **カスタマイズ可能**: 書式、配置、データ処理の詳細設定が可能
+## Features
 
-## ユースケース
+- **Smart Table Detection**: Automatically detects Excel print areas and converts them to Markdown tables
+- **CSV Markdown Output**: Exports entire sheets in CSV format with validation metadata
+- **Mermaid Flowcharts**: Generates Mermaid diagrams from Excel shapes and tables
+- **Hyperlink Support**: Multiple output modes (inline, footnote, plain text)
+- **Split by Sheet**: Generate individual files per sheet
+- **Customizable**: Detailed settings for formatting, alignment, and data processing
 
-- **ドキュメント生成**: Excel仕様書をMarkdownに変換
-- **AI/LLM処理**: トークン効率に最適化されたCSVマークダウン形式
-- **フローチャート抽出**: Excel図形から図を抽出
-- **データ移行**: ExcelデータをポータブルなMarkdown形式にエクスポート
-- **バージョン管理**: Excelの変更をテキストベース形式で追跡
+## Use Cases
 
-## ドキュメント
+- **Document Generation**: Convert Excel specifications to Markdown
+- **AI/LLM Processing**: CSV markdown format optimized for token efficiency
+- **Flowchart Extraction**: Extract diagrams from Excel shapes
+- **Data Migration**: Export Excel data to portable Markdown format
+- **Version Control**: Track Excel changes in text-based format
 
-- [CHANGELOG.md](CHANGELOG.md) - バージョン履歴
-- [CONTRIBUTING.md](CONTRIBUTING.md) - コントリビューション方法
-- [SECURITY.md](SECURITY.md) - セキュリティポリシーとベストプラクティス
-- [v1.7/spec.md](v1.7/spec.md) - 技術仕様書
+## Documentation
 
-## プロジェクト構成
+- [CHANGELOG.md](CHANGELOG.md) - Version history
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
+- [SECURITY.md](SECURITY.md) - Security policy and best practices
+- [v1.7/spec.md](v1.7/spec.md) - Technical specification
 
-```
-excel2md/
-├── v1.7/
-│   ├── excel_to_md.py      # メイン変換プログラム（最新版）
-│   ├── spec.md             # 仕様書
-│   └── tests/              # テストスイート
-├── pyproject.toml          # プロジェクトメタデータ
-├── LICENSE                 # MITライセンス
-├── README.md               # このファイル
-├── CONTRIBUTING.md         # コントリビューションガイド
-├── SECURITY.md             # セキュリティポリシー
-└── CHANGELOG.md            # バージョン履歴
-```
+## Setup
 
-## クイックスタート
+### Requirements
 
-### 必要環境
+- Python 3.9 or higher
+- [uv](https://docs.astral.sh/uv/) package manager
 
-- Python 3.9 以上
-- openpyxl 3.1.5 以上
-
-### 依存関係のインストール
+### Install Dependencies
 
 ```bash
-pip install openpyxl
+# Install uv (if not already installed)
+# Details: https://docs.astral.sh/uv/getting-started/installation/
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+uv sync
 ```
 
-または uv を使用:
+## Usage
 
 ```bash
-uv pip install openpyxl
+uv run python v1.7/excel_to_md.py input.xlsx -o output.md
 ```
 
-### 基本的な使い方
+This generates:
+- `output.md` - Standard Markdown table format
+- `input_csv.md` - CSV markdown format (enabled by default)
 
+### Common Examples
+
+**Convert with Mermaid flowchart support:**
 ```bash
-python3 v1.7/excel_to_md.py input.xlsx -o output.md
+uv run python v1.7/excel_to_md.py input.xlsx -o output.md --mermaid-enabled
 ```
 
-これにより以下が生成されます:
-- `output.md` - 標準Markdownテーブル形式
-- `input_csv.md` - CSVマークダウン形式（デフォルトで有効）
-
-### よく使う例
-
-**Mermaidフローチャート対応で変換:**
+**Generate individual files per sheet:**
 ```bash
-python3 v1.7/excel_to_md.py input.xlsx -o output.md --mermaid-enabled
+uv run python v1.7/excel_to_md.py input.xlsx -o output.md --split-by-sheet
 ```
 
-**シートごとに個別ファイルを生成:**
+**Output standard Markdown only (no CSV output):**
 ```bash
-python3 v1.7/excel_to_md.py input.xlsx -o output.md --split-by-sheet
+uv run python v1.7/excel_to_md.py input.xlsx -o output.md --no-csv-markdown-enabled
 ```
 
-**標準Markdownのみ出力（CSV出力なし）:**
+**Plain text hyperlinks (no Markdown syntax):**
 ```bash
-python3 v1.7/excel_to_md.py input.xlsx -o output.md --no-csv-markdown-enabled
+uv run python v1.7/excel_to_md.py input.xlsx -o output.md --hyperlink-mode inline_plain
 ```
 
-**平文ハイパーリンク（Markdown記法なし）:**
+**Reduce token count (exclude CSV summary section):**
 ```bash
-python3 v1.7/excel_to_md.py input.xlsx -o output.md --hyperlink-mode inline_plain
+uv run python v1.7/excel_to_md.py input.xlsx -o output.md --no-csv-include-description
 ```
 
-**トークン数削減（CSV概要セクション除外）:**
-```bash
-python3 v1.7/excel_to_md.py input.xlsx -o output.md --no-csv-include-description
-```
+## Key Options
 
-## 主要オプション
+### Output Control
 
-### 出力制御
-
-| オプション | デフォルト | 説明 |
+| Option | Default | Description |
 |--------|---------|-------------|
-| `-o`, `--output` | - | 出力ファイルパス |
-| `--split-by-sheet` | false | シートごとに個別ファイルを生成 |
-| `--csv-markdown-enabled` | true | CSVマークダウン出力を有効化 |
-| `--csv-include-description` | true | CSV出力に概要セクションを含める |
-| `--csv-include-metadata` | true | CSV出力に検証メタデータを含める |
+| `-o`, `--output` | - | Output file path |
+| `--split-by-sheet` | false | Generate individual files per sheet |
+| `--csv-markdown-enabled` | true | Enable CSV markdown output |
+| `--csv-include-description` | true | Include summary section in CSV output |
+| `--csv-include-metadata` | true | Include validation metadata in CSV output |
 
-### ハイパーリンク形式
+### Hyperlink Formats
 
-| モード | 説明 | 出力例 |
+| Mode | Description | Output Example |
 |------|-------------|----------------|
-| `inline` | Markdown形式 | `[テキスト](URL)` |
-| `inline_plain` | 平文形式 | `テキスト (URL)` |
-| `footnote` | 脚注形式 | `[テキスト][^1]` + `[^1]: URL` |
-| `text_only` | 表示テキストのみ | `テキスト` |
-| `both` | インライン+脚注 | 両方の形式 |
+| `inline` | Markdown format | `[text](URL)` |
+| `inline_plain` | Plain text format | `text (URL)` |
+| `footnote` | Footnote format | `[text][^1]` + `[^1]: URL` |
+| `text_only` | Display text only | `text` |
+| `both` | Inline + footnote | Both formats |
 
-### Mermaidフローチャート
+### Mermaid Flowcharts
 
-| オプション | デフォルト | 説明 |
+| Option | Default | Description |
 |--------|---------|-------------|
-| `--mermaid-enabled` | false | Mermaid変換を有効化 |
-| `--mermaid-detect-mode` | shapes | 検出モード: `shapes`, `column_headers`, `heuristic` |
-| `--mermaid-direction` | TD | フローチャート方向: `TD`, `LR`, `BT`, `RL` |
-| `--mermaid-keep-source-table` | true | 元のテーブルもMermaidと一緒に出力 |
+| `--mermaid-enabled` | false | Enable Mermaid conversion |
+| `--mermaid-detect-mode` | shapes | Detection mode: `shapes`, `column_headers`, `heuristic` |
+| `--mermaid-direction` | TD | Flowchart direction: `TD`, `LR`, `BT`, `RL` |
+| `--mermaid-keep-source-table` | true | Output original table along with Mermaid |
 
-### テーブル処理
+### Table Processing
 
-| オプション | デフォルト | 説明 |
+| Option | Default | Description |
 |--------|---------|-------------|
-| `--header-detection` | first_row | 先頭行をヘッダとして扱う |
-| `--align-detection` | numbers_right | 数値列を右寄せ |
-| `--max-cells-per-table` | 200000 | テーブルあたりの最大セル数 |
-| `--no-print-area-mode` | used_range | 印刷領域未設定時の動作 |
+| `--header-detection` | first_row | Treat first row as header |
+| `--align-detection` | numbers_right | Right-align numeric columns |
+| `--max-cells-per-table` | 200000 | Maximum cells per table |
+| `--no-print-area-mode` | used_range | Behavior when print area not set |
 
-## 出力例
+## Output Examples
 
-### 標準Markdown出力
+### Standard Markdown Output
 
 ```markdown
-# 変換結果: sample.xlsx
+# Conversion Result: sample.xlsx
 
-- 仕様バージョン: 1.7
-- シート数: 2
-- シート一覧: Sheet1, 集計
+- Spec Version: 1.7
+- Sheet Count: 2
+- Sheet List: Sheet1, Summary
 
 ---
 
 ## Sheet1
 
 ### Table 1 (A1:C4)
-| 品目 | 数量 | 備考 |
+| Item | Quantity | Notes |
 | --- | ---: | --- |
-| りんご | 10 | [発注先](https://example.com)[^1] |
-| みかん | 5 |  |
+| Apple | 10 | [Supplier](https://example.com)[^1] |
+| Orange | 5 |  |
 
 [^1]: https://example.com
 ```
 
-### CSVマークダウン出力
+### CSV Markdown Output
 
 ````markdown
-# CSV出力: sample.xlsx
+# CSV Output: sample.xlsx
 
-## 概要
+## Summary
 
-### ファイル情報
-- 元のExcelファイル名: sample.xlsx
-- シート数: 2
-- 生成日時: 2025-01-05 10:00:00
+### File Information
+- Original Excel filename: sample.xlsx
+- Sheet count: 2
+- Generated at: 2025-01-05 10:00:00
 
-### このファイルについて
-このCSVマークダウンファイルは、AIがExcelの内容を理解できるよう...
+### About This File
+This CSV markdown file is designed to help AI understand Excel content...
 
 ---
 
 ## Sheet1
 
 ```csv
-品目,数量,備考
-りんご,10,発注先
-みかん,5,
+Item,Quantity,Notes
+Apple,10,Supplier
+Orange,5,
 ```
 
 ---
 
-## 検証用メタデータ
+## Validation Metadata
 
-- **生成日時**: 2025-01-05 10:00:00
-- **元Excelファイル**: sample.xlsx
-- **検証ステータス**: OK
+- **Generated at**: 2025-01-05 10:00:00
+- **Original Excel file**: sample.xlsx
+- **Validation status**: OK
 ````
 
-## 高度なオプション
+## Advanced Options
 
-全オプションの一覧:
+List all options:
 
 ```bash
-python3 v1.7/excel_to_md.py --help
+uv run python v1.7/excel_to_md.py --help
 ```
 
-主な高度なオプション:
-- セル結合ポリシー
-- 日付/数値フォーマット制御
-- 空白処理
-- Markdownエスケープレベル
-- 非表示行/列ポリシー
-- ロケール固有のフォーマット
+Key advanced options:
+- Cell merge policy
+- Date/number format control
+- Whitespace handling
+- Markdown escape level
+- Hidden row/column policy
+- Locale-specific formatting
 
-## コントリビューション
+## Directory Structure
 
-コントリビューションを歓迎します！詳細は [CONTRIBUTING.md](CONTRIBUTING.md) をご覧ください。
+```
+excel2md/
+├── v1.7/
+│   ├── excel_to_md.py      # Main conversion program (latest version)
+│   ├── spec.md             # Specification
+│   └── tests/              # Test suite
+├── pyproject.toml          # Project metadata
+├── LICENSE                 # MIT License
+├── README.md               # This file
+├── CONTRIBUTING.md         # Contribution guide
+├── SECURITY.md             # Security policy
+└── CHANGELOG.md            # Version history
+```
 
-- バグ報告は [GitHub Issues](https://github.com/elvez/excel2md/issues) へ
-- 改善のためのプルリクエストを提出
-- 既存のコードスタイルに従ってください
-- 新機能にはテストを追加してください
+## Security
 
-## 問い合わせ先
+For security concerns, please see [SECURITY.md](SECURITY.md).
 
-バグ報告や質問については、以下までご連絡ください。
+**Key security notes:**
+- Only process Excel files from trusted sources
+- Use `read_only=True` mode to prevent file modification
+- Excel macros are not executed
+- Sanitize Markdown output to prevent injection
 
-- **メールアドレス**: info@elvez.co.jp
-- **宛先**: 株式会社エルブズ
+## Contributing
 
-GitHub Issuesでの報告も可能です: [GitHub Issues](https://github.com/elvez/excel2md/issues)
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-## セキュリティ
+- Report bugs via [GitHub Issues](https://github.com/elvez/excel2md/issues)
+- Submit pull requests for improvements
+- Follow existing code style
+- Add tests for new features
 
-セキュリティに関する懸念は [SECURITY.md](SECURITY.md) をご確認ください。
+## Changelog
 
-**主要なセキュリティ注意事項:**
-- 信頼できるソースからのExcelファイルのみを処理してください
-- `read_only=True` モードを使用してファイル変更を防止
-- Excelマクロは実行しません
-- Markdown出力をサニタイズしてインジェクションを防止
+See [CHANGELOG.md](CHANGELOG.md) for details.
 
-## ライセンス
+## Background
 
-このプロジェクトはMITライセンスの下でライセンスされています - 詳細は [LICENSE](LICENSE) ファイルをご覧ください。
+This tool was created during the development of **IXV**, an AI development support tool targeting Japanese development documents and specifications.
 
-## リンク
+IXV addresses challenges in understanding, structuring, and utilizing Japanese documents in system development. This repository publicly shares a portion of that work.
 
-- [リポジトリ](https://github.com/elvez/excel2md)
-- [Issues](https://github.com/elvez/excel2md/issues)
+## License
+
+MIT License - See [LICENSE](LICENSE) for details.
+
+## Contact
+
+- **Email**: info@elvez.co.jp
+- **Company**: Elvez, Inc.

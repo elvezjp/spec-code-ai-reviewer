@@ -5,6 +5,27 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/spec/v2.0.0.html) に準拠しています。
 
+## [0.7.0] - 2026-01-22
+
+### 追加
+- **AIでMarkdownを整理する機能**: ExcelからAI生成したMarkdownをAIで構造化・正規化する機能を追加
+  - 「AIでMarkdownを整理する」ボタンと方針入力欄
+  - テンプレート付きの整理方針入力UI
+  - react-diff-viewerを使用した整理前後のDiff表示
+- **エラー/警告表示**: トークン超過、タイムアウト、改変検出などのアラート表示
+- **ツール別前処理**: markdown_toolsに前処理メソッドを追加し、ツール固有の説明文混同問題に対応
+- **推定トークン数表示**: 整理実行前にトークン数の目安を表示
+- **organize-markdown API**: ファイル単位でMarkdown整理を実行するエンドポイントを追加
+
+### 変更
+- **設定ファイル更新**: v0.7.0をlatest版として設定
+  - `nginx/version-map.conf`: v0.7.0のルーティング追加、defaultポートを8070に変更
+  - `docker-compose.yml`: v0.7.0フロントエンド・ポート8070を追加
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: v0.7.0エントリ追加
+
+### 注意
+- **後方互換性**: v0.6.0以前のバージョンは引き続き利用可能（マルチバージョン構成維持）
+
 ## [0.6.0] - 2026-01-18
 
 ### 追加
@@ -133,6 +154,7 @@
 
 | バージョン | 主な機能 |
 |------------|----------|
+| 0.7.0      | AIでMarkdownを整理する機能、Diff表示、ツール別前処理 |
 | 0.6.0      | React + Vite + TypeScript移行、Tailwind v4、テスト環境構築 |
 | 0.5.2      | Bedrock Converse API対応、Amazon Novaモデル対応 |
 | 0.5.1      | OpenAI GPT-5.2対応 |
