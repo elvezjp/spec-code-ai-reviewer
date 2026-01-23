@@ -1,4 +1,6 @@
-# 設計書-Javaプログラム突合 AIレビュアー
+# Spec Doc–Java Program Matching AI Reviewer
+
+[English](./README.md) | [日本語](./README_ja.md)
 
 [![Elvez](https://img.shields.io/badge/Elvez-Product-3F61A7?style=flat-square)](https://elvez.co.jp/)
 [![IXV Ecosystem](https://img.shields.io/badge/IXV-Ecosystem-3F61A7?style=flat-square)](https://elvez.co.jp/ixv/)
@@ -7,159 +9,116 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Stars](https://img.shields.io/github/stars/elvezjp/spec-code-ai-reviewer?style=social)](https://github.com/elvezjp/spec-code-ai-reviewer/stargazers)
 
-設計書（Excel形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
+A web application that uses AI to cross-check design documents (Excel format) against program code and verify consistency.
 
-- [設計書-Javaプログラム突合 AIレビュアー](#設計書-javaプログラム突合-aiレビュアー)
-  - [機能](#機能)
-  - [システム構成](#システム構成)
-  - [使い方](#使い方)
-    - [LLMプロバイダー・認証情報の切り替え](#llmプロバイダー認証情報の切り替え)
-  - [セットアップ](#セットアップ)
-    - [前提条件](#前提条件)
-      - [Python バージョン](#python-バージョン)
-      - [Node.js バージョン（v0.6.0以降）](#nodejs-バージョンv060以降)
-      - [その他](#その他)
-    - [インストール](#インストール)
-    - [システムLLM認証設定（AWS Bedrock）](#システムllm認証設定aws-bedrock)
-    - [単一バージョンで起動する場合](#単一バージョンで起動する場合)
-      - [v0.6.0以降（Vite + React版）](#v060以降vite--react版)
-      - [v0.5.2以前（単一HTMLファイル版）](#v052以前単一htmlファイル版)
-    - [Docker Composeで起動する場合（マルチバージョン対応）](#docker-composeで起動する場合マルチバージョン対応)
-    - [テスト実行](#テスト実行)
-    - [バージョン同期](#バージョン同期)
-      - [オプション](#オプション)
-  - [環境変数（システムLLM用）](#環境変数システムllm用)
-  - [よくある質問と回答/トラブルシューティング](#よくある質問と回答トラブルシューティング)
-    - [1. LLMモデルを複数登録できますが、これは何に使われますか？](#1-llmモデルを複数登録できますがこれは何に使われますか)
-    - [2. OpenAI API使用時に「Connection error.」と表示される](#2-openai-api使用時にconnection-errorと表示される)
-    - [3. Bedrock使用時に「on-demand throughput isn't supported.」というエラーが表示される](#3-bedrock使用時にon-demand-throughput-isnt-supportedというエラーが表示される)
-    - [4. Bedrock使用時に「maximum tokens you requested exceeds the model limit」と表示される](#4-bedrock使用時にmaximum-tokens-you-requested-exceeds-the-model-limitと表示される)
-  - [API エンドポイント](#api-エンドポイント)
-  - [ディレクトリ構成](#ディレクトリ構成)
-  - [Git Subtrees](#git-subtrees)
-    - [Subtree の更新方法](#subtree-の更新方法)
-  - [バージョン管理](#バージョン管理)
-    - [ポート割り当てルール](#ポート割り当てルール)
-    - [新しいバージョンを追加する際の変更箇所](#新しいバージョンを追加する際の変更箇所)
-      - [バージョンディレクトリの追加と更新](#バージョンディレクトリの追加と更新)
-      - [設定ファイルとドキュメントの更新](#設定ファイルとドキュメントの更新)
-      - [ecosystem.config.js への追加例](#ecosystemconfigjs-への追加例)
-      - [nginx/version-map.conf への追加例](#nginxversion-mapconf-への追加例)
-    - [本番環境での更新手順](#本番環境での更新手順)
-  - [更新履歴](#更新履歴)
-  - [開発の背景](#開発の背景)
-  - [ライセンス](#ライセンス)
-  - [問い合わせ先](#問い合わせ先)
+## Features
 
+- **Design document conversion**: Convert Excel (.xlsx, .xls) to Markdown (using MarkItDown, excel2md)
+- **Program conversion**: Add line numbers to any text file (add-line-numbers compatible)
+- **Cross-check review**: Verify consistency between the design doc and code using LLMs (Bedrock / Anthropic / OpenAI)
+- **Report output**: Generate a Markdown review report
 
-## 機能
+For detailed feature specs, see [latest/spec.md](latest/spec.md).
 
-- **設計書変換**: Excel (.xlsx, .xls) → Markdown形式に変換（MarkItDown、excel2md使用）
-- **プログラム変換**: 任意のテキストファイルに行番号を付与（add-line-numbers準拠）
-- **突合レビュー**: LLM（Bedrock / Anthropic / OpenAI）を使用して設計書とコードの整合性を検証
-- **レポート出力**: マークダウン形式のレビューレポートを生成
+## System Architecture
 
-機能仕様の詳細については[latest/spec.md](latest/spec.md)を参照してください。
+- **Frontend**:
+  - v0.6.0 and later: Vite + React + TypeScript + Tailwind CSS
+  - v0.5.2 and earlier: Single HTML file + Tailwind CSS (CDN)
+- **Backend**: Python / FastAPI
+  - MarkItDown / excel2md (Excel to Markdown conversion)
+  - add-line-numbers compatible (line numbering)
+  - Multi-LLM provider support (Bedrock / Anthropic / OpenAI)
 
-## システム構成
+## Usage
 
-- **フロントエンド**:
-  - v0.6.0以降: Vite + React + TypeScript + Tailwind CSS
-  - v0.5.2以前: 単一HTMLファイル + Tailwind CSS (CDN)
-- **バックエンド**: Python / FastAPI
-  - MarkItDown / excel2md (Excel→Markdown変換)
-  - add-line-numbers準拠 (行番号付与)
-  - マルチLLMプロバイダー対応 (Bedrock / Anthropic / OpenAI)
+1. **Upload design documents**: Select Excel (.xlsx, .xls) files (multiple allowed)
+   - **Role**: Select one main design document (others are treated as reference materials)
+   - **Type**: Choose from 9 types such as design doc, requirements doc, coding guidelines, etc.
+   - **Conversion tool**: Choose MarkItDown / excel2md (CSV) / excel2md (CSV+Mermaid)
+2. **Click "Convert to Markdown"**: Converted Markdown is shown in preview
+3. **Upload programs**: Select any source code files (multiple allowed)
+4. **Click "Convert with add-line-numbers"**: Line numbers are added and shown in preview
+5. **Click "Run Review"**: AI runs the review twice with the same settings
+6. **Review results**: Switch tabs to view each run, then copy or download
 
-## 使い方
+### Switching LLM Providers and Credentials
 
-1. **設計書をアップロード**: Excel (.xlsx, .xls) ファイルを選択（複数可）
-   - **役割**: メイン設計書を1つ選択（それ以外は参照資料として扱われる）
-   - **種別**: 設計書/要件定義書/コーディング規約など9種類から選択
-   - **変換ツール**: MarkItDown / excel2md (CSV) / excel2md (CSV+Mermaid) から選択
-2. **「マークダウンに変換」をクリック**: Markdown形式に変換されプレビュー表示
-3. **プログラムをアップロード**: 任意のソースコードファイルを選択（複数可）
-4. **「add-line-numbersで変換」をクリック**: 行番号が付与されプレビュー表示
-5. **「レビュー実行」をクリック**: AIが同じ設定で2回レビューを実行
-6. **結果を確認**: タブ切替で1回目・2回目の結果を個別に確認、コピーまたはダウンロード
+By default, the system LLM (AWS Bedrock configured on the server side) is used. If you want to use your own LLM credentials, upload a configuration file using the steps below.
 
-### LLMプロバイダー・認証情報の切り替え
+1. Open the settings modal from the "Settings" icon in the top-right
+2. On the [Config File Generator](/config-file-generator/) page, select an LLM provider (Bedrock / Anthropic API / OpenAI API), enter the required API keys, and generate a configuration file
+3. Return to the settings modal and upload the configuration file
+4. Select the LLM models to use (multiple can be specified)
 
-デフォルトではシステムLLM（サーバー側で設定されたAWS Bedrock）が使用されます。利用者自身のLLM認証情報を使用する場合は、以下の手順で設定ファイルをアップロードしてください。
+## Setup
 
-1. 画面右上の「設定」アイコンから設定モーダルを開く
-2. [設定ファイルジェネレーター](/config-file-generator/)画面でLLMプロバイダー（Bedrock / Anthropic API / OpenAI API）を選択し、APIキーなど必要な情報を入力して設定ファイルを作成
-3. 設定モーダルに戻って設定ファイルをアップロード
-4. 使用するLLMモデルを選択（複数指定した場合）
+There are two ways to run the app locally.
 
-## セットアップ
+- **Single-version launch**: Start directly with uvicorn (for development)
+- **Docker Compose launch**: Multi-version environment equivalent to production (for verification)
 
-ローカル環境では以下の2通りの起動方法があります。
+For production deployment on EC2, see [EC2 Deployment Spec](docs/ec2-deployment-spec.md).
 
-- **単一バージョン起動**: uvicornで直接起動（開発向け）
-- **Docker Compose起動**: 本番環境と同等のマルチバージョン環境（動作確認向け）
+### Prerequisites
 
-本番環境（EC2）へのデプロイについては [EC2デプロイ仕様書](docs/ec2-deployment-spec.md) を参照してください。
+#### Python Version
 
-### 前提条件
+- **Required**: Python 3.10 or later
+- **Recommended**: Python 3.11 or 3.12
+- **How to check**: Run `python --version` or `python3 --version`
 
-#### Python バージョン
+uv automatically uses an appropriate Python version. The installed Python 3.10+ on your system will be used as-is.
 
-- **必須バージョン**: Python 3.10以上
-- **推奨バージョン**: Python 3.11 または 3.12
-- **確認方法**: `python --version` または `python3 --version` で確認してください
+#### Node.js Version (v0.6.0 and later)
 
-uvが自動的に適切なPythonバージョンを使用します。システムにインストールされているPython 3.10以上のバージョンがそのまま利用されます。
+- **Required**: Node.js 18 or later
+- **Recommended**: Node.js 20 LTS or 22 LTS
+- **How to check**: Run `node --version`
 
-#### Node.js バージョン（v0.6.0以降）
+Required for developing/building the v0.6.0+ frontend (Vite + React + TypeScript). Not needed if you only use v0.5.2 or earlier.
 
-- **必須バージョン**: Node.js 18以上
-- **推奨バージョン**: Node.js 20 LTS または 22 LTS
-- **確認方法**: `node --version` で確認してください
+#### Other
 
-v0.6.0以降のフロントエンド（Vite + React + TypeScript）の開発・ビルドに必要です。v0.5.2以前のみ使用する場合は不要です。
+- [uv](https://docs.astral.sh/uv/) (Python package manager)
 
-#### その他
-
-- [uv](https://docs.astral.sh/uv/) (Python パッケージマネージャー)
-
-### インストール
+### Installation
 
 ```bash
-# uv をインストール（未インストールの場合）
-# 詳細: https://docs.astral.sh/uv/getting-started/installation/
+# Install uv (if not installed)
+# See: https://docs.astral.sh/uv/getting-started/installation/
 
-# Node.js をインストール（v0.6.0以降を使用する場合）
-# 詳細: https://nodejs.org/
+# Install Node.js (if using v0.6.0 or later)
+# See: https://nodejs.org/
 # macOS (Homebrew): brew install node
-# Windows: https://nodejs.org/ からインストーラをダウンロード
+# Windows: Download the installer from https://nodejs.org/
 
-# リポジトリをクローン
+# Clone the repository
 git clone git@github.com:elvezjp/spec-code-ai-reviewer.git
 cd spec-code-ai-reviewer
 ```
 
-### システムLLM認証設定（AWS Bedrock）
+### System LLM Auth Setup (AWS Bedrock)
 
-**注意**: AWS環境がない場合、この設定は不要です。Web画面から設定ファイルをアップロードすることで、利用者自身がLLM認証情報を設定して使用できます（「[使い方](#使い方)」セクション参照）。
+**Note**: If you do not have an AWS environment, this setup is not required. You can upload your own LLM config file via the web UI (see the "[Usage](#usage)" section).
 
 ```bash
-# 方法1: 環境変数
+# Option 1: Environment variables
 export AWS_ACCESS_KEY_ID=your-access-key
 export AWS_SECRET_ACCESS_KEY=your-secret-key
 export AWS_REGION=ap-northeast-1
 
-# 方法2: AWS CLI でプロファイル設定
+# Option 2: Configure with AWS CLI
 aws configure
 ```
 
-### 単一バージョンで起動する場合
+### Single-Version Launch
 
-#### v0.6.0以降（Vite + React版）
+#### v0.6.0 and later (Vite + React)
 
-v0.6.0以降はフロントエンドとバックエンドを別々に起動します。
+For v0.6.0 and later, start frontend and backend separately.
 
-**ターミナル1: バックエンド起動**
+**Terminal 1: Start backend**
 
 ```bash
 cd versions/v0.6.0/backend
@@ -167,7 +126,7 @@ uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
-**ターミナル2: フロントエンド起動**
+**Terminal 2: Start frontend**
 
 ```bash
 cd versions/v0.6.0/frontend
@@ -175,13 +134,13 @@ npm install
 npm run dev
 ```
 
-ブラウザで http://localhost:5173 にアクセス（Vite開発サーバー）
+Access http://localhost:5173 (Vite dev server)
 
-**注意**: フロントエンドはViteの開発サーバー（ポート5173）で起動し、APIリクエストはバックエンド（ポート8000）にプロキシされます。
+**Note**: The frontend runs on the Vite dev server (port 5173), and API requests are proxied to the backend (port 8000).
 
-#### v0.5.2以前（単一HTMLファイル版）
+#### v0.5.2 and earlier (Single HTML file)
 
-v0.5.2以前はバックエンドのみ起動します（フロントエンドはバックエンドから配信）。
+For v0.5.2 and earlier, only the backend runs (frontend is served by the backend).
 
 ```bash
 cd versions/v0.5.2/backend
@@ -189,381 +148,374 @@ uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
-ブラウザで http://localhost:8000 にアクセス
+Access http://localhost:8000
 
-**注意**: 画面左上にバージョン切替バルーンが表示されますが、単一バージョン起動時は起動したバージョンでのみ動作します。画面右上「設定」アイコンから起動中のバージョン番号を確認できます。
+**Note**: A version switch balloon appears at the top-left, but in single-version launch mode only the running version works. Check the running version number from the "Settings" icon in the top-right.
 
-### Docker Composeで起動する場合（マルチバージョン対応）
+### Docker Compose Launch (Multi-Version)
 
-本番環境と同等のバージョン切替機能を含む開発環境を起動できます。
+You can start a development environment with version switching equivalent to production.
 
 ```bash
-# AWS認証情報を設定（システムLLMを使用する場合）
+# Set AWS credentials (if using system LLM)
 cp .env.example .env
-# .env ファイルを編集してAWS認証情報を設定
+# Edit .env to set AWS credentials
 
-# 起動
+# Start
 docker-compose up -d --build
 
-# ブラウザでアクセス
+# Open in browser
 open http://localhost:8000
 
-# ログ確認
+# View logs
 docker-compose logs -f
 
-# 停止
+# Stop
 docker-compose down
 ```
 
-**注意**: AWS環境がない場合は `.env` ファイルの作成は不要です。Web画面から設定ファイルをアップロードすることで、Anthropic APIやOpenAI APIを使用できます。
+**Note**: If you do not have an AWS environment, you do not need to create `.env`. You can use Anthropic API or OpenAI API by uploading a config file via the web UI.
 
-画面左上のバルーンでバージョン切替が可能です（Cookie + Nginx mapによるルーティング）。
+You can switch versions from the top-left balloon (routing via Cookie + Nginx map).
 
-### テスト実行
+### Run Tests
 
-各バージョンのディレクトリでテストを実行します。
+Run tests in each version's directory.
 
 ```bash
-# v0.6.0 バックエンドのテスト
+# v0.6.0 backend tests
 cd versions/v0.6.0/backend
 uv run pytest tests/ -v
 
-# v0.6.0 フロントエンドのテスト
+# v0.6.0 frontend tests
 cd versions/v0.6.0/frontend
 npm test
 
-# v0.5.2以前のテスト（バックエンドのみ）
+# v0.5.2 and earlier tests (backend only)
 cd versions/v0.5.2/backend
 uv run pytest tests/ -v
 ```
 
-### バージョン同期
+### Version Sync
 
-バージョン番号は `backend/pyproject.toml` で一元管理しています。
-フロントエンドのバージョン表記を同期するには：
+Version numbers are centrally managed in `backend/pyproject.toml`.
+To sync version labels in the frontend:
 
 ```bash
 python3 scripts/sync_version.py
 ```
 
-このスクリプトは以下を行います：
+This script does the following:
 
-1. **バージョン番号の同期**: 各 `backend/pyproject.toml` のバージョンを読み取り、対応する `frontend/index.html` の表示を更新
-2. **VERSIONS配列の更新**: 全フロントエンドのバージョン切替UI用 `VERSIONS` 配列を、利用可能な全バージョンで更新
+1. **Sync version numbers**: Reads versions from each `backend/pyproject.toml` and updates the display in the corresponding `frontend/index.html`
+2. **Update VERSIONS array**: Updates the version switcher `VERSIONS` array in all frontends with all available versions
 
-#### オプション
+#### Options
 
 ```bash
-# 全バージョンを同期 + VERSIONS配列更新（デフォルト）
+# Sync all versions + update VERSIONS array (default)
 python3 scripts/sync_version.py
 
-# 指定バージョンのみ同期（VERSIONS配列更新なし）
+# Sync only a specific version (no VERSIONS array update)
 python3 scripts/sync_version.py v0.5.0
 
-# VERSIONS配列の更新をスキップ
+# Skip updating the VERSIONS array
 python3 scripts/sync_version.py --no-versions-array
 ```
 
-## 環境変数（システムLLM用）
+## Environment Variables (System LLM)
 
-システムLLM（AWS Bedrock）の実行に利用される環境変数です。
+These environment variables are used to run the system LLM (AWS Bedrock).
 
-**注意**: Web画面から設定ファイルをアップロードして実行した場合、そちらの設定が優先されます。（「[使い方](#使い方)」セクション参照）。
+**Note**: If you run with a config file uploaded from the web UI, that configuration takes precedence (see the "[Usage](#usage)" section).
 
-| 変数名 | 説明 | デフォルト値 |
-|--------|------|-------------|
-| `AWS_ACCESS_KEY_ID` | AWSアクセスキー | - |
-| `AWS_SECRET_ACCESS_KEY` | AWSシークレットキー | - |
-| `AWS_REGION` | AWSリージョン | `ap-northeast-1` |
-| `BEDROCK_MODEL_ID` | 使用するモデルID | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
-| `BEDROCK_MAX_TOKENS` | レスポンスの最大トークン数 | `16384` |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `AWS_ACCESS_KEY_ID` | AWS access key | - |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key | - |
+| `AWS_REGION` | AWS region | `ap-northeast-1` |
+| `BEDROCK_MODEL_ID` | Model ID to use | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
+| `BEDROCK_MAX_TOKENS` | Max response tokens | `16384` |
 
 ---
 
-## よくある質問と回答/トラブルシューティング
+## FAQ / Troubleshooting
 
-### 1. LLMモデルを複数登録できますが、これは何に使われますか？
-設定ファイルでモデルを複数登録しておくことで、設定画面からレビュー実行に利用するモデルを選択して使用することができます。
+### 1. I can register multiple LLM models. What is this used for?
 
-### 2. OpenAI API使用時に「Connection error.」と表示される
+By registering multiple models in the config file, you can select which model to use for review execution from the settings screen.
 
-ネットワークの問題が原因で発生することが多いエラーです。
+### 2. "Connection error." is shown when using OpenAI API
 
-**考えられる原因:**
-- インターネット接続が不安定
-- プロキシ環境でプロキシ設定がされていない
-- ファイアウォールによるAPI通信のブロック
-- VPN接続の問題
+This error is often caused by network issues.
 
-**対処方法:**
-1. インターネット接続を確認する
-2. プロキシ環境の設定を確認する
-3. ファイアウォールで LLMプロバイダのAPI（`api.openai.com`等）への通信が許可されているか確認する
+**Possible causes:**
+- Unstable internet connection
+- Proxy settings not configured in a proxy environment
+- Firewall blocks API traffic to the LLM provider (e.g., `api.openai.com`)
+- VPN connection issues
 
-### 3. Bedrock使用時に「on-demand throughput isn't supported.」というエラーが表示される
+**How to fix:**
+1. Check your internet connection
+2. Check proxy settings
+3. Confirm that the firewall allows outbound traffic to the LLM provider API
+
+### 3. "on-demand throughput isn't supported." is shown when using Bedrock
 
 ```
 ValidationException: Invocation of model ID amazon.nova-pro-v1:0 with on-demand throughput isn't supported.
 Retry your request with the ID or ARN of an inference profile that contains this model.
 ```
 
-**原因:**
-- リージョンプレフィックス（`us.`や`apac.`）が付いていない
-- モデルID名が間違っている
+**Cause:**
+- Missing region prefix (`us.` or `apac.`)
+- Incorrect model ID
 
-**対処方法:**
-- AWSのBedrockモデルIDを確認する
-- クロスリージョン推論の「推論プロファイルID」を指定する
-  - エラーになる例: `amazon.nova-pro-v1:0`
-  - 正しい例: `us.amazon.nova-pro-v1:0` または `apac.amazon.nova-pro-v1:0`
+**How to fix:**
+- Check the Bedrock model ID
+- Specify the cross-region inference "inference profile ID"
+  - Example (error): `amazon.nova-pro-v1:0`
+  - Example (correct): `us.amazon.nova-pro-v1:0` or `apac.amazon.nova-pro-v1:0`
 
-### 4. Bedrock使用時に「maximum tokens you requested exceeds the model limit」と表示される
-
-出力トークン数の設定がモデルの上限を超えている場合に発生するエラーです。
+### 4. "maximum tokens you requested exceeds the model limit" is shown when using Bedrock
 
 ```
 The maximum tokens you requested exceeds the model limit of 10000.
 Try again with a maximum tokens value that is lower than 10000.
 ```
 
-**原因:**
-- 設定ファイルの `max_tokens` がモデルの設定可能上限を超えている
+**Cause:**
+- `max_tokens` in the config file exceeds the model limit
   - Amazon Nova Lite / Micro / Pro: 10,000
   - Anthropic Claude Haiku 4.5: 16,384
 
-**対処方法:**
-- 設定ファイルジェネレータで設定ファイルを再作成する
-- 設定ファイルで `max_tokens` をモデルの上限以下に設定する
+**How to fix:**
+- Regenerate the config file in the config file generator
+- Set `max_tokens` to a value within the model limit
 
 ---
 
-## API エンドポイント
+## API Endpoints
 
-| メソッド | パス | 説明 |
-|----------|------|------|
-| GET | `/` | フロントエンド配信 |
-| GET | `/api/health` | ヘルスチェック |
-| POST | `/api/convert/excel-to-markdown` | Excel→Markdown変換 |
-| POST | `/api/convert/add-line-numbers` | 行番号付与 |
-| GET | `/api/convert/available-tools` | 利用可能な変換ツール一覧取得 |
-| POST | `/api/review` | レビュー実行 |
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Serve frontend |
+| GET | `/api/health` | Health check |
+| POST | `/api/convert/excel-to-markdown` | Excel to Markdown conversion |
+| POST | `/api/convert/add-line-numbers` | Add line numbers |
+| GET | `/api/convert/available-tools` | List available conversion tools |
+| POST | `/api/review` | Run review |
 
-## ディレクトリ構成
+## Directory Structure
 
 ```
 spec-code-ai-reviewer/
-├── docker-compose.yml           # Docker Compose設定（マルチバージョン開発用）
-├── Dockerfile.dev               # 開発用Dockerfile（Ubuntu）
-├── docker-entrypoint.sh         # Docker起動スクリプト
-├── ecosystem.config.js          # PM2設定（本番用）
-├── dev.ecosystem.config.js      # PM2設定（開発用）
+├── docker-compose.yml           # Docker Compose config (multi-version dev)
+├── Dockerfile.dev               # Dev Dockerfile (Ubuntu)
+├── docker-entrypoint.sh         # Docker startup script
+├── ecosystem.config.js          # PM2 config (production)
+├── dev.ecosystem.config.js      # PM2 config (development)
 ├── nginx/
-│   ├── dev.conf                 # 開発用Nginx設定
-│   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
-│   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.7.0    # シンボリックリンク（最新版を指す）
+│   ├── dev.conf                 # Dev Nginx config
+│   ├── spec-code-ai-reviewer.conf  # Production Nginx config
+│   └── version-map.conf         # Version switch map (shared)
+├── latest -> versions/v0.6.0    # Symlink to latest
 │
-├── versions/                    # 全バージョン格納
-│   ├── README.md                # バージョン管理説明
-│   ├── v0.5.0/                  # 旧バージョン
+├── versions/                    # All versions
+│   ├── README.md                # Version management notes
+│   ├── v0.5.0/                  # Old version
 │   │   ├── backend/
 │   │   ├── frontend/
 │   │   ├── config-file-generator-spec.md
 │   │   └── spec.md
-│   ├── v0.5.1/                  # 旧バージョン
+│   ├── v0.5.1/                  # Old version
 │   │   ├── backend/
 │   │   ├── frontend/
 │   │   ├── config-file-generator-spec.md
 │   │   └── spec.md
-│   ├── v0.5.2/                  # 旧バージョン
+│   ├── v0.5.2/                  # Old version
 │   │   ├── backend/
 │   │   ├── frontend/
 │   │   ├── config-file-generator-spec.md
 │   │   └── spec.md
-│   ├── v0.6.0/                  # 旧バージョン（Vite + React）
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
-│   └── v0.7.0/                  # 最新版（Vite + React）
+│   └── v0.6.0/                  # Latest (Vite + React)
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
 │       └── spec.md
 │
-├── docs/                        # ドキュメント
-│   └── ec2-deployment-spec.md   # EC2デプロイ仕様書
+├── docs/                        # Docs
+│   └── ec2-deployment-spec.md   # EC2 deployment spec
 │
-├── scripts/                     # ユーティリティスクリプト
-│   └── sync_version.py          # バージョン同期スクリプト
+├── scripts/                     # Utility scripts
+│   └── sync_version.py          # Version sync script
 │
-├── tests/                       # 試験項目表
+├── tests/                       # Test cases
 │   └── README.md
 │
-├── add-line-numbers/            # サブツリー（elvezjp）
-├── excel2md/                    # サブツリー（elvezjp）
-├── markitdown/                  # サブツリー（Microsoft）
-└── README.md                    # 本ファイル
+├── add-line-numbers/            # Subtree (elvezjp)
+├── excel2md/                    # Subtree (elvezjp)
+├── markitdown/                  # Subtree (Microsoft)
+└── README.md                    # This file
 ```
 
 ## Git Subtrees
 
-このリポジトリには以下の外部リポジトリを git subtree で追加しています。
+This repository includes the following external repositories via git subtree.
 
-| ディレクトリ | リポジトリ | 説明 |
-|-------------|-----------|------|
-| `add-line-numbers/` | https://github.com/elvezjp/add-line-numbers | ファイルに行番号を追加するツール |
-| `excel2md/` | https://github.com/elvezjp/excel2md | Excel→CSVマークダウン変換ツール |
-| `markitdown/` | https://github.com/microsoft/markitdown | 各種ファイル形式をMarkdownに変換するツール |
+| Directory | Repository | Description |
+|-------------|-----------|-------------|
+| `add-line-numbers/` | https://github.com/elvezjp/add-line-numbers | Tool to add line numbers to files |
+| `excel2md/` | https://github.com/elvezjp/excel2md | Excel to CSV Markdown conversion tool |
+| `markitdown/` | https://github.com/microsoft/markitdown | Tool to convert various file formats to Markdown |
 
-### Subtree の更新方法
+### Updating Subtrees
 
 ```bash
-# add-line-numbers を更新
+# Update add-line-numbers
 git subtree pull --prefix=add-line-numbers https://github.com/elvezjp/add-line-numbers.git main --squash
 
-# excel2md を更新
+# Update excel2md
 git subtree pull --prefix=excel2md https://github.com/elvezjp/excel2md.git main --squash
 
-# markitdown を更新
+# Update markitdown
 git subtree pull --prefix=markitdown https://github.com/microsoft/markitdown.git main --squash
 ```
 
-## バージョン管理
+## Version Management
 
-### ポート割り当てルール
+### Port Assignment Rule
 
-セマンティックバージョニング（`vX.Y.Z`）に対応したポート割り当てルールを採用しています。
+A port assignment rule based on semantic versioning (`vX.Y.Z`) is used.
 
 ```
-ポート番号 = 8000 + (マイナーバージョン × 10) + パッチバージョン
-例: v0.2.5 → 8000 + (2 × 10) + 5 = 8025
+Port = 8000 + (minor version x 10) + patch version
+Example: v0.2.5 -> 8000 + (2 x 10) + 5 = 8025
 ```
 
-| バージョン | ポート |
-|-----------|-------|
-| v0.7.0 (latest) | 8070 |
-| v0.6.0 | 8060 |
+| Version | Port |
+|-----------|------|
+| v0.6.0 (latest) | 8060 |
 | v0.5.2 | 8052 |
 | v0.5.1 | 8051 |
 | v0.5.0 | 8050 |
 
-### 新しいバージョンを追加する際の変更箇所
+### Changes Required When Adding a New Version
 
-新バージョン（例: v0.7.0）を追加する場合、以下のファイルを修正します。
+When adding a new version (e.g., v0.7.0), update the following files.
 
-#### バージョンディレクトリの追加と更新
+#### Add and Update Version Directory
 
-| ファイル | 変更内容 |
+| File | Change |
 |---------|---------|
-| `versions/v0.7.0/` | 新バージョンのコードを配置 |
-| `versions/v0.7.0/spec.md` | バージョン番号を更新（冒頭、レビュー情報例、テスト項目） |
-| `versions/v0.7.0/config-file-generator-spec.md` | 対象バージョンを更新 |
-| `versions/v0.7.0/frontend/package.json` | versionを更新（v0.6.0以降） |
-| `versions/v0.7.0/backend/pyproject.toml` | versionを更新 |
-| `latest` シンボリックリンク | 新バージョンを指すように更新（`rm latest && ln -s versions/v0.7.0 latest`） |
-| `versions/v0.5.x/frontend/index.html` | VERSIONS配列を更新追加（`scripts/sync_version.py`実行、v0.5.x以前のみ） |
+| `versions/v0.7.0/` | Add the new version code |
+| `versions/v0.7.0/spec.md` | Update version numbers (top, review examples, test items) |
+| `versions/v0.7.0/config-file-generator-spec.md` | Update target version |
+| `versions/v0.7.0/frontend/package.json` | Update version (v0.6.0+ only) |
+| `versions/v0.7.0/backend/pyproject.toml` | Update version |
+| `latest` symlink | Update to point to new version (`rm latest && ln -s versions/v0.7.0 latest`) |
+| `versions/v0.5.x/frontend/index.html` | Update VERSIONS array (run `scripts/sync_version.py`, v0.5.x and earlier only) |
 
-#### 設定ファイルとドキュメントの更新
+#### Update Config and Docs
 
-| ファイル | 変更内容 |
+| File | Change |
 |---------|---------|
-| `docker-compose.yml` | backendのexposeに新ポートを追加、nginxのvolumesに新フロントエンドを追加 |
-| `nginx/version-map.conf` | 新バージョンのルーティングを追加、defaultポート変更 |
-| `ecosystem.config.js` | VERSIONS配列に新バージョンを追加（下記参照） |
-| `dev.ecosystem.config.js` | VERSIONS配列に新バージョンを追加 |
-| `docs/ec2-deployment-spec.md` | 設定例に新バージョンの記載を追加 |
-| `versions/README.md` | ディレクトリ構成、バージョン比較表、更新履歴を追加 |
-| `README.md` | ディレクトリ構成、ポート割り当て表を更新 |
-| `CHANGELOG.md` | 更新履歴を追記 |
+| `docker-compose.yml` | Add new port to backend expose; add new frontend to nginx volumes |
+| `nginx/version-map.conf` | Add new routing; update default port |
+| `ecosystem.config.js` | Add new version to VERSIONS array (see below) |
+| `dev.ecosystem.config.js` | Add new version to VERSIONS array |
+| `docs/ec2-deployment-spec.md` | Add new version to config examples |
+| `versions/README.md` | Add directory structure, version comparison table, and update history |
+| `README.md` | Update directory structure and port table |
+| `CHANGELOG.md` | Append change history |
 
-#### ecosystem.config.js への追加例
+#### Example: Add to ecosystem.config.js
 
-VERSIONS配列に新バージョンを追加します。`latest`はシンボリックリンクのため、実体バージョンのみ起動します：
+Add the new version to the VERSIONS array. `latest` is a symlink, so only real versions are started.
 
 ```javascript
 const VERSIONS = [
-  // latestはシンボリックリンクのため、実体バージョンのみ起動
-  { name: 'spec-code-ai-reviewer-v0.7.0', cwd: 'versions/v0.7.0', port: 8070 },  // 追加
+  // latest is a symlink, so only real versions are started
+  { name: 'spec-code-ai-reviewer-v0.7.0', cwd: 'versions/v0.7.0', port: 8070 },  // add
   { name: 'spec-code-ai-reviewer-v0.6.0', cwd: 'versions/v0.6.0', port: 8060 },
   { name: 'spec-code-ai-reviewer-v0.5.0', cwd: 'versions/v0.5.0', port: 8050 },
 ];
 ```
 
-**注意**: `latest`用のプロセスは不要です。Nginxの`version-map.conf`で`default`ポートが最新版を指すため、Cookie未設定時も最新版にルーティングされます。
+**Note**: There is no need for a `latest` process. Since `version-map.conf` routes the `default` port to the latest version, requests without a cookie are routed to the latest version.
 
-**注意**: `PYTHONPATH` に `add-line-numbers` サブツリーのパスが設定されており、`add_line_numbers` モジュールをインポート可能にしています。
+**Note**: `PYTHONPATH` is configured with the `add-line-numbers` subtree path, so the `add_line_numbers` module can be imported.
 
-#### nginx/version-map.conf への追加例
+#### Example: Add to nginx/version-map.conf
 
 ```nginx
-# Cookie値に応じてバックエンドポートを振り分け
+# Route backend port based on Cookie value
 map $cookie_app_version $backend_port {
-    "v0.7.0"  8070;  # 追加
+    "v0.7.0"  8070;  # add
     "v0.6.0"  8060;
     "v0.5.0"  8050;
     default   8070;  # latest (v0.7.0)
 }
 
-# Cookie値に応じてフロントエンドを振り分け
+# Route frontend based on Cookie value
 map $cookie_app_version $frontend_root {
-    "v0.7.0"  /var/www/spec-code-ai-reviewer/versions/v0.7.0/frontend;  # 追加
+    "v0.7.0"  /var/www/spec-code-ai-reviewer/versions/v0.7.0/frontend;  # add
     "v0.6.0"  /var/www/spec-code-ai-reviewer/versions/v0.6.0/frontend;
     "v0.5.0"  /var/www/spec-code-ai-reviewer/versions/v0.5.0/frontend;
     default   /var/www/spec-code-ai-reviewer/latest/frontend;
 }
 ```
 
-### 本番環境での更新手順
+### Production Update Steps
 
 ```bash
-# （ローカルPCで実行）GitHubに登録済みの公開鍵に対応する「秘密鍵」をssh-agentへ追加
+# (Run locally) Add the private key corresponding to the registered GitHub public key to ssh-agent
 eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_rsa   # 鍵ファイル名が異なる場合は適宜変更
+ssh-add ~/.ssh/id_rsa   # Adjust file name as needed
 
-# サーバーにSSH接続（ssh-agent転送でGitHubアクセス可能にする）
+# SSH into the server (enable ssh-agent forwarding to access GitHub)
 ssh -A user@example.com
 
-# 新バージョンをデプロイ
+# Deploy new version
 cd /var/www/spec-code-ai-reviewer
 git pull origin main
 
-# 依存関係をインストール
+# Install dependencies
 cd versions/v0.5.1/backend
 uv sync
 
-# PM2でプロセスを再構成（新バージョンのプロセスを追加）
+# Rebuild PM2 process list (add new version)
 cd /var/www/spec-code-ai-reviewer
 pm2 delete all
 pm2 start ecosystem.config.js
 pm2 save
 
-# Nginx設定を反映（version-map.confの変更を反映）
+# Apply Nginx config changes (reflect version-map.conf)
 sudo cp nginx/version-map.conf /etc/nginx/conf.d/
 sudo nginx -t
 sudo nginx -s reload
 ```
 
-**補足:**
-- `latest` シンボリックリンクは `git pull` で自動更新される（Gitがシンボリックリンクを追跡）
-- `pm2 reload` は既存プロセスの再起動のみ。新バージョン追加時は `pm2 delete all && pm2 start` で再構成が必要
-- `spec-code-ai-reviewer.conf` は `$backend_port` 変数を使用するため、`version-map.conf` の更新のみでOK
+**Notes:**
+- The `latest` symlink is updated automatically by `git pull` (Git tracks symlinks)
+- `pm2 reload` only restarts existing processes. When adding a new version, run `pm2 delete all && pm2 start` to rebuild.
+- `spec-code-ai-reviewer.conf` uses the `$backend_port` variable, so only `version-map.conf` needs updating
 
-## 更新履歴
+## Update History
 
-詳細な変更履歴は [CHANGELOG.md](CHANGELOG.md) を参照してください。
+For detailed change history, see [CHANGELOG.md](CHANGELOG.md).
 
-## 開発の背景
+## Background
 
-本ツールは、日本語の開発文書・仕様書を対象とした開発支援AI **IXV（イクシブ）** の開発過程で生まれた小さな実用品です。
+This tool is a small practical product born from the development of the Japanese development document support AI **IXV (Ikushibu)**.
 
-IXVでは、システム開発における日本語の文書について、理解・構造化・活用という課題に取り組んでおり、本リポジトリでは、その一部を切り出して公開しています。
+In IXV, we tackle the challenge of understanding, structuring, and utilizing Japanese documents in system development. This repository publishes a cut-out part of that effort.
 
-## ライセンス
+## License
 
-MIT License - 詳細は [LICENSE](LICENSE) を参照してください。
+MIT License - See [LICENSE](LICENSE) for details.
 
-## 問い合わせ先
+## Contact
 
-- **メールアドレス**: info@elvez.co.jp
-- **宛先**: 株式会社エルブズ
+- **Email**: info@elvez.co.jp
+- **To**: Elvez Co., Ltd.
