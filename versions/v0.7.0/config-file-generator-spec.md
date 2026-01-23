@@ -1,6 +1,6 @@
 # 設定ファイルジェネレーター
 
-**バージョン: 0.6.0**
+**バージョン: 0.7.0**
 
 ## 概要
 
@@ -9,7 +9,7 @@ TypeScriptで型安全に実装され、スキーマ定義を差し替えるこ�
 
 現在はspec-code-ai-reviewer用の設定（`reviewer-config.md`）を生成するスキーマが設定されている。
 
-v0.6.0でフロントエンド全体がVite + React + TypeScriptに移行したため、本機能もReactコンポーネントとして再実装された。
+v0.7.0でフロントエンド全体がVite + React + TypeScriptに移行したため、本機能もReactコンポーネントとして再実装された。
 
 ## 使い方
 
@@ -49,7 +49,7 @@ v0.6.0でフロントエンド全体がVite + React + TypeScriptに移行した�
 
 ## info
 
-- version: v0.6.0
+- version: v0.7.0
 - created_at: 2026-01-18T10:30:00+09:00
 
 ## llm
@@ -112,7 +112,7 @@ v0.6.0でフロントエンド全体がVite + React + TypeScriptに移行した�
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  設定ファイルジェネレーター                          v0.6.0  │
+│  設定ファイルジェネレーター                          v0.7.0  │
 ├──────────────────────────────────────────────────────────────┤
 │                                                               │
 │  設計書-Javaプログラム突合 AIレビュアー 設定ファイルを作成   │
@@ -122,7 +122,7 @@ v0.6.0でフロントエンド全体がVite + React + TypeScriptに移行した�
 ├──────────────────────────────────────────────────────────────┤
 │ ■ info（設定ファイル情報）                                    │
 │                                                               │
-│   version:    v0.6.0（固定）                                  │
+│   version:    v0.7.0（固定）                                  │
 │   created_at: ダウンロード時に自動生成                        │
 │                                                               │
 ├──────────────────────────────────────────────────────────────┤
@@ -182,7 +182,7 @@ v0.6.0でフロントエンド全体がVite + React + TypeScriptに移行した�
 
 ### アーキテクチャ
 
-v0.6.0ではReact + TypeScriptで実装され、以下の構成となる。
+v0.7.0ではReact + TypeScriptで実装され、以下の構成となる。
 
 ```
 frontend/src/features/config-file-generator/
@@ -250,7 +250,7 @@ export const CONFIG_SCHEMA: ConfigSchema = {
   meta: {
     outputTitle: '設計書-Javaプログラム突合 AIレビュアー 設定ファイル',
     outputFileName: 'reviewer-config.md',
-    version: 'v0.6.0',
+    version: 'v0.7.0',
   },
 
   // セクション定義（配列順にUIに表示）
@@ -265,7 +265,7 @@ export const CONFIG_SCHEMA: ConfigSchema = {
           id: 'version',
           label: 'version',
           type: 'fixed',
-          value: 'v0.6.0',
+          value: 'v0.7.0',
         },
         {
           id: 'created_at',
@@ -526,7 +526,7 @@ React Routerにより `/config-file-generator` でアクセス可能。
 
 ## 対象バージョン
 
-v0.6.0
+v0.7.0
 
 ## E2E試験項目
 
