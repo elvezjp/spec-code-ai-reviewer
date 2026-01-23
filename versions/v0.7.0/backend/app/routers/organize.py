@@ -5,6 +5,7 @@ import os
 
 from fastapi import APIRouter
 
+from app.markdown_tools.registry import get_markdown_tool
 from app.models.schemas import (
     OrganizeMarkdownRequest,
     OrganizeMarkdownResponse,
@@ -24,18 +25,21 @@ _TIMEOUT_SECONDS = int(os.environ.get("ORGANIZE_TIMEOUT_SECONDS", "180"))
 _MAX_RETRIES = int(os.environ.get("ORGANIZE_MAX_RETRIES", "2"))
 
 
-def preprocess_markdown(markdown: str, tool: str | None = None) -> str:
+def preprocess_markdown(markdown: str, tool_name: str | None = None) -> str:
     """Markdownに対して前処理を実行する
 
     Args:
         markdown: 前処理対象のMarkdown
-        tool: 使用されたツール名
+        tool_name: 使用されたツール名
 
     Returns:
         str: 前処理後のMarkdown
     """
-    # 将来的にツールに応じた前処理を追加
-    return markdown
+    if not tool_name:
+        return markdown
+
+    tool = get_markdown_tool(tool_name)
+    return tool.preprocess_for_organize(markdown)
 
 
 @router.post("/organize-markdown", response_model=OrganizeMarkdownResponse)

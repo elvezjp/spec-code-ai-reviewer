@@ -82,3 +82,30 @@ class Excel2mdMermaidTool(MarkdownTool):
 
         finally:
             sys.path = original_path
+
+    def preprocess_for_organize(self, markdown: str) -> str:
+        """excel2mdの概要セクションを除去する。
+
+        excel2mdの出力構造:
+        - タイトル: # CSV出力: filename.xlsx または # SheetName
+        - 概要セクション: ## 概要 ... (ツール説明文)
+        - セパレータ: ---
+        - 本文: # Sheet: ... (実際のシート内容)
+
+        タイトルと概要セクションはツール固有の情報であり、
+        メタ情報は別途付与するため、最初の --- までを除去する。
+        """
+        # セパレータ行を検出して、それ以降を返す
+        lines = markdown.split("\n")
+
+        for i, line in enumerate(lines):
+            # --- のみの行を検出（セパレータ）
+            if line.strip() == "---":
+                # セパレータ以降を返す（空行をスキップ）
+                remaining = "\n".join(lines[i + 1 :]).strip()
+                if remaining:
+                    return remaining
+                break
+
+        # セパレータが見つからない場合はそのまま返す
+        return markdown

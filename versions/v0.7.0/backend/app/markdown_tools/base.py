@@ -24,6 +24,15 @@ class MarkdownTool(ABC):
         """バイナリのExcelファイルをMarkdown文字列に変換する。"""
         raise NotImplementedError
 
+    def preprocess_for_organize(self, markdown: str) -> str:
+        """Markdown整理前の前処理を行う。
+
+        ツール固有の説明文やメタ情報を除去し、
+        設計書内容のみを抽出するための前処理。
+        デフォルトではそのまま返す。
+        """
+        return markdown
+
 
 class SupportsMarkdownTool(Protocol):
     """型補完用のプロトコル。"""
