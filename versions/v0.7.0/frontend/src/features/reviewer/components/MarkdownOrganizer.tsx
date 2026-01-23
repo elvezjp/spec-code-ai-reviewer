@@ -130,6 +130,9 @@ export function MarkdownOrganizer({
 
   const diffViewerStyles = useMemo(
     () => ({
+      diffContainer: {
+        minWidth: 'unset',
+      },
       gutter: {
         fontSize: '0.75rem',
         lineHeight: '1.25rem',
