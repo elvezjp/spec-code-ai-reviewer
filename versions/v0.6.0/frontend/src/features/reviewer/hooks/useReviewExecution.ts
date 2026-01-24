@@ -12,7 +12,6 @@ import * as api from '../services/api'
 interface UseReviewExecutionReturn {
   reviewResults: (ReviewExecutionData | null)[]
   isReviewing: boolean
-  currentExecutionNumber: number
   currentTab: number
   reviewError: string | null
   executeReview: (params: {
@@ -33,7 +32,6 @@ const REVIEW_EXECUTION_COUNT = 2
 export function useReviewExecution(): UseReviewExecutionReturn {
   const [reviewResults, setReviewResults] = useState<(ReviewExecutionData | null)[]>([null, null])
   const [isReviewing, setIsReviewing] = useState(false)
-  const [currentExecutionNumber, setCurrentExecutionNumber] = useState(0)
   const [currentTab, setCurrentTab] = useState(1)
   const [reviewError, setReviewError] = useState<string | null>(null)
 
@@ -93,7 +91,6 @@ export function useReviewExecution(): UseReviewExecutionReturn {
       setIsReviewing(true)
       setReviewError(null)
       setReviewResults([null, null])
-      setCurrentExecutionNumber(1)
 
       const specFilename = specFiles.map((f) => f.filename).join(', ')
       const codeFilename = codeFiles.map((f) => f.filename).join(', ')
@@ -102,8 +99,6 @@ export function useReviewExecution(): UseReviewExecutionReturn {
         const results: (ReviewExecutionData | null)[] = [null, null]
 
         for (let i = 1; i <= REVIEW_EXECUTION_COUNT; i++) {
-          setCurrentExecutionNumber(i)
-
           const executedAt = new Date().toLocaleString('ja-JP', {
             year: 'numeric',
             month: '2-digit',
@@ -167,7 +162,6 @@ export function useReviewExecution(): UseReviewExecutionReturn {
         throw error
       } finally {
         setIsReviewing(false)
-        setCurrentExecutionNumber(0)
       }
     },
     []
@@ -182,7 +176,6 @@ export function useReviewExecution(): UseReviewExecutionReturn {
   return {
     reviewResults,
     isReviewing,
-    currentExecutionNumber,
     currentTab,
     reviewError,
     executeReview,
