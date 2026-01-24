@@ -11,6 +11,8 @@
 
 A web application that uses AI to cross-check design documents (Excel format) against program code and verify consistency.
 
+https://github.com/user-attachments/assets/1d240e7e-b209-4fc2-aa7d-8c7aea681a55
+
 ## Features
 
 - **Design document conversion**: Convert Excel (.xlsx, .xls) to Markdown (using MarkItDown, excel2md)

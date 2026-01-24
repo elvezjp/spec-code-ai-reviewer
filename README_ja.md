@@ -11,6 +11,8 @@
 
 設計書（Excel形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
 
+https://github.com/user-attachments/assets/1d240e7e-b209-4fc2-aa7d-8c7aea681a55
+
 ## 機能
 
 - **設計書変換**: Excel (.xlsx, .xls) → Markdown形式に変換（MarkItDown、excel2md使用）
