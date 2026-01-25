@@ -34,7 +34,7 @@ export function Presets() {
 
   const handleApply = (preset: Preset) => {
     applyPreset(preset)
-    sessionStorage.setItem('preset-toast', `プリセット「${preset.name}」を適用しました`)
+    sessionStorage.setItem('preset-toast', `プリセット「${preset.name}」を適用し、ブラウザに保存しました`)
     navigate('/')
   }
 
