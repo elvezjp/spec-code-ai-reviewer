@@ -18,7 +18,7 @@ import {
   useVersions,
 } from '@core/index'
 import { PRESET_CATALOG } from '@core/data/presetCatalog'
-import type { ScreenState, SystemPromptPreset } from '@core/types'
+import type { ScreenState } from '@core/types'
 import {
   SpecTypesSection,
   SpecFileList,
@@ -148,23 +148,6 @@ export function Reviewer() {
       }
     }
   }, [showToast])
-
-  // プリセットカタログのプリセットをSystemPromptPresetに変換して統合
-  const allPresets = useMemo(() => {
-    const catalogPresets: SystemPromptPreset[] = PRESET_CATALOG.map((preset) => ({
-      name: preset.name,
-      role: preset.systemPrompt.role,
-      purpose: preset.systemPrompt.purpose,
-      format: preset.systemPrompt.format,
-      notes: preset.systemPrompt.notes,
-    }))
-
-    // 設定ファイルのプリセットと統合（重複を避ける）
-    const existingNames = new Set(catalogPresets.map(p => p.name))
-    const configPresets = systemPromptPresets.filter(p => !existingNames.has(p.name))
-
-    return [...catalogPresets, ...configPresets]
-  }, [systemPromptPresets])
 
   // プリセット選択時の処理
   const handlePresetChange = useCallback((presetName: string) => {
@@ -362,7 +345,7 @@ export function Reviewer() {
 
       {/* System prompt settings */}
       <SystemPromptEditor
-        presets={allPresets}
+        presets={systemPromptPresets}
         selectedPreset={selectedPreset}
         currentValues={currentPromptValues}
         onPresetChange={handlePresetChange}

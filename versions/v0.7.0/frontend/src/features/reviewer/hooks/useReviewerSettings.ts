@@ -6,6 +6,7 @@ import {
   DEFAULT_SYSTEM_PROMPTS,
   DEFAULT_LLM_SETTINGS,
 } from '@core/hooks/useSettings'
+import { PRESET_CATALOG } from '@core/data/presetCatalog'
 
 export interface ConfigLoadStatus {
   llm?: string
@@ -77,26 +78,37 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
       ? reviewerConfig.specTypes
       : DEFAULT_SPEC_TYPES
 
-  // システムプロンプトプリセット: 常に「標準レビュープリセット」を含める
+  // システムプロンプトプリセット: 標準レビュープリセット（デフォルト） + カタログ + 設定ファイル
   const systemPromptPresets: SystemPromptPreset[] = useMemo(() => {
+    // 標準レビュープリセット（デフォルトとして先頭に配置）
+    const standardPreset = DEFAULT_SYSTEM_PROMPTS.find(p => p.name === '標準レビュープリセット')
+
+    // プリセットカタログからSystemPromptPresetに変換
+    const catalogPresets: SystemPromptPreset[] = PRESET_CATALOG.map((preset) => ({
+      name: preset.name,
+      role: preset.systemPrompt.role,
+      purpose: preset.systemPrompt.purpose,
+      format: preset.systemPrompt.format,
+      notes: preset.systemPrompt.notes,
+    }))
+
+    // 設定ファイルのプリセット
     const configPrompts = reviewerConfig?.systemPrompts && reviewerConfig.systemPrompts.length > 0
       ? reviewerConfig.systemPrompts
       : []
 
-    // 設定ファイルのプリセットに「標準レビュープリセット」が含まれていない場合は追加
-    const standardPreset = DEFAULT_SYSTEM_PROMPTS.find(p => p.name === '標準レビュープリセット')
-    const hasStandardPreset = configPrompts.some(p => p.name === '標準レビュープリセット')
-
-    const basePrompts = configPrompts.length > 0 ? configPrompts : DEFAULT_SYSTEM_PROMPTS
-    const merged = standardPreset && !hasStandardPreset
-      ? [...basePrompts, standardPreset]
-      : basePrompts
+    // 統合: 標準レビュープリセット（デフォルト） → カタログ → 設定ファイル
+    const allPrompts = [
+      ...(standardPreset ? [standardPreset] : []),
+      ...catalogPresets,
+      ...configPrompts,
+    ]
 
     // 同名プリセットは先勝ちで重複排除
-    return merged.filter((item, index, array) => {
+    return allPrompts.filter((item, index, array) => {
       return array.findIndex(entry => entry.name === item.name) === index
     })
-  }, [reviewerConfig?.systemPrompts])
+  }, [reviewerConfig])
 
   const llmConfig: LlmConfig | null = reviewerConfig?.llm?.provider
     ? {
@@ -518,6 +530,45 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
           }
           setSelectedModelState(modelToSelect)
         }
+
+        // 保存済みのプリセット選択を復元
+        // 設定ファイルのプリセットを含めた全プリセットリストを構築して検索
+        const savedPreset = localStorage.getItem(SELECTED_PROMPT_KEY)
+        if (savedPreset) {
+          // 標準レビュープリセット（デフォルト）
+          const standardPreset = DEFAULT_SYSTEM_PROMPTS.find(p => p.name === '標準レビュープリセット')
+          // プリセットカタログからSystemPromptPresetに変換
+          const catalogPresets: SystemPromptPreset[] = PRESET_CATALOG.map((preset) => ({
+            name: preset.name,
+            role: preset.systemPrompt.role,
+            purpose: preset.systemPrompt.purpose,
+            format: preset.systemPrompt.format,
+            notes: preset.systemPrompt.notes,
+          }))
+          // 設定ファイルのプリセット
+          const configPrompts = parsed.systemPrompts && parsed.systemPrompts.length > 0
+            ? parsed.systemPrompts
+            : []
+          // 全プリセットリスト: 標準レビュープリセット → カタログ → 設定ファイル
+          const allPresets = [
+            ...(standardPreset ? [standardPreset] : []),
+            ...catalogPresets,
+            ...configPrompts,
+          ]
+          const exists = allPresets.some((p) => p.name === savedPreset)
+          if (exists) {
+            const preset = allPresets.find((p) => p.name === savedPreset)
+            if (preset) {
+              setSelectedPreset(preset.name)
+              setCurrentPromptValues({
+                role: normalizePromptText(preset.role),
+                purpose: normalizePromptText(preset.purpose),
+                format: normalizePromptText(preset.format),
+                notes: normalizePromptText(preset.notes),
+              })
+            }
+          }
+        }
       } catch {
         // Ignore parse errors
       }
@@ -525,8 +576,12 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
   }, [])
 
   // Load saved preset selection and apply default preset
-  // selectedPresetが既に設定されている場合は、それを保持する
+  // 設定ファイルがない場合のみ実行（設定ファイルがある場合は上のuseEffectで処理済み）
   useEffect(() => {
+    // 設定ファイルが保存されている場合は、上のuseEffectで処理されるのでスキップ
+    const savedConfig = localStorage.getItem(STORAGE_KEY)
+    if (savedConfig) return
+
     if (systemPromptPresets.length === 0 || selectedPreset) return
 
     const savedPreset = localStorage.getItem(SELECTED_PROMPT_KEY)
@@ -534,10 +589,12 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
       const exists = systemPromptPresets.some((p) => p.name === savedPreset)
       if (exists) {
         selectPreset(savedPreset)
+        return
       }
-      return
+      // 保存されたプリセットが存在しない場合はフォールバック
     }
 
+    // デフォルトとして最初のプリセットを選択
     selectPreset(systemPromptPresets[0].name)
   }, [systemPromptPresets, selectPreset, selectedPreset])
 
