@@ -5,6 +5,8 @@ import tempfile
 from pathlib import Path
 
 from .base import MarkdownTool
+
+# excel2mdモジュールへのパスはexcel2md_tool.pyで一元管理
 from .excel2md_tool import EXCEL2MD_PATH
 
 
