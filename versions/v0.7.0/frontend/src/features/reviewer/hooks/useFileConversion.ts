@@ -38,6 +38,11 @@ interface UseFileConversionReturn {
 
 const DEFAULT_TOOL = 'markitdown'
 const DEFAULT_TYPE = '設計書'
+const DOCX_TOOL = 'markitdown'
+
+const isDocxFilename = (filename: string): boolean => filename.toLowerCase().endsWith('.docx')
+const isDocFilename = (filename: string): boolean =>
+  filename.toLowerCase().endsWith('.doc') && !isDocxFilename(filename)
 
 export function useFileConversion(): UseFileConversionReturn {
   const [specFiles, setSpecFiles] = useState<DesignFile[]>([])
@@ -61,17 +66,25 @@ export function useFileConversion(): UseFileConversionReturn {
   }, [])
 
   const addSpecFiles = useCallback((files: File[]) => {
-    const newFiles: DesignFile[] = files.map((file, index) => ({
+    const filtered = files.filter((file) => !isDocFilename(file.name))
+    const excludedCount = files.length - filtered.length
+
+    const newFiles: DesignFile[] = filtered.map((file, index) => ({
       file,
       filename: file.name,
       isMain: index === 0,
       type: DEFAULT_TYPE,
-      tool: DEFAULT_TOOL,
+      tool: isDocxFilename(file.name) ? DOCX_TOOL : DEFAULT_TOOL,
     }))
 
     setSpecFiles(newFiles)
     setSpecMarkdown(null)
-    setSpecStatus('')
+    if (excludedCount > 0) {
+      const suffix = excludedCount > 0 ? `（${excludedCount}件を除外）` : ''
+      setSpecStatus(`❌ .doc形式は非対応です。.docx形式で保存し直してください${suffix}`)
+    } else {
+      setSpecStatus('')
+    }
   }, [])
 
   const removeSpecFile = useCallback((filename: string) => {
@@ -111,7 +124,9 @@ export function useFileConversion(): UseFileConversionReturn {
   const setSpecTool = useCallback((filename: string, tool: string) => {
     setSpecFiles((prev) =>
       prev.map((f) =>
-        f.filename === filename ? { ...f, tool } : f
+        f.filename === filename
+          ? { ...f, tool: isDocxFilename(f.filename) ? DOCX_TOOL : tool }
+          : f
       )
     )
     setSpecMarkdown(null)
@@ -119,7 +134,12 @@ export function useFileConversion(): UseFileConversionReturn {
   }, [])
 
   const applyToolToAll = useCallback((tool: string) => {
-    setSpecFiles((prev) => prev.map((f) => ({ ...f, tool })))
+    setSpecFiles((prev) =>
+      prev.map((f) => ({
+        ...f,
+        tool: isDocxFilename(f.filename) ? DOCX_TOOL : tool,
+      }))
+    )
     setSpecMarkdown(null)
     setSpecStatus('⚠️ ツールが変更されました。再変換してください。')
   }, [])
@@ -135,7 +155,8 @@ export function useFileConversion(): UseFileConversionReturn {
         const results: DesignFile[] = []
 
         for (const specFile of specFiles) {
-          const result = await api.convertExcelToMarkdown(specFile.file, specFile.tool)
+          const normalizedTool = isDocxFilename(specFile.filename) ? DOCX_TOOL : specFile.tool
+          const result = await api.convertExcelToMarkdown(specFile.file, normalizedTool)
 
           if (!result.success) {
             throw new Error(`[${specFile.filename}] ${result.error || '変換に失敗しました'}`)
@@ -143,6 +164,7 @@ export function useFileConversion(): UseFileConversionReturn {
 
           results.push({
             ...specFile,
+            tool: normalizedTool,
             markdown: result.markdown,
             note: getTypeNote(specFile.type),
           })

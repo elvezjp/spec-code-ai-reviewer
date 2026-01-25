@@ -32,6 +32,7 @@ export function SpecFileList({
   onDownload,
 }: SpecFileListProps) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(true)
+  const isDocxFilename = (filename: string) => filename.toLowerCase().endsWith('.docx')
 
   if (files.length === 0) return null
 
@@ -61,50 +62,61 @@ export function SpecFileList({
 
       {/* File list */}
       <div className="space-y-2">
-        {files.map((file) => (
-          <div
-            key={file.filename}
-            className="flex flex-col gap-1 text-sm bg-gray-50 border border-gray-200 rounded px-3 py-2"
-          >
-            <span className="text-gray-700 break-words">{file.filename}</span>
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="flex items-center gap-1 cursor-pointer">
-                <input
-                  type="radio"
-                  name="main-spec"
-                  checked={file.isMain}
-                  onChange={() => onMainChange(file.filename)}
-                  className="w-4 h-4 text-blue-600 cursor-pointer"
-                />
-                <span className="text-xs text-gray-500 font-bold">メイン</span>
-              </label>
-              <span className="text-xs text-gray-500 ml-2">種別</span>
-              <select
-                value={file.type}
-                onChange={(e) => onTypeChange(file.filename, e.target.value)}
-                className="border border-gray-300 rounded px-2 py-1 text-sm"
-              >
-                {specTypesList.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-              <span className="text-xs text-gray-500">ツール</span>
-              <select
-                value={file.tool}
-                onChange={(e) => onToolChange(file.filename, e.target.value)}
-                className="border border-gray-300 rounded px-2 py-1 text-sm"
-              >
-                {availableTools.map((t) => (
-                  <option key={t.name} value={t.name}>
-                    {t.display_name}
-                  </option>
-                ))}
-              </select>
+        {files.map((file) => {
+          const isDocx = isDocxFilename(file.filename)
+          return (
+            <div
+              key={file.filename}
+              className="flex flex-col gap-1 text-sm bg-gray-50 border border-gray-200 rounded px-3 py-2"
+            >
+              <span className="text-gray-700 break-words">{file.filename}</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex items-center gap-1 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="main-spec"
+                    checked={file.isMain}
+                    onChange={() => onMainChange(file.filename)}
+                    className="w-4 h-4 text-blue-600 cursor-pointer"
+                  />
+                  <span className="text-xs text-gray-500 font-bold">メイン</span>
+                </label>
+                <span className="text-xs text-gray-500 ml-2">種別</span>
+                <select
+                  value={file.type}
+                  onChange={(e) => onTypeChange(file.filename, e.target.value)}
+                  className="border border-gray-300 rounded px-2 py-1 text-sm"
+                >
+                  {specTypesList.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-xs text-gray-500">ツール</span>
+                <select
+                  value={file.tool}
+                  onChange={(e) => onToolChange(file.filename, e.target.value)}
+                  className="border border-gray-300 rounded px-2 py-1 text-sm"
+                  disabled={isDocx}
+                >
+                  {isDocx ? (
+                    <option value="markitdown">MarkItDown</option>
+                  ) : (
+                    availableTools.map((t) => (
+                      <option key={t.name} value={t.name}>
+                        {t.display_name}
+                      </option>
+                    ))
+                  )}
+                </select>
+                {isDocx && (
+                  <span className="text-xs text-orange-600">WordはMarkItDownのみ対応</span>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <p className="text-xs text-gray-400 mt-2">

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useFileConversion } from '@features/reviewer/hooks/useFileConversion'
+import * as api from '@features/reviewer/services/api'
 
 // APIモジュールのモック
 vi.mock('@features/reviewer/services/api', () => ({
@@ -70,6 +71,51 @@ describe('useFileConversion', () => {
       expect(result.current.specFiles[0].isMain).toBe(true)
       expect(result.current.specFiles[0].type).toBe('設計書')
       expect(result.current.specFiles[0].tool).toBe('markitdown')
+    })
+
+    it('.docxのみ追加時、toolはmarkitdownでtypeは設計書', () => {
+      const { result } = renderHook(() => useFileConversion())
+
+      act(() => {
+        result.current.addSpecFiles([createMockFile('spec.DOCX')])
+      })
+
+      expect(result.current.specFiles).toHaveLength(1)
+      expect(result.current.specFiles[0].filename).toBe('spec.DOCX')
+      expect(result.current.specFiles[0].tool).toBe('markitdown')
+      expect(result.current.specFiles[0].type).toBe('設計書')
+    })
+
+    it('.docのみは除外され、specStatusにエラーが設定される', () => {
+      const { result } = renderHook(() => useFileConversion())
+
+      act(() => {
+        result.current.addSpecFiles([createMockFile('legacy.doc')])
+      })
+
+      expect(result.current.specFiles).toHaveLength(0)
+      expect(result.current.specStatus).toContain('.doc形式は非対応')
+      expect(result.current.specStatus).toContain('1件を除外')
+    })
+
+    it('.doc混在は除外され、残りの先頭がメインになる', () => {
+      const { result } = renderHook(() => useFileConversion())
+
+      act(() => {
+        result.current.addSpecFiles([
+          createMockFile('legacy.doc'),
+          createMockFile('spec.docx'),
+          createMockFile('spec.xlsx'),
+        ])
+      })
+
+      expect(result.current.specFiles).toHaveLength(2)
+      expect(result.current.specFiles[0].filename).toBe('spec.docx')
+      expect(result.current.specFiles[0].isMain).toBe(true)
+      expect(result.current.specFiles[0].tool).toBe('markitdown')
+      expect(result.current.specFiles[1].filename).toBe('spec.xlsx')
+      expect(result.current.specFiles[1].isMain).toBe(false)
+      expect(result.current.specStatus).toContain('.doc形式は非対応')
     })
 
     it('複数ファイル追加時、最初のファイルがメインになる', () => {
@@ -204,6 +250,20 @@ describe('useFileConversion', () => {
 
       expect(result.current.specFiles[0].tool).toBe('excel2md')
     })
+
+    it('.docxに対してexcel2mdを指定してもmarkitdownのまま', () => {
+      const { result } = renderHook(() => useFileConversion())
+
+      act(() => {
+        result.current.addSpecFiles([createMockFile('spec.docx')])
+      })
+
+      act(() => {
+        result.current.setSpecTool('spec.docx', 'excel2md')
+      })
+
+      expect(result.current.specFiles[0].tool).toBe('markitdown')
+    })
   })
 
   describe('applyToolToAll', () => {
@@ -223,6 +283,58 @@ describe('useFileConversion', () => {
 
       expect(result.current.specFiles[0].tool).toBe('excel2md')
       expect(result.current.specFiles[1].tool).toBe('excel2md')
+    })
+
+    it('.docxとExcel混在でexcel2md適用時、.docxはmarkitdownのまま', () => {
+      const { result } = renderHook(() => useFileConversion())
+
+      act(() => {
+        result.current.addSpecFiles([
+          createMockFile('spec.docx'),
+          createMockFile('spec.xlsx'),
+        ])
+      })
+
+      act(() => {
+        result.current.applyToolToAll('excel2md')
+      })
+
+      expect(result.current.specFiles[0].filename).toBe('spec.docx')
+      expect(result.current.specFiles[0].tool).toBe('markitdown')
+      expect(result.current.specFiles[1].filename).toBe('spec.xlsx')
+      expect(result.current.specFiles[1].tool).toBe('excel2md')
+    })
+  })
+
+  describe('convertSpecs', () => {
+    it('.docxを含む場合、APIにtool: markitdownが渡される', async () => {
+      const { result } = renderHook(() => useFileConversion())
+      const convertExcelToMarkdownMock = vi.mocked(api.convertExcelToMarkdown)
+
+      act(() => {
+        result.current.addSpecFiles([
+          createMockFile('spec.docx'),
+          createMockFile('spec.xlsx'),
+        ])
+      })
+
+      act(() => {
+        result.current.setSpecTool('spec.xlsx', 'excel2md')
+      })
+
+      await act(async () => {
+        await result.current.convertSpecs(() => '')
+      })
+
+      expect(convertExcelToMarkdownMock).toHaveBeenCalledTimes(2)
+      expect(convertExcelToMarkdownMock).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'spec.docx' }),
+        'markitdown'
+      )
+      expect(convertExcelToMarkdownMock).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'spec.xlsx' }),
+        'excel2md'
+      )
     })
   })
 
