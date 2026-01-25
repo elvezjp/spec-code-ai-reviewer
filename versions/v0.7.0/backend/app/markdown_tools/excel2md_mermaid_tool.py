@@ -5,11 +5,13 @@ import tempfile
 from pathlib import Path
 
 from .base import MarkdownTool
+
+# excel2mdモジュールへのパスはexcel2md_tool.pyで一元管理
 from .excel2md_tool import EXCEL2MD_PATH
 
 
 class Excel2mdMermaidTool(MarkdownTool):
-    """excel2md v1.7を利用したExcel→CSVマークダウン+Mermaid変換。
+    """excel2md を利用したExcel→CSVマークダウン+Mermaid変換。
 
     概要セクションあり、検証用メタデータなし、Mermaidフローチャートありで出力する。
     シェイプからMermaidフローチャートを検出して出力する（mermaid_detect_mode=shapes）。
@@ -50,7 +52,7 @@ class Excel2mdMermaidTool(MarkdownTool):
                 expected_output = tmpdir_path / f"{output_basename}_csv.md"
 
                 # argparserでオプションを設定
-                # v1.7: 概要セクションあり（デフォルト）、検証用メタデータなし、Mermaidあり
+                # 概要セクションあり（デフォルト）、検証用メタデータなし、Mermaidあり
                 parser = build_argparser()
                 args = parser.parse_args(
                     [
