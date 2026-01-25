@@ -13,7 +13,8 @@
 - 期待される動作
 - 実際の動作
 - サンプルファイル（可能であれば）
-- Python のバージョン
+- Python のバージョン（バックエンド関連の場合）
+- Node.js のバージョン（フロントエンド関連の場合）
 - オペレーティングシステム
 
 ### 機能改善の提案
@@ -39,12 +40,19 @@
 
 3. 変更に対する**テストを作成**
    ```bash
-   # テストを実行
-   cd versions/v0.5.0/backend
+   # バックエンドのテストを実行
+   cd versions/v0.7.0/backend
    uv run pytest tests/ -v
 
-   # カバレッジ付きでテストを実行
+   # バックエンドのカバレッジ付きテスト
    uv run pytest tests/ --cov=app --cov-report=html
+
+   # フロントエンドのテストを実行
+   cd versions/v0.7.0/frontend
+   npm run test:run
+
+   # フロントエンドのカバレッジ付きテスト
+   npm run test:coverage
    ```
 
 4. 必要に応じて**ドキュメントを更新**
@@ -69,8 +77,9 @@
 ### 前提条件
 
 - Python 3.10 以上
+- Node.js 18 以上
 - [uv](https://docs.astral.sh/uv/) パッケージマネージャー
-- AWS アカウント（Bedrock へのアクセス権限）
+- AWS アカウント（Bedrock へのアクセス権限）または Anthropic/OpenAI API キー
 
 ### インストール
 
@@ -79,23 +88,37 @@
 git clone https://github.com/YOUR-USERNAME/spec-code-ai-reviewer.git
 cd spec-code-ai-reviewer
 
-# 依存関係をインストール
-cd versions/v0.5.0/backend
+# バックエンドの依存関係をインストール
+cd versions/v0.7.0/backend
 uv sync
+
+# フロントエンドの依存関係をインストール
+cd ../frontend
+npm install
 ```
 
 ### テストの実行
 
 ```bash
-# すべてのテストを実行
-cd versions/v0.5.0/backend
+# バックエンド：すべてのテストを実行
+cd versions/v0.7.0/backend
 uv run pytest tests/ -v
 
-# 特定のテストファイルを実行
+# バックエンド：特定のテストファイルを実行
 uv run pytest tests/test_convert.py -v
 
-# カバレッジ付きで実行
+# バックエンド：カバレッジ付きで実行
 uv run pytest tests/ --cov=app --cov-report=html
+
+# フロントエンド：すべてのテストを実行
+cd versions/v0.7.0/frontend
+npm run test:run
+
+# フロントエンド：ウォッチモードでテストを実行
+npm run test
+
+# フロントエンド：カバレッジ付きで実行
+npm run test:coverage
 ```
 
 ### 変更のテスト
@@ -109,16 +132,24 @@ PR を送信する前に、以下を確認してください：
 
 ## コーディングガイドライン
 
-### Python スタイル
+### Python スタイル（バックエンド）
 
 - PEP 8 スタイルガイドラインに従う
 - 適切な場所で型ヒントを使用
 - 最大行長: 100 文字（長い文字列については柔軟に対応）
 - 意味のある変数名を使用
 
+### TypeScript/React スタイル（フロントエンド）
+
+- ESLint の設定に従う（`npm run lint` で確認）
+- TypeScript の厳格モードを使用
+- コンポーネントは関数コンポーネントで記述
+- Tailwind CSS でスタイリング
+- 意味のあるコンポーネント名と変数名を使用
+
 ### ドキュメント
 
-- すべてのパブリック関数とクラスに docstring を追加
+- すべてのパブリック関数とクラスに docstring/JSDoc を追加
 - 明確で簡潔な言葉を使用
 - 役立つ場合は docstring に例を含める
 
@@ -143,7 +174,7 @@ Closes #123
 ## バージョン管理
 
 貢献する際は：
-- 最新バージョン（`versions/v0.5.0/`）に焦点を当てる
+- 最新バージョン（`versions/v0.7.0/`）に焦点を当てる
 - 可能な限り後方互換性を維持する
 - 破壊的変更は明確にドキュメント化する
 
