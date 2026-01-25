@@ -39,6 +39,7 @@ versions/
 | Bedrock Converse API | - | - | - | - | - | - | あり | あり | あり |
 | Amazon Nova対応 | - | - | - | - | - | - | あり | あり | あり |
 | フロントエンドテスト | - | - | - | - | - | - | - | あり（Vitest） | あり（Vitest） |
+| プリセットライブラリ | - | - | - | - | - | - | - | あり | あり |
 | AIでMarkdown整理 | - | - | - | - | - | - | - | - | あり（Diff表示、ツール別前処理） |
 
 
@@ -58,6 +59,7 @@ versions/
 - **Tailwind CSS v4対応**: 最新のTailwind CSSを採用
 - **lucide-react導入**: 絵文字をlucide-reactアイコンに統一し、UIの一貫性を向上
 - **Vitest導入**: フロントエンドの単体テスト環境を構築
+- **プリセットライブラリを追加**: プロンプトと設計書種別のプリセットライブラリを追加
 
 ### v0.5.2 (2026-01-13)
 - **Bedrock Converse API対応**: `invoke_model`から`converse`に移行し、Anthropic Claude系とAmazon Novaモデルの両方に対応
