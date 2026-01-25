@@ -209,3 +209,7 @@ __marimo__/
 
 # macos
 .DS_Store
+
+# vscode
+.vscode/
+.claude/
