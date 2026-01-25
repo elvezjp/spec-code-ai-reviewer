@@ -342,6 +342,14 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
       result.llm = llmData as LlmSettings
     }
 
+    // 設定ファイルのプリセット名にサフィックスを付けて、プリセットカタログとの衝突を回避
+    if (result.systemPrompts && result.systemPrompts.length > 0) {
+      result.systemPrompts = result.systemPrompts.map(preset => ({
+        ...preset,
+        name: `${preset.name} (設定ファイル)`,
+      }))
+    }
+
     return result
   }
 
