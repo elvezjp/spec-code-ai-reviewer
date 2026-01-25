@@ -90,6 +90,7 @@ export function Reviewer() {
   // Review execution
   const {
     reviewResults,
+    currentExecutionNumber,
     currentTab,
     executeReview,
     setCurrentTab,
@@ -356,7 +357,7 @@ export function Reviewer() {
     </Layout>
   )
 
-  const executingScreen = <ExecutingScreen currentExecution={1} totalExecutions={2} />
+  const executingScreen = <ExecutingScreen currentExecution={currentExecutionNumber} totalExecutions={2} />
 
   const resultScreen = (
     <ReviewResult
