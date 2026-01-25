@@ -478,6 +478,7 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
   const clearSavedConfig = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY)
     localStorage.removeItem(SELECTED_MODEL_KEY)
+    localStorage.removeItem(SELECTED_PROMPT_KEY)
     setReviewerConfig(null)
     setConfigFilename(null)
     setConfigModified(false)

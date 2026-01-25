@@ -434,7 +434,7 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
               p => p.name !== '標準レビュープリセット' && p.name !== systemPromptPreset.name
             )
           : []
-      
+
       // 適用するプリセットを先頭に、「標準レビュープリセット」を2番目に配置
       const mergedPrompts = (standardPreset
         ? [systemPromptPreset, standardPreset, ...basePrompts]
@@ -478,6 +478,7 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
   const clearSavedConfig = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY)
     localStorage.removeItem(SELECTED_MODEL_KEY)
+    localStorage.removeItem(SELECTED_PROMPT_KEY)
     setReviewerConfig(null)
     setConfigFilename(null)
     setConfigModified(false)
