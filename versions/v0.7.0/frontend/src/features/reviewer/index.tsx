@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useCallback } from 'react'
-import { Settings, FileText } from 'lucide-react'
+import { useEffect, useMemo, useCallback, useState, useRef } from 'react'
+import { Settings, FileText, BookOpen } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import {
   Layout,
   Header,
@@ -16,7 +17,8 @@ import {
   useTokenEstimation,
   useVersions,
 } from '@core/index'
-import type { ScreenState } from '@core/types'
+import { PRESET_CATALOG } from '@core/data/presetCatalog'
+import type { ScreenState, SystemPromptPreset } from '@core/types'
 import {
   SpecTypesSection,
   SpecFileList,
@@ -40,6 +42,8 @@ export function Reviewer() {
   const settingsModal = useModal()
   const screenManager = useScreenManager()
   const { versions, currentVersion, switchVersion } = useVersions()
+  const [toastMessage, setToastMessage] = useState('')
+  const toastTimerRef = useRef<number | null>(null)
 
   // File conversion
   const {
@@ -85,6 +89,7 @@ export function Reviewer() {
     saveConfigToBrowser,
     clearSavedConfig,
     hasSavedConfig,
+    applyPreset,
   } = useReviewerSettings()
 
   // Review execution
@@ -122,6 +127,59 @@ export function Reviewer() {
   useEffect(() => {
     loadTools()
   }, [loadTools])
+
+  const showToast = useCallback((message: string) => {
+    setToastMessage(message)
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current)
+    }
+    toastTimerRef.current = window.setTimeout(() => setToastMessage(''), 3000)
+  }, [])
+
+  useEffect(() => {
+    const message = sessionStorage.getItem('preset-toast')
+    if (!message) return
+
+    sessionStorage.removeItem('preset-toast')
+    showToast(message)
+    return () => {
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current)
+      }
+    }
+  }, [showToast])
+
+  // プリセットカタログのプリセットをSystemPromptPresetに変換して統合
+  const allPresets = useMemo(() => {
+    const catalogPresets: SystemPromptPreset[] = PRESET_CATALOG.map((preset) => ({
+      name: preset.name,
+      role: preset.systemPrompt.role,
+      purpose: preset.systemPrompt.purpose,
+      format: preset.systemPrompt.format,
+      notes: preset.systemPrompt.notes,
+    }))
+
+    // 設定ファイルのプリセットと統合（重複を避ける）
+    const existingNames = new Set(catalogPresets.map(p => p.name))
+    const configPresets = systemPromptPresets.filter(p => !existingNames.has(p.name))
+
+    return [...catalogPresets, ...configPresets]
+  }, [systemPromptPresets])
+
+  // プリセット選択時の処理
+  const handlePresetChange = useCallback((presetName: string) => {
+    // プリセットカタログのプリセットかどうかを判定
+    const catalogPreset = PRESET_CATALOG.find((p) => p.name === presetName)
+
+    if (catalogPreset) {
+      // プリセットカタログのプリセットの場合は、設計書種別も含めて適用
+      applyPreset(catalogPreset)
+      showToast(`プリセット「${catalogPreset.name}」を適用しました（設計書種別も更新されました）`)
+    } else {
+      // 設定ファイルのプリセットの場合は、従来通り
+      selectPreset(presetName)
+    }
+  }, [applyPreset, selectPreset, showToast])
 
   const isReviewEnabled = specMarkdown && codeWithLineNumbers
 
@@ -209,13 +267,22 @@ export function Reviewer() {
           />
         }
         rightContent={
-          <button
-            onClick={settingsModal.open}
-            className="text-gray-500 hover:text-gray-700"
-            title="設定"
-          >
-            <Settings className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/presets"
+              className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm"
+            >
+              <BookOpen className="w-4 h-4" />
+              プリセット
+            </Link>
+            <button
+              onClick={settingsModal.open}
+              className="text-gray-500 hover:text-gray-700"
+              title="設定"
+            >
+              <Settings className="w-6 h-6" />
+            </button>
+          </div>
         }
       />
 
@@ -295,10 +362,10 @@ export function Reviewer() {
 
       {/* System prompt settings */}
       <SystemPromptEditor
-        presets={systemPromptPresets}
+        presets={allPresets}
         selectedPreset={selectedPreset}
         currentValues={currentPromptValues}
-        onPresetChange={selectPreset}
+        onPresetChange={handlePresetChange}
         onValueChange={updatePromptValue}
         isCollapsible={true}
         defaultExpanded={false}
@@ -373,11 +440,18 @@ export function Reviewer() {
   )
 
   return (
-    <ScreenContainer
-      currentScreen={screenManager.currentScreen as ScreenState}
-      mainScreen={mainScreen}
-      executingScreen={executingScreen}
-      resultScreen={resultScreen}
-    />
+    <>
+      {toastMessage && (
+        <div className="fixed right-6 top-6 z-50 rounded-md bg-gray-900 px-4 py-2 text-sm text-white shadow-lg">
+          {toastMessage}
+        </div>
+      )}
+      <ScreenContainer
+        currentScreen={screenManager.currentScreen as ScreenState}
+        mainScreen={mainScreen}
+        executingScreen={executingScreen}
+        resultScreen={resultScreen}
+      />
+    </>
   )
 }

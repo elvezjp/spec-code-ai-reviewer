@@ -31,6 +31,14 @@ export interface SpecType {
   note: string
 }
 
+// プリセット専用プロンプト
+export interface PresetPrompt {
+  role: string
+  purpose: string
+  format: string
+  notes: string
+}
+
 // システムプロンプトプリセット
 export interface SystemPromptPreset {
   name: string
@@ -38,6 +46,16 @@ export interface SystemPromptPreset {
   purpose: string
   format: string
   notes: string
+}
+
+// プリセット
+export interface Preset {
+  id: string
+  name: string
+  description: string
+  tags: string[]
+  systemPrompt: PresetPrompt
+  specTypes: SpecType[]
 }
 
 // 設定ファイル（reviewer-config.md のパース結果）
