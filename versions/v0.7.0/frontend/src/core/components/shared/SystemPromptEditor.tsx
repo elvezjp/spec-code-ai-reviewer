@@ -36,7 +36,7 @@ export function SystemPromptEditor({
       {/* プリセット選択 */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          プロンプトプリセット
+          プリセット
         </label>
         <select
           value={selectedPreset}
@@ -50,7 +50,7 @@ export function SystemPromptEditor({
           ))}
         </select>
         <p className="text-xs text-gray-400 mt-1">
-          選択したプリセットで各入力欄が更新されます。プリセットライブラリのプリセットを選択すると、設計書種別も更新されます。
+          選択したプリセットで各入力欄が更新されます
         </p>
       </div>
 

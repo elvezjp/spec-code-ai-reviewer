@@ -17,7 +17,6 @@ import {
   useTokenEstimation,
   useVersions,
 } from '@core/index'
-import { PRESET_CATALOG } from '@core/data/presetCatalog'
 import type { ScreenState } from '@core/types'
 import {
   SpecTypesSection,
@@ -89,7 +88,6 @@ export function Reviewer() {
     saveConfigToBrowser,
     clearSavedConfig,
     hasSavedConfig,
-    applyPreset,
   } = useReviewerSettings()
 
   // Review execution
@@ -148,21 +146,6 @@ export function Reviewer() {
       }
     }
   }, [showToast])
-
-  // プリセット選択時の処理
-  const handlePresetChange = useCallback((presetName: string) => {
-    // プリセットカタログのプリセットかどうかを判定
-    const catalogPreset = PRESET_CATALOG.find((p) => p.name === presetName)
-
-    if (catalogPreset) {
-      // プリセットカタログのプリセットの場合は、設計書種別も含めて適用
-      applyPreset(catalogPreset)
-      showToast(`プリセット「${catalogPreset.name}」を適用しました（設計書種別も更新されました）`)
-    } else {
-      // 設定ファイルのプリセットの場合は、従来通り
-      selectPreset(presetName)
-    }
-  }, [applyPreset, selectPreset, showToast])
 
   const isReviewEnabled = specMarkdown && codeWithLineNumbers
 
@@ -348,7 +331,7 @@ export function Reviewer() {
         presets={systemPromptPresets}
         selectedPreset={selectedPreset}
         currentValues={currentPromptValues}
-        onPresetChange={handlePresetChange}
+        onPresetChange={selectPreset}
         onValueChange={updatePromptValue}
         isCollapsible={true}
         defaultExpanded={false}
