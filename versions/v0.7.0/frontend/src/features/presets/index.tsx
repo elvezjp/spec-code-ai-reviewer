@@ -1,7 +1,19 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { Layout, Header, Card, Button, usePresetCatalog } from '@core/index'
+import {
+  Layout,
+  Header,
+  Card,
+  Button,
+  usePresetCatalog,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeaderCell,
+  TableCell,
+} from '@core/index'
 import { useReviewerSettings } from '@/features/reviewer/hooks'
 import type { Preset } from '@core/types'
 
@@ -18,6 +30,7 @@ export function Presets() {
     resetFilters,
   } = usePresetCatalog()
   const [expandedPresets, setExpandedPresets] = useState<Set<string>>(new Set())
+  const [expandedSpecTypes, setExpandedSpecTypes] = useState<Set<string>>(new Set())
 
   const handleApply = (preset: Preset) => {
     applyPreset(preset)
@@ -27,6 +40,18 @@ export function Presets() {
 
   const togglePreset = (presetId: string) => {
     setExpandedPresets((prev) => {
+      const next = new Set(prev)
+      if (next.has(presetId)) {
+        next.delete(presetId)
+      } else {
+        next.add(presetId)
+      }
+      return next
+    })
+  }
+
+  const toggleSpecTypes = (presetId: string) => {
+    setExpandedSpecTypes((prev) => {
       const next = new Set(prev)
       if (next.has(presetId)) {
         next.delete(presetId)
@@ -118,46 +143,88 @@ export function Presets() {
                   </span>
                 ))}
               </div>
-              <div className="text-sm text-gray-700">
-                <button
-                  onClick={() => togglePreset(preset.id)}
-                  aria-expanded={expandedPresets.has(preset.id)}
-                  aria-controls={`preset-details-${preset.id}`}
-                  aria-label={`${preset.name}のシステムプロンプト詳細を${expandedPresets.has(preset.id) ? '閉じる' : '表示'}`}
-                  className="flex items-center gap-2 w-full text-left font-medium text-gray-800 hover:text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-                >
-                  {expandedPresets.has(preset.id) ? (
-                    <ChevronDown className="w-4 h-4" aria-hidden="true" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4" aria-hidden="true" />
-                  )}
-                  <span>システムプロンプトを見る（4項目）</span>
-                </button>
-                {expandedPresets.has(preset.id) && (
-                  <div
-                    id={`preset-details-${preset.id}`}
-                    role="region"
-                    aria-label={`${preset.name}のシステムプロンプト詳細`}
-                    className="mt-2 pl-6 space-y-2 border-l-2 border-gray-200"
+              <div className="text-sm text-gray-700 space-y-2">
+                <div>
+                  <button
+                    onClick={() => togglePreset(preset.id)}
+                    aria-expanded={expandedPresets.has(preset.id)}
+                    aria-controls={`preset-details-${preset.id}`}
+                    aria-label={`${preset.name}のシステムプロンプト詳細を${expandedPresets.has(preset.id) ? '閉じる' : '表示'}`}
+                    className="flex items-center gap-2 w-full text-left font-medium text-gray-800 hover:text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
                   >
-                    <p>
-                      <span className="font-medium">役割:</span>{' '}
-                      <span className="text-gray-600">{preset.systemPrompt.role}</span>
-                    </p>
-                    <p>
-                      <span className="font-medium">目的:</span>{' '}
-                      <span className="text-gray-600">{preset.systemPrompt.purpose}</span>
-                    </p>
-                    <p>
-                      <span className="font-medium">フォーマット:</span>{' '}
-                      <span className="text-gray-600">{preset.systemPrompt.format}</span>
-                    </p>
-                    <p>
-                      <span className="font-medium">注意事項:</span>{' '}
-                      <span className="text-gray-600">{preset.systemPrompt.notes}</span>
-                    </p>
-                  </div>
-                )}
+                    {expandedPresets.has(preset.id) ? (
+                      <ChevronDown className="w-4 h-4" aria-hidden="true" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                    )}
+                    <span>システムプロンプトを見る</span>
+                  </button>
+                  {expandedPresets.has(preset.id) && (
+                    <div
+                      id={`preset-details-${preset.id}`}
+                      role="region"
+                      aria-label={`${preset.name}のシステムプロンプト詳細`}
+                      className="mt-2"
+                    >
+                      <div className="bg-gray-50 border border-gray-200 rounded-md p-3 max-h-64 overflow-auto">
+                        <pre className="text-xs text-gray-700 whitespace-pre-wrap font-mono">
+{`## 役割
+${preset.systemPrompt.role}
+
+## 目的
+${preset.systemPrompt.purpose}
+
+## フォーマット
+${preset.systemPrompt.format}
+
+## 注意事項
+${preset.systemPrompt.notes}`}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <button
+                    onClick={() => toggleSpecTypes(preset.id)}
+                    aria-expanded={expandedSpecTypes.has(preset.id)}
+                    aria-controls={`preset-spectypes-${preset.id}`}
+                    aria-label={`${preset.name}の設計書種別を${expandedSpecTypes.has(preset.id) ? '閉じる' : '表示'}`}
+                    className="flex items-center gap-2 w-full text-left font-medium text-gray-800 hover:text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                  >
+                    {expandedSpecTypes.has(preset.id) ? (
+                      <ChevronDown className="w-4 h-4" aria-hidden="true" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                    )}
+                    <span>設計書種別と注意事項を見る</span>
+                  </button>
+                  {expandedSpecTypes.has(preset.id) && (
+                    <div
+                      id={`preset-spectypes-${preset.id}`}
+                      role="region"
+                      aria-label={`${preset.name}の設計書種別`}
+                      className="mt-2 overflow-x-auto"
+                    >
+                      <Table className="min-w-full text-sm">
+                        <TableHead>
+                          <TableRow>
+                            <TableHeaderCell className="w-1/4">種別</TableHeaderCell>
+                            <TableHeaderCell>注意事項</TableHeaderCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {preset.specTypes.map((specType, index) => (
+                            <TableRow key={index}>
+                              <TableCell>{specType.type}</TableCell>
+                              <TableCell className="text-gray-600 text-xs">{specType.note}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex justify-end">
                 <Button onClick={() => handleApply(preset)}>このプリセットを使う</Button>
