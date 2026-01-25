@@ -12,7 +12,7 @@ from .base import MarkdownTool
 _DEFAULT_EXCEL2MD_PATH = (
     Path(__file__).resolve().parent.parent.parent.parent.parent.parent
     / "excel2md"
-    / "v1.7"
+    / "v1.8"
 )
 EXCEL2MD_PATH = Path(
     os.environ.get("EXCEL2MD_PATH", str(_DEFAULT_EXCEL2MD_PATH))
@@ -20,7 +20,7 @@ EXCEL2MD_PATH = Path(
 
 
 class Excel2mdTool(MarkdownTool):
-    """excel2md v1.7を利用したExcel→CSVマークダウン変換。
+    """excel2md を利用したExcel→CSVマークダウン変換。
 
     概要セクションあり、検証用メタデータなしで出力する。
     """
@@ -60,7 +60,7 @@ class Excel2mdTool(MarkdownTool):
                 expected_output = tmpdir_path / f"{output_basename}_csv.md"
 
                 # argparserでオプションを設定
-                # v1.7: 概要セクションあり（デフォルト）、検証用メタデータなし
+                # 概要セクションあり（デフォルト）、検証用メタデータなし
                 parser = build_argparser()
                 args = parser.parse_args(
                     [
