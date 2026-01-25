@@ -80,8 +80,8 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
 
   // システムプロンプトプリセット: 標準レビュープリセット（デフォルト） + カタログ + 設定ファイル
   const systemPromptPresets: SystemPromptPreset[] = useMemo(() => {
-    // 標準レビュープリセット（デフォルトとして先頭に配置）
-    const standardPreset = DEFAULT_SYSTEM_PROMPTS.find(p => p.name === '標準レビュープリセット')
+    // デフォルトプリセット（先頭に配置）
+    const defaultPreset = DEFAULT_SYSTEM_PROMPTS[0]
 
     // プリセットカタログからSystemPromptPresetに変換
     const catalogPresets: SystemPromptPreset[] = PRESET_CATALOG.map((preset) => ({
@@ -97,9 +97,9 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
       ? reviewerConfig.systemPrompts
       : []
 
-    // 統合: 標準レビュープリセット（デフォルト） → カタログ → 設定ファイル
+    // 統合: デフォルトプリセット → カタログ → 設定ファイル
     const allPrompts = [
-      ...(standardPreset ? [standardPreset] : []),
+      ...(defaultPreset ? [defaultPreset] : []),
       ...catalogPresets,
       ...configPrompts,
     ]
@@ -426,18 +426,18 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
         notes: preset.systemPrompt.notes,
       }
 
-      // 「標準レビュープリセット」を必ず保持
-      const standardPreset = DEFAULT_SYSTEM_PROMPTS.find(p => p.name === '標準レビュープリセット')
+      // デフォルトプリセットを必ず保持
+      const defaultPreset = DEFAULT_SYSTEM_PROMPTS[0]
       const basePrompts =
         reviewerConfig?.systemPrompts && reviewerConfig.systemPrompts.length > 0
           ? reviewerConfig.systemPrompts.filter(
-              p => p.name !== '標準レビュープリセット' && p.name !== systemPromptPreset.name
+              p => p.name !== defaultPreset?.name && p.name !== systemPromptPreset.name
             )
           : []
 
-      // 適用するプリセットを先頭に、「標準レビュープリセット」を2番目に配置
-      const mergedPrompts = (standardPreset
-        ? [systemPromptPreset, standardPreset, ...basePrompts]
+      // 適用するプリセットを先頭に、デフォルトプリセットを2番目に配置
+      const mergedPrompts = (defaultPreset
+        ? [systemPromptPreset, defaultPreset, ...basePrompts]
         : [systemPromptPreset, ...basePrompts]
       ).filter((item, index, array) => {
         return array.findIndex(entry => entry.name === item.name) === index
@@ -536,8 +536,8 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
         // 設定ファイルのプリセットを含めた全プリセットリストを構築して検索
         const savedPreset = localStorage.getItem(SELECTED_PROMPT_KEY)
         if (savedPreset) {
-          // 標準レビュープリセット（デフォルト）
-          const standardPreset = DEFAULT_SYSTEM_PROMPTS.find(p => p.name === '標準レビュープリセット')
+          // デフォルトプリセット
+          const defaultPreset = DEFAULT_SYSTEM_PROMPTS[0]
           // プリセットカタログからSystemPromptPresetに変換
           const catalogPresets: SystemPromptPreset[] = PRESET_CATALOG.map((preset) => ({
             name: preset.name,
@@ -550,9 +550,9 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
           const configPrompts = parsed.systemPrompts && parsed.systemPrompts.length > 0
             ? parsed.systemPrompts
             : []
-          // 全プリセットリスト: 標準レビュープリセット → カタログ → 設定ファイル
+          // 全プリセットリスト: デフォルトプリセット → カタログ → 設定ファイル
           const allPresets = [
-            ...(standardPreset ? [standardPreset] : []),
+            ...(defaultPreset ? [defaultPreset] : []),
             ...catalogPresets,
             ...configPrompts,
           ]
