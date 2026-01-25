@@ -254,10 +254,10 @@ export function Reviewer() {
 
       {/* Spec files section */}
       <Card className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">設計書 (Excel)</h2>
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">設計書 (Excel / Word)</h2>
         <div className="flex items-center gap-2 mb-2">
           <FileInputButton
-            accept=".xlsx,.xls"
+            accept=".xlsx,.xls,.docx"
             multiple
             onFilesSelect={addSpecFiles}
             label="ファイルを選択"
