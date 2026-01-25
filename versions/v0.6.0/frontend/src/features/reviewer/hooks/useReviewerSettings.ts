@@ -78,7 +78,7 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
       ? reviewerConfig.specTypes
       : DEFAULT_SPEC_TYPES
 
-  // システムプロンプトプリセット: 標準レビュープリセット（デフォルト） + カタログ + 設定ファイル
+  // システムプロンプトプリセット: デフォルト + カタログ + 設定ファイル
   const systemPromptPresets: SystemPromptPreset[] = useMemo(() => {
     // デフォルトプリセット（先頭に配置）
     const defaultPreset = DEFAULT_SYSTEM_PROMPTS[0]
