@@ -47,6 +47,7 @@ interface UseReviewerSettingsReturn {
 const STORAGE_KEY = 'reviewer-config'
 const SELECTED_MODEL_KEY = 'selected-model'
 const SELECTED_PROMPT_KEY = 'selected-system-prompt'
+const CONFIG_FILE_PRESET_SUFFIX = ' (設定ファイル)'
 
 // 最初の:でのみ分割（モデル名に:が含まれる場合に対応）
 const parseSelectedModelKey = (key: string): { provider: string; model: string } | null => {
@@ -358,7 +359,7 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
     if (result.systemPrompts && result.systemPrompts.length > 0) {
       result.systemPrompts = result.systemPrompts.map(preset => ({
         ...preset,
-        name: `${preset.name} (設定ファイル)`,
+        name: `${preset.name}${CONFIG_FILE_PRESET_SUFFIX}`,
       }))
     }
 
