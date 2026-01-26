@@ -5,7 +5,7 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/spec/v2.0.0.html) に準拠しています。
 
-## [0.7.0] - 2026-01-25
+## [0.7.0] - 2026-01-26
 
 ### 追加
 - **AIでMarkdownを整理する機能**: ExcelからAI生成したMarkdownをAIで構造化・正規化する機能を追加
@@ -19,6 +19,7 @@
 - **プリセットライブラリを追加**: プロンプトと設計書種別のプリセットライブラリを追加
 
 ### 変更
+- **excel2md v2.0対応**: git subtreeを更新しv2.0に対応
 - **設定ファイル更新**: v0.7.0をlatest版として設定
   - `nginx/version-map.conf`: v0.7.0のルーティング追加、defaultポートを8070に変更
   - `docker-compose.yml`: v0.7.0フロントエンド・ポート8070を追加
