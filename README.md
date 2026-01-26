@@ -1,4 +1,4 @@
-# Spec Doc–Java Program Matching AI Reviewer
+# spec-code-ai-reviewer
 
 [English](./README.md) | [日本語](./README_ja.md)
 
