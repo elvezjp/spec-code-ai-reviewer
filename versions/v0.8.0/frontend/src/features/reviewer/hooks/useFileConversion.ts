@@ -20,6 +20,7 @@ interface UseFileConversionReturn {
     organizedFiles: Map<string, string>,
     getTypeNote: (type: string) => string
   ) => void
+  applySpecSummary: (summary: string) => void
 
   // Code files
   codeFiles: CodeFile[]
@@ -30,6 +31,7 @@ interface UseFileConversionReturn {
   removeCodeFile: (filename: string) => void
   convertCodes: () => Promise<void>
   clearCodes: () => void
+  applyCodeSummary: (summary: string) => void
 
   // Available tools
   availableTools: ConversionTool[]
@@ -205,6 +207,11 @@ export function useFileConversion(): UseFileConversionReturn {
     []
   )
 
+  const applySpecSummary = useCallback((summary: string) => {
+    setSpecMarkdown(summary)
+    setSpecStatus('✅ AI要約済み')
+  }, [])
+
   const addCodeFiles = useCallback((files: File[]) => {
     const newFiles: CodeFile[] = files.map((file) => ({
       file,
@@ -266,6 +273,11 @@ export function useFileConversion(): UseFileConversionReturn {
     setCodeStatus('')
   }, [])
 
+  const applyCodeSummary = useCallback((summary: string) => {
+    setCodeWithLineNumbers(summary)
+    setCodeStatus('✅ AI要約済み')
+  }, [])
+
   return {
     specFiles,
     specMarkdown,
@@ -280,6 +292,7 @@ export function useFileConversion(): UseFileConversionReturn {
     convertSpecs,
     clearSpecs,
     applyOrganizedMarkdown,
+    applySpecSummary,
 
     codeFiles,
     codeWithLineNumbers,
@@ -289,6 +302,7 @@ export function useFileConversion(): UseFileConversionReturn {
     removeCodeFile,
     convertCodes,
     clearCodes,
+    applyCodeSummary,
 
     availableTools,
     loadTools,

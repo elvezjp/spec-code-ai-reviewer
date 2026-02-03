@@ -170,6 +170,7 @@ export function ProgressiveSummaryPanel({
   const canStart = isReady || isStopped
   const canStop = isSummarizing
   const hasResult = state.currentSummary.length > 0
+  const canAdopt = (isCompleted || isStopped) && hasResult
 
   return (
     <div className="mt-4 border-t border-gray-200 pt-3">
@@ -298,7 +299,8 @@ export function ProgressiveSummaryPanel({
             <div className="flex items-center gap-2">
               <button
                 onClick={handleAdopt}
-                className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition"
+                disabled={!canAdopt}
+                className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 <Check className="w-4 h-4" />
                 採用してレビュー入力に反映

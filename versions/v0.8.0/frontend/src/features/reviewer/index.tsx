@@ -58,12 +58,14 @@ export function Reviewer() {
     applyToolToAll,
     convertSpecs,
     applyOrganizedMarkdown,
+    applySpecSummary,
     codeFiles,
     codeWithLineNumbers,
     isCodeConverting,
     codeStatus,
     addCodeFiles,
     convertCodes,
+    applyCodeSummary,
     availableTools,
     loadTools,
   } = useFileConversion()
@@ -301,8 +303,8 @@ export function Reviewer() {
           files={specFiles}
           llmConfig={llmConfig || undefined}
           onAdopt={(summary) => {
-            navigator.clipboard.writeText(summary)
-            showToast('サマリーをクリップボードにコピーしました')
+            applySpecSummary(summary)
+            showToast('サマリーを設計書に反映しました')
           }}
         />
       </Card>
@@ -341,8 +343,8 @@ export function Reviewer() {
           files={codeFiles}
           llmConfig={llmConfig || undefined}
           onAdopt={(summary) => {
-            navigator.clipboard.writeText(summary)
-            showToast('サマリーをクリップボードにコピーしました')
+            applyCodeSummary(summary)
+            showToast('サマリーをプログラムに反映しました')
           }}
         />
       </Card>
