@@ -157,3 +157,19 @@ class BedrockProvider(LLMProvider):
             return response["output"]["message"]["content"][0]["text"]
         except Exception as e:
             raise RuntimeError(f"Markdown整理中にエラーが発生しました: {str(e)}") from e
+
+    def progressive_summary(self, system_prompt: str, user_message: str) -> str:
+        """Bedrock APIを呼び出して段階的要約を実行する"""
+        try:
+            response = self._client.converse(
+                modelId=self._model_id,
+                messages=[{
+                    "role": "user",
+                    "content": [{"text": user_message}],
+                }],
+                system=[{"text": system_prompt}],
+                inferenceConfig={"maxTokens": self._max_tokens},
+            )
+            return response["output"]["message"]["content"][0]["text"]
+        except Exception as e:
+            raise RuntimeError(f"段階的要約中にエラーが発生しました: {str(e)}") from e

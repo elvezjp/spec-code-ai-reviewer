@@ -121,3 +121,16 @@ class AnthropicProvider(LLMProvider):
             return response.content[0].text
         except Exception as e:
             raise RuntimeError(f"Markdown整理中にエラーが発生しました: {str(e)}") from e
+
+    def progressive_summary(self, system_prompt: str, user_message: str) -> str:
+        """Anthropic APIを呼び出して段階的要約を実行する"""
+        try:
+            response = self._client.messages.create(
+                model=self._model_id,
+                max_tokens=self._max_tokens,
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_message}],
+            )
+            return response.content[0].text
+        except Exception as e:
+            raise RuntimeError(f"段階的要約中にエラーが発生しました: {str(e)}") from e

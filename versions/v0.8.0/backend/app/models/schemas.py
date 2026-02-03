@@ -267,3 +267,62 @@ class OrganizeMarkdownResponse(BaseModel):
     warnings: list[OrganizeMarkdownWarning] = []
     error: str | None = None
     errorCode: str | None = None
+
+
+# ============================================================
+# 段階的要約 API スキーマ
+# ============================================================
+
+
+class Chunk(BaseModel):
+    """チャンクデータ構造"""
+
+    id: str  # "chunk-0001" 形式
+    title: str  # 見出しテキスト or ファイル名+クラス/関数名
+    text: str  # チャンク本文
+    tokenCount: int  # 推定トークン数
+
+
+class SplitChunksRequest(BaseModel):
+    """チャンク分割APIのリクエスト"""
+
+    type: Literal["spec", "code"]
+    markdown: str
+    sourceFilenames: list[str] = []
+
+
+class SplitChunksResponse(BaseModel):
+    """チャンク分割APIのレスポンス"""
+
+    success: bool
+    chunks: list[Chunk] = []
+    totalTokenCount: int = 0
+    error: str | None = None
+
+
+class ChunkInput(BaseModel):
+    """段階的要約APIの入力チャンク"""
+
+    id: str
+    title: str
+    text: str
+
+
+class ProgressiveSummaryRequest(BaseModel):
+    """段階的要約APIのリクエスト"""
+
+    type: Literal["spec", "code"]
+    chunk: ChunkInput
+    chunkOutline: str
+    currentSummary: str
+    policy: str
+    llmConfig: LLMConfig | None = None
+
+
+class ProgressiveSummaryResponse(BaseModel):
+    """段階的要約APIのレスポンス"""
+
+    success: bool
+    chunkSummary: str | None = None
+    updatedSummary: str | None = None
+    error: str | None = None

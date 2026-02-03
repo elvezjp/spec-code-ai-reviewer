@@ -152,3 +152,69 @@ export interface CodeFileForApi {
   filename: string
   contentWithLineNumbers: string
 }
+
+// ============================================================
+// 段階的要約 API 型定義
+// ============================================================
+
+export interface Chunk {
+  id: string // "chunk-0001" 形式
+  title: string // 見出しテキスト or ファイル名+クラス/関数名
+  text: string // チャンク本文
+  tokenCount: number // 推定トークン数
+}
+
+export type ChunkStatus = 'pending' | 'processing' | 'completed' | 'error'
+
+export interface ChunkWithStatus extends Chunk {
+  status: ChunkStatus
+  error?: string
+}
+
+export type ProgressiveSummaryStatus =
+  | 'idle'
+  | 'splitting'
+  | 'ready'
+  | 'summarizing'
+  | 'stopped'
+  | 'completed'
+  | 'error'
+
+export interface ProgressiveSummaryState {
+  type: 'spec' | 'code'
+  chunks: ChunkWithStatus[]
+  currentIndex: number // -1 = not started
+  currentSummary: string
+  totalTokenCount: number
+  status: ProgressiveSummaryStatus
+  error: string | null
+}
+
+export interface SplitChunksRequest {
+  type: 'spec' | 'code'
+  markdown: string
+  sourceFilenames: string[]
+}
+
+export interface SplitChunksResponse {
+  success: boolean
+  chunks: Chunk[]
+  totalTokenCount: number
+  error?: string
+}
+
+export interface ProgressiveSummaryRequest {
+  type: 'spec' | 'code'
+  chunk: { id: string; title: string; text: string }
+  chunkOutline: string
+  currentSummary: string
+  policy: string
+  llmConfig?: LlmConfig
+}
+
+export interface ProgressiveSummaryResponse {
+  success: boolean
+  chunkSummary?: string
+  updatedSummary?: string
+  error?: string
+}

@@ -6,6 +6,10 @@ import type {
   ReviewResult,
   OrganizeMarkdownRequest,
   OrganizeMarkdownResponse,
+  SplitChunksRequest,
+  SplitChunksResponse,
+  ProgressiveSummaryRequest,
+  ProgressiveSummaryResponse,
 } from '../types'
 
 const getBackendUrl = (): string => {
@@ -100,6 +104,34 @@ export async function organizeMarkdown(
   request: OrganizeMarkdownRequest
 ): Promise<OrganizeMarkdownResponse> {
   const response = await fetch(`${getBackendUrl()}/api/organize-markdown`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  })
+
+  return await response.json()
+}
+
+// ============================================================
+// 段階的要約 API
+// ============================================================
+
+export async function splitChunks(
+  request: SplitChunksRequest
+): Promise<SplitChunksResponse> {
+  const response = await fetch(`${getBackendUrl()}/api/split-chunks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  })
+
+  return await response.json()
+}
+
+export async function executeProgressiveSummary(
+  request: ProgressiveSummaryRequest
+): Promise<ProgressiveSummaryResponse> {
+  const response = await fetch(`${getBackendUrl()}/api/progressive-summary`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),

@@ -82,6 +82,19 @@ class LLMProvider(ABC):
         pass
 
     @abstractmethod
+    def progressive_summary(self, system_prompt: str, user_message: str) -> str:
+        """段階的要約を実行する
+
+        Args:
+            system_prompt: システムプロンプト
+            user_message: ユーザーメッセージ
+
+        Returns:
+            str: LLMからの出力テキスト
+        """
+        pass
+
+    @abstractmethod
     def test_connection(self) -> dict:
         """接続テストを実行する
 

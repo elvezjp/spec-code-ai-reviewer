@@ -25,13 +25,14 @@ import {
   ReviewResult,
   ExecutingScreen,
   MarkdownOrganizer,
+  ProgressiveSummaryPanel,
 } from './components'
 import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport } from './hooks'
 import { testLlmConnection } from './services/api'
 
 const APP_INFO = {
   name: 'spec-code-ai-reviewer',
-  version: 'v0.7.0',
+  version: 'v0.8.0',
   description: '設計書-Javaプログラム突合 AIレビュアー',
   copyright: '© 株式会社エルブズ',
   url: 'https://elvez.co.jp',
@@ -294,6 +295,16 @@ export function Reviewer() {
           getTypeNote={getTypeNote}
           onAdopt={(organizedFiles) => applyOrganizedMarkdown(organizedFiles, getTypeNote)}
         />
+        <ProgressiveSummaryPanel
+          type="spec"
+          markdown={specMarkdown}
+          files={specFiles}
+          llmConfig={llmConfig || undefined}
+          onAdopt={(summary) => {
+            navigator.clipboard.writeText(summary)
+            showToast('サマリーをクリップボードにコピーしました')
+          }}
+        />
       </Card>
 
       {/* Code files section */}
@@ -323,6 +334,16 @@ export function Reviewer() {
           isConverting={isCodeConverting}
           onConvert={convertCodes}
           onDownload={() => codeWithLineNumbers && downloadCodeWithLineNumbers(codeWithLineNumbers)}
+        />
+        <ProgressiveSummaryPanel
+          type="code"
+          markdown={codeWithLineNumbers}
+          files={codeFiles}
+          llmConfig={llmConfig || undefined}
+          onAdopt={(summary) => {
+            navigator.clipboard.writeText(summary)
+            showToast('サマリーをクリップボードにコピーしました')
+          }}
         />
       </Card>
 

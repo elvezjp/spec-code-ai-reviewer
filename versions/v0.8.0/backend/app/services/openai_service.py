@@ -128,3 +128,18 @@ class OpenAIProvider(LLMProvider):
             return response.choices[0].message.content or ""
         except Exception as e:
             raise RuntimeError(f"Markdown整理中にエラーが発生しました: {str(e)}") from e
+
+    def progressive_summary(self, system_prompt: str, user_message: str) -> str:
+        """OpenAI APIを呼び出して段階的要約を実行する"""
+        try:
+            response = self._client.chat.completions.create(
+                model=self._model_id,
+                max_completion_tokens=self._max_tokens,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message},
+                ],
+            )
+            return response.choices[0].message.content or ""
+        except Exception as e:
+            raise RuntimeError(f"段階的要約中にエラーが発生しました: {str(e)}") from e
