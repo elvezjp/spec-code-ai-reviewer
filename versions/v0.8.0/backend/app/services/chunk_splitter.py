@@ -15,7 +15,8 @@ from app.services.markdown_organizer import estimate_tokens
 MAX_CHUNK_LINES = int(os.environ.get("MAX_CHUNK_LINES", "500"))
 
 # ファイル境界検出用の正規表現
-_FILE_BOUNDARY_RE = re.compile(r"^##\s+(file:|プログラム:)\s*(.+)$", re.MULTILINE)
+# フロントエンドの出力形式: "# 設計書: xxx" または "# プログラム: xxx"
+_FILE_BOUNDARY_RE = re.compile(r"^#\s+(設計書:|プログラム:)\s*(.+)$", re.MULTILINE)
 
 # 見出し検出用の正規表現
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
