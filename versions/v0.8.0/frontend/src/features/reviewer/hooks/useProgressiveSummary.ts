@@ -81,7 +81,14 @@ export function useProgressiveSummary() {
       if (state.chunks.length === 0) return
 
       abortRef.current = false
-      const startIndex = state.currentIndex < 0 ? 0 : state.currentIndex
+
+      // Find the first chunk that is not completed
+      const startIndex = state.chunks.findIndex((c) => c.status !== 'completed')
+      if (startIndex === -1) {
+        // All chunks are already completed
+        setState((prev) => ({ ...prev, status: 'completed' }))
+        return
+      }
 
       setState((prev) => ({ ...prev, status: 'summarizing' }))
 
@@ -157,7 +164,7 @@ export function useProgressiveSummary() {
 
       setState((prev) => ({ ...prev, status: 'completed' }))
     },
-    [state.chunks, state.currentIndex, state.currentSummary, state.type, policy]
+    [state.chunks, state.currentSummary, state.type, policy]
   )
 
   // Stop summarization

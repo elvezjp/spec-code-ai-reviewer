@@ -5,9 +5,6 @@ import {
   ChevronRight,
   Play,
   Square,
-  Download,
-  Check,
-  Trash2,
   Circle,
   CheckCircle,
   Loader2,
@@ -89,6 +86,7 @@ export function ProgressiveSummaryPanel({
   onAdopt,
 }: ProgressiveSummaryPanelProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isStopping, setIsStopping] = useState(false)
   const prevMarkdownRef = useRef<string | null>(markdown)
 
   const {
@@ -126,9 +124,25 @@ export function ProgressiveSummaryPanel({
     setPolicy(type === 'spec' ? defaultSpecPolicy : defaultCodePolicy)
   }, [type, setPolicy, defaultSpecPolicy, defaultCodePolicy])
 
-  const handleStart = () => startSummarization(llmConfig)
-  const handleStop = () => stopSummarization()
-  const handleResume = () => startSummarization(llmConfig)
+  // Reset isStopping when status changes from summarizing
+  useEffect(() => {
+    if (state.status !== 'summarizing') {
+      setIsStopping(false)
+    }
+  }, [state.status])
+
+  const handleStart = () => {
+    setIsStopping(false)
+    startSummarization(llmConfig)
+  }
+  const handleStop = () => {
+    setIsStopping(true)
+    stopSummarization()
+  }
+  const handleResume = () => {
+    setIsStopping(false)
+    startSummarization(llmConfig)
+  }
 
   const handleAdopt = () => {
     if (state.currentSummary) {
@@ -225,13 +239,22 @@ export function ProgressiveSummaryPanel({
               </button>
             )}
             {canStop && (
-              <button
-                onClick={handleStop}
-                className="flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm transition"
-              >
-                <Square className="w-4 h-4" />
-                停止
-              </button>
+              <>
+                <button
+                  onClick={handleStop}
+                  disabled={isStopping}
+                  className="flex items-center gap-1 bg-highlight hover:brightness-95 text-black px-3 py-1 rounded text-sm transition disabled:bg-gray-400 disabled:text-gray-600 disabled:cursor-not-allowed"
+                >
+                  <Square className="w-4 h-4" />
+                  停止
+                </button>
+                {isStopping && (
+                  <span className="text-xs text-orange-600 flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    応答を待っています。現在の要約処理が終了したら停止します。
+                  </span>
+                )}
+              </>
             )}
             {isSplitting && (
               <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -268,6 +291,14 @@ export function ProgressiveSummaryPanel({
             )}
           </div>
 
+          {/* Info note */}
+          {isReady && (
+            <p className="text-xs text-gray-400">
+              ※ チャンクごとに繰り返し要約を実行します。
+              途中経過サマリーの入力トークン数は段階的に大きくなります。
+            </p>
+          )}
+
           {/* Chunk list */}
           {state.chunks.length > 0 && (
             <div>
@@ -276,14 +307,6 @@ export function ProgressiveSummaryPanel({
               </h4>
               <ChunkList chunks={state.chunks} currentIndex={state.currentIndex} />
             </div>
-          )}
-
-          {/* Info note */}
-          {isReady && (
-            <p className="text-xs text-gray-400">
-              ※ チャンクごとに繰り返し要約を実行します。
-              途中経過サマリーの入力トークン数は段階的に大きくなります。
-            </p>
           )}
 
           {/* Summary preview */}
@@ -300,23 +323,20 @@ export function ProgressiveSummaryPanel({
               <button
                 onClick={handleAdopt}
                 disabled={!canAdopt}
-                className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
-                <Check className="w-4 h-4" />
                 採用してレビュー入力に反映
               </button>
               <button
                 onClick={handleDownload}
-                className="flex items-center gap-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm transition"
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm transition"
               >
-                <Download className="w-4 h-4" />
-                サマリーをDL
+                サマリーをダウンロード
               </button>
               <button
                 onClick={handleDiscard}
-                className="flex items-center gap-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm transition"
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm transition"
               >
-                <Trash2 className="w-4 h-4" />
                 破棄
               </button>
             </div>
