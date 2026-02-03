@@ -12,7 +12,8 @@
 
 1. **モード切り替え**
    - 画面上部でタブによる切り替え（突合モード / マッピングモード）
-   - 初期表示は突合モード
+   - 選択中のモードはlocalStorageに保存（既存のLLMモデル・プリセット選択と同様）
+   - 初期表示はlocalStorageから復元、未設定時は突合モード
 
 2. **入力**
    - 入力ファイルは既存と同一（設計書Excel、ソースコード）
@@ -98,44 +99,95 @@ export interface ReviewRequest {
   mode: ReviewMode  // 追加
 }
 
-// マッピング結果の型
-export interface MappingItem {
-  designSection: string      // 設計書の項目（見出し番号/項目名）
-  designContent: string      // 設計書の内容要約
-  codeLocation: string       // 実装箇所（ファイル名:行番号）
-  codeElement: string        // 実装要素（クラス名/関数名）
-  confidence: 'high' | 'medium' | 'low'  // 確信度
-  notes?: string             // 備考
+// マッピング用簡易判定の型
+export type MappingStatus = 'ok' | 'warning' | 'ng'
+
+export interface SimpleMappingJudgment {
+  status: MappingStatus
+  designItemCount: number   // 設計書項目件数
+  mappedCount: number       // マッピングできた件数
+  unmappedCount: number     // 未マッピング件数
+  coveragePercent: number   // カバレッジ率（0-100）
 }
 
-export interface MappingResult {
-  items: MappingItem[]
-  unmappedDesignItems: string[]  // マッピングできなかった設計項目
-  summary: string                 // サマリー
-}
+// ※ 以下は将来の拡張用（AIレスポンスをパースして構造化する場合）
+// export interface MappingItem {
+//   designSection: string      // 設計書の項目（見出し番号/項目名）
+//   designContent: string      // 設計書の内容要約
+//   codeLocation: string       // 実装箇所（ファイル名:行番号）
+//   codeElement: string        // 実装要素（クラス名/関数名）
+//   confidence: 'high' | 'medium' | 'low'  // 確信度
+//   notes?: string             // 備考
+// }
 ```
 
-#### 2.2 マッピング用プリセット追加
+#### 2.2 プリセットカタログの再構成
 
 **ファイル**: `versions/v0.8.0/frontend/src/core/data/presetCatalog.ts`
 
+既存の `PRESET_CATALOG` を突合用・マッピング用に分離し、統合したカタログを提供する。
+
 ```typescript
-// マッピング用プリセットを追加
-export const MAPPING_PRESET: Preset = {
-  id: 'design-code-mapping',
-  name: '設計書-コードマッピング',
-  description: '設計書の各項目がソースコードのどこで実装されているかを特定します。',
-  tags: ['マッピング', '設計書', 'トレーサビリティ'],
-  systemPrompt: {
-    role: 'あなたは設計書とソースコードのマッピングを行う専門家です。',
-    purpose: `設計書の各項目（機能、要件、処理ロジックなど）がソースコードのどこで実装されているかを特定し、マッピング表を作成してください。
+import type { Preset } from '../types'
+
+// デフォルトプリセットのID
+export const DEFAULT_REVIEW_PRESET_ID = 'standard-review'
+export const DEFAULT_MAPPING_PRESET_ID = 'standard-mapping'
+
+// 後方互換のため維持
+export const DEFAULT_PRESET_ID = DEFAULT_REVIEW_PRESET_ID
+
+// ========================================
+// 突合用プリセットカタログ
+// ========================================
+export const REVIEW_PRESET_CATALOG: Preset[] = [
+  {
+    id: 'standard-review',
+    name: '標準レビュープリセット',
+    description:
+      '設計書とプログラムコードを突合し、整合性を検証する汎用的なレビューを行います。',
+    tags: ['突合', '汎用', '設計書'],  // '突合' タグを追加
+    systemPrompt: {
+      // 既存の standard-review と同一
+      role: 'あなたは設計書とプログラムコードを突合し、整合性を検証するレビュアーです。',
+      purpose: `設計書の内容がプログラムに正しく実装されているかを検証し、差異や問題点を報告してください。
+...（既存の内容）`,
+      format: `...（既存の内容）`,
+      notes: `...（既存の内容）`,
+    },
+    specTypes: [
+      // 既存の specTypes と同一
+    ],
+  },
+  {
+    id: 'react-component',
+    name: 'React/TypeScript コンポーネント',
+    description: '...',
+    tags: ['突合', 'React', 'TypeScript', 'フロントエンド'],  // '突合' タグを追加
+    // ...既存の内容
+  },
+  // ... 他の既存プリセット（すべてのtagsに '突合' を追加）
+]
+
+// ========================================
+// マッピング用プリセットカタログ
+// ========================================
+export const MAPPING_PRESET_CATALOG: Preset[] = [
+  {
+    id: 'standard-mapping',
+    name: '標準マッピングプリセット',
+    description: '設計書の各項目がソースコードのどこで実装されているかを特定します。',
+    tags: ['マッピング', '汎用', '設計書', 'トレーサビリティ'],
+    systemPrompt: {
+      role: 'あなたは設計書とソースコードのマッピングを行う専門家です。',
+      purpose: `設計書の各項目（機能、要件、処理ロジックなど）がソースコードのどこで実装されているかを特定し、マッピング表を作成してください。
 
 以下の情報を特定してください：
 1. 設計書の項目（見出し番号、項目名）
 2. 実装箇所（ファイル名、行番号範囲）
 3. 実装要素（クラス名、関数名、メソッド名）
 4. マッピングの確信度（高/中/低）`,
-    format: `マークダウン形式で、以下の順に出力してください：
+      format: `マークダウン形式で、以下の順に出力してください：
 
 1. **マッピングサマリー**
    - マッピング実行日時
@@ -151,7 +203,7 @@ export const MAPPING_PRESET: Preset = {
 
 4. **マッピング詳細**
    - 各マッピングの根拠説明（必要に応じて）`,
-    notes: `- 設計書の見出し番号や項目番号を必ず明示してください
+      notes: `- 設計書の見出し番号や項目番号を必ず明示してください
 - ソースコードの行番号を必ず添えてください
 - 1つの設計項目が複数箇所で実装されている場合はすべて列挙してください
 - 確信度は以下の基準で判定してください：
@@ -159,14 +211,107 @@ export const MAPPING_PRESET: Preset = {
   - 中: 対応関係は推測できるが完全一致ではない
   - 低: 関連性はあるが確証がない
 - 実装箇所が特定できない項目は「未マッピング項目」に記載してください`,
+    },
+    specTypes: [
+      { type: '設計書', note: '各機能の実装箇所を特定してください' },
+      { type: '要件定義書', note: '各要件の実装箇所を特定してください' },
+      { type: '処理ロジック', note: '各処理の実装箇所を特定してください' },
+      { type: '処理フロー', note: '各処理ステップの実装箇所を特定してください' },
+      { type: 'インターフェース仕様', note: 'API/関数の実装箇所を特定してください' },
+    ],
   },
-  specTypes: [
-    { type: '設計書', note: '各機能の実装箇所を特定してください' },
-    { type: '要件定義書', note: '各要件の実装箇所を特定してください' },
-    { type: '処理ロジック', note: '各処理の実装箇所を特定してください' },
-    { type: '処理フロー', note: '各処理ステップの実装箇所を特定してください' },
-    { type: 'インターフェース仕様', note: 'API/関数の実装箇所を特定してください' },
-  ],
+  {
+    id: 'api-mapping',
+    name: 'API エンドポイントマッピング',
+    description: 'API仕様書とコントローラー/ルーター実装のマッピングを行います。',
+    tags: ['マッピング', 'API', 'REST', 'OpenAPI'],
+    systemPrompt: {
+      role: 'あなたはAPI仕様とバックエンド実装のマッピングを行う専門家です。',
+      purpose: `API仕様書（OpenAPI/Swagger等）の各エンドポイント定義がソースコードのどこで実装されているかを特定してください。
+
+以下の情報を特定してください：
+1. APIエンドポイント（HTTPメソッド + パス）
+2. 実装箇所（コントローラー/ルーターファイル、行番号）
+3. ハンドラー関数名
+4. 関連するミドルウェア・バリデーション`,
+      format: `マークダウン形式で、以下の順に出力してください：
+
+1. **APIマッピングサマリー**
+   - 対象API数
+   - 実装済み/未実装の内訳
+
+2. **エンドポイントマッピング一覧**
+| メソッド | パス | 実装ファイル:行 | ハンドラー | ミドルウェア | 備考 |
+|---------|-----|----------------|-----------|-------------|------|
+
+3. **未実装エンドポイント**
+   - 仕様書にあるが実装が見つからないエンドポイント`,
+      notes: `- HTTPメソッド（GET/POST/PUT/DELETE等）を明示してください
+- ルーティング定義とハンドラー実装の両方を特定してください
+- 認証・認可ミドルウェアの適用状況も記載してください`,
+    },
+    specTypes: [
+      { type: 'OpenAPI仕様書', note: '各エンドポイントの実装箇所を特定してください' },
+      { type: 'API設計書', note: '各APIの実装箇所を特定してください' },
+    ],
+  },
+  {
+    id: 'database-mapping',
+    name: 'データベーススキーママッピング',
+    description: 'ER図/テーブル定義とモデル/エンティティ実装のマッピングを行います。',
+    tags: ['マッピング', 'データベース', 'SQL', 'ORM'],
+    systemPrompt: {
+      role: 'あなたはデータベース設計と実装のマッピングを行う専門家です。',
+      purpose: `データベース設計書（ER図、テーブル定義）の各テーブル/カラムがソースコードのモデル/エンティティとしてどこで定義されているかを特定してください。`,
+      format: `マークダウン形式で、以下の順に出力してください：
+
+1. **テーブルマッピング一覧**
+| テーブル名 | モデル/エンティティ | 実装ファイル:行 | 備考 |
+|-----------|-------------------|----------------|------|
+
+2. **カラムマッピング詳細**（テーブルごと）
+
+3. **リレーション実装状況**`,
+      notes: `- ORM（Prisma/TypeORM/SQLAlchemy等）の定義形式を考慮してください
+- マイグレーションファイルとの対応も確認してください`,
+    },
+    specTypes: [
+      { type: 'ER図', note: '各テーブルの実装箇所を特定してください' },
+      { type: 'テーブル定義書', note: '各カラムの実装箇所を特定してください' },
+    ],
+  },
+]
+
+// ========================================
+// 統合プリセットカタログ（突合 + マッピング）
+// ========================================
+export const PRESET_CATALOG: Preset[] = [
+  ...REVIEW_PRESET_CATALOG,
+  ...MAPPING_PRESET_CATALOG,
+]
+
+// ========================================
+// ヘルパー関数
+// ========================================
+
+/**
+ * モードに応じたプリセットカタログを取得
+ */
+export function getPresetCatalogByMode(mode: ReviewMode): Preset[] {
+  if (mode === 'mapping') {
+    return MAPPING_PRESET_CATALOG
+  }
+  return REVIEW_PRESET_CATALOG
+}
+
+/**
+ * モードに応じたデフォルトプリセットIDを取得
+ */
+export function getDefaultPresetIdByMode(mode: ReviewMode): string {
+  if (mode === 'mapping') {
+    return DEFAULT_MAPPING_PRESET_ID
+  }
+  return DEFAULT_REVIEW_PRESET_ID
 }
 ```
 
@@ -211,34 +356,167 @@ export function ModeSelector({ currentMode, onModeChange }: ModeSelectorProps) {
 }
 ```
 
-#### 2.4 マッピング結果表示コンポーネント
+#### 2.4 結果表示コンポーネントの共通化
 
-**ファイル**: `versions/v0.8.0/frontend/src/features/reviewer/components/MappingResult.tsx`（新規）
+既存の `ReviewResult.tsx` をベースに、突合モード・マッピングモード両対応の共通コンポーネントとして拡張する。
 
-- 既存の `ReviewResult.tsx` をベースに作成
-- マッピング一覧をテーブル形式で表示
-- 確信度によるフィルタリング機能
-- 未マッピング項目のハイライト表示
-- 既存と同様のダウンロード機能
+**共通化方針**:
+
+- **見出しの共通化**: モードによらず同じ見出しを使用
+  - 「レビュー情報」「マッピング情報」→「実行情報」
+  - 「レビュー実行データ一式ダウンロード」「マッピング実行データ一式ダウンロード」→「実行データ一式ダウンロード」
+
+- **各セクションの共通化方針**:
+  | セクション | 共通化 | カスタマイズ内容 |
+  |-----------|-------|----------------|
+  | ヘッダー + タブ切り替え | 完全共通 | なし |
+  | 簡易判定 | 構造共通 | 判定ロジックとステータス表示内容のみモード別 |
+  | 実行情報 | 完全共通 | なし（見出しを共通化） |
+  | 詳細レポート | 完全共通 | なし |
+  | 実行データ一式ダウンロード | ほぼ共通 | ZIPファイル名のみモード別（`review-result.md` / `mapping-result.md`） |
+
+- **簡易判定のモード別表示**:
+  - 突合モード: 既存の `ng`/`warning`/`ok` 判定（不整合キーワード検索）
+  - マッピングモード: カバレッジ率による `ng`/`warning`/`ok` 判定
+
+```typescript
+// 簡易判定のステータス定義（マッピング用）
+// 突合モードと同じステータス名・色を使用
+const mappingStatusConfig = {
+  ok: {
+    label: '問題なし',
+    icon: <CheckCircle className="w-6 h-6 text-green-600" />,
+    bgColor: 'bg-green-50',
+    borderColor: 'border-green-200',
+    textColor: 'text-green-700',
+    iconBg: 'bg-green-100',
+  },
+  warning: {
+    label: '確認が必要',
+    icon: <AlertTriangle className="w-6 h-6 text-yellow-600" />,
+    bgColor: 'bg-yellow-50',
+    borderColor: 'border-yellow-200',
+    textColor: 'text-yellow-700',
+    iconBg: 'bg-yellow-100',
+  },
+  ng: {
+    label: '問題あり',
+    icon: <XCircle className="w-6 h-6 text-red-600" />,
+    bgColor: 'bg-red-50',
+    borderColor: 'border-red-200',
+    textColor: 'text-red-700',
+    iconBg: 'bg-red-100',
+  },
+}
+
+// 簡易判定の表示
+const renderSimpleMappingJudgment = (judgment: SimpleMappingJudgment) => {
+  const config = mappingStatusConfig[judgment.status]
+  return (
+    <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4`}>
+      <div className="flex items-center gap-3">
+        <span className={`${config.iconBg} rounded-full p-2`}>{config.icon}</span>
+        <div>
+          <div className={`font-bold ${config.textColor} text-lg`}>
+            マッピングカバレッジ: {judgment.coveragePercent}%
+          </div>
+          <div className="text-sm text-gray-600">
+            設計書項目: {judgment.designItemCount}件 /
+            マッピング: {judgment.mappedCount}件 /
+            未マッピング: {judgment.unmappedCount}件
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+```
 
 #### 2.5 状態管理の拡張
 
-**ファイル**: `versions/v0.8.0/frontend/src/features/reviewer/hooks/useReviewerSettings.ts`
+**ファイル**: `versions/v0.8.0/frontend/src/core/hooks/useSettings.ts`
+
+localStorageにモードを保存する機能を追加（既存のLLMモデル・プリセット選択と同様の方式）。
 
 ```typescript
-// モード状態の追加
-const [currentMode, setCurrentMode] = useState<ReviewMode>('review')
+// ストレージキーの定義
+const STORAGE_KEY = 'reviewer-config'
 
-// モード変更時のプリセット自動切り替え
-const handleModeChange = (mode: ReviewMode) => {
-  setCurrentMode(mode)
-  if (mode === 'mapping') {
-    // マッピング用プリセットを自動適用
-    applyPreset(MAPPING_PRESET)
-  } else {
-    // デフォルトプリセットに戻す
-    applyPreset(getPresetById(DEFAULT_PRESET_ID))
+interface ReviewerConfig {
+  // 既存フィールド
+  llmConfig?: LlmConfig
+  selectedModel?: string
+  selectedPresetId?: string
+  // 新規追加
+  reviewMode?: ReviewMode  // 'review' | 'mapping'
+}
+
+export function useSettings() {
+  // 既存のstate...
+
+  // モード状態をlocalStorageから復元
+  const [reviewMode, setReviewMode] = useState<ReviewMode>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      const config = JSON.parse(saved) as ReviewerConfig
+      return config.reviewMode ?? 'review'
+    }
+    return 'review'
+  })
+
+  // モード変更時にlocalStorageに保存
+  const updateReviewMode = useCallback((mode: ReviewMode) => {
+    setReviewMode(mode)
+    const saved = localStorage.getItem(STORAGE_KEY)
+    const config = saved ? JSON.parse(saved) : {}
+    config.reviewMode = mode
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
+  }, [])
+
+  return {
+    // 既存の返却値...
+    reviewMode,
+    updateReviewMode,
   }
+}
+```
+
+**ファイル**: `versions/v0.8.0/frontend/src/features/reviewer/hooks/useReviewerSettings.ts`
+
+モード変更時のプリセット自動切り替えロジック。
+
+```typescript
+import {
+  getPresetCatalogByMode,
+  getDefaultPresetIdByMode
+} from '@core/data/presetCatalog'
+
+// useSettings から reviewMode, updateReviewMode を取得
+const { reviewMode, updateReviewMode, ...settings } = useSettings()
+
+// モードに応じたプリセットカタログを取得
+const availablePresets = useMemo(
+  () => getPresetCatalogByMode(reviewMode),
+  [reviewMode]
+)
+
+// モード変更ハンドラー
+const handleModeChange = useCallback((mode: ReviewMode) => {
+  updateReviewMode(mode)
+
+  // モードに応じたデフォルトプリセットを自動適用
+  const defaultPresetId = getDefaultPresetIdByMode(mode)
+  const defaultPreset = getPresetById(defaultPresetId)
+  if (defaultPreset) {
+    applyPreset(defaultPreset)
+  }
+}, [updateReviewMode, applyPreset])
+
+return {
+  // 既存の返却値...
+  reviewMode,
+  handleModeChange,
+  availablePresets,  // モードに応じたプリセット一覧
 }
 ```
 
@@ -262,7 +540,46 @@ const executeReview = async (mode: ReviewMode) => {
 
 - `ModeSelector` コンポーネントを追加
 - モードに応じた結果表示コンポーネントの切り替え
-- プリセット選択UIの表示/非表示制御（マッピングモード時は非表示）
+- **プリセット選択UIは両モードで表示**（モードに応じたプリセット一覧を表示）
+
+```typescript
+export function Reviewer() {
+  const {
+    reviewMode,
+    handleModeChange,
+    availablePresets,  // モードに応じたプリセット一覧
+    selectedPreset,
+    applyPreset,
+    // ...
+  } = useReviewerSettings()
+
+  return (
+    <div>
+      {/* モード切り替えUI */}
+      <ModeSelector
+        currentMode={reviewMode}
+        onModeChange={handleModeChange}
+      />
+
+      {/* 設計書・プログラムアップロード（共通） */}
+      {/* ... */}
+
+      {/* プリセット選択（両モードで表示、モードに応じたプリセット一覧） */}
+      <PresetSelector
+        presets={availablePresets}
+        selectedPreset={selectedPreset}
+        onSelect={applyPreset}
+      />
+
+      {/* システムプロンプト編集（共通） */}
+      {/* ... */}
+
+      {/* 実行ボタン（共通） */}
+      {/* ... */}
+    </div>
+  )
+}
+```
 
 ---
 
@@ -392,20 +709,20 @@ def test_mapping_user_message():
 |-------------|------|
 | `versions/v0.8.0/` | v0.7.0からコピー |
 | `frontend/src/features/reviewer/components/ModeSelector.tsx` | モード切り替えUI |
-| `frontend/src/features/reviewer/components/MappingResult.tsx` | マッピング結果表示 |
 | `frontend/src/features/reviewer/components/__tests__/ModeSelector.test.tsx` | テスト |
-| `frontend/src/features/reviewer/components/__tests__/MappingResult.test.tsx` | テスト |
 
 ### 変更
 
 | ファイルパス | 変更内容 |
 |-------------|---------|
 | `frontend/src/core/types/index.ts` | `ReviewMode` 型追加 |
-| `frontend/src/core/data/presetCatalog.ts` | `MAPPING_PRESET` 追加 |
+| `frontend/src/core/data/presetCatalog.ts` | 突合用/マッピング用カタログ分離、タグ追加、ヘルパー関数追加 |
+| `frontend/src/core/hooks/useSettings.ts` | `reviewMode` のlocalStorage永続化追加 |
 | `frontend/src/features/reviewer/types/index.ts` | マッピング関連型追加 |
-| `frontend/src/features/reviewer/hooks/useReviewerSettings.ts` | モード状態管理追加 |
+| `frontend/src/features/reviewer/hooks/useReviewerSettings.ts` | モード切り替え、モード別プリセット一覧取得追加 |
 | `frontend/src/features/reviewer/hooks/useReviewExecution.ts` | モードパラメータ対応 |
 | `frontend/src/features/reviewer/services/api.ts` | リクエストにモード追加 |
+| `frontend/src/features/reviewer/components/ReviewResult.tsx` | 両モード対応化（見出し共通化、簡易判定のモード別切り替え） |
 | `frontend/src/features/reviewer/index.tsx` | モード切り替えUI統合 |
 | `backend/app/models/schemas.py` | `ReviewMode` enum追加 |
 | `backend/app/services/prompt_builder.py` | マッピング用メッセージ構築 |
@@ -455,8 +772,9 @@ def test_mapping_user_message():
 │  └─────────────────────────────────────────────────────┘   │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │ プリセット選択（突合モード時のみ表示）                │   │
-│  │ ...                                                  │   │
+│  │ プリセット選択（モードに応じたプリセット一覧を表示）   │   │
+│  │ 突合モード時: 突合用プリセット一覧                    │   │
+│  │ マッピングモード時: マッピング用プリセット一覧        │   │
 │  └─────────────────────────────────────────────────────┘   │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐   │
@@ -469,7 +787,7 @@ def test_mapping_user_message():
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### マッピング結果画面
+### マッピング結果画面（突合モードと同一構成）
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -478,44 +796,118 @@ def test_mapping_user_message():
 │  ┌─────────────┬─────────────┐                              │
 │  │   1回目     │    2回目    │                              │
 │  └─────────────┴─────────────┘                              │
+│  ※ 同じ設定で2回マッピングを実行しました                    │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ 簡易判定                                                     │
+│  ┌───────────────────────────────────────────────┐         │
+│  │ [✓/△/✗] マッピングカバレッジ: 85%              │         │
+│  │                                               │         │
+│  │ 設計書項目: 20件                               │         │
+│  │ マッピング: 17件 / 未マッピング: 3件            │         │
+│  └───────────────────────────────────────────────┘         │
+│  ※ キーワード検索による簡易的な判定です。                    │
+│    詳細レポートを確認してください。                          │
+│  ※ 設計書項目件数はAIの判定ごとに異なる場合があります。      │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ 実行情報                                                     │
+│  バージョン:        v0.8.0                                  │
+│  モデルID:          claude-haiku-...                        │
+│  実行日時:          2026-02-03 12:34:56                     │
+│  トークン数:        入力 1,234 / 出力 567                    │
 │                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ マッピングサマリー                                    │   │
-│  │ ┌───────────────────────────────────────────────┐   │   │
-│  │ │ 総件数: 25件                                   │   │   │
-│  │ │ 高確信: 18件 | 中確信: 5件 | 低確信: 2件        │   │   │
-│  │ │ 未マッピング: 3件                              │   │   │
-│  │ └───────────────────────────────────────────────┘   │   │
-│  └─────────────────────────────────────────────────────┘   │
+│  設計書:                                                     │
+│  ┌──────────┬──────┬──────┬────────────┐                   │
+│  │ファイル名 │ 役割 │ 種別 │   ツール   │                   │
+│  ├──────────┼──────┼──────┼────────────┤                   │
+│  │spec.xlsx │メイン│設計書│MarkItDown │                   │
+│  └──────────┴──────┴──────┴────────────┘                   │
 │                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ フィルタ: [全て] [高確信] [中確信] [低確信] [未マッピング] │   │
-│  └─────────────────────────────────────────────────────┘   │
+│  プログラム:                                                 │
+│  ┌──────────────────────────────────────┐                   │
+│  │ファイル名                             │                   │
+│  ├──────────────────────────────────────┤                   │
+│  │main.ts                               │                   │
+│  └──────────────────────────────────────┘                   │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ 📄 詳細レポート                                              │
+│  ┌───────────────────────────────────────────────┐         │
+│  │ (Markdownプレビュー: max-h-96でスクロール)     │         │
+│  │ # マッピングサマリー                           │         │
+│  │ ## マッピング一覧                              │         │
+│  │ | 設計書項目 | 実装ファイル:行 | 実装要素 | ... │         │
+│  │ ...                                           │         │
+│  └───────────────────────────────────────────────┘         │
 │                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ マッピング一覧                                        │   │
-│  │ ┌──────────┬──────────┬────────────┬────────┬──────┐│   │
-│  │ │設計書項目 │設計内容   │実装ファイル:行│実装要素 │確信度││   │
-│  │ ├──────────┼──────────┼────────────┼────────┼──────┤│   │
-│  │ │1.1 ログイン│ユーザー認証│auth.ts:45-80│login() │ 高  ││   │
-│  │ │1.2 ログアウト│セッション破棄│auth.ts:82-95│logout()│ 高 ││   │
-│  │ │...        │...       │...         │...     │...   ││   │
-│  │ └──────────┴──────────┴────────────┴────────┴──────┘│   │
-│  └─────────────────────────────────────────────────────┘   │
+│  ┌─────────────┐ ┌─────────────────┐                       │
+│  │ 📋 コピー   │ │ 💾 ダウンロード │                       │
+│  └─────────────┘ └─────────────────┘                       │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ 📦 実行データ一式ダウンロード                                │
 │                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ 詳細レポート                                          │   │
-│  │ ...（Markdownプレビュー）                             │   │
-│  │                            [ コピー ] [ ダウンロード ] │   │
-│  └─────────────────────────────────────────────────────┘   │
+│  実行の入出力データを一式ダウンロードできます                 │
 │                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ 一式ダウンロード (ZIP)                                │   │
-│  │                            [ 一式ダウンロード ]        │   │
-│  └─────────────────────────────────────────────────────┘   │
+│  ダウンロード内容:                                           │
+│  ┌────────────────────┬──────────────────────────┐         │
+│  │ README.md          │ 実行情報と同梱説明     │         │
+│  │ system-prompt.md   │ システムプロンプト       │         │
+│  │ spec-markdown.md   │ 変換後の設計書           │         │
+│  │ code-numbered.txt  │ 行番号付きプログラム     │         │
+│  │ mapping-result.md  │ AIマッピング結果         │         │
+│  └────────────────────┴──────────────────────────┘         │
 │                                                             │
+│  ┌─────────────────────────────────────────────┐           │
+│  │       📥 一式ダウンロード（ZIP）            │           │
+│  └─────────────────────────────────────────────┘           │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+### マッピング用簡易判定のステータス
+
+| ステータス | アイコン | 表示ラベル | 色 | 判定条件 |
+|-----------|---------|-----------|-----|---------|
+| `ok` | ✓ | 問題なし | 緑 | カバレッジ100%（未マッピング0件） |
+| `warning` | △ | 確認が必要 | 黄 | カバレッジ1%〜99% |
+| `ng` | ✗ | 問題あり | 赤 | カバレッジ0%、設計書項目0件、または判定不能 |
+
+**判定ロジック（`getSimpleMappingJudgment`）**:
+```typescript
+interface SimpleMappingJudgment {
+  status: 'ok' | 'warning' | 'ng'
+  designItemCount: number   // 設計書項目件数
+  mappedCount: number       // マッピングできた件数
+  unmappedCount: number     // 未マッピング件数
+  coveragePercent: number   // カバレッジ率（0-100）
+}
+
+function getSimpleMappingJudgment(reportText: string): SimpleMappingJudgment {
+  // レポート内のキーワードからカウントを抽出
+  // 1. 設計書項目件数: マッピング一覧テーブルの行数 + 未マッピング項目リストの件数
+  // 2. マッピング件数: マッピング一覧テーブルの行数
+  // 3. 未マッピング件数: 「未マッピング」セクションの項目数
+  // 4. カバレッジ率: マッピング件数 / 設計書項目件数 * 100
+
+  // ステータス判定:
+  // - 判定不能（パース失敗等） → 'ng'
+  // - 設計書項目件数が0 → 'ng'
+  // - カバレッジ0% → 'ng'
+  // - カバレッジ100% → 'ok'
+  // - カバレッジ1-99% → 'warning'
+}
+```
+
+**注記事項**:
+- キーワード検索による簡易的な判定のため、AIの出力形式によっては正確に判定できない場合があります
+- 判定できない場合は「問題あり」として表示されます
+- 設計書項目件数はAIが設計書を解析して抽出するため、実行ごとに異なる場合があります
+- 詳細な確認は「詳細レポート」セクションで行ってください
 
 ---
 
@@ -548,8 +940,73 @@ def test_mapping_user_message():
 
 ---
 
+---
+
+## プリセットカタログ設計の要点
+
+### 定数名の変更
+
+| 変更前 | 変更後 | 説明 |
+|-------|-------|------|
+| `PRESET_CATALOG` | `REVIEW_PRESET_CATALOG` | 突合用プリセットのみ |
+| （新規） | `MAPPING_PRESET_CATALOG` | マッピング用プリセットのみ |
+| （新規） | `PRESET_CATALOG` | 両カタログを結合（後方互換） |
+
+### タグの追加
+
+- **突合用プリセット**: 各プリセットの `tags` 配列に `'突合'` を追加
+- **マッピング用プリセット**: 各プリセットの `tags` 配列に `'マッピング'` を追加
+
+### ヘルパー関数
+
+| 関数名 | 引数 | 返却値 | 説明 |
+|-------|------|-------|------|
+| `getPresetCatalogByMode(mode)` | `ReviewMode` | `Preset[]` | モードに応じたプリセット一覧 |
+| `getDefaultPresetIdByMode(mode)` | `ReviewMode` | `string` | モードに応じたデフォルトプリセットID |
+
+### localStorage永続化
+
+| キー | フィールド | 型 | 説明 |
+|-----|-----------|-----|------|
+| `reviewer-config` | `reviewMode` | `'review' \| 'mapping'` | 選択中のモード |
+
+既存の `llmConfig`, `selectedModel`, `selectedPresetId` と同じストレージキーを使用し、一貫した永続化方式を維持。
+
+---
+
+## コンポーネント共通化設計
+
+### 見出しの共通化
+
+結果画面の見出しを突合モード・マッピングモードで共通化し、コンポーネントの再利用性を高める。
+
+| 変更前（突合） | 変更前（マッピング） | 変更後（共通） |
+|--------------|-------------------|--------------|
+| レビュー情報 | マッピング情報 | 実行情報 |
+| レビュー実行データ一式ダウンロード | マッピング実行データ一式ダウンロード | 実行データ一式ダウンロード |
+
+### セクション別の共通化方針
+
+| セクション | 共通化レベル | 備考 |
+|-----------|------------|------|
+| ヘッダー + タブ切り替え | 完全共通 | 1回目/2回目の切り替えは両モード同一 |
+| 簡易判定 | 構造共通・内容別 | 判定ロジックと表示内容のみモード別に切り替え |
+| 実行情報 | 完全共通 | バージョン、モデルID、実行日時、トークン数、ファイル一覧 |
+| 詳細レポート | 完全共通 | Markdownプレビュー、コピー、ダウンロード |
+| 実行データ一式ダウンロード | ほぼ共通 | ZIPファイル名のみモード別 |
+
+### 実装方針
+
+- 既存の `ReviewResult.tsx` を拡張し、モードをpropsで受け取る形式に変更
+- 簡易判定のみモードに応じた判定関数・表示コンポーネントを切り替え
+- 新規ファイル `MappingResult.tsx` は作成せず、`ReviewResult.tsx` で両モード対応
+- ファイル名は `ReviewResult.tsx` のまま維持（または `ExecutionResult.tsx` へリネーム検討）
+
+---
+
 ## 参考
 
 - [v0.7.0 spec.md](../versions/v0.7.0/spec.md)
 - [プリセットカタログ](../versions/v0.7.0/frontend/src/core/data/presetCatalog.ts)
 - [レビュー結果コンポーネント](../versions/v0.7.0/frontend/src/features/reviewer/components/ReviewResult.tsx)
+- [useSettings.ts](../versions/v0.7.0/frontend/src/core/hooks/useSettings.ts)
