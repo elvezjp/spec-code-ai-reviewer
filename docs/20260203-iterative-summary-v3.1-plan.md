@@ -26,8 +26,8 @@ v3.0ではサーバーサイドでジョブ管理を行う複雑な設計だっ�
 | 出力形式 | 構造化JSON | サマリー本文（Markdown） |
 | UI操作 | セクションごとに手動実行 | 自動順次実行（開始/停止のみ） |
 | ジョブ管理 | 複雑（version, failed_sections等） | 不要 |
-| チャンク分割 | バックエンド | フロントエンド |
-| API | 7エンドポイント | 1エンドポイント |
+| チャンク分割 | バックエンド | バックエンド（簡易版） |
+| API | 7エンドポイント | 2エンドポイント |
 
 ---
 
@@ -54,16 +54,18 @@ v3.0ではサーバーサイドでジョブ管理を行う複雑な設計だっ�
 ### 処理フロー
 
 ```
-1. ユーザーが設計書/コードのMarkdownを入力
-2. パネル展開時にフロントエンドでチャンク分割を実行（見出しベースでパース）
-   - チャンク一覧と各チャンクの推定トークン数を表示
-3. 「要約を開始」ボタン押下
-4. フロントエンドでチャンクごとに順次要約APIを実行
+1. ユーザーが設計書/コードを選択
+2. 設計書: Markdown変換完了時 / コード: 行番号付与完了時に、
+   自動的にチャンク分割API（/api/split-chunks）を実行
+   - チャンク一覧と各チャンクの推定トークン数を取得・表示
+3. パネル展開時にチャンク一覧を確認可能
+4. 「要約を開始」ボタン押下
+5. フロントエンドでチャンクごとに順次要約APIを実行
    - 各チャンクの要約結果をブラウザ側で累積
    - 進捗状況をリアルタイム表示（処理中チャンク名、完了数/総数）
    - 「停止」ボタンで中断可能（そこまでの結果は保持）
-5. 全チャンク完了後、サマリー結果を表示
-6. 「採用してレビュー入力に反映」ボタンでレビュー入力に反映
+6. 全チャンク完了後、サマリー結果を表示
+7. 「採用してレビュー入力に反映」ボタンでレビュー入力に反映
    - 「サマリーをDL」ボタンでMarkdownファイルとしてダウンロード可能
 ```
 
@@ -98,23 +100,76 @@ v3.0ではサーバーサイドでジョブ管理を行う複雑な設計だっ�
 
 **処理**: 1チャンクを要約し、累積サマリーに統合して返す
 
-### チャンク分割（フロントエンド）
+#### チャンク分割API
 
-フロントエンド側でMarkdownを見出し単位で分割する。分割単位は「チャンク」と呼び、セクション/段落/任意のテキスト塊を柔軟に扱う。
+- **エンドポイント**: `POST /api/split-chunks`
+- **呼び出しタイミング**: 設計書のMarkdown変換完了時、またはコードの行番号付与完了時に自動実行
+
+**入力**:
+```json
+{
+  "type": "spec" | "code",
+  "markdown": "string",
+  "sourceFilenames": ["string"]
+}
+```
+
+**出力**:
+```json
+{
+  "success": "boolean",
+  "chunks": [
+    {
+      "id": "chunk-0001",
+      "title": "string",
+      "text": "string",
+      "tokenCount": 1234
+    }
+  ],
+  "totalTokenCount": "number",
+  "error": "string | null"
+}
+```
+
+**処理**: Markdownをチャンクに分割し、各チャンクの推定トークン数を計算して返す
+
+### チャンク分割（バックエンド）
+
+バックエンド側でMarkdownをチャンク単位で分割する。設計書のMarkdown変換またはコードの行番号付与が完了したタイミングで、自動的にチャンク分割APIを呼び出す。
+
+#### 分割ロジック
+
+**Step 1: ファイル単位で分割**
+- 設計書・コードともに、変換後のMarkdownにはファイル単位で見出し（`## file: <path>` または `## プログラム: <path>`）が付与されている
+- この見出しを境界として、まずファイル単位で分割する
+
+**Step 2: 大きいチャンクをさらに分割（500行超）**
+
+| 種別 | 分割方法 |
+|------|----------|
+| 設計書 | 見出しレベル（`###`〜`####`）で分割 |
+| コード | クラス/関数を簡易検出して分割。検出できない場合は500行で区切る |
+
+**コードのクラス/関数検出**（v3.0と同様）:
+- Python: `class ClassName`, `def func_name`
+- TypeScript/JS: `export class`, `export function`, `async function`
+- Java: `public class`, `interface`, `enum`, メソッド定義
+- Go: `type Name struct`, `func (r *Receiver) Name()`
+- 未対応言語: 500行で機械的に分割
+
+**定数**:
+```python
+MAX_CHUNK_LINES = 500  # 環境変数で上書き可能
+```
+
+#### データ構造
 
 ```typescript
 interface Chunk {
-  id: string           // "chunk-0001" 形式
-  title: string        // 見出しテキスト（または識別名）
+  id: string           // "chunk-0001" 形式（元テキストの順序を保持）
+  title: string        // 見出しテキスト（またはファイル名+クラス/関数名）
   text: string         // チャンク本文
   tokenCount: number   // 推定トークン数
-}
-
-function splitMarkdownToChunks(markdown: string): Chunk[] {
-  // 見出し（#〜###）を境界としてパース
-  // 見出しがない部分は「（見出しなし）」として扱う
-  // 各チャンクの推定トークン数を計算
-  // 将来的に、チャンクが大きすぎる場合のさらなる分割も検討
 }
 ```
 
@@ -183,21 +238,30 @@ ProgressiveSummaryPanel/
 ```typescript
 interface ProgressiveSummaryState {
   type: 'spec' | 'code'
-  chunks: Chunk[]               // 分割されたチャンク一覧（トークン数含む）
+  chunks: Chunk[]               // /api/split-chunks から取得したチャンク一覧
   currentIndex: number          // 処理中のインデックス（-1: 未開始）
   currentSummary: string        // 累積サマリー
-  totalTokenCount: number       // 合計トークン数
-  status: 'idle' | 'summarizing' | 'stopped' | 'completed' | 'error'
+  totalTokenCount: number       // 合計トークン数（APIレスポンスから取得）
+  status: 'idle' | 'splitting' | 'summarizing' | 'stopped' | 'completed' | 'error'
   error: string | null
 }
 ```
 
 **statusの状態遷移**:
-- `idle`: 初期状態（パネル展開、チャンク分割済み、実行前）
+- `idle`: 初期状態（Markdown未変換）
+- `splitting`: チャンク分割API実行中
 - `summarizing`: 要約処理中
 - `stopped`: ユーザーによる中断
 - `completed`: 全チャンク完了
 - `error`: エラー発生
+
+**状態遷移フロー**:
+```
+idle → splitting（Markdown変換完了時に自動実行）
+     → idle（チャンク分割完了、要約開始待ち）
+     → summarizing（要約開始ボタン押下）
+     → stopped（停止ボタン押下）/ completed（全完了）/ error
+```
 
 #### UI要素
 
@@ -397,27 +461,31 @@ interface ProgressiveSummaryState {
 
 ### Phase 1: バックエンドAPI
 
-1. `POST /api/progressive-summary` の実装
+1. `POST /api/split-chunks` の実装
+   - ファイル単位での分割（見出しベース）
+   - 設計書: 見出しレベルでの追加分割
+   - コード: クラス/関数検出での追加分割（v3.0のロジックを流用）
+   - 推定トークン数計算
+2. `POST /api/progressive-summary` の実装
    - プロンプト生成（設計書用/コード用）
    - LLM呼び出し
    - サマリー統合
 
 ### Phase 2: フロントエンドUI
 
-2. チャンク分割ロジックの実装
-   - `splitMarkdownToChunks` 関数
-   - 見出しベースのパース処理
-   - 各チャンクの推定トークン数計算（既存の `estimateTokenCount` を使用）
 3. `ProgressiveSummaryPanel` コンポーネントの作成
    - 方針入力欄（デフォルトテンプレート付き）
-   - チャンク一覧表示（トークン数付き）
+   - チャンク一覧表示（トークン数付き、APIから取得）
    - 開始/停止ボタン
    - 進捗表示
-4. チャンク順次実行ロジックの実装
+4. Markdown変換完了時のチャンク分割API自動呼び出し
+   - 設計書: Markdown変換完了後
+   - コード: 行番号付与完了後
+5. チャンク順次実行ロジックの実装
    - 状態管理
    - API呼び出しループ
    - 中断/再開処理
-5. サマリー結果表示と操作機能
+6. サマリー結果表示と操作機能
    - プレビュー表示
    - 「採用してレビュー入力に反映」ボタン
    - 「サマリーをDL」ボタン（Markdownファイルダウンロード）
@@ -425,9 +493,9 @@ interface ProgressiveSummaryState {
 
 ### Phase 3: 統合とテスト
 
-6. レビュー画面への組み込み
-7. エラー処理の実装
-8. 動作検証
+7. レビュー画面への組み込み
+8. エラー処理の実装
+9. 動作検証
 
 ---
 
@@ -437,19 +505,22 @@ interface ProgressiveSummaryState {
 versions/v0.8.0/
 ├── backend/app/
 │   ├── routers/
-│   │   └── progressive_summary.py  # /api/progressive-summary ルーター
+│   │   ├── progressive_summary.py  # /api/progressive-summary ルーター
+│   │   └── chunk_splitter.py       # /api/split-chunks ルーター
 │   └── services/
-│       └── progressive_summary.py  # 要約処理
+│       ├── progressive_summary.py  # 要約処理
+│       └── chunk_splitter.py       # チャンク分割ロジック（v3.0から流用・簡略化）
 └── frontend/src/features/reviewer/
     ├── components/
     │   ├── ProgressiveSummaryPanel.tsx  # メインコンポーネント
     │   ├── ChunkList.tsx                # チャンク一覧
     │   └── SummaryPreview.tsx           # サマリープレビュー
-    ├── utils/
-    │   └── splitMarkdown.ts       # チャンク分割ロジック
     └── services/
         └── api.ts                 # API呼び出し追加
 ```
+
+**v3.0からの流用**:
+- `chunk_splitter.py` は `versions/v0.7.0/backend/app/services/iterative_job.py` の分割ロジック（`_split_spec_markdown`, `_split_code_markdown`, `_split_code_by_symbols` 等）を抽出・簡略化して使用
 
 ---
 
