@@ -333,7 +333,7 @@ export function MarkdownOrganizer({
                   styles={diffViewerStyles}
                 />
               </div>
-              <div className="flex items-center gap-2 mt-3">
+              <div className="flex items-center justify-between mt-3">
                 <button
                   onClick={handleAdopt}
                   className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition"

@@ -319,20 +319,22 @@ export function ProgressiveSummaryPanel({
 
           {/* Result action buttons */}
           {hasResult && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleAdopt}
-                disabled={!canAdopt}
-                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                採用してレビュー入力に反映
-              </button>
-              <button
-                onClick={handleDownload}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm transition"
-              >
-                サマリーをダウンロード
-              </button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleAdopt}
+                  disabled={!canAdopt}
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  採用してレビュー入力に反映
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm transition"
+                >
+                  サマリーをダウンロード
+                </button>
+              </div>
               <button
                 onClick={handleDiscard}
                 className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm transition"
