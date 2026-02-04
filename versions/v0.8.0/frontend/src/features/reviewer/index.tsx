@@ -371,6 +371,9 @@ export function Reviewer() {
       {/* Token estimate */}
       <TokenEstimator
         totalTokens={tokenEstimation.totalTokens}
+        specTokens={tokenEstimation.specTokens}
+        codeTokens={tokenEstimation.codeTokens}
+        promptTokens={tokenEstimation.promptTokens}
         isWarning={tokenEstimation.isWarning}
         isVisible={!!(specMarkdown || codeWithLineNumbers)}
       />
