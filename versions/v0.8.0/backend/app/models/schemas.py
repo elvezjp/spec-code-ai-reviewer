@@ -279,7 +279,7 @@ class SplitMarkdownRequest(BaseModel):
 
     content: str  # Markdownテキスト
     filename: str  # 元ファイル名
-    maxDepth: int = Field(default=2, ge=1, le=6)  # 分割深度 (H1-H6)
+    maxDepth: int = Field(default=2, ge=1, le=6)  # 分割の見出しレベル (H1-H6)
 
 
 class DocumentPart(BaseModel):

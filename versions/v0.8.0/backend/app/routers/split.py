@@ -40,7 +40,7 @@ async def split_markdown(request: SplitMarkdownRequest):
     Markdownをセクション単位で分割する（md2map相当）
 
     - 見出し（H1-H6）を基準に分割
-    - maxDepthで分割深度を指定（デフォルト: H2まで）
+    - maxDepthで分割の見出しレベルを指定（デフォルト: H2まで）
 
     【Phase 2: スタブ実装】
     実際のmd2map呼び出しは Phase 3 で実装。

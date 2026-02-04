@@ -160,7 +160,7 @@ export function SplitSettingsSection({
           {isDocOptionsExpanded && (
             <div className="mt-2 ml-5 p-3 bg-gray-50 rounded border border-gray-200">
               <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-600">分割深度:</span>
+                <span className="text-sm text-gray-600">見出しレベル:</span>
                 <label className="flex items-center gap-1 cursor-pointer">
                   <input
                     type="radio"
@@ -169,7 +169,7 @@ export function SplitSettingsSection({
                     onChange={() => handleDepthChange(2)}
                     className="w-4 h-4 text-blue-600"
                   />
-                  <span className="text-sm text-gray-700">H2まで（推奨）</span>
+                  <span className="text-sm text-gray-700">H2(##)まで（推奨）</span>
                 </label>
                 <label className="flex items-center gap-1 cursor-pointer">
                   <input
@@ -179,7 +179,7 @@ export function SplitSettingsSection({
                     onChange={() => handleDepthChange(3)}
                     className="w-4 h-4 text-blue-600"
                   />
-                  <span className="text-sm text-gray-700">H3まで</span>
+                  <span className="text-sm text-gray-700">H3(###)まで</span>
                 </label>
                 <label className="flex items-center gap-1 cursor-pointer">
                   <input
@@ -189,7 +189,7 @@ export function SplitSettingsSection({
                     onChange={() => handleDepthChange(4)}
                     className="w-4 h-4 text-blue-600"
                   />
-                  <span className="text-sm text-gray-700">H4まで</span>
+                  <span className="text-sm text-gray-700">H4(####)まで</span>
                 </label>
               </div>
             </div>
@@ -253,7 +253,7 @@ export function SplitSettingsSection({
               <a href="https://github.com/elvezjp/md2map" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
                 md2map
               </a>
-              の仕様に準拠した分割を行います。設定した見出しの深さで分割します。
+              の仕様に準拠した分割を行います。設定した見出しレベルで分割します。
             </li>
             <li>
               プログラム分割:{' '}
