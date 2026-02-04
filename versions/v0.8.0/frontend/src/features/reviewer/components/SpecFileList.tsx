@@ -143,9 +143,20 @@ export function SpecFileList({
           >
             Microsoft MarkItDown
           </a>
-          の仕様に準拠した変換を行います
+          の仕様に準拠した変換を行います。
         </li>
-        <li>excel2md: シート全体をCSVブロックとして変換します</li>
+        <li>
+          excel2md:{' '}
+          <a
+            href="https://github.com/elvezjp/excel2md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:underline"
+          >
+            excel2md
+          </a>
+          の仕様に準拠した変換を行います。シート全体をCSVブロックとして変換します。
+        </li>
       </ul>
 
       {/* Preview */}

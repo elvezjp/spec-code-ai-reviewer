@@ -247,6 +247,22 @@ export function SplitSettingsSection({
               '分割プレビュー実行'
             )}
           </button>
+          <ul className="text-xs text-gray-400 mt-2 list-disc list-inside space-y-0.5">
+            <li>
+              設計書分割:{' '}
+              <a href="https://github.com/elvezjp/md2map" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                md2map
+              </a>
+              の仕様に準拠した分割を行います。設定した見出しの深さで分割します。
+            </li>
+            <li>
+              プログラム分割:{' '}
+              <a href="https://github.com/elvezjp/code2map" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                code2map
+              </a>
+              の仕様に準拠した分割を行います。クラスや関数など意味のある単位で分割します。
+            </li>
+          </ul>
         </div>
       )}
 
