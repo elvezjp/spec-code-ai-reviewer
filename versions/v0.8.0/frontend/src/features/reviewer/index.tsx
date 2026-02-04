@@ -114,8 +114,6 @@ export function Reviewer() {
     executePreview: executeSplitPreview,
     clearPreview: clearSplitPreview,
     isSplitEnabled,
-    reviewMode,
-    estimatedReviewCount,
   } = useSplitSettings()
 
   // System prompt text for token estimation
@@ -395,36 +393,10 @@ export function Reviewer() {
 
       {/* Review button */}
       <Card>
-        <div className="mb-4">
-          <p className="text-sm text-gray-700 text-center">
-            現在のモード: <span className="font-medium">{isSplitEnabled ? '分割レビュー' : '一括レビュー'}</span>
-          </p>
-          {isSplitEnabled && splitPreviewResult && (
-            <div className="mt-2 p-3 bg-gray-50 rounded border border-gray-200 text-sm text-center">
-              <p>
-                設計書: {splitSettings.documentMode === 'split' && splitPreviewResult.documentParts
-                  ? `分割 (${splitPreviewResult.documentParts.length} パート)`
-                  : '一括'}
-              </p>
-              <p>
-                プログラム: {splitSettings.codeMode === 'split' && splitPreviewResult.codeParts
-                  ? `分割 (${splitPreviewResult.codeParts.length} パート)`
-                  : '一括'}
-              </p>
-              {reviewMode === 'both-split' && (
-                <p className="mt-1 text-gray-500">
-                  レビュー実行回数: 最大 {estimatedReviewCount} 回
-                  <br />
-                  <span className="text-xs">※ 関連性の高いパーツのみレビューするため、実際の回数は減少します</span>
-                </p>
-              )}
-            </div>
-          )}
-        </div>
         <Button
           variant="success"
           size="lg"
-          disabled={!isReviewEnabled}
+          disabled={!isReviewEnabled || (isSplitEnabled && !splitPreviewResult)}
           onClick={handleReviewExecute}
         >
           レビュー実行
@@ -432,6 +404,11 @@ export function Reviewer() {
         {!isReviewEnabled && (
           <p className="text-xs text-orange-500 mt-3 text-center">
             ※ レビューを実行するには、設計書とプログラムを両方変換してください。
+          </p>
+        )}
+        {isSplitEnabled && !splitPreviewResult && (
+          <p className="text-xs text-orange-500 mt-3 text-center">
+            ※ 分割レビューを実行するには、先に「分割プレビュー実行」を行ってください。
           </p>
         )}
         <p className="text-xs text-gray-400 mt-1 text-center">

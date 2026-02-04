@@ -26,8 +26,7 @@ export function SplitSettingsSection({
   hasCodeFiles,
   codeFilenames,
 }: SplitSettingsSectionProps) {
-  const [isDocOptionsExpanded, setIsDocOptionsExpanded] = useState(true)
-  const [isCodeOptionsExpanded, setIsCodeOptionsExpanded] = useState(true)
+  const [isOptionsExpanded, setIsOptionsExpanded] = useState(true)
   const prevHasDesignDocRef = useRef(hasDesignDoc)
   const prevHasCodeFilesRef = useRef(hasCodeFiles)
 
@@ -51,14 +50,14 @@ export function SplitSettingsSection({
   const handleDocModeChange = useCallback((mode: SplitMode) => {
     onSettingsChange({ ...settings, documentMode: mode })
     if (mode === 'split') {
-      setIsDocOptionsExpanded(true)
+      setIsOptionsExpanded(true)
     }
   }, [settings, onSettingsChange])
 
   const handleCodeModeChange = useCallback((mode: SplitMode) => {
     onSettingsChange({ ...settings, codeMode: mode })
     if (mode === 'split') {
-      setIsCodeOptionsExpanded(true)
+      setIsOptionsExpanded(true)
     }
   }, [settings, onSettingsChange])
 
@@ -116,6 +115,13 @@ export function SplitSettingsSection({
             />
             <span className="text-sm text-gray-700">分割</span>
           </label>
+          <span className="text-xs text-gray-400 ml-2">
+            ※{' '}
+            <a href="https://github.com/elvezjp/md2map" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+              md2map
+            </a>
+            {' '}の仕様に準拠し、設定した見出しレベルで分割します。
+          </span>
         </div>
 
         {/* プログラム */}
@@ -143,86 +149,88 @@ export function SplitSettingsSection({
             />
             <span className="text-sm text-gray-700">分割</span>
           </label>
+          <span className="text-xs text-gray-400 ml-2">
+            ※{' '}
+            <a href="https://github.com/elvezjp/code2map" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+              code2map
+            </a>
+            {' '}の仕様に準拠し、クラスや関数など意味のある単位で分割します。
+          </span>
         </div>
       </div>
 
-      {/* 設計書分割オプション */}
-      {settings.documentMode === 'split' && (
+      {/* 分割オプション */}
+      {isSplitEnabled && (
         <div className="mb-4">
           <button
             type="button"
-            onClick={() => setIsDocOptionsExpanded(!isDocOptionsExpanded)}
+            onClick={() => setIsOptionsExpanded(!isOptionsExpanded)}
             className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
           >
-            {isDocOptionsExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            設計書分割オプション
+            {isOptionsExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            分割オプション
           </button>
-          {isDocOptionsExpanded && (
-            <div className="mt-2 ml-5 p-3 bg-gray-50 rounded border border-gray-200">
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-600">見出しレベル:</span>
-                <label className="flex items-center gap-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="docDepth"
-                    checked={settings.documentMaxDepth === 2}
-                    onChange={() => handleDepthChange(2)}
-                    className="w-4 h-4 text-blue-600"
-                  />
-                  <span className="text-sm text-gray-700">H2(##)まで（推奨）</span>
-                </label>
-                <label className="flex items-center gap-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="docDepth"
-                    checked={settings.documentMaxDepth === 3}
-                    onChange={() => handleDepthChange(3)}
-                    className="w-4 h-4 text-blue-600"
-                  />
-                  <span className="text-sm text-gray-700">H3(###)まで</span>
-                </label>
-                <label className="flex items-center gap-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="docDepth"
-                    checked={settings.documentMaxDepth === 4}
-                    onChange={() => handleDepthChange(4)}
-                    className="w-4 h-4 text-blue-600"
-                  />
-                  <span className="text-sm text-gray-700">H4(####)まで</span>
-                </label>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+          {isOptionsExpanded && (
+            <div className="mt-2 p-3 bg-gray-50 rounded border border-gray-200 space-y-3">
+              {/* 設計書オプション */}
+              {settings.documentMode === 'split' && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">設計書</p>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-gray-600">見出しレベル:</span>
+                    <label className="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="docDepth"
+                        checked={settings.documentMaxDepth === 2}
+                        onChange={() => handleDepthChange(2)}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-sm text-gray-700">H2(##)まで（推奨）</span>
+                    </label>
+                    <label className="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="docDepth"
+                        checked={settings.documentMaxDepth === 3}
+                        onChange={() => handleDepthChange(3)}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-sm text-gray-700">H3(###)まで</span>
+                    </label>
+                    <label className="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="docDepth"
+                        checked={settings.documentMaxDepth === 4}
+                        onChange={() => handleDepthChange(4)}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-sm text-gray-700">H4(####)まで</span>
+                    </label>
+                  </div>
+                </div>
+              )}
 
-      {/* プログラム分割オプション */}
-      {settings.codeMode === 'split' && (
-        <div className="mb-4">
-          <button
-            type="button"
-            onClick={() => setIsCodeOptionsExpanded(!isCodeOptionsExpanded)}
-            className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
-          >
-            {isCodeOptionsExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            プログラム分割オプション
-          </button>
-          {isCodeOptionsExpanded && (
-            <div className="mt-2 ml-5 p-3 bg-gray-50 rounded border border-gray-200">
-              <div className="text-sm text-gray-600">
-                <p>対応言語: Python (.py) / Java (.java)</p>
-                {supportedCodeFiles.length > 0 && (
-                  <p className="mt-1 text-green-600">
-                    対応ファイル: {supportedCodeFiles.join(', ')}
-                  </p>
-                )}
-                {unsupportedCodeFiles.length > 0 && (
-                  <p className="mt-1 text-amber-600">
-                    未対応ファイル: {unsupportedCodeFiles.join(', ')}（一括処理されます）
-                  </p>
-                )}
-              </div>
+              {/* プログラムオプション */}
+              {settings.codeMode === 'split' && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">プログラム</p>
+                  <div className="text-sm text-gray-600">
+                    <p>対応言語: Python (.py) / Java (.java)</p>
+                    {supportedCodeFiles.length > 0 && (
+                      <p className="mt-1 text-green-600">
+                        対応ファイル: {supportedCodeFiles.join(', ')}
+                      </p>
+                    )}
+                    {unsupportedCodeFiles.length > 0 && (
+                      <p className="mt-1 text-amber-600">
+                        未対応ファイル: {unsupportedCodeFiles.join(', ')}（一括処理されます）
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -247,22 +255,6 @@ export function SplitSettingsSection({
               '分割プレビュー実行'
             )}
           </button>
-          <ul className="text-xs text-gray-400 mt-2 list-disc list-inside space-y-0.5">
-            <li>
-              設計書分割:{' '}
-              <a href="https://github.com/elvezjp/md2map" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                md2map
-              </a>
-              の仕様に準拠した分割を行います。設定した見出しレベルで分割します。
-            </li>
-            <li>
-              プログラム分割:{' '}
-              <a href="https://github.com/elvezjp/code2map" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                code2map
-              </a>
-              の仕様に準拠した分割を行います。クラスや関数など意味のある単位で分割します。
-            </li>
-          </ul>
         </div>
       )}
 
