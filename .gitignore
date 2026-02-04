@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.code2map-out/
+code2map-out/
+.pytest_cache/
+.coverage
+htmlcov/
+.DS_Store
+
+## IDE
+.vscode/
+.claude/
+
+## Example Output
+review/
