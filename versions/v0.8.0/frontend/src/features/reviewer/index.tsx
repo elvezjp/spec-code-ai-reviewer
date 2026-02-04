@@ -112,6 +112,7 @@ export function Reviewer() {
     isExecutingPreview: isSplitPreviewExecuting,
     setSettings: setSplitSettings,
     executePreview: executeSplitPreview,
+    clearPreview: clearSplitPreview,
     isSplitEnabled,
     reviewMode,
     estimatedReviewCount,
@@ -375,20 +376,19 @@ export function Reviewer() {
       />
 
       {/* Split settings (v0.8.0) */}
-      {(specMarkdown || codeWithLineNumbers) && (
-        <div className="mb-6">
-          <SplitSettingsSection
-            settings={splitSettings}
-            onSettingsChange={setSplitSettings}
-            previewResult={splitPreviewResult}
-            onExecutePreview={handleSplitPreviewExecute}
-            isExecuting={isSplitPreviewExecuting}
-            hasDesignDoc={!!specMarkdown}
-            hasCodeFiles={codeFiles.length > 0}
-            codeFilenames={codeFiles.map(f => f.filename)}
-          />
-        </div>
-      )}
+      <div className="mb-6">
+        <SplitSettingsSection
+          settings={splitSettings}
+          onSettingsChange={setSplitSettings}
+          previewResult={splitPreviewResult}
+          onExecutePreview={handleSplitPreviewExecute}
+          onClearPreview={clearSplitPreview}
+          isExecuting={isSplitPreviewExecuting}
+          hasDesignDoc={!!specMarkdown}
+          hasCodeFiles={!!codeWithLineNumbers}
+          codeFilenames={codeFiles.map(f => f.filename)}
+        />
+      </div>
 
       {/* Review button */}
       <Card>

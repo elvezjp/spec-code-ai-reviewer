@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
-import { Button, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@core/index'
+import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@core/index'
 import type { SplitSettings, SplitMode, DocumentPart, CodePart, SplitPreviewResult } from '../types'
 
 interface SplitSettingsSectionProps {
@@ -8,6 +8,7 @@ interface SplitSettingsSectionProps {
   onSettingsChange: (settings: SplitSettings) => void
   previewResult: SplitPreviewResult | null
   onExecutePreview: () => Promise<void>
+  onClearPreview: () => void
   isExecuting: boolean
   hasDesignDoc: boolean
   hasCodeFiles: boolean
@@ -19,13 +20,33 @@ export function SplitSettingsSection({
   onSettingsChange,
   previewResult,
   onExecutePreview,
+  onClearPreview,
   isExecuting,
   hasDesignDoc,
   hasCodeFiles,
   codeFilenames,
 }: SplitSettingsSectionProps) {
-  const [isDocOptionsExpanded, setIsDocOptionsExpanded] = useState(false)
-  const [isCodeOptionsExpanded, setIsCodeOptionsExpanded] = useState(false)
+  const [isDocOptionsExpanded, setIsDocOptionsExpanded] = useState(true)
+  const [isCodeOptionsExpanded, setIsCodeOptionsExpanded] = useState(true)
+  const prevHasDesignDocRef = useRef(hasDesignDoc)
+  const prevHasCodeFilesRef = useRef(hasCodeFiles)
+
+  // 設計書またはプログラムがdisabledになったらプレビューをクリア
+  useEffect(() => {
+    const prevHasDesignDoc = prevHasDesignDocRef.current
+    const prevHasCodeFiles = prevHasCodeFilesRef.current
+
+    // 設計書がenabled→disabledになった場合、または
+    // プログラムがenabled→disabledになった場合にクリア
+    if ((prevHasDesignDoc && !hasDesignDoc) || (prevHasCodeFiles && !hasCodeFiles)) {
+      if (previewResult) {
+        onClearPreview()
+      }
+    }
+
+    prevHasDesignDocRef.current = hasDesignDoc
+    prevHasCodeFilesRef.current = hasCodeFiles
+  }, [hasDesignDoc, hasCodeFiles, previewResult, onClearPreview])
 
   const handleDocModeChange = useCallback((mode: SplitMode) => {
     onSettingsChange({ ...settings, documentMode: mode })
@@ -63,12 +84,15 @@ export function SplitSettingsSection({
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-lg font-medium text-gray-900 mb-4">6. 分割設定</h2>
+      <h2 className="text-lg font-semibold text-gray-800">分割設定</h2>
+      <p className="text-xs text-gray-400 mt-2 mb-4">
+        設計書やプログラムが大きくAIのトークン上限を超える場合、分割してレビューできます。
+      </p>
 
       {/* 分割モード選択 */}
-      <div className="space-y-4 mb-6">
+      <div className="space-y-2 mb-4">
         {/* 設計書 */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
           <span className="text-sm font-medium text-gray-700 w-24">設計書:</span>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -95,7 +119,7 @@ export function SplitSettingsSection({
         </div>
 
         {/* プログラム */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
           <span className="text-sm font-medium text-gray-700 w-24">プログラム:</span>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -206,23 +230,23 @@ export function SplitSettingsSection({
 
       {/* 分割プレビュー実行ボタン */}
       {isSplitEnabled && (
-        <div className="flex justify-center mb-4">
-          <Button
+        <div className="mb-4">
+          <button
             onClick={onExecutePreview}
-            disabled={!canExecutePreview || isExecuting}
-            variant="primary"
+            disabled={!canExecutePreview || isExecuting || !!previewResult}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             {isExecuting ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
                 プレビュー実行中...
               </>
             ) : previewResult ? (
-              '分割プレビュー実行 ✓ 実行済み'
+              'プレビュー実行済み'
             ) : (
               '分割プレビュー実行'
             )}
-          </Button>
+          </button>
         </div>
       )}
 
