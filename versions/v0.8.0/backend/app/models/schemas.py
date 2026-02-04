@@ -267,3 +267,100 @@ class OrganizeMarkdownResponse(BaseModel):
     warnings: list[OrganizeMarkdownWarning] = []
     error: str | None = None
     errorCode: str | None = None
+
+
+# =============================================================================
+# Split API スキーマ (v0.8.0)
+# =============================================================================
+
+
+class SplitMarkdownRequest(BaseModel):
+    """Markdown分割APIのリクエスト"""
+
+    content: str  # Markdownテキスト
+    filename: str  # 元ファイル名
+    maxDepth: int = Field(default=2, ge=1, le=6)  # 分割深度 (H1-H6)
+
+
+class DocumentPart(BaseModel):
+    """分割された設計書パーツ"""
+
+    section: str  # セクション名
+    level: int  # 見出しレベル (1-6)
+    path: str  # パス (親セクション > 子セクション)
+    startLine: int
+    endLine: int
+    content: str  # パーツの内容
+    estimatedTokens: int
+
+
+class SplitMarkdownResponse(BaseModel):
+    """Markdown分割APIのレスポンス"""
+
+    success: bool
+    parts: list[DocumentPart] = []
+    indexContent: str | None = None  # INDEX.md相当の内容
+    error: str | None = None
+
+
+class SplitCodeRequest(BaseModel):
+    """コード分割APIのリクエスト"""
+
+    content: str  # 元のコード（行番号なし）
+    filename: str  # ファイル名（拡張子で言語判定）
+
+
+class CodePart(BaseModel):
+    """分割されたコードパーツ"""
+
+    symbol: str  # シンボル名 (クラス名、関数名など)
+    symbolType: str  # class, method, function
+    parentSymbol: str | None = None  # 親シンボル (メソッドの場合のクラス名)
+    startLine: int
+    endLine: int
+    content: str  # パーツの内容
+    estimatedTokens: int
+
+
+class SplitCodeResponse(BaseModel):
+    """コード分割APIのレスポンス"""
+
+    success: bool
+    parts: list[CodePart] = []
+    indexContent: str | None = None  # INDEX.md相当の内容
+    language: str | None = None  # 検出された言語
+    error: str | None = None
+
+
+class PartsReviewRequest(BaseModel):
+    """分割レビューAPIのリクエスト"""
+
+    documentParts: list[DocumentPart] | None = None
+    codeParts: list[CodePart] | None = None
+    systemPrompt: SystemPrompt
+    llmConfig: LLMConfig | None = None
+    executedAt: str | None = None
+
+
+class PartsReviewProgress(BaseModel):
+    """分割レビュー進捗"""
+
+    sessionId: str
+    status: Literal["running", "completed", "error"]
+    totalPhases: int = 3
+    currentPhase: int  # 1: 構造マッチング, 2: ペアレビュー, 3: 統合
+    phaseName: str
+    totalPairs: int = 0
+    completedPairs: int = 0
+    partialResults: list[str] = []
+    error: str | None = None
+
+
+class PartsReviewResponse(BaseModel):
+    """分割レビューAPIのレスポンス"""
+
+    success: bool
+    sessionId: str | None = None
+    report: str | None = None
+    reviewMeta: ReviewMeta | None = None
+    error: str | None = None

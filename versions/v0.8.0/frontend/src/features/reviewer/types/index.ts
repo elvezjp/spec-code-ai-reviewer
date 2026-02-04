@@ -152,3 +152,97 @@ export interface CodeFileForApi {
   filename: string
   contentWithLineNumbers: string
 }
+
+// =============================================================================
+// Split Types (v0.8.0)
+// =============================================================================
+
+export type SplitMode = 'batch' | 'split'
+
+export interface SplitSettings {
+  documentMode: SplitMode
+  documentMaxDepth: number // 1-6
+  codeMode: SplitMode
+}
+
+export interface DocumentPart {
+  section: string
+  level: number
+  path: string
+  startLine: number
+  endLine: number
+  content: string
+  estimatedTokens: number
+}
+
+export interface CodePart {
+  symbol: string
+  symbolType: string // class, method, function
+  parentSymbol: string | null
+  startLine: number
+  endLine: number
+  content: string
+  estimatedTokens: number
+}
+
+export interface SplitMarkdownRequest {
+  content: string
+  filename: string
+  maxDepth: number
+}
+
+export interface SplitMarkdownResponse {
+  success: boolean
+  parts: DocumentPart[]
+  indexContent?: string
+  error?: string
+}
+
+export interface SplitCodeRequest {
+  content: string
+  filename: string
+}
+
+export interface SplitCodeResponse {
+  success: boolean
+  parts: CodePart[]
+  indexContent?: string
+  language?: string
+  error?: string
+}
+
+export interface SplitPreviewResult {
+  documentParts: DocumentPart[] | null
+  codeParts: CodePart[] | null
+  documentIndex: string | null
+  codeIndex: string | null
+  codeLanguage: string | null
+}
+
+export interface PartsReviewRequest {
+  documentParts?: DocumentPart[]
+  codeParts?: CodePart[]
+  systemPrompt: SystemPromptValues
+  llmConfig?: LlmConfig
+  executedAt?: string
+}
+
+export interface PartsReviewProgress {
+  sessionId: string
+  status: 'running' | 'completed' | 'error'
+  totalPhases: number
+  currentPhase: number
+  phaseName: string
+  totalPairs: number
+  completedPairs: number
+  partialResults: string[]
+  error?: string
+}
+
+export interface PartsReviewResponse {
+  success: boolean
+  sessionId?: string
+  report?: string
+  reviewMeta?: ReviewMeta
+  error?: string
+}

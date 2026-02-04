@@ -6,6 +6,13 @@ import type {
   ReviewResult,
   OrganizeMarkdownRequest,
   OrganizeMarkdownResponse,
+  SplitMarkdownRequest,
+  SplitMarkdownResponse,
+  SplitCodeRequest,
+  SplitCodeResponse,
+  PartsReviewRequest,
+  PartsReviewResponse,
+  PartsReviewProgress,
 } from '../types'
 
 const getBackendUrl = (): string => {
@@ -104,6 +111,54 @@ export async function organizeMarkdown(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   })
+
+  return await response.json()
+}
+
+// =============================================================================
+// Split API (v0.8.0)
+// =============================================================================
+
+export async function splitMarkdown(
+  request: SplitMarkdownRequest
+): Promise<SplitMarkdownResponse> {
+  const response = await fetch(`${getBackendUrl()}/api/split/markdown`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  })
+
+  return await response.json()
+}
+
+export async function splitCode(
+  request: SplitCodeRequest
+): Promise<SplitCodeResponse> {
+  const response = await fetch(`${getBackendUrl()}/api/split/code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  })
+
+  return await response.json()
+}
+
+export async function executePartsReview(
+  request: PartsReviewRequest
+): Promise<PartsReviewResponse> {
+  const response = await fetch(`${getBackendUrl()}/api/review/parts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  })
+
+  return await response.json()
+}
+
+export async function getPartsReviewStatus(
+  sessionId: string
+): Promise<PartsReviewProgress> {
+  const response = await fetch(`${getBackendUrl()}/api/review/parts/${sessionId}/status`)
 
   return await response.json()
 }

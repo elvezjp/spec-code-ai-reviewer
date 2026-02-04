@@ -25,13 +25,14 @@ import {
   ReviewResult,
   ExecutingScreen,
   MarkdownOrganizer,
+  SplitSettingsSection,
 } from './components'
-import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport } from './hooks'
+import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport, useSplitSettings } from './hooks'
 import { testLlmConnection } from './services/api'
 
 const APP_INFO = {
   name: 'spec-code-ai-reviewer',
-  version: 'v0.7.0',
+  version: 'v0.8.0',
   description: '設計書-Javaプログラム突合 AIレビュアー',
   copyright: '© 株式会社エルブズ',
   url: 'https://elvez.co.jp',
@@ -104,6 +105,18 @@ export function Reviewer() {
   const { downloadZip, downloadReport, copyReport, downloadSpecMarkdown, downloadCodeWithLineNumbers } =
     useZipExport()
 
+  // Split settings (v0.8.0)
+  const {
+    settings: splitSettings,
+    previewResult: splitPreviewResult,
+    isExecutingPreview: isSplitPreviewExecuting,
+    setSettings: setSplitSettings,
+    executePreview: executeSplitPreview,
+    isSplitEnabled,
+    reviewMode,
+    estimatedReviewCount,
+  } = useSplitSettings()
+
   // System prompt text for token estimation
   const systemPromptText = useMemo(() => {
     return [
@@ -148,6 +161,23 @@ export function Reviewer() {
   }, [showToast])
 
   const isReviewEnabled = specMarkdown && codeWithLineNumbers
+
+  // Handler for split preview execution
+  const handleSplitPreviewExecute = useCallback(async () => {
+    // 元のコードファイル内容を取得（行番号なし）
+    const codeFilesForSplit = await Promise.all(
+      codeFiles.map(async (cf) => ({
+        filename: cf.filename,
+        content: await cf.file.text(),
+      }))
+    )
+
+    await executeSplitPreview(
+      specMarkdown,
+      specFiles.find(f => f.isMain)?.filename || 'design.md',
+      codeFilesForSplit
+    )
+  }, [codeFiles, specMarkdown, specFiles, executeSplitPreview])
 
   const handleReviewExecute = async () => {
     if (!specMarkdown || !codeWithLineNumbers) return
@@ -344,8 +374,50 @@ export function Reviewer() {
         isVisible={!!(specMarkdown || codeWithLineNumbers)}
       />
 
+      {/* Split settings (v0.8.0) */}
+      {(specMarkdown || codeWithLineNumbers) && (
+        <div className="mb-6">
+          <SplitSettingsSection
+            settings={splitSettings}
+            onSettingsChange={setSplitSettings}
+            previewResult={splitPreviewResult}
+            onExecutePreview={handleSplitPreviewExecute}
+            isExecuting={isSplitPreviewExecuting}
+            hasDesignDoc={!!specMarkdown}
+            hasCodeFiles={codeFiles.length > 0}
+            codeFilenames={codeFiles.map(f => f.filename)}
+          />
+        </div>
+      )}
+
       {/* Review button */}
       <Card>
+        <div className="mb-4">
+          <p className="text-sm text-gray-700 text-center">
+            現在のモード: <span className="font-medium">{isSplitEnabled ? '分割レビュー' : '一括レビュー'}</span>
+          </p>
+          {isSplitEnabled && splitPreviewResult && (
+            <div className="mt-2 p-3 bg-gray-50 rounded border border-gray-200 text-sm text-center">
+              <p>
+                設計書: {splitSettings.documentMode === 'split' && splitPreviewResult.documentParts
+                  ? `分割 (${splitPreviewResult.documentParts.length} パート)`
+                  : '一括'}
+              </p>
+              <p>
+                プログラム: {splitSettings.codeMode === 'split' && splitPreviewResult.codeParts
+                  ? `分割 (${splitPreviewResult.codeParts.length} パート)`
+                  : '一括'}
+              </p>
+              {reviewMode === 'both-split' && (
+                <p className="mt-1 text-gray-500">
+                  レビュー実行回数: 最大 {estimatedReviewCount} 回
+                  <br />
+                  <span className="text-xs">※ 関連性の高いパーツのみレビューするため、実際の回数は減少します</span>
+                </p>
+              )}
+            </div>
+          )}
+        </div>
         <Button
           variant="success"
           size="lg"

@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
-from app.routers import convert, review, organize
+from app.routers import convert, review, organize, split
 
 # pyproject.tomlからバージョンを取得
 APP_VERSION = version("spec-code-ai-reviewer-backend")
@@ -28,7 +28,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -36,6 +36,7 @@ app.add_middleware(
 app.include_router(convert.router, prefix="/api/convert", tags=["convert"])
 app.include_router(review.router, prefix="/api", tags=["review"])
 app.include_router(organize.router, prefix="/api", tags=["organize"])
+app.include_router(split.router, prefix="/api", tags=["split"])
 
 # フロントエンドの静的ファイル配信
 FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend"
