@@ -1,6 +1,6 @@
 [project]
 name = "spec-code-ai-reviewer-backend"
-version = "0.7.0"
+version = "0.8.0"
 description = "設計書-Javaプログラム突合 AIレビュアー バックエンド"
 requires-python = ">=3.10"
 dependencies = [
@@ -14,10 +14,14 @@ dependencies = [
     "openai>=2.14.0",
     "python-dotenv>=1.0.0",
     "add-line-numbers",
+    "md2map",
+    "code2map",
 ]
 
 [tool.uv.sources]
 add-line-numbers = { path = "../../../add-line-numbers", editable = true }
+md2map = { path = "../../../md2map", editable = true }
+code2map = { path = "../../../code2map", editable = true }
 
 [build-system]
 requires = ["hatchling"]
@@ -33,4 +37,4 @@ dev-dependencies = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = ["../../../add-line-numbers"]
+pythonpath = ["../../../add-line-numbers", "../../../md2map", "../../../code2map"]
