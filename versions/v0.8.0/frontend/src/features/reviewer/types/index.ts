@@ -381,7 +381,7 @@ export interface IntegrateResponse {
 
 export type SplitReviewPhase = 'idle' | 'structure-matching' | 'group-review' | 'integrate' | 'completed' | 'paused' | 'error'
 
-export type GroupReviewStatus = 'pending' | 'in_progress' | 'completed' | 'error'
+export type GroupReviewStatus = 'pending' | 'in_progress' | 'completed' | 'error' | 'skipped'
 
 export interface GroupReviewState {
   groupId: string

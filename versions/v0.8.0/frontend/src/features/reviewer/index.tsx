@@ -125,6 +125,7 @@ export function Reviewer() {
     currentGroupIndex: 0,
   })
   const isPausedRef = useRef(false)
+  const errorActionRef = useRef<{ action: 'retry' | 'skip'; groupId: string } | null>(null)
 
   // System prompt text for token estimation
   const systemPromptText = useMemo(() => {
@@ -199,6 +200,14 @@ export function Reviewer() {
     setSplitReviewState((prev) => ({ ...prev, phase: 'group-review' }))
   }, [])
 
+  const handleRetryGroup = useCallback((groupId: string) => {
+    errorActionRef.current = { action: 'retry', groupId }
+  }, [])
+
+  const handleSkipGroup = useCallback((groupId: string) => {
+    errorActionRef.current = { action: 'skip', groupId }
+  }, [])
+
   // Split review execution
   const executeSplitReviewFlow = useCallback(async () => {
     if (!splitPreviewResult) return
@@ -271,7 +280,7 @@ export function Reviewer() {
       const groupReviewResults: GroupReviewState[] = [...initialGroupStates]
 
       for (let i = 0; i < groups.length; i++) {
-        // Check for pause
+        // Check for manual pause
         if (isPausedRef.current) {
           setSplitReviewState((prev) => ({
             ...prev,
@@ -279,21 +288,12 @@ export function Reviewer() {
             currentGroupIndex: i,
             groupReviews: groupReviewResults,
           }))
-          // Wait for resume
           while (isPausedRef.current) {
             await new Promise((resolve) => setTimeout(resolve, 500))
           }
         }
 
         const group = groups[i]
-
-        // Update status to in_progress
-        groupReviewResults[i] = { ...groupReviewResults[i], status: 'in_progress' }
-        setSplitReviewState((prev) => ({
-          ...prev,
-          groupReviews: [...groupReviewResults],
-          currentGroupIndex: i,
-        }))
 
         // Build document parts for this group
         const documentParts: GroupDocumentPart[] = group.docSections.map((section) => {
@@ -320,33 +320,81 @@ export function Reviewer() {
           }
         })
 
-        try {
-          const groupResponse = await executeGroupReview({
-            groupId: group.groupId,
-            groupName: group.groupName,
-            documentParts,
-            codeParts,
-            llmConfig: llmConfig || undefined,
-          })
+        // Retry loop: execute group review, pause on error for retry/skip
+        let resolved = false
+        while (!resolved) {
+          // Update status to in_progress
+          groupReviewResults[i] = { ...groupReviewResults[i], status: 'in_progress', error: undefined }
+          setSplitReviewState((prev) => ({
+            ...prev,
+            phase: 'group-review',
+            groupReviews: [...groupReviewResults],
+            currentGroupIndex: i,
+          }))
 
-          if (groupResponse.success && groupResponse.reviewResult) {
-            groupReviewResults[i] = {
-              ...groupReviewResults[i],
-              status: 'completed',
-              result: groupResponse.reviewResult,
+          let failed = false
+          let errorMessage = ''
+
+          try {
+            const groupResponse = await executeGroupReview({
+              groupId: group.groupId,
+              groupName: group.groupName,
+              documentParts,
+              codeParts,
+              llmConfig: llmConfig || undefined,
+            })
+
+            if (groupResponse.success && groupResponse.reviewResult) {
+              groupReviewResults[i] = {
+                ...groupReviewResults[i],
+                status: 'completed',
+                result: groupResponse.reviewResult,
+              }
+              resolved = true
+            } else {
+              failed = true
+              errorMessage = groupResponse.error || 'グループレビューに失敗しました'
             }
-          } else {
+          } catch (error) {
+            failed = true
+            errorMessage = error instanceof Error ? error.message : 'グループレビューに失敗しました'
+          }
+
+          if (failed) {
+            // Mark as error and pause for user action
             groupReviewResults[i] = {
               ...groupReviewResults[i],
               status: 'error',
-              error: groupResponse.error || 'グループレビューに失敗しました',
+              error: errorMessage,
             }
-          }
-        } catch (error) {
-          groupReviewResults[i] = {
-            ...groupReviewResults[i],
-            status: 'error',
-            error: error instanceof Error ? error.message : 'グループレビューに失敗しました',
+            errorActionRef.current = null
+            setSplitReviewState((prev) => ({
+              ...prev,
+              phase: 'paused',
+              groupReviews: [...groupReviewResults],
+              currentGroupIndex: i,
+            }))
+
+            // Wait for user to choose retry or skip
+            while (errorActionRef.current === null) {
+              await new Promise((resolve) => setTimeout(resolve, 500))
+            }
+
+            const errorAction = errorActionRef.current as { action: 'retry' | 'skip'; groupId: string }
+            errorActionRef.current = null
+            const action = errorAction.action
+
+            if (action === 'retry') {
+              // Loop again to retry
+              continue
+            } else {
+              // Skip: mark as skipped and move on
+              groupReviewResults[i] = {
+                ...groupReviewResults[i],
+                status: 'skipped',
+              }
+              resolved = true
+            }
           }
         }
 
@@ -354,6 +402,12 @@ export function Reviewer() {
           ...prev,
           groupReviews: [...groupReviewResults],
         }))
+      }
+
+      // Check if any completed groups exist before integration
+      const hasCompletedGroups = groupReviewResults.some((g) => g.status === 'completed')
+      if (!hasCompletedGroups) {
+        throw new Error('完了したグループレビューがないため、結果統合を実行できません')
       }
 
       // Phase 3: Integration
@@ -386,7 +440,7 @@ export function Reviewer() {
       }))
 
       // Show result screen
-      // screenManager.showResult() // TODO: 画面確認用に一時無効化
+      screenManager.showResult()
     } catch (error) {
       setSplitReviewState((prev) => ({
         ...prev,
@@ -673,6 +727,8 @@ export function Reviewer() {
       onBack={screenManager.showMain}
       onPause={handleSplitPause}
       onResume={handleSplitResume}
+      onRetryGroup={handleRetryGroup}
+      onSkipGroup={handleSkipGroup}
     />
   ) : (
     <ExecutingScreen currentExecution={currentExecutionNumber} totalExecutions={2} />

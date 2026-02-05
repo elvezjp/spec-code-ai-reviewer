@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircle, Loader2, Circle, Pause, Play, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react'
+import { CheckCircle, Loader2, Circle, Pause, Play, AlertCircle, SkipForward, RotateCcw, ChevronDown, ChevronRight, Ban } from 'lucide-react'
 import { Card } from '@core/index'
 import type {
   SplitReviewState,
@@ -11,9 +11,11 @@ interface SplitExecutingScreenProps {
   onBack: () => void
   onPause: () => void
   onResume: () => void
+  onRetryGroup: (groupId: string) => void
+  onSkipGroup: (groupId: string) => void
 }
 
-type StepStatus = 'completed' | 'in_progress' | 'pending' | 'error'
+type StepStatus = 'completed' | 'in_progress' | 'pending' | 'error' | 'skipped'
 
 function StatusIcon({ status }: { status: StepStatus }) {
   switch (status) {
@@ -23,17 +25,20 @@ function StatusIcon({ status }: { status: StepStatus }) {
       return <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
     case 'error':
       return <AlertCircle className="w-5 h-5 text-red-600" />
+    case 'skipped':
+      return <Ban className="w-5 h-5 text-gray-400" />
     default:
       return <Circle className="w-5 h-5 text-gray-400" />
   }
 }
 
 function StatusText({ status }: { status: StepStatus }) {
-  const config = {
+  const config: Record<StepStatus, { text: string; className: string }> = {
     completed: { text: '完了', className: 'text-green-600' },
     in_progress: { text: '実行中', className: 'text-blue-600' },
     pending: { text: '待機中', className: 'text-gray-500' },
     error: { text: 'エラー', className: 'text-red-600' },
+    skipped: { text: 'スキップ', className: 'text-gray-400' },
   }
   const { text, className } = config[status]
   return <span className={className}>{text}</span>
@@ -138,8 +143,13 @@ export function SplitExecutingScreen({
   onBack,
   onPause,
   onResume,
+  onRetryGroup,
+  onSkipGroup,
 }: SplitExecutingScreenProps) {
   const isPaused = state.phase === 'paused'
+  const hasErrorGroup = state.groupReviews.some((g) => g.status === 'error')
+  const isErrorPaused = isPaused && hasErrorGroup
+  const isManualPaused = isPaused && !hasErrorGroup
   const isRunning = ['structure-matching', 'group-review', 'integrate'].includes(state.phase)
 
   const structureMatchingStatus = getPhaseStatus(state.phase, 'structure-matching')
@@ -147,7 +157,7 @@ export function SplitExecutingScreen({
   const integrateStatus = getPhaseStatus(state.phase, 'integrate')
 
   const groups = state.structureMatchingResult?.groups || []
-  const completedGroups = state.groupReviews.filter((g) => g.status === 'completed').length
+  const completedGroups = state.groupReviews.filter((g) => g.status === 'completed' || g.status === 'skipped').length
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -191,7 +201,7 @@ export function SplitExecutingScreen({
               一時停止
             </button>
           )}
-          {isPaused && (
+          {isManualPaused && (
             <>
               <button
                 onClick={onResume}
@@ -204,6 +214,11 @@ export function SplitExecutingScreen({
                 完了済みの結果は保持されています。再開すると続きから処理を継続します。
               </p>
             </>
+          )}
+          {isErrorPaused && (
+            <p className="text-sm text-red-600 mt-2">
+              グループレビューでエラーが発生しました。該当ステップでリトライまたはスキップを選択してください。
+            </p>
           )}
         </div>
       </Card>
@@ -290,10 +305,36 @@ export function SplitExecutingScreen({
                     </div>
                   )}
 
+                  {status === 'skipped' && (
+                    <div className="mt-2 pt-2 border-t text-gray-500">
+                      このグループはスキップされました
+                    </div>
+                  )}
+
                   {status === 'error' && reviewState?.error && (
-                    <div className="mt-2 pt-2 border-t text-red-600">
-                      <span className="text-gray-500">エラー: </span>
-                      {reviewState.error}
+                    <div className="mt-2 pt-2 border-t">
+                      <div className="text-red-600">
+                        <span className="text-gray-500">エラー: </span>
+                        {reviewState.error}
+                      </div>
+                      {isPaused && (
+                        <div className="flex items-center gap-3 mt-3">
+                          <button
+                            onClick={() => onRetryGroup(group.groupId)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            リトライ
+                          </button>
+                          <button
+                            onClick={() => onSkipGroup(group.groupId)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-400 hover:bg-gray-500 text-white text-sm rounded-md transition"
+                          >
+                            <SkipForward className="w-3.5 h-3.5" />
+                            スキップ
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
