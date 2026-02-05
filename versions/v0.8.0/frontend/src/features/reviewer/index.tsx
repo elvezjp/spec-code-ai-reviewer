@@ -386,7 +386,7 @@ export function Reviewer() {
       }))
 
       // Show result screen
-      screenManager.showResult()
+      // screenManager.showResult() // TODO: 画面確認用に一時無効化
     } catch (error) {
       setSplitReviewState((prev) => ({
         ...prev,

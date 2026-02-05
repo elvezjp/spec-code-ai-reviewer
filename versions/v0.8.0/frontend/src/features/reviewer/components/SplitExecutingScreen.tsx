@@ -1,4 +1,4 @@
-import { ArrowLeft, CheckCircle, Loader2, Circle, Pause, Play, AlertCircle } from 'lucide-react'
+import { CheckCircle, Loader2, Circle, Pause, Play, AlertCircle } from 'lucide-react'
 import type {
   SplitReviewState,
   GroupReviewState,
@@ -47,8 +47,7 @@ function getPhaseStatus(
 
   if (phase === 'error') return 'error'
   if (phase === 'paused') {
-    // paused状態の場合、現在のフェーズまでの状態を判定
-    return 'pending' // 簡略化
+    return 'pending'
   }
   if (phase === 'completed') return 'completed'
   if (currentIndex > targetIndex) return 'completed'
@@ -71,7 +70,7 @@ function GroupCard({ group, reviewState }: { group: MatchedGroup; reviewState?: 
   const result = reviewState?.result
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border rounded-md overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
         <span className="font-medium text-gray-800">{group.groupName}</span>
         <div className="flex items-center gap-2">
@@ -185,14 +184,10 @@ export function SplitExecutingScreen({
       {/* Header */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <div className="flex justify-between items-center">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-blue-500 hover:text-blue-700"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            戻る
-          </button>
           <h1 className="text-xl font-bold text-gray-800">分割レビュー実行中</h1>
+          <button onClick={onBack} className="text-blue-500 hover:text-blue-700">
+            ← 戻る
+          </button>
         </div>
       </div>
 
@@ -213,37 +208,33 @@ export function SplitExecutingScreen({
       )}
 
       {/* Phase 1: Structure Matching */}
-      <div className="bg-white rounded-lg shadow-md mb-6 overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
-          <span className="font-semibold text-gray-800">1. 構造マッチング</span>
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">1. 構造マッチング</h2>
           <div className="flex items-center gap-2">
             <StatusIcon status={structureMatchingStatus} />
             <StatusText status={structureMatchingStatus} />
           </div>
         </div>
 
-        {structureMatchingStatus !== 'pending' && (
-          <div className="px-6 py-4">
-            {structureMatchingStatus === 'in_progress' && (
-              <div className="flex items-center gap-2 text-blue-600">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>構造を分析中...</span>
-              </div>
-            )}
+        {structureMatchingStatus === 'in_progress' && (
+          <div className="flex items-center gap-2 text-blue-600">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>構造を分析中...</span>
+          </div>
+        )}
 
-            {structureMatchingStatus === 'completed' && state.structureMatchingResult && (
-              <div className="text-gray-700">
-                マッチング結果: {state.structureMatchingResult.totalGroups} グループ
-              </div>
-            )}
+        {structureMatchingStatus === 'completed' && state.structureMatchingResult && (
+          <div className="text-sm text-gray-700">
+            マッチング結果: {state.structureMatchingResult.totalGroups} グループ
           </div>
         )}
       </div>
 
       {/* Phase 2: Group Review */}
-      <div className="bg-white rounded-lg shadow-md mb-6 overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
-          <span className="font-semibold text-gray-800">2. グループレビュー</span>
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">2. グループレビュー</h2>
           <div className="flex items-center gap-2">
             <StatusIcon status={groupReviewStatus} />
             <StatusText status={groupReviewStatus} />
@@ -251,7 +242,7 @@ export function SplitExecutingScreen({
         </div>
 
         {groupReviewStatus !== 'pending' && groups.length > 0 && (
-          <div className="px-6 py-4 space-y-4">
+          <div className="space-y-4">
             {groups.map((group, index) => {
               const reviewState = state.groupReviews.find((g) => g.groupId === group.groupId)
               return (
@@ -266,36 +257,32 @@ export function SplitExecutingScreen({
       </div>
 
       {/* Phase 3: Integration */}
-      <div className="bg-white rounded-lg shadow-md mb-6 overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
-          <span className="font-semibold text-gray-800">3. 結果統合</span>
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">3. 結果統合</h2>
           <div className="flex items-center gap-2">
             <StatusIcon status={integrateStatus} />
             <StatusText status={integrateStatus} />
           </div>
         </div>
 
-        {integrateStatus !== 'pending' && (
-          <div className="px-6 py-4">
-            {integrateStatus === 'in_progress' && (
-              <div className="flex items-center gap-2 text-blue-600">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>結果を統合中...</span>
-              </div>
-            )}
+        {integrateStatus === 'in_progress' && (
+          <div className="flex items-center gap-2 text-blue-600">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>結果を統合中...</span>
+          </div>
+        )}
 
-            {integrateStatus === 'completed' && state.integrateResult?.integratedReport && (
-              <div className="text-gray-700">
-                <div className="mb-2">
-                  <span className="text-gray-500">総合評価: </span>
-                  {state.integrateResult.integratedReport.overallSummary}
-                </div>
-                <div>
-                  <span className="text-gray-500">整合性スコア: </span>
-                  {Math.round(state.integrateResult.integratedReport.consistencyScore * 100)}%
-                </div>
-              </div>
-            )}
+        {integrateStatus === 'completed' && state.integrateResult?.integratedReport && (
+          <div className="text-sm text-gray-700">
+            <div className="mb-2">
+              <span className="text-gray-500">総合評価: </span>
+              {state.integrateResult.integratedReport.overallSummary}
+            </div>
+            <div>
+              <span className="text-gray-500">整合性スコア: </span>
+              {Math.round(state.integrateResult.integratedReport.consistencyScore * 100)}%
+            </div>
           </div>
         )}
       </div>
@@ -305,7 +292,7 @@ export function SplitExecutingScreen({
         {isRunning && (
           <button
             onClick={onPause}
-            className="flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg shadow-md transition"
+            className="flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-md transition"
           >
             <Pause className="w-5 h-5" />
             一時停止
@@ -315,7 +302,7 @@ export function SplitExecutingScreen({
         {isPaused && (
           <button
             onClick={onResume}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-md transition"
+            className="flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition"
           >
             <Play className="w-5 h-5" />
             再開
