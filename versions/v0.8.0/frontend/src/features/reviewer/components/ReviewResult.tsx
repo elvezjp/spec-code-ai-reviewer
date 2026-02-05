@@ -10,7 +10,8 @@ import {
   Download,
 } from 'lucide-react'
 import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@core/index'
-import type { ReviewExecutionData, SimpleJudgment, ReviewMeta, SplitReviewState, IntegratedReport } from '../types'
+import { ExecutionInfo } from './ExecutionInfo'
+import type { ReviewExecutionData, SimpleJudgment, SplitReviewState, IntegratedReport } from '../types'
 
 interface ReviewResultProps {
   results: (ReviewExecutionData | null)[]
@@ -169,76 +170,6 @@ export function ReviewResult({
     )
   }
 
-  const renderReviewMeta = (meta: ReviewMeta) => {
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="text-gray-600">バージョン:</div>
-          <div className="text-gray-800">{meta.version || '-'}</div>
-          <div className="text-gray-600">モデルID:</div>
-          <div className="text-gray-800">{meta.modelId || '-'}</div>
-          <div className="text-gray-600">レビュー実行日時:</div>
-          <div className="text-gray-800">{meta.executedAt || '-'}</div>
-          <div className="text-gray-600">トークン数:</div>
-          <div className="text-gray-800">
-            入力 {(meta.inputTokens || 0).toLocaleString()} / 出力{' '}
-            {(meta.outputTokens || 0).toLocaleString()}
-          </div>
-        </div>
-
-        {meta.designs && meta.designs.length > 0 && (
-          <div className="mt-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">設計書:</h3>
-            <div className="overflow-x-auto">
-              <Table className="min-w-full text-sm">
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>ファイル名</TableHeaderCell>
-                    <TableHeaderCell>役割</TableHeaderCell>
-                    <TableHeaderCell>種別</TableHeaderCell>
-                    <TableHeaderCell>ツール</TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {meta.designs.map((d) => (
-                    <TableRow key={d.filename}>
-                      <TableCell>{d.filename}</TableCell>
-                      <TableCell>{d.role}</TableCell>
-                      <TableCell>{d.type}</TableCell>
-                      <TableCell>{d.tool}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        )}
-
-        {meta.programs && meta.programs.length > 0 && (
-          <div className="mt-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">プログラム:</h3>
-            <div className="overflow-x-auto">
-              <Table className="min-w-full text-sm">
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>ファイル名</TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {meta.programs.map((p) => (
-                    <TableRow key={p.filename}>
-                      <TableCell>{p.filename}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        )}
-      </div>
-    )
-  }
-
   const downloadFiles = [
     { name: 'README.md', desc: 'レビュー情報と同梱ファイルの説明' },
     { name: 'system-prompt.md', desc: 'システムプロンプト（役割・目的・出力形式・注意事項）' },
@@ -247,63 +178,33 @@ export function ReviewResult({
     { name: 'review-result.md', desc: 'AIレビュー結果' },
   ]
 
-  // 分割レビュー用のレビュー情報表示
-  const renderSplitReviewMeta = () => {
-    if (!splitReviewState) return null
-
-    const groupReviews = splitReviewState.groupReviews
-    const completedGroups = groupReviews.filter((g) => g.status === 'completed').length
-    const totalFindings = groupReviews.reduce((sum, g) => {
-      return sum + (g.result?.findings.length || 0)
-    }, 0)
-    const tokensUsed = splitReviewState.integrateResult?.tokensUsed || { input: 0, output: 0 }
+  // 分割レビュー用のグループ一覧テーブル（カスタム領域）
+  const renderGroupsTable = () => {
+    if (!splitReviewState?.structureMatchingResult) return null
 
     return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="text-gray-600">レビューモード:</div>
-          <div className="text-gray-800">分割レビュー</div>
-          <div className="text-gray-600">レビューグループ数:</div>
-          <div className="text-gray-800">{completedGroups} グループ</div>
-          <div className="text-gray-600">指摘件数（合計）:</div>
-          <div className="text-gray-800">{totalFindings} 件</div>
-          <div className="text-gray-600">トークン数（統合フェーズ）:</div>
-          <div className="text-gray-800">
-            入力 {(tokensUsed.input || 0).toLocaleString()} / 出力{' '}
-            {(tokensUsed.output || 0).toLocaleString()}
-          </div>
+      <div>
+        <h3 className="text-sm font-medium text-gray-700 mb-2">グループ一覧:</h3>
+        <div className="overflow-x-auto">
+          <Table className="min-w-full text-sm">
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell>グループ名</TableHeaderCell>
+                <TableHeaderCell>設計書セクション</TableHeaderCell>
+                <TableHeaderCell>コードシンボル</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {splitReviewState.structureMatchingResult.groups.map((group) => (
+                <TableRow key={group.groupId}>
+                  <TableCell>{group.groupName}</TableCell>
+                  <TableCell>{group.docSections.map((s) => s.title).join(', ')}</TableCell>
+                  <TableCell>{group.codeSymbols.map((s) => s.symbol).join(', ')}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
-
-        {splitReviewState.structureMatchingResult && (
-          <div className="mt-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">レビューグループ:</h3>
-            <div className="overflow-x-auto">
-              <Table className="min-w-full text-sm">
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>グループ名</TableHeaderCell>
-                    <TableHeaderCell>設計書セクション</TableHeaderCell>
-                    <TableHeaderCell>コードシンボル</TableHeaderCell>
-                    <TableHeaderCell>指摘数</TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {splitReviewState.structureMatchingResult.groups.map((group) => {
-                    const reviewState = groupReviews.find((g) => g.groupId === group.groupId)
-                    return (
-                      <TableRow key={group.groupId}>
-                        <TableCell>{group.groupName}</TableCell>
-                        <TableCell>{group.docSections.map((s) => s.title).join(', ')}</TableCell>
-                        <TableCell>{group.codeSymbols.map((s) => s.symbol).join(', ')}</TableCell>
-                        <TableCell>{reviewState?.result?.findings.length || 0}</TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        )}
       </div>
     )
   }
@@ -312,6 +213,7 @@ export function ReviewResult({
   if (isSplitMode && splitResult) {
     const splitJudgment = getSplitReviewJudgment(splitResult)
     const splitReportText = generateSplitReviewReport(splitResult)
+    const tokensUsed = splitReviewState?.integrateResult?.tokensUsed
 
     return (
       <div className="max-w-4xl mx-auto p-6">
@@ -334,10 +236,18 @@ export function ReviewResult({
           </p>
         </div>
 
-        {/* Review meta */}
+        {/* Execution info */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">レビュー情報</h2>
-          {renderSplitReviewMeta()}
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">実行情報</h2>
+          <ExecutionInfo
+            version="v0.8.0"
+            modelId="-"
+            executedAt={new Date().toISOString()}
+            inputTokens={tokensUsed?.input}
+            outputTokens={tokensUsed?.output}
+          >
+            {renderGroupsTable()}
+          </ExecutionInfo>
         </div>
 
         {/* Detailed report */}
@@ -449,10 +359,18 @@ export function ReviewResult({
             </p>
           </div>
 
-          {/* Review meta */}
+          {/* Execution info */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">レビュー情報</h2>
-            {renderReviewMeta(currentResult.reviewMeta)}
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">実行情報</h2>
+            <ExecutionInfo
+              version={currentResult.reviewMeta.version}
+              modelId={currentResult.reviewMeta.modelId}
+              executedAt={currentResult.reviewMeta.executedAt}
+              inputTokens={currentResult.reviewMeta.inputTokens}
+              outputTokens={currentResult.reviewMeta.outputTokens}
+              designs={currentResult.reviewMeta.designs}
+              programs={currentResult.reviewMeta.programs}
+            />
           </div>
 
           {/* Detailed report */}
