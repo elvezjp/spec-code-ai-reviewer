@@ -24,11 +24,13 @@ import {
   CodeFileList,
   ReviewResult,
   ExecutingScreen,
+  SplitExecutingScreen,
   MarkdownOrganizer,
   SplitSettingsSection,
 } from './components'
 import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport, useSplitSettings } from './hooks'
-import { testLlmConnection } from './services/api'
+import { testLlmConnection, executeStructureMatching, executeGroupReview, executeIntegrate } from './services/api'
+import type { SplitReviewState, GroupReviewState, MatchedGroup, GroupDocumentPart, GroupCodePart } from './types'
 
 const APP_INFO = {
   name: 'spec-code-ai-reviewer',
@@ -116,6 +118,14 @@ export function Reviewer() {
     isSplitEnabled,
   } = useSplitSettings()
 
+  // Split review execution state (v0.8.0)
+  const [splitReviewState, setSplitReviewState] = useState<SplitReviewState>({
+    phase: 'idle',
+    groupReviews: [],
+    currentGroupIndex: 0,
+  })
+  const isPausedRef = useRef(false)
+
   // System prompt text for token estimation
   const systemPromptText = useMemo(() => {
     return [
@@ -178,11 +188,225 @@ export function Reviewer() {
     )
   }, [codeFiles, specMarkdown, specFiles, executeSplitPreview])
 
+  // Split review pause/resume handlers
+  const handleSplitPause = useCallback(() => {
+    isPausedRef.current = true
+    setSplitReviewState((prev) => ({ ...prev, phase: 'paused' }))
+  }, [])
+
+  const handleSplitResume = useCallback(() => {
+    isPausedRef.current = false
+    setSplitReviewState((prev) => ({ ...prev, phase: 'group-review' }))
+  }, [])
+
+  // Split review execution
+  const executeSplitReviewFlow = useCallback(async () => {
+    if (!splitPreviewResult) return
+
+    // Reset state
+    isPausedRef.current = false
+    setSplitReviewState({
+      phase: 'structure-matching',
+      groupReviews: [],
+      currentGroupIndex: 0,
+    })
+
+    try {
+      // Phase 1: Structure Matching
+      const documentIndexMd = splitPreviewResult.documentIndex || ''
+      const documentMapJson = {
+        sections: splitPreviewResult.documentParts?.map((p) => ({
+          title: p.section,
+          level: p.level,
+          path: p.path,
+          startLine: p.startLine,
+          endLine: p.endLine,
+        })) || [],
+      }
+
+      const codeFileStructures = codeFiles.map((cf, index) => {
+        const codeParts = splitPreviewResult.codeParts || []
+        return {
+          filename: cf.filename,
+          indexMd: splitPreviewResult.codeIndex || '',
+          mapJson: {
+            symbols: codeParts.map((p) => ({
+              name: p.symbol,
+              symbolType: p.symbolType,
+              parentSymbol: p.parentSymbol,
+              startLine: p.startLine,
+              endLine: p.endLine,
+            })),
+          },
+        }
+      })
+
+      const structureMatchingResponse = await executeStructureMatching({
+        document: { indexMd: documentIndexMd, mapJson: documentMapJson },
+        codeFiles: codeFileStructures,
+        llmConfig: llmConfig || undefined,
+      })
+
+      if (!structureMatchingResponse.success) {
+        throw new Error(structureMatchingResponse.error || '構造マッチングに失敗しました')
+      }
+
+      const groups = structureMatchingResponse.groups
+
+      // Initialize group review states
+      const initialGroupStates: GroupReviewState[] = groups.map((g) => ({
+        groupId: g.groupId,
+        groupName: g.groupName,
+        status: 'pending',
+      }))
+
+      setSplitReviewState({
+        phase: 'group-review',
+        structureMatchingResult: structureMatchingResponse,
+        groupReviews: initialGroupStates,
+        currentGroupIndex: 0,
+      })
+
+      // Phase 2: Group Reviews
+      const groupReviewResults: GroupReviewState[] = [...initialGroupStates]
+
+      for (let i = 0; i < groups.length; i++) {
+        // Check for pause
+        if (isPausedRef.current) {
+          setSplitReviewState((prev) => ({
+            ...prev,
+            phase: 'paused',
+            currentGroupIndex: i,
+            groupReviews: groupReviewResults,
+          }))
+          // Wait for resume
+          while (isPausedRef.current) {
+            await new Promise((resolve) => setTimeout(resolve, 500))
+          }
+        }
+
+        const group = groups[i]
+
+        // Update status to in_progress
+        groupReviewResults[i] = { ...groupReviewResults[i], status: 'in_progress' }
+        setSplitReviewState((prev) => ({
+          ...prev,
+          groupReviews: [...groupReviewResults],
+          currentGroupIndex: i,
+        }))
+
+        // Build document parts for this group
+        const documentParts: GroupDocumentPart[] = group.docSections.map((section) => {
+          const part = splitPreviewResult.documentParts?.find((p) => p.path === section.path)
+          return {
+            title: section.title,
+            path: section.path,
+            startLine: part?.startLine || 0,
+            endLine: part?.endLine || 0,
+            content: part?.content || '',
+          }
+        })
+
+        // Build code parts for this group
+        const codeParts: GroupCodePart[] = group.codeSymbols.map((sym) => {
+          const part = splitPreviewResult.codeParts?.find((p) => p.symbol === sym.symbol)
+          return {
+            filename: sym.filename,
+            symbol: sym.symbol,
+            symbolType: part?.symbolType || 'unknown',
+            startLine: part?.startLine || 0,
+            endLine: part?.endLine || 0,
+            content: part?.content || '',
+          }
+        })
+
+        try {
+          const groupResponse = await executeGroupReview({
+            groupId: group.groupId,
+            groupName: group.groupName,
+            documentParts,
+            codeParts,
+            llmConfig: llmConfig || undefined,
+          })
+
+          if (groupResponse.success && groupResponse.reviewResult) {
+            groupReviewResults[i] = {
+              ...groupReviewResults[i],
+              status: 'completed',
+              result: groupResponse.reviewResult,
+            }
+          } else {
+            groupReviewResults[i] = {
+              ...groupReviewResults[i],
+              status: 'error',
+              error: groupResponse.error || 'グループレビューに失敗しました',
+            }
+          }
+        } catch (error) {
+          groupReviewResults[i] = {
+            ...groupReviewResults[i],
+            status: 'error',
+            error: error instanceof Error ? error.message : 'グループレビューに失敗しました',
+          }
+        }
+
+        setSplitReviewState((prev) => ({
+          ...prev,
+          groupReviews: [...groupReviewResults],
+        }))
+      }
+
+      // Phase 3: Integration
+      setSplitReviewState((prev) => ({ ...prev, phase: 'integrate' }))
+
+      const groupReviewSummaries = groupReviewResults
+        .filter((g) => g.status === 'completed' && g.result)
+        .map((g) => ({
+          groupId: g.groupId,
+          groupName: g.groupName,
+          summary: g.result!.summary,
+          findings: g.result!.findings,
+        }))
+
+      const integrateResponse = await executeIntegrate({
+        structureMatching: structureMatchingResponse,
+        groupReviews: groupReviewSummaries,
+        llmConfig: llmConfig || undefined,
+      })
+
+      if (!integrateResponse.success) {
+        throw new Error(integrateResponse.error || '結果統合に失敗しました')
+      }
+
+      setSplitReviewState((prev) => ({
+        ...prev,
+        phase: 'completed',
+        integrateResult: integrateResponse,
+      }))
+
+      // Show result screen
+      screenManager.showResult()
+    } catch (error) {
+      setSplitReviewState((prev) => ({
+        ...prev,
+        phase: 'error',
+        error: error instanceof Error ? error.message : 'レビュー実行に失敗しました',
+      }))
+    }
+  }, [splitPreviewResult, codeFiles, llmConfig, screenManager])
+
   const handleReviewExecute = async () => {
     if (!specMarkdown || !codeWithLineNumbers) return
 
     screenManager.showExecuting()
 
+    // 分割モードの場合は分割レビューフローを実行
+    if (isSplitEnabled && splitPreviewResult) {
+      await executeSplitReviewFlow()
+      return
+    }
+
+    // 通常モード
     try {
       await executeReview({
         specFiles,
@@ -442,7 +666,16 @@ export function Reviewer() {
     </Layout>
   )
 
-  const executingScreen = <ExecutingScreen currentExecution={currentExecutionNumber} totalExecutions={2} />
+  const executingScreen = isSplitEnabled ? (
+    <SplitExecutingScreen
+      state={splitReviewState}
+      onBack={screenManager.showMain}
+      onPause={handleSplitPause}
+      onResume={handleSplitResume}
+    />
+  ) : (
+    <ExecutingScreen currentExecution={currentExecutionNumber} totalExecutions={2} />
+  )
 
   const resultScreen = (
     <ReviewResult
@@ -454,6 +687,8 @@ export function Reviewer() {
       onDownloadZip={downloadZip}
       getSimpleJudgment={getSimpleJudgment}
       onBack={screenManager.showMain}
+      splitReviewState={splitReviewState}
+      isSplitMode={isSplitEnabled && splitReviewState.phase === 'completed'}
     />
   )
 
