@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircle, Loader2, Circle, Pause, Play, AlertCircle, SkipForward, RotateCcw, ChevronDown, ChevronRight, Ban } from 'lucide-react'
+import { CheckCircle, Loader2, Circle, Play, AlertCircle, SkipForward, RotateCcw, ChevronDown, ChevronRight, Ban } from 'lucide-react'
 import { Card } from '@core/index'
 import type {
   SplitReviewState,
@@ -9,7 +9,6 @@ import type {
 interface SplitExecutingScreenProps {
   state: SplitReviewState
   onBack: () => void
-  onPause: () => void
   onResume: () => void
   onRetryGroup: (groupId: string) => void
   onSkipGroup: (groupId: string) => void
@@ -141,7 +140,6 @@ function StepCard({
 export function SplitExecutingScreen({
   state,
   onBack,
-  onPause,
   onResume,
   onRetryGroup,
   onSkipGroup,
@@ -149,8 +147,6 @@ export function SplitExecutingScreen({
   const isPaused = state.phase === 'paused'
   const hasErrorGroup = state.groupReviews.some((g) => g.status === 'error')
   const isErrorPaused = isPaused && hasErrorGroup
-  const isManualPaused = isPaused && !hasErrorGroup
-  const isRunning = ['structure-matching', 'group-review', 'integrate'].includes(state.phase)
 
   const structureMatchingStatus = getPhaseStatus(state.phase, 'structure-matching')
   const groupReviewStatus = getPhaseStatus(state.phase, 'group-review')
@@ -192,33 +188,19 @@ export function SplitExecutingScreen({
             </div>
           </div>
 
-          {isRunning && (
-            <button
-              onClick={onPause}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm rounded-md transition"
-            >
-              <Pause className="w-4 h-4" />
-              一時停止
-            </button>
-          )}
-          {isManualPaused && (
+          {isErrorPaused && (
             <>
+              <p className="text-sm text-red-600 mt-2">
+                グループレビューでエラーが発生しました。該当ステップでリトライまたはスキップを選択してください。
+              </p>
               <button
                 onClick={onResume}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition"
+                className="inline-flex items-center gap-2 px-4 py-2 mt-3 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition"
               >
                 <Play className="w-4 h-4" />
-                再開
+                再開（エラーをスキップ）
               </button>
-              <p className="text-sm text-yellow-600 mt-4">
-                完了済みの結果は保持されています。再開すると続きから処理を継続します。
-              </p>
             </>
-          )}
-          {isErrorPaused && (
-            <p className="text-sm text-red-600 mt-2">
-              グループレビューでエラーが発生しました。該当ステップでリトライまたはスキップを選択してください。
-            </p>
           )}
         </div>
       </Card>

@@ -124,7 +124,6 @@ export function Reviewer() {
     groupReviews: [],
     currentGroupIndex: 0,
   })
-  const isPausedRef = useRef(false)
   const errorActionRef = useRef<{ action: 'retry' | 'skip'; groupId: string } | null>(null)
 
   // System prompt text for token estimation
@@ -189,15 +188,9 @@ export function Reviewer() {
     )
   }, [codeFiles, specMarkdown, specFiles, executeSplitPreview])
 
-  // Split review pause/resume handlers
-  const handleSplitPause = useCallback(() => {
-    isPausedRef.current = true
-    setSplitReviewState((prev) => ({ ...prev, phase: 'paused' }))
-  }, [])
-
+  // Split review resume handler (skip errored group and continue)
   const handleSplitResume = useCallback(() => {
-    isPausedRef.current = false
-    setSplitReviewState((prev) => ({ ...prev, phase: 'group-review' }))
+    errorActionRef.current = { action: 'skip', groupId: '' }
   }, [])
 
   const handleRetryGroup = useCallback((groupId: string) => {
@@ -213,7 +206,7 @@ export function Reviewer() {
     if (!splitPreviewResult) return
 
     // Reset state
-    isPausedRef.current = false
+    errorActionRef.current = null
     setSplitReviewState({
       phase: 'structure-matching',
       groupReviews: [],
@@ -280,19 +273,6 @@ export function Reviewer() {
       const groupReviewResults: GroupReviewState[] = [...initialGroupStates]
 
       for (let i = 0; i < groups.length; i++) {
-        // Check for manual pause
-        if (isPausedRef.current) {
-          setSplitReviewState((prev) => ({
-            ...prev,
-            phase: 'paused',
-            currentGroupIndex: i,
-            groupReviews: groupReviewResults,
-          }))
-          while (isPausedRef.current) {
-            await new Promise((resolve) => setTimeout(resolve, 500))
-          }
-        }
-
         const group = groups[i]
 
         // Build document parts for this group
@@ -725,7 +705,6 @@ export function Reviewer() {
     <SplitExecutingScreen
       state={splitReviewState}
       onBack={screenManager.showMain}
-      onPause={handleSplitPause}
       onResume={handleSplitResume}
       onRetryGroup={handleRetryGroup}
       onSkipGroup={handleSkipGroup}
