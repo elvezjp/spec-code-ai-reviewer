@@ -219,30 +219,181 @@ export interface SplitPreviewResult {
   codeLanguage: string | null
 }
 
-export interface PartsReviewRequest {
-  documentParts?: DocumentPart[]
-  codeParts?: CodePart[]
-  systemPrompt: SystemPromptValues
-  llmConfig?: LlmConfig
-  executedAt?: string
+// =============================================================================
+// Structure Matching Types
+// =============================================================================
+
+export interface DocumentStructure {
+  indexMd: string
+  mapJson: Record<string, unknown>
 }
 
-export interface PartsReviewProgress {
-  sessionId: string
-  status: 'running' | 'completed' | 'error'
-  totalPhases: number
-  currentPhase: number
-  phaseName: string
-  totalPairs: number
-  completedPairs: number
-  partialResults: string[]
+export interface CodeFileStructure {
+  filename: string
+  indexMd: string
+  mapJson: Record<string, unknown>
+}
+
+export interface StructureMatchingRequest {
+  document: DocumentStructure
+  codeFiles: CodeFileStructure[]
+  llmConfig?: LlmConfig
+}
+
+export interface MatchedDocSection {
+  title: string
+  path: string
+}
+
+export interface MatchedCodeSymbol {
+  filename: string
+  symbol: string
+}
+
+export interface MatchedGroup {
+  groupId: string
+  groupName: string
+  docSections: MatchedDocSection[]
+  codeSymbols: MatchedCodeSymbol[]
+  reason: string
+  estimatedTokens: number
+}
+
+export interface StructureMatchingResponse {
+  success: boolean
+  groups: MatchedGroup[]
+  totalGroups: number
   error?: string
 }
 
-export interface PartsReviewResponse {
+// =============================================================================
+// Group Review Types
+// =============================================================================
+
+export interface GroupDocumentPart {
+  title: string
+  path: string
+  startLine: number
+  endLine: number
+  content: string
+}
+
+export interface GroupCodePart {
+  filename: string
+  symbol: string
+  symbolType: string
+  startLine: number
+  endLine: number
+  content: string
+}
+
+export interface GroupReviewRequest {
+  groupId: string
+  groupName: string
+  documentParts: GroupDocumentPart[]
+  codeParts: GroupCodePart[]
+  reviewOptions?: Record<string, unknown>
+  llmConfig?: LlmConfig
+}
+
+export interface ReviewFinding {
+  id: string
+  findingType: string // inconsistency, missing_in_code, missing_in_doc, suggestion
+  severity: string // error, warning, info
+  docLocation?: { section: string; line: number }
+  codeLocation?: { filename: string; symbol: string; line: number }
+  description: string
+  recommendation: string
+}
+
+export interface GroupReviewResult {
+  summary: string
+  findings: ReviewFinding[]
+  statistics: {
+    totalFindings: number
+    errors: number
+    warnings: number
+    info: number
+  }
+}
+
+export interface GroupReviewResponse {
   success: boolean
-  sessionId?: string
-  report?: string
-  reviewMeta?: ReviewMeta
+  groupId: string
+  reviewResult?: GroupReviewResult
+  tokensUsed?: { input: number; output: number }
+  error?: string
+}
+
+// =============================================================================
+// Integrate Types
+// =============================================================================
+
+export interface GroupReviewSummary {
+  groupId: string
+  groupName: string
+  summary: string
+  findings: ReviewFinding[]
+}
+
+export interface IntegrateRequest {
+  structureMatching: StructureMatchingResponse
+  groupReviews: GroupReviewSummary[]
+  integrationOptions?: Record<string, unknown>
+  llmConfig?: LlmConfig
+}
+
+export interface KeyIssue {
+  priority: number
+  title: string
+  affectedGroups: string[]
+  description: string
+  relatedFindings: string[]
+}
+
+export interface CrossGroupIssue {
+  title: string
+  groups: string[]
+  description: string
+}
+
+export interface IntegratedReport {
+  overallSummary: string
+  consistencyScore: number
+  keyIssues: KeyIssue[]
+  crossGroupIssues: CrossGroupIssue[]
+  statistics: Record<string, unknown>
+  deduplicatedFindings: string[]
+}
+
+export interface IntegrateResponse {
+  success: boolean
+  integratedReport?: IntegratedReport
+  tokensUsed?: { input: number; output: number }
+  error?: string
+}
+
+// =============================================================================
+// Split Review Execution State (Frontend)
+// =============================================================================
+
+export type SplitReviewPhase = 'idle' | 'structure-matching' | 'group-review' | 'integrate' | 'completed' | 'paused' | 'error'
+
+export type GroupReviewStatus = 'pending' | 'in_progress' | 'completed' | 'error'
+
+export interface GroupReviewState {
+  groupId: string
+  groupName: string
+  status: GroupReviewStatus
+  result?: GroupReviewResult
+  error?: string
+}
+
+export interface SplitReviewState {
+  phase: SplitReviewPhase
+  structureMatchingResult?: StructureMatchingResponse
+  groupReviews: GroupReviewState[]
+  integrateResult?: IntegrateResponse
+  currentGroupIndex: number
   error?: string
 }

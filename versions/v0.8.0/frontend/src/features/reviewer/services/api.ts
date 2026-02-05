@@ -10,9 +10,12 @@ import type {
   SplitMarkdownResponse,
   SplitCodeRequest,
   SplitCodeResponse,
-  PartsReviewRequest,
-  PartsReviewResponse,
-  PartsReviewProgress,
+  StructureMatchingRequest,
+  StructureMatchingResponse,
+  GroupReviewRequest,
+  GroupReviewResponse,
+  IntegrateRequest,
+  IntegrateResponse,
 } from '../types'
 
 const getBackendUrl = (): string => {
@@ -143,10 +146,14 @@ export async function splitCode(
   return await response.json()
 }
 
-export async function executePartsReview(
-  request: PartsReviewRequest
-): Promise<PartsReviewResponse> {
-  const response = await fetch(`${getBackendUrl()}/api/review/parts`, {
+// =============================================================================
+// Split Review APIs (v0.8.0 - New)
+// =============================================================================
+
+export async function executeStructureMatching(
+  request: StructureMatchingRequest
+): Promise<StructureMatchingResponse> {
+  const response = await fetch(`${getBackendUrl()}/api/review/structure-matching`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
@@ -155,10 +162,26 @@ export async function executePartsReview(
   return await response.json()
 }
 
-export async function getPartsReviewStatus(
-  sessionId: string
-): Promise<PartsReviewProgress> {
-  const response = await fetch(`${getBackendUrl()}/api/review/parts/${sessionId}/status`)
+export async function executeGroupReview(
+  request: GroupReviewRequest
+): Promise<GroupReviewResponse> {
+  const response = await fetch(`${getBackendUrl()}/api/review/group`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  })
+
+  return await response.json()
+}
+
+export async function executeIntegrate(
+  request: IntegrateRequest
+): Promise<IntegrateResponse> {
+  const response = await fetch(`${getBackendUrl()}/api/review/integrate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  })
 
   return await response.json()
 }

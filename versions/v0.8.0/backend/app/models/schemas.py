@@ -332,35 +332,211 @@ class SplitCodeResponse(BaseModel):
     error: str | None = None
 
 
-class PartsReviewRequest(BaseModel):
-    """分割レビューAPIのリクエスト"""
+# =============================================================================
+# Structure Matching API スキーマ
+# =============================================================================
 
-    documentParts: list[DocumentPart] | None = None
-    codeParts: list[CodePart] | None = None
-    systemPrompt: SystemPrompt
+
+class DocumentMapSection(BaseModel):
+    """設計書のMAP.jsonセクション情報"""
+
+    title: str
+    level: int
+    path: str
+    startLine: int
+    endLine: int
+
+
+class CodeMapSymbol(BaseModel):
+    """コードのMAP.jsonシンボル情報"""
+
+    name: str
+    symbolType: str
+    parentSymbol: str | None = None
+    startLine: int
+    endLine: int
+
+
+class DocumentStructure(BaseModel):
+    """設計書の構造情報"""
+
+    indexMd: str
+    mapJson: dict  # { sections: list[DocumentMapSection] }
+
+
+class CodeFileStructure(BaseModel):
+    """コードファイルの構造情報"""
+
+    filename: str
+    indexMd: str
+    mapJson: dict  # { symbols: list[CodeMapSymbol] }
+
+
+class StructureMatchingRequest(BaseModel):
+    """構造マッチングAPIのリクエスト"""
+
+    document: DocumentStructure
+    codeFiles: list[CodeFileStructure]
     llmConfig: LLMConfig | None = None
-    executedAt: str | None = None
 
 
-class PartsReviewProgress(BaseModel):
-    """分割レビュー進捗"""
+class MatchedDocSection(BaseModel):
+    """マッチングされた設計書セクション"""
 
-    sessionId: str
-    status: Literal["running", "completed", "error"]
-    totalPhases: int = 3
-    currentPhase: int  # 1: 構造マッチング, 2: ペアレビュー, 3: 統合
-    phaseName: str
-    totalPairs: int = 0
-    completedPairs: int = 0
-    partialResults: list[str] = []
+    title: str
+    path: str
+
+
+class MatchedCodeSymbol(BaseModel):
+    """マッチングされたコードシンボル"""
+
+    filename: str
+    symbol: str
+
+
+class MatchedGroup(BaseModel):
+    """マッチングされたグループ"""
+
+    groupId: str
+    groupName: str  # グループの表示名
+    docSections: list[MatchedDocSection]
+    codeSymbols: list[MatchedCodeSymbol]
+    reason: str
+    estimatedTokens: int
+
+
+class StructureMatchingResponse(BaseModel):
+    """構造マッチングAPIのレスポンス"""
+
+    success: bool
+    groups: list[MatchedGroup] = []
+    totalGroups: int = 0
     error: str | None = None
 
 
-class PartsReviewResponse(BaseModel):
-    """分割レビューAPIのレスポンス"""
+# =============================================================================
+# Group Review API スキーマ
+# =============================================================================
+
+
+class GroupDocumentPart(BaseModel):
+    """グループレビュー用の設計書パーツ"""
+
+    title: str
+    path: str
+    startLine: int
+    endLine: int
+    content: str
+
+
+class GroupCodePart(BaseModel):
+    """グループレビュー用のコードパーツ"""
+
+    filename: str
+    symbol: str
+    symbolType: str
+    startLine: int
+    endLine: int
+    content: str
+
+
+class GroupReviewRequest(BaseModel):
+    """グループレビューAPIのリクエスト"""
+
+    groupId: str
+    groupName: str
+    documentParts: list[GroupDocumentPart]
+    codeParts: list[GroupCodePart]
+    reviewOptions: dict = {}
+    llmConfig: LLMConfig | None = None
+
+
+class ReviewFinding(BaseModel):
+    """レビュー指摘事項"""
+
+    id: str
+    findingType: str  # inconsistency, missing_in_code, missing_in_doc, suggestion
+    severity: str  # error, warning, info
+    docLocation: dict | None = None  # { section: str, line: int }
+    codeLocation: dict | None = None  # { filename: str, symbol: str, line: int }
+    description: str
+    recommendation: str
+
+
+class GroupReviewResult(BaseModel):
+    """グループレビュー結果"""
+
+    summary: str
+    findings: list[ReviewFinding] = []
+    statistics: dict = {}  # { totalFindings, errors, warnings, info }
+
+
+class GroupReviewResponse(BaseModel):
+    """グループレビューAPIのレスポンス"""
 
     success: bool
-    sessionId: str | None = None
-    report: str | None = None
-    reviewMeta: ReviewMeta | None = None
+    groupId: str
+    reviewResult: GroupReviewResult | None = None
+    tokensUsed: dict = {}  # { input: int, output: int }
+    error: str | None = None
+
+
+# =============================================================================
+# Integrate API スキーマ
+# =============================================================================
+
+
+class GroupReviewSummary(BaseModel):
+    """統合用のグループレビューサマリー"""
+
+    groupId: str
+    groupName: str
+    summary: str
+    findings: list[ReviewFinding] = []
+
+
+class IntegrateRequest(BaseModel):
+    """結果統合APIのリクエスト"""
+
+    structureMatching: dict  # 構造マッチング結果
+    groupReviews: list[GroupReviewSummary]
+    integrationOptions: dict = {}  # { deduplicateFindings, checkCrossGroupIssues }
+    llmConfig: LLMConfig | None = None
+
+
+class KeyIssue(BaseModel):
+    """主要な課題"""
+
+    priority: int
+    title: str
+    affectedGroups: list[str]
+    description: str
+    relatedFindings: list[str]
+
+
+class CrossGroupIssue(BaseModel):
+    """グループ間の課題"""
+
+    title: str
+    groups: list[str]
+    description: str
+
+
+class IntegratedReport(BaseModel):
+    """統合レポート"""
+
+    overallSummary: str
+    consistencyScore: float
+    keyIssues: list[KeyIssue] = []
+    crossGroupIssues: list[CrossGroupIssue] = []
+    statistics: dict = {}
+    deduplicatedFindings: list[str] = []
+
+
+class IntegrateResponse(BaseModel):
+    """結果統合APIのレスポンス"""
+
+    success: bool
+    integratedReport: IntegratedReport | None = None
+    tokensUsed: dict = {}
     error: str | None = None

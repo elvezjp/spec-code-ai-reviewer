@@ -4,8 +4,6 @@
 Phase 2ではスタブ実装（ダミーデータを返す）。
 """
 
-import uuid
-
 from fastapi import APIRouter
 
 from app.models.schemas import (
@@ -13,14 +11,24 @@ from app.models.schemas import (
     SplitMarkdownResponse,
     SplitCodeRequest,
     SplitCodeResponse,
-    PartsReviewRequest,
-    PartsReviewResponse,
-    PartsReviewProgress,
     DocumentPart,
     CodePart,
-    ReviewMeta,
-    DesignMeta,
-    ProgramMeta,
+    # Structure Matching API
+    StructureMatchingRequest,
+    StructureMatchingResponse,
+    MatchedGroup,
+    MatchedDocSection,
+    MatchedCodeSymbol,
+    # Group Review API
+    GroupReviewRequest,
+    GroupReviewResponse,
+    GroupReviewResult,
+    ReviewFinding,
+    # Integrate API
+    IntegrateRequest,
+    IntegrateResponse,
+    IntegratedReport,
+    KeyIssue,
 )
 
 router = APIRouter()
@@ -245,115 +253,194 @@ async def split_code(request: SplitCodeRequest):
     )
 
 
-@router.post("/review/parts", response_model=PartsReviewResponse)
-async def review_parts(request: PartsReviewRequest):
+@router.post("/review/structure-matching", response_model=StructureMatchingResponse)
+async def structure_matching(request: StructureMatchingRequest):
     """
-    分割されたパーツに対してレビューを実行する
+    構造マッチング（フェーズ1）
 
-    - フェーズ1: 構造マッチング（設計書INDEX + コードINDEX）
-    - フェーズ2: ペアレビュー（関連するパーツ同士）
-    - フェーズ3: 統合（全結果をまとめる）
+    設計書とコードの構造を比較し、関連性の高いグループを特定する。
 
     【Phase 2: スタブ実装】
-    実際のレビューロジックは Phase 3 で実装。
+    実際のLLM呼び出しは Phase 3 で実装。
     """
-    session_id = str(uuid.uuid4())
+    # スタブ: ダミーのグループ情報を返す
+    dummy_groups = [
+        MatchedGroup(
+            groupId="group_1",
+            groupName="ユーザー管理",
+            docSections=[
+                MatchedDocSection(title="機能要件", path="機能要件"),
+                MatchedDocSection(title="ユーザー管理", path="機能要件 > ユーザー管理"),
+            ],
+            codeSymbols=[
+                MatchedCodeSymbol(filename="UserService.java", symbol="UserService"),
+                MatchedCodeSymbol(filename="UserService.java", symbol="createUser"),
+                MatchedCodeSymbol(filename="UserService.java", symbol="updateUser"),
+            ],
+            reason="ユーザー管理に関連する設計とコード",
+            estimatedTokens=8500,
+        ),
+        MatchedGroup(
+            groupId="group_2",
+            groupName="API設計",
+            docSections=[
+                MatchedDocSection(title="API設計", path="API設計"),
+            ],
+            codeSymbols=[
+                MatchedCodeSymbol(filename="UserService.java", symbol="deleteUser"),
+                MatchedCodeSymbol(filename="UserService.java", symbol="findById"),
+            ],
+            reason="API仕様とエンドポイント実装",
+            estimatedTokens=5200,
+        ),
+        MatchedGroup(
+            groupId="group_3",
+            groupName="データベース設計",
+            docSections=[
+                MatchedDocSection(title="データベース設計", path="データベース設計"),
+            ],
+            codeSymbols=[],
+            reason="データベース設計（対応コードなし）",
+            estimatedTokens=3000,
+        ),
+    ]
 
-    # スタブ: ダミーのレビュー結果を返す
-    doc_count = len(request.documentParts) if request.documentParts else 0
-    code_count = len(request.codeParts) if request.codeParts else 0
-
-    report = f"""# 分割レビュー結果（スタブ）
-
-## 概要
-
-- 設計書パーツ数: {doc_count}
-- コードパーツ数: {code_count}
-- レビューモード: 分割レビュー
-
-## フェーズ1: 構造マッチング結果
-
-設計書とコードの構造を分析し、以下のペアリングを特定しました。
-
-| 設計書セクション | 関連コード | 関連度 |
-|------------------|------------|--------|
-| 概要 | - | - |
-| 機能要件 | UserService | 高 |
-| 画面設計 | - | - |
-| API設計 | UserService | 高 |
-| データベース設計 | - | 中 |
-
-## フェーズ2: ペアレビュー結果
-
-### ペア1: 機能要件 × UserService
-
-**整合性**: ✅ 良好
-
-設計書の機能要件とUserServiceの実装は概ね整合しています。
-
-**指摘事項**:
-- L45-80: createUserメソッドにバリデーション処理が不足している可能性があります
-
-### ペア2: API設計 × UserService
-
-**整合性**: ⚠️ 要確認
-
-**指摘事項**:
-- L122-150: deleteUserメソッドの戻り値が設計書と異なる可能性があります
-
-## フェーズ3: 統合サマリー
-
-| 項目 | 結果 |
-|------|------|
-| 総合判定 | ⚠️ 軽微な不整合あり |
-| 重大な問題 | 0件 |
-| 要確認事項 | 2件 |
-| 推奨事項 | 1件 |
-"""
-
-    review_meta = ReviewMeta(
-        version="0.8.0",
-        modelId="stub-model",
-        provider="stub",
-        executedAt=request.executedAt or "2026-02-04T12:00:00Z",
-        designs=[
-            DesignMeta(
-                filename="design.md",
-                role="メイン設計書",
-                isMain=True,
-                type="詳細設計書",
-                tool="stub",
-            )
-        ],
-        programs=[ProgramMeta(filename="UserService.java")],
-        inputTokens=35000,
-        outputTokens=2000,
-    )
-
-    return PartsReviewResponse(
+    return StructureMatchingResponse(
         success=True,
-        sessionId=session_id,
-        report=report,
-        reviewMeta=review_meta,
+        groups=dummy_groups,
+        totalGroups=len(dummy_groups),
     )
 
 
-@router.get("/review/parts/{session_id}/status", response_model=PartsReviewProgress)
-async def get_parts_review_status(session_id: str):
+@router.post("/review/group", response_model=GroupReviewResponse)
+async def review_group(request: GroupReviewRequest):
     """
-    分割レビューの進捗状況を取得する
+    グループレビュー（フェーズ2）
+
+    1グループ（関連する設計書パーツ + コードパーツ）をレビューする。
 
     【Phase 2: スタブ実装】
-    実際の進捗管理は Phase 3 で実装。
+    実際のLLM呼び出しは Phase 3 で実装。
     """
-    # スタブ: 完了状態を返す
-    return PartsReviewProgress(
-        sessionId=session_id,
-        status="completed",
-        totalPhases=3,
-        currentPhase=3,
-        phaseName="統合",
-        totalPairs=5,
-        completedPairs=5,
-        partialResults=[],
+    # スタブ: ダミーのレビュー結果を返す
+    doc_titles = [p.title for p in request.documentParts]
+    code_symbols = [p.symbol for p in request.codeParts]
+
+    dummy_findings = []
+
+    # グループに応じたダミー指摘を生成
+    if request.groupId == "group_1":
+        dummy_findings = [
+            ReviewFinding(
+                id="F001",
+                findingType="inconsistency",
+                severity="warning",
+                docLocation={"section": "ユーザー管理", "line": 165},
+                codeLocation={"filename": "UserService.java", "symbol": "createUser", "line": 25},
+                description="設計書では「メールアドレスは必須」と記載されているが、コードではnull許容になっている",
+                recommendation="コードにメールアドレスの必須チェックを追加するか、設計書を修正する",
+            ),
+            ReviewFinding(
+                id="F002",
+                findingType="missing_in_code",
+                severity="error",
+                docLocation={"section": "機能要件", "line": 78},
+                codeLocation=None,
+                description="設計書に記載の「パスワード強度チェック」がコードに実装されていない",
+                recommendation="PasswordValidatorクラスを作成し、createUserメソッドから呼び出す",
+            ),
+        ]
+        summary = "設計書とコードは概ね整合しているが、バリデーション仕様に差異あり"
+    elif request.groupId == "group_2":
+        dummy_findings = [
+            ReviewFinding(
+                id="F003",
+                findingType="inconsistency",
+                severity="warning",
+                docLocation={"section": "API設計", "line": 45},
+                codeLocation={"filename": "UserService.java", "symbol": "deleteUser", "line": 122},
+                description="設計書ではDELETEメソッドの戻り値は204だが、コードでは200を返している",
+                recommendation="HTTPステータスコードを設計書に合わせて修正する",
+            ),
+        ]
+        summary = "APIの仕様とコードは概ね整合しているが、ステータスコードに差異あり"
+    else:
+        summary = "対応するコードがないため、設計書のみの確認となります"
+
+    result = GroupReviewResult(
+        summary=summary,
+        findings=dummy_findings,
+        statistics={
+            "totalFindings": len(dummy_findings),
+            "errors": sum(1 for f in dummy_findings if f.severity == "error"),
+            "warnings": sum(1 for f in dummy_findings if f.severity == "warning"),
+            "info": sum(1 for f in dummy_findings if f.severity == "info"),
+        },
+    )
+
+    return GroupReviewResponse(
+        success=True,
+        groupId=request.groupId,
+        reviewResult=result,
+        tokensUsed={"input": 6500, "output": 1200},
+    )
+
+
+@router.post("/review/integrate", response_model=IntegrateResponse)
+async def integrate_reviews(request: IntegrateRequest):
+    """
+    結果統合（フェーズ3）
+
+    全グループのレビュー結果を統合し、最終レポートを生成する。
+
+    【Phase 2: スタブ実装】
+    実際のLLM呼び出しは Phase 3 で実装。
+    """
+    # スタブ: ダミーの統合レポートを返す
+    total_findings = sum(len(gr.findings) for gr in request.groupReviews)
+    total_errors = sum(
+        sum(1 for f in gr.findings if f.severity == "error")
+        for gr in request.groupReviews
+    )
+    total_warnings = sum(
+        sum(1 for f in gr.findings if f.severity == "warning")
+        for gr in request.groupReviews
+    )
+
+    report = IntegratedReport(
+        overallSummary=f"全体として設計書とコードの整合性は良好（適合率78%）。主要な課題はバリデーション仕様の不一致。レビュー対象: {len(request.groupReviews)}グループ",
+        consistencyScore=0.78,
+        keyIssues=[
+            KeyIssue(
+                priority=1,
+                title="バリデーション仕様の不一致",
+                affectedGroups=["group_1"],
+                description="ユーザー登録時のバリデーションが設計書とコードで異なる",
+                relatedFindings=["F001", "F002"],
+            ),
+            KeyIssue(
+                priority=2,
+                title="HTTPステータスコードの不整合",
+                affectedGroups=["group_2"],
+                description="API設計書と実装でステータスコードが異なる",
+                relatedFindings=["F003"],
+            ),
+        ],
+        crossGroupIssues=[],
+        statistics={
+            "totalGroupsReviewed": len(request.groupReviews),
+            "totalFindings": total_findings,
+            "bySeverity": {
+                "error": total_errors,
+                "warning": total_warnings,
+                "info": 0,
+            },
+        },
+        deduplicatedFindings=[],
+    )
+
+    return IntegrateResponse(
+        success=True,
+        integratedReport=report,
+        tokensUsed={"input": 4500, "output": 2000},
     )
