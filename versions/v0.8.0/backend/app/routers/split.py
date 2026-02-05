@@ -4,6 +4,8 @@
 Phase 2ではスタブ実装（ダミーデータを返す）。
 """
 
+import asyncio
+
 from fastapi import APIRouter
 
 from app.models.schemas import (
@@ -263,6 +265,8 @@ async def structure_matching(request: StructureMatchingRequest):
     【Phase 2: スタブ実装】
     実際のLLM呼び出しは Phase 3 で実装。
     """
+    await asyncio.sleep(5)  # スタブ用の遅延（画面確認用）
+
     # スタブ: ダミーのグループ情報を返す
     dummy_groups = [
         MatchedGroup(
@@ -322,6 +326,8 @@ async def review_group(request: GroupReviewRequest):
     【Phase 2: スタブ実装】
     実際のLLM呼び出しは Phase 3 で実装。
     """
+    await asyncio.sleep(5)  # スタブ用の遅延（画面確認用）
+
     # スタブ: ダミーのレビュー結果を返す
     doc_titles = [p.title for p in request.documentParts]
     code_symbols = [p.symbol for p in request.codeParts]
@@ -397,6 +403,8 @@ async def integrate_reviews(request: IntegrateRequest):
     【Phase 2: スタブ実装】
     実際のLLM呼び出しは Phase 3 で実装。
     """
+    await asyncio.sleep(5)  # スタブ用の遅延（画面確認用）
+
     # スタブ: ダミーの統合レポートを返す
     total_findings = sum(len(gr.findings) for gr in request.groupReviews)
     total_errors = sum(
