@@ -371,6 +371,7 @@ export function Reviewer() {
       const integrateResponse = await executeIntegrate({
         structureMatching: structureMatchingResponse,
         groupReviews: groupReviewSummaries,
+        systemPrompt: systemPromptText,
         llmConfig: llmConfig || undefined,
       })
 
@@ -393,7 +394,7 @@ export function Reviewer() {
         error: error instanceof Error ? error.message : 'レビュー実行に失敗しました',
       }))
     }
-  }, [splitPreviewResult, codeFiles, llmConfig, screenManager])
+  }, [splitPreviewResult, codeFiles, llmConfig, screenManager, systemPromptText])
 
   const handleReviewExecute = async () => {
     if (!specMarkdown || !codeWithLineNumbers) return

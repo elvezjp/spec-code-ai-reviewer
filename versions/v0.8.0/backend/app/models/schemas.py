@@ -501,6 +501,7 @@ class IntegrateRequest(BaseModel):
     structureMatching: dict  # 構造マッチング結果
     groupReviews: list[GroupReviewSummary]
     integrationOptions: dict = {}  # { deduplicateFindings, checkCrossGroupIssues }
+    systemPrompt: str | None = None  # システムプロンプト設定（注意事項・出力フォーマット情報を含む）
     llmConfig: LLMConfig | None = None
 
 
@@ -537,6 +538,7 @@ class IntegrateResponse(BaseModel):
     """結果統合APIのレスポンス"""
 
     success: bool
+    report: str | None = None  # AIが生成した統合レビューレポート（Markdown形式）
     integratedReport: IntegratedReport | None = None
     tokensUsed: dict = {}
     error: str | None = None

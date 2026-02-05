@@ -340,6 +340,7 @@ export interface IntegrateRequest {
   structureMatching: StructureMatchingResponse
   groupReviews: GroupReviewSummary[]
   integrationOptions?: Record<string, unknown>
+  systemPrompt?: string // システムプロンプト設定（注意事項・出力フォーマット情報を含む）
   llmConfig?: LlmConfig
 }
 
@@ -368,6 +369,7 @@ export interface IntegratedReport {
 
 export interface IntegrateResponse {
   success: boolean
+  report?: string // AIが生成した統合レビューレポート（Markdown形式）
   integratedReport?: IntegratedReport
   tokensUsed?: { input: number; output: number }
   error?: string

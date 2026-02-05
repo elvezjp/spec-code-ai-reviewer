@@ -392,6 +392,7 @@ async def integrate_reviews(request: IntegrateRequest):
     結果統合（フェーズ3）
 
     全グループのレビュー結果を統合し、最終レポートを生成する。
+    システムプロンプト設定に基づいて、AIがMarkdown形式のレビューレポートを生成する。
 
     【Phase 2: スタブ実装】
     実際のLLM呼び出しは Phase 3 で実装。
@@ -407,7 +408,7 @@ async def integrate_reviews(request: IntegrateRequest):
         for gr in request.groupReviews
     )
 
-    report = IntegratedReport(
+    integrated_report = IntegratedReport(
         overallSummary=f"全体として設計書とコードの整合性は良好（適合率78%）。主要な課題はバリデーション仕様の不一致。レビュー対象: {len(request.groupReviews)}グループ",
         consistencyScore=0.78,
         keyIssues=[
@@ -439,8 +440,49 @@ async def integrate_reviews(request: IntegrateRequest):
         deduplicatedFindings=[],
     )
 
+    # AIが生成するMarkdownレポート（スタブ）
+    markdown_report = f"""# 設計書-コード整合性レビュー結果
+
+## 1. 全体サマリー
+
+{integrated_report.overallSummary}
+
+**整合性スコア**: {integrated_report.consistencyScore * 100:.0f}%
+
+## 2. 重要な課題
+
+"""
+    for issue in integrated_report.keyIssues:
+        markdown_report += f"""### 優先度{issue.priority}: {issue.title}
+
+- **影響グループ**: {', '.join(issue.affectedGroups)}
+- **説明**: {issue.description}
+- **関連指摘**: {', '.join(issue.relatedFindings)}
+
+"""
+
+    markdown_report += f"""## 3. 指摘事項一覧
+
+| ID | 種別 | 重要度 | 説明 |
+|----|------|--------|------|
+"""
+    for gr in request.groupReviews:
+        for finding in gr.findings:
+            markdown_report += f"| {finding.id} | {finding.findingType} | {finding.severity} | {finding.description} |\n"
+
+    markdown_report += f"""
+## 4. 統計情報
+
+- **レビュー対象グループ数**: {len(request.groupReviews)}
+- **総指摘件数**: {total_findings}
+  - エラー: {total_errors}
+  - 警告: {total_warnings}
+  - 情報: 0
+"""
+
     return IntegrateResponse(
         success=True,
-        integratedReport=report,
+        report=markdown_report,
+        integratedReport=integrated_report,
         tokensUsed={"input": 4500, "output": 2000},
     )

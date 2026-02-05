@@ -63,51 +63,6 @@ export function ReviewResult({
     }
   }
 
-  // 分割レビュー結果をMarkdownレポートに変換
-  const generateSplitReviewReport = (report: IntegratedReport): string => {
-    const lines: string[] = []
-
-    lines.push('# 分割レビュー結果')
-    lines.push('')
-    lines.push('## 総合評価')
-    lines.push('')
-    lines.push(report.overallSummary)
-    lines.push('')
-    lines.push(`**整合性スコア**: ${Math.round(report.consistencyScore * 100)}%`)
-    lines.push('')
-
-    if (report.keyIssues.length > 0) {
-      lines.push('## 主要な課題')
-      lines.push('')
-      report.keyIssues.forEach((issue, index) => {
-        const priority = issue.priority === 1 ? '🔴' : issue.priority === 2 ? '🟡' : '🔵'
-        lines.push(`### ${priority} ${index + 1}. ${issue.title}`)
-        lines.push('')
-        lines.push(issue.description)
-        lines.push('')
-        if (issue.affectedGroups.length > 0) {
-          lines.push(`**影響グループ**: ${issue.affectedGroups.join(', ')}`)
-          lines.push('')
-        }
-      })
-    }
-
-    if (report.crossGroupIssues.length > 0) {
-      lines.push('## グループ間の課題')
-      lines.push('')
-      report.crossGroupIssues.forEach((issue, index) => {
-        lines.push(`### ${index + 1}. ${issue.title}`)
-        lines.push('')
-        lines.push(issue.description)
-        lines.push('')
-        lines.push(`**関連グループ**: ${issue.groups.join(', ')}`)
-        lines.push('')
-      })
-    }
-
-    return lines.join('\n')
-  }
-
   const statusConfig = {
     ng: {
       label: '問題あり',
@@ -212,7 +167,8 @@ export function ReviewResult({
   // 分割モードかつ結果がある場合
   if (isSplitMode && splitResult) {
     const splitJudgment = getSplitReviewJudgment(splitResult)
-    const splitReportText = generateSplitReviewReport(splitResult)
+    // APIから返されたMarkdownレポートを使用
+    const splitReportText = splitReviewState?.integrateResult?.report || ''
     const tokensUsed = splitReviewState?.integrateResult?.tokensUsed
 
     return (
