@@ -1,10 +1,14 @@
 """分割API (v0.8.0)
 
 セマンティック分割機能のAPIエンドポイント。
-Phase 2ではスタブ実装（ダミーデータを返す）。
+md2map / code2map ライブラリを使用してファイルを分割し、
+LLMを使用して構造マッチング・グループレビュー・結果統合を行う。
 """
 
-import asyncio
+import json
+import os
+import re
+import tempfile
 
 from fastapi import APIRouter
 
@@ -32,8 +36,14 @@ from app.models.schemas import (
     IntegratedReport,
     KeyIssue,
 )
+from app.services.llm_service import get_llm_provider
 
 router = APIRouter()
+
+
+# ---------------------------------------------------------------------------
+# ユーティリティ
+# ---------------------------------------------------------------------------
 
 
 def _estimate_tokens(text: str) -> int:
@@ -44,108 +54,123 @@ def _estimate_tokens(text: str) -> int:
     return int(japanese_chars * 1.5 + other_chars * 0.25)
 
 
+def _extract_json(text: str) -> dict:
+    """LLMの応答からJSONを抽出する"""
+    # ```json ... ``` ブロックからの抽出を試行
+    json_match = re.search(r"```(?:json)?\s*\n(.*?)\n```", text, re.DOTALL)
+    if json_match:
+        return json.loads(json_match.group(1))
+    # テキスト全体をJSONとしてパースを試行
+    return json.loads(text.strip())
+
+
+# ---------------------------------------------------------------------------
+# 分割API
+# ---------------------------------------------------------------------------
+
+
 @router.post("/split/markdown", response_model=SplitMarkdownResponse)
 async def split_markdown(request: SplitMarkdownRequest):
     """
-    Markdownをセクション単位で分割する（md2map相当）
+    Markdownをセクション単位で分割する（md2map使用）
 
     - 見出し（H1-H6）を基準に分割
     - maxDepthで分割の見出しレベルを指定（デフォルト: H2まで）
-
-    【Phase 2: スタブ実装】
-    実際のmd2map呼び出しは Phase 3 で実装。
     """
-    # スタブ: ダミーの分割結果を返す
-    dummy_parts = [
-        DocumentPart(
-            section="概要",
-            level=2,
-            path="概要",
-            startLine=1,
-            endLine=50,
-            content="# 概要\n\nこのドキュメントは...",
-            estimatedTokens=2000,
-        ),
-        DocumentPart(
-            section="機能要件",
-            level=2,
-            path="機能要件",
-            startLine=51,
-            endLine=200,
-            content="# 機能要件\n\n## ユーザー管理\n...",
-            estimatedTokens=8000,
-        ),
-        DocumentPart(
-            section="画面設計",
-            level=2,
-            path="画面設計",
-            startLine=201,
-            endLine=450,
-            content="# 画面設計\n\n## ログイン画面\n...",
-            estimatedTokens=12000,
-        ),
-        DocumentPart(
-            section="API設計",
-            level=2,
-            path="API設計",
-            startLine=451,
-            endLine=600,
-            content="# API設計\n\n## エンドポイント一覧\n...",
-            estimatedTokens=7000,
-        ),
-        DocumentPart(
-            section="データベース設計",
-            level=2,
-            path="データベース設計",
-            startLine=601,
-            endLine=750,
-            content="# データベース設計\n\n## ER図\n...",
-            estimatedTokens=6000,
-        ),
-    ]
+    try:
+        from md2map.generators.index_generator import (
+            generate_index as md2map_generate_index,
+        )
+        from md2map.generators.parts_generator import (
+            generate_parts as md2map_generate_parts,
+        )
+        from md2map.parsers.markdown_parser import MarkdownParser
+        from md2map.utils.file_utils import read_file as md2map_read_file
 
-    index_content = f"""# Index: {request.filename}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # 入力ファイルを書き込み
+            input_path = os.path.join(tmpdir, request.filename or "input.md")
+            with open(input_path, "w", encoding="utf-8") as f:
+                f.write(request.content)
 
-## Structure Tree
+            # パース
+            parser = MarkdownParser()
+            sections, warnings = parser.parse(input_path, request.maxDepth)
 
-- {request.filename}
-  - 概要 (L1-L50)
-  - 機能要件 (L51-L200)
-  - 画面設計 (L201-L450)
-  - API設計 (L451-L600)
-  - データベース設計 (L601-L750)
+            if not sections:
+                return SplitMarkdownResponse(
+                    success=True,
+                    parts=[],
+                    indexContent="# No sections found\n",
+                )
 
-## Section Summary
+            # 行を読み込み（md2mapはkeepends=Trueの行リストを返す）
+            lines, _ = md2map_read_file(input_path)
+            if lines is None:
+                return SplitMarkdownResponse(
+                    success=False,
+                    error="ファイルの読み込みに失敗しました",
+                )
 
-| # | Section | Lines | Est. Tokens |
-|---|---------|-------|-------------|
-| 1 | 概要 | L1-L50 | ~2,000 |
-| 2 | 機能要件 | L51-L200 | ~8,000 |
-| 3 | 画面設計 | L201-L450 | ~12,000 |
-| 4 | API設計 | L451-L600 | ~7,000 |
-| 5 | データベース設計 | L601-L750 | ~6,000 |
-"""
+            # パーツ生成（section.part_fileを設定するために必要）
+            out_dir = os.path.join(tmpdir, "output")
+            md2map_generate_parts(sections, lines, out_dir)
 
-    return SplitMarkdownResponse(
-        success=True,
-        parts=dummy_parts,
-        indexContent=index_content,
-    )
+            # INDEX.md生成
+            index_path = os.path.join(out_dir, "INDEX.md")
+            md2map_generate_index(
+                sections, warnings, index_path, request.filename
+            )
+
+            # INDEX.md読み取り
+            with open(index_path, "r", encoding="utf-8") as f:
+                index_content = f.read()
+
+            # DocumentPartリスト構築
+            parts = []
+            for section in sections:
+                content = "".join(
+                    lines[section.start_line - 1 : section.end_line]
+                )
+                parts.append(
+                    DocumentPart(
+                        section=section.title,
+                        level=section.level,
+                        path=section.path,
+                        startLine=section.start_line,
+                        endLine=section.end_line,
+                        content=content,
+                        estimatedTokens=_estimate_tokens(content),
+                    )
+                )
+
+        return SplitMarkdownResponse(
+            success=True,
+            parts=parts,
+            indexContent=index_content,
+        )
+
+    except Exception as e:
+        return SplitMarkdownResponse(
+            success=False,
+            error=f"Markdown分割中にエラーが発生しました: {str(e)}",
+        )
 
 
 @router.post("/split/code", response_model=SplitCodeResponse)
 async def split_code(request: SplitCodeRequest):
     """
-    コードをクラス・メソッド・関数単位で分割する（code2map相当）
+    コードをクラス・メソッド・関数単位で分割する（code2map使用）
 
     - ファイル拡張子から言語を自動判定
     - 対応言語: Python (.py), Java (.java)
-
-    【Phase 2: スタブ実装】
-    実際のcode2map呼び出しは Phase 3 で実装。
     """
     # 言語判定
-    ext = request.filename.lower().split(".")[-1] if "." in request.filename else ""
+    ext = (
+        request.filename.lower().split(".")[-1]
+        if "." in request.filename
+        else ""
+    )
     language = {"py": "python", "java": "java"}.get(ext)
 
     if not language:
@@ -154,166 +179,249 @@ async def split_code(request: SplitCodeRequest):
             error=f"未対応の言語です: .{ext} (対応: .py, .java)",
         )
 
-    # スタブ: ダミーの分割結果を返す
-    if language == "java":
-        dummy_parts = [
-            CodePart(
-                symbol="UserService",
-                symbolType="class",
-                parentSymbol=None,
-                startLine=1,
-                endLine=250,
-                content="public class UserService {\n    // ...\n}",
-                estimatedTokens=5000,
-            ),
-            CodePart(
-                symbol="createUser",
-                symbolType="method",
-                parentSymbol="UserService",
-                startLine=45,
-                endLine=80,
-                content="public User createUser(String name) {\n    // ...\n}",
-                estimatedTokens=1500,
-            ),
-            CodePart(
-                symbol="updateUser",
-                symbolType="method",
-                parentSymbol="UserService",
-                startLine=82,
-                endLine=120,
-                content="public User updateUser(Long id, String name) {\n    // ...\n}",
-                estimatedTokens=1600,
-            ),
-            CodePart(
-                symbol="deleteUser",
-                symbolType="method",
-                parentSymbol="UserService",
-                startLine=122,
-                endLine=150,
-                content="public void deleteUser(Long id) {\n    // ...\n}",
-                estimatedTokens=1200,
-            ),
-            CodePart(
-                symbol="findById",
-                symbolType="method",
-                parentSymbol="UserService",
-                startLine=152,
-                endLine=180,
-                content="public User findById(Long id) {\n    // ...\n}",
-                estimatedTokens=1200,
-            ),
-        ]
-    else:  # python
-        dummy_parts = [
-            CodePart(
-                symbol="UserManager",
-                symbolType="class",
-                parentSymbol=None,
-                startLine=10,
-                endLine=150,
-                content="class UserManager:\n    # ...",
-                estimatedTokens=4000,
-            ),
-            CodePart(
-                symbol="create_user",
-                symbolType="method",
-                parentSymbol="UserManager",
-                startLine=25,
-                endLine=50,
-                content="def create_user(self, name: str) -> User:\n    # ...",
-                estimatedTokens=1200,
-            ),
-            CodePart(
-                symbol="update_user",
-                symbolType="method",
-                parentSymbol="UserManager",
-                startLine=52,
-                endLine=80,
-                content="def update_user(self, user_id: int, name: str) -> User:\n    # ...",
-                estimatedTokens=1300,
-            ),
-        ]
+    try:
+        from code2map.generators.index_generator import (
+            generate_index as code2map_generate_index,
+        )
+        from code2map.generators.parts_generator import (
+            generate_parts as code2map_generate_parts,
+        )
+        from code2map.utils.file_utils import (
+            read_lines as code2map_read_lines,
+            slice_lines,
+        )
 
-    index_content = f"""# Index: {request.filename}
+        if language == "python":
+            from code2map.parsers.python_parser import PythonParser
 
-## Language: {language.title()}
+            code_parser = PythonParser()
+        else:
+            from code2map.parsers.java_parser import JavaParser
 
-## Symbols
+            code_parser = JavaParser()
 
-| # | Symbol | Type | Lines | Est. Tokens |
-|---|--------|------|-------|-------------|
-"""
-    for i, part in enumerate(dummy_parts, 1):
-        parent = f" ({part.parentSymbol})" if part.parentSymbol else ""
-        index_content += f"| {i} | {part.symbol}{parent} | {part.symbolType} | L{part.startLine}-L{part.endLine} | ~{part.estimatedTokens:,} |\n"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # 入力ファイルを書き込み
+            input_path = os.path.join(tmpdir, request.filename)
+            with open(input_path, "w", encoding="utf-8") as f:
+                f.write(request.content)
 
-    return SplitCodeResponse(
-        success=True,
-        parts=dummy_parts,
-        indexContent=index_content,
-        language=language,
-    )
+            # パース
+            symbols, warnings = code_parser.parse(input_path)
+
+            if not symbols:
+                return SplitCodeResponse(
+                    success=True,
+                    parts=[],
+                    indexContent="# No symbols found\n",
+                    language=language,
+                )
+
+            # 行を読み込み（code2mapはsplitlines()の行リストを返す）
+            c2m_lines = code2map_read_lines(input_path)
+
+            # パーツ生成（symbol.part_fileを設定するために必要）
+            out_dir = os.path.join(tmpdir, "output")
+            code2map_generate_parts(symbols, c2m_lines, out_dir)
+
+            # INDEX.md生成
+            index_path = os.path.join(out_dir, "INDEX.md")
+            code2map_generate_index(
+                symbols, warnings, c2m_lines, index_path, request.filename
+            )
+
+            # INDEX.md読み取り
+            with open(index_path, "r", encoding="utf-8") as f:
+                index_content = f.read()
+
+            # CodePartリスト構築
+            parts = []
+            for symbol in symbols:
+                content = slice_lines(
+                    c2m_lines, symbol.start_line, symbol.end_line
+                )
+                parts.append(
+                    CodePart(
+                        symbol=symbol.name,
+                        symbolType=symbol.kind,
+                        parentSymbol=symbol.parent,
+                        startLine=symbol.start_line,
+                        endLine=symbol.end_line,
+                        content=content,
+                        estimatedTokens=_estimate_tokens(content),
+                    )
+                )
+
+        return SplitCodeResponse(
+            success=True,
+            parts=parts,
+            indexContent=index_content,
+            language=language,
+        )
+
+    except Exception as e:
+        return SplitCodeResponse(
+            success=False,
+            error=f"コード分割中にエラーが発生しました: {str(e)}",
+        )
 
 
-@router.post("/review/structure-matching", response_model=StructureMatchingResponse)
+# ---------------------------------------------------------------------------
+# レビューAPI
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/review/structure-matching", response_model=StructureMatchingResponse
+)
 async def structure_matching(request: StructureMatchingRequest):
     """
     構造マッチング（フェーズ1）
 
     設計書とコードの構造を比較し、関連性の高いグループを特定する。
-
-    【Phase 2: スタブ実装】
-    実際のLLM呼び出しは Phase 3 で実装。
+    AIが設計書のINDEX.md / MAP.jsonとコードのINDEX.md / MAP.jsonを分析し、
+    関連する設計書セクションとコードシンボルをグループ化する。
     """
-    await asyncio.sleep(5)  # スタブ用の遅延（画面確認用）
+    try:
+        provider = get_llm_provider(request.llmConfig)
 
-    # スタブ: ダミーのグループ情報を返す
-    dummy_groups = [
-        MatchedGroup(
-            groupId="group_1",
-            groupName="ユーザー管理",
-            docSections=[
-                MatchedDocSection(title="機能要件", path="機能要件"),
-                MatchedDocSection(title="ユーザー管理", path="機能要件 > ユーザー管理"),
-            ],
-            codeSymbols=[
-                MatchedCodeSymbol(filename="UserService.java", symbol="UserService"),
-                MatchedCodeSymbol(filename="UserService.java", symbol="createUser"),
-                MatchedCodeSymbol(filename="UserService.java", symbol="updateUser"),
-            ],
-            reason="ユーザー管理に関連する設計とコード",
-            estimatedTokens=8500,
-        ),
-        MatchedGroup(
-            groupId="group_2",
-            groupName="API設計",
-            docSections=[
-                MatchedDocSection(title="API設計", path="API設計"),
-            ],
-            codeSymbols=[
-                MatchedCodeSymbol(filename="UserService.java", symbol="deleteUser"),
-                MatchedCodeSymbol(filename="UserService.java", symbol="findById"),
-            ],
-            reason="API仕様とエンドポイント実装",
-            estimatedTokens=5200,
-        ),
-        MatchedGroup(
-            groupId="group_3",
-            groupName="データベース設計",
-            docSections=[
-                MatchedDocSection(title="データベース設計", path="データベース設計"),
-            ],
-            codeSymbols=[],
-            reason="データベース設計（対応コードなし）",
-            estimatedTokens=3000,
-        ),
-    ]
+        system_prompt = (
+            "あなたは設計書とソースコードの構造を分析する専門家です。\n"
+            "設計書の構造（セクション一覧）とコードの構造（シンボル一覧）を比較し、\n"
+            "関連性の高い設計書セクションとコードシンボルをグループにまとめてください。\n"
+            "必ず指定されたJSON形式のみで応答してください。\n\n"
+            "【重要】出力するdoc_sectionsのtitleとpathは、設計書MAP.jsonに記載された"
+            "titleとpathの値を正確にそのまま使用してください。\n"
+            "【重要】出力するcode_symbolsのfilenameとsymbolは、コードMAP.jsonに記載された"
+            "original_fileとsymbolの値を正確にそのまま使用してください。"
+        )
 
-    return StructureMatchingResponse(
-        success=True,
-        groups=dummy_groups,
-        totalGroups=len(dummy_groups),
-    )
+        # ユーザーメッセージ構築
+        user_parts = [
+            "# 構造マッチング依頼\n",
+            "以下の設計書構造とコード構造を比較し、関連性の高いグループを特定してください。",
+            "設計書の複数セクションと、複数のコード部分が対応する場合もあります。\n",
+            "## 設計書構造\n",
+            "### INDEX.md",
+            request.document.indexMd,
+            "\n### MAP.json",
+            json.dumps(request.document.mapJson, ensure_ascii=False, indent=2),
+        ]
+
+        for code_file in request.codeFiles:
+            user_parts.extend([
+                f"\n## コード構造: {code_file.filename}\n",
+                f"### {code_file.filename} - INDEX.md",
+                code_file.indexMd,
+                f"\n### {code_file.filename} - MAP.json",
+                json.dumps(
+                    code_file.mapJson, ensure_ascii=False, indent=2
+                ),
+            ])
+
+        user_parts.extend([
+            "\n## 出力形式\n",
+            "以下のJSON形式で出力してください:",
+            "",
+            "**注意**: doc_sectionsのtitle/pathは設計書MAP.jsonの値を、"
+            "code_symbolsのfilename/symbolはコードMAP.jsonの値を、"
+            "正確にそのまま使用してください（後工程でのマッチングに使用されます）。\n",
+            "```json",
+            json.dumps(
+                {
+                    "groups": [
+                        {
+                            "id": "group1",
+                            "name": "グループの表示名",
+                            "doc_sections": [
+                                {
+                                    "title": "MAP.jsonのtitle値をそのまま使用",
+                                    "path": "MAP.jsonのpath値をそのまま使用",
+                                }
+                            ],
+                            "code_symbols": [
+                                {
+                                    "filename": "MAP.jsonのoriginal_file値をそのまま使用",
+                                    "symbol": "MAP.jsonのsymbol値をそのまま使用",
+                                }
+                            ],
+                            "reason": "グループ化の理由",
+                        }
+                    ]
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            "```",
+        ])
+
+        user_message = "\n".join(user_parts)
+
+        # LLM呼び出し
+        response_text, input_tokens, output_tokens = provider.send_message(
+            system_prompt, user_message
+        )
+
+        # JSON応答パース
+        result = _extract_json(response_text)
+        groups = []
+        for i, g in enumerate(result.get("groups", [])):
+            group_id = g.get("id", f"group_{i + 1}")
+            group_name = g.get("name", group_id)
+
+            doc_sections = [
+                MatchedDocSection(
+                    title=ds.get("title", ""),
+                    path=ds.get("path", ds.get("title", "")),
+                )
+                for ds in g.get("doc_sections", [])
+            ]
+
+            code_symbols = [
+                MatchedCodeSymbol(
+                    filename=cs.get("filename", ""),
+                    symbol=cs.get("symbol", ""),
+                )
+                for cs in g.get("code_symbols", [])
+            ]
+
+            # 推定トークン数の計算
+            estimated = _estimate_tokens(
+                json.dumps(g, ensure_ascii=False)
+            )
+
+            groups.append(
+                MatchedGroup(
+                    groupId=group_id,
+                    groupName=group_name,
+                    docSections=doc_sections,
+                    codeSymbols=code_symbols,
+                    reason=g.get("reason", ""),
+                    estimatedTokens=estimated,
+                )
+            )
+
+        return StructureMatchingResponse(
+            success=True,
+            groups=groups,
+            totalGroups=len(groups),
+        )
+
+    except json.JSONDecodeError as e:
+        return StructureMatchingResponse(
+            success=False,
+            error=f"AIの応答をJSONとして解析できませんでした: {str(e)}",
+        )
+    except RuntimeError as e:
+        return StructureMatchingResponse(
+            success=False,
+            error=str(e),
+        )
+    except Exception as e:
+        return StructureMatchingResponse(
+            success=False,
+            error=f"構造マッチング中にエラーが発生しました: {str(e)}",
+        )
 
 
 @router.post("/review/group", response_model=GroupReviewResponse)
@@ -322,74 +430,153 @@ async def review_group(request: GroupReviewRequest):
     グループレビュー（フェーズ2）
 
     1グループ（関連する設計書パーツ + コードパーツ）をレビューする。
-
-    【Phase 2: スタブ実装】
-    実際のLLM呼び出しは Phase 3 で実装。
     """
-    await asyncio.sleep(5)  # スタブ用の遅延（画面確認用）
+    try:
+        provider = get_llm_provider(request.llmConfig)
 
-    # スタブ: ダミーのレビュー結果を返す
-    doc_titles = [p.title for p in request.documentParts]
-    code_symbols = [p.symbol for p in request.codeParts]
+        system_prompt = (
+            "あなたは設計書とソースコードの整合性をレビューする専門家です。\n"
+            "設計書の記述とコード実装の整合性を確認し、指摘事項を報告してください。\n"
+            "必ず指定されたJSON形式のみで応答してください。"
+        )
 
-    dummy_findings = []
-
-    # グループに応じたダミー指摘を生成
-    if request.groupId == "group_1":
-        dummy_findings = [
-            ReviewFinding(
-                id="F001",
-                findingType="inconsistency",
-                severity="warning",
-                docLocation={"section": "ユーザー管理", "line": 165},
-                codeLocation={"filename": "UserService.java", "symbol": "createUser", "line": 25},
-                description="設計書では「メールアドレスは必須」と記載されているが、コードではnull許容になっている",
-                recommendation="コードにメールアドレスの必須チェックを追加するか、設計書を修正する",
-            ),
-            ReviewFinding(
-                id="F002",
-                findingType="missing_in_code",
-                severity="error",
-                docLocation={"section": "機能要件", "line": 78},
-                codeLocation=None,
-                description="設計書に記載の「パスワード強度チェック」がコードに実装されていない",
-                recommendation="PasswordValidatorクラスを作成し、createUserメソッドから呼び出す",
-            ),
+        # ユーザーメッセージ構築
+        user_parts = [
+            "# レビュー依頼\n",
+            "以下の設計書セクションとコードの整合性をレビューしてください。\n",
+            f"## レビュー対象グループ: {request.groupName}\n",
+            f"- グループID: {request.groupId}",
+            f"- 設計書セクション: {', '.join(p.title for p in request.documentParts)}",
+            f"- 対応コード: {', '.join(p.symbol for p in request.codeParts)}\n",
         ]
-        summary = "設計書とコードは概ね整合しているが、バリデーション仕様に差異あり"
-    elif request.groupId == "group_2":
-        dummy_findings = [
-            ReviewFinding(
-                id="F003",
-                findingType="inconsistency",
-                severity="warning",
-                docLocation={"section": "API設計", "line": 45},
-                codeLocation={"filename": "UserService.java", "symbol": "deleteUser", "line": 122},
-                description="設計書ではDELETEメソッドの戻り値は204だが、コードでは200を返している",
-                recommendation="HTTPステータスコードを設計書に合わせて修正する",
+
+        # 設計書内容
+        user_parts.append("## 設計書内容\n")
+        for part in request.documentParts:
+            user_parts.extend([
+                f"### {part.title} (L{part.startLine}-L{part.endLine})\n",
+                part.content,
+                "",
+            ])
+
+        # コード内容
+        user_parts.append("## コード内容\n")
+        for part in request.codeParts:
+            user_parts.extend([
+                f"### {part.filename}:{part.symbol} ({part.symbolType}, L{part.startLine}-L{part.endLine})\n",
+                f"```\n{part.content}\n```\n",
+            ])
+
+        # レビュー観点
+        user_parts.extend([
+            "## レビュー観点\n",
+            "1. 設計書の記述とコード実装の整合性",
+            "2. 設計書に記載があるがコードに実装されていない機能",
+            "3. コードに実装があるが設計書に記載がない機能",
+            "4. 命名の一貫性",
+            "5. その他の懸念事項\n",
+        ])
+
+        # 出力形式
+        user_parts.extend([
+            "## 出力形式\n",
+            "以下のJSON形式で出力してください:",
+            "```json",
+            json.dumps(
+                {
+                    "summary": "全体的な整合性の評価",
+                    "findings": [
+                        {
+                            "id": "F001",
+                            "type": "inconsistency|missing_in_code|missing_in_doc|suggestion",
+                            "severity": "error|warning|info",
+                            "doc_location": {
+                                "section": "セクション名",
+                                "line": 25,
+                            },
+                            "code_location": {
+                                "filename": "ファイル名",
+                                "symbol": "シンボル名",
+                                "line": 45,
+                            },
+                            "description": "指摘内容",
+                            "recommendation": "推奨対応",
+                        }
+                    ],
+                },
+                ensure_ascii=False,
+                indent=2,
             ),
-        ]
-        summary = "APIの仕様とコードは概ね整合しているが、ステータスコードに差異あり"
-    else:
-        summary = "対応するコードがないため、設計書のみの確認となります"
+            "```",
+            "\n指摘がない場合はfindingsを空配列にしてください。",
+        ])
 
-    result = GroupReviewResult(
-        summary=summary,
-        findings=dummy_findings,
-        statistics={
-            "totalFindings": len(dummy_findings),
-            "errors": sum(1 for f in dummy_findings if f.severity == "error"),
-            "warnings": sum(1 for f in dummy_findings if f.severity == "warning"),
-            "info": sum(1 for f in dummy_findings if f.severity == "info"),
-        },
-    )
+        user_message = "\n".join(user_parts)
 
-    return GroupReviewResponse(
-        success=True,
-        groupId=request.groupId,
-        reviewResult=result,
-        tokensUsed={"input": 6500, "output": 1200},
-    )
+        # LLM呼び出し
+        response_text, input_tokens, output_tokens = provider.send_message(
+            system_prompt, user_message
+        )
+
+        # JSON応答パース
+        result = _extract_json(response_text)
+
+        findings = []
+        for f in result.get("findings", []):
+            findings.append(
+                ReviewFinding(
+                    id=f.get("id", ""),
+                    findingType=f.get("type", "suggestion"),
+                    severity=f.get("severity", "info"),
+                    docLocation=f.get("doc_location"),
+                    codeLocation=f.get("code_location"),
+                    description=f.get("description", ""),
+                    recommendation=f.get("recommendation", ""),
+                )
+            )
+
+        review_result = GroupReviewResult(
+            summary=result.get("summary", ""),
+            findings=findings,
+            statistics={
+                "totalFindings": len(findings),
+                "errors": sum(
+                    1 for f in findings if f.severity == "error"
+                ),
+                "warnings": sum(
+                    1 for f in findings if f.severity == "warning"
+                ),
+                "info": sum(
+                    1 for f in findings if f.severity == "info"
+                ),
+            },
+        )
+
+        return GroupReviewResponse(
+            success=True,
+            groupId=request.groupId,
+            reviewResult=review_result,
+            tokensUsed={"input": input_tokens, "output": output_tokens},
+        )
+
+    except json.JSONDecodeError as e:
+        return GroupReviewResponse(
+            success=False,
+            groupId=request.groupId,
+            error=f"AIの応答をJSONとして解析できませんでした: {str(e)}",
+        )
+    except RuntimeError as e:
+        return GroupReviewResponse(
+            success=False,
+            groupId=request.groupId,
+            error=str(e),
+        )
+    except Exception as e:
+        return GroupReviewResponse(
+            success=False,
+            groupId=request.groupId,
+            error=f"グループレビュー中にエラーが発生しました: {str(e)}",
+        )
 
 
 @router.post("/review/integrate", response_model=IntegrateResponse)
@@ -399,98 +586,142 @@ async def integrate_reviews(request: IntegrateRequest):
 
     全グループのレビュー結果を統合し、最終レポートを生成する。
     システムプロンプト設定に基づいて、AIがMarkdown形式のレビューレポートを生成する。
-
-    【Phase 2: スタブ実装】
-    実際のLLM呼び出しは Phase 3 で実装。
     """
-    await asyncio.sleep(5)  # スタブ用の遅延（画面確認用）
+    try:
+        provider = get_llm_provider(request.llmConfig)
 
-    # スタブ: ダミーの統合レポートを返す
-    total_findings = sum(len(gr.findings) for gr in request.groupReviews)
-    total_errors = sum(
-        sum(1 for f in gr.findings if f.severity == "error")
-        for gr in request.groupReviews
-    )
-    total_warnings = sum(
-        sum(1 for f in gr.findings if f.severity == "warning")
-        for gr in request.groupReviews
-    )
+        system_prompt = (
+            "あなたはレビュー結果を統合するエキスパートです。\n"
+            "複数のグループレビュー結果を統合し、最終的なレビューレポートを"
+            "Markdown形式で生成してください。"
+        )
 
-    integrated_report = IntegratedReport(
-        overallSummary=f"全体として設計書とコードの整合性は良好（適合率78%）。主要な課題はバリデーション仕様の不一致。レビュー対象: {len(request.groupReviews)}グループ",
-        consistencyScore=0.78,
-        keyIssues=[
-            KeyIssue(
-                priority=1,
-                title="バリデーション仕様の不一致",
-                affectedGroups=["group_1"],
-                description="ユーザー登録時のバリデーションが設計書とコードで異なる",
-                relatedFindings=["F001", "F002"],
+        # ユーザーメッセージ構築
+        user_parts = [
+            "# レビュー結果統合依頼\n",
+            "以下のグループレビュー結果を統合し、最終レポートを生成してください。\n",
+        ]
+
+        # システムプロンプト設定（注意事項・出力フォーマット）
+        if request.systemPrompt:
+            user_parts.extend([
+                "## システムプロンプト設定\n",
+                "以下の注意事項・出力フォーマットに従ってレポートを作成してください:\n",
+                request.systemPrompt,
+                "",
+            ])
+
+        # 構造マッチング結果
+        user_parts.extend([
+            "## 構造マッチング結果\n",
+            "```json",
+            json.dumps(
+                request.structureMatching, ensure_ascii=False, indent=2
             ),
-            KeyIssue(
-                priority=2,
-                title="HTTPステータスコードの不整合",
-                affectedGroups=["group_2"],
-                description="API設計書と実装でステータスコードが異なる",
-                relatedFindings=["F003"],
-            ),
-        ],
-        crossGroupIssues=[],
-        statistics={
-            "totalGroupsReviewed": len(request.groupReviews),
-            "totalFindings": total_findings,
-            "bySeverity": {
-                "error": total_errors,
-                "warning": total_warnings,
-                "info": 0,
+            "```\n",
+        ])
+
+        # グループレビュー結果
+        user_parts.append("## グループレビュー結果\n")
+        for gr in request.groupReviews:
+            user_parts.extend([
+                f"### {gr.groupName} ({gr.groupId})\n",
+                f"**サマリー**: {gr.summary}\n",
+            ])
+            if gr.findings:
+                user_parts.append("**指摘事項**:\n")
+                for f in gr.findings:
+                    user_parts.append(
+                        f"- [{f.severity}] {f.id}: {f.description}"
+                    )
+                user_parts.append("")
+
+        # 統合指示
+        user_parts.extend([
+            "## 統合指示\n",
+            "1. 各グループのレビュー結果を統合し、重複する指摘を排除してください",
+            "2. グループ間にまたがる問題があれば特定してください",
+            "3. 全体的な整合性評価を記述してください",
+        ])
+
+        if request.systemPrompt:
+            user_parts.append(
+                "4. システムプロンプト設定に記載された出力フォーマットに"
+                "従って最終レポートを生成してください"
+            )
+
+        user_parts.extend([
+            "\n## 出力\n",
+            "Markdown形式のレビューレポートを出力してください。",
+        ])
+
+        user_message = "\n".join(user_parts)
+
+        # LLM呼び出し
+        response_text, input_tokens, output_tokens = provider.send_message(
+            system_prompt, user_message
+        )
+
+        # 統計情報をグループレビュー結果から集計
+        total_findings = sum(
+            len(gr.findings) for gr in request.groupReviews
+        )
+        total_errors = sum(
+            sum(1 for f in gr.findings if f.severity == "error")
+            for gr in request.groupReviews
+        )
+        total_warnings = sum(
+            sum(1 for f in gr.findings if f.severity == "warning")
+            for gr in request.groupReviews
+        )
+        total_info = sum(
+            sum(1 for f in gr.findings if f.severity == "info")
+            for gr in request.groupReviews
+        )
+
+        # IntegratedReport構築
+        # 重複指摘の検出
+        seen_descriptions = set()
+        deduplicated = []
+        for gr in request.groupReviews:
+            for f in gr.findings:
+                if f.description not in seen_descriptions:
+                    seen_descriptions.add(f.description)
+                else:
+                    deduplicated.append(f.id)
+
+        integrated_report = IntegratedReport(
+            overallSummary=f"レビュー対象: {len(request.groupReviews)}グループ, "
+            f"総指摘件数: {total_findings}件",
+            consistencyScore=0.0,  # AIレポートから抽出可能だが、簡易実装
+            keyIssues=[],
+            crossGroupIssues=[],
+            statistics={
+                "totalGroupsReviewed": len(request.groupReviews),
+                "totalFindings": total_findings,
+                "bySeverity": {
+                    "error": total_errors,
+                    "warning": total_warnings,
+                    "info": total_info,
+                },
             },
-        },
-        deduplicatedFindings=[],
-    )
+            deduplicatedFindings=deduplicated,
+        )
 
-    # AIが生成するMarkdownレポート（スタブ）
-    markdown_report = f"""# 設計書-コード整合性レビュー結果
+        return IntegrateResponse(
+            success=True,
+            report=response_text,
+            integratedReport=integrated_report,
+            tokensUsed={"input": input_tokens, "output": output_tokens},
+        )
 
-## 1. 全体サマリー
-
-{integrated_report.overallSummary}
-
-**整合性スコア**: {integrated_report.consistencyScore * 100:.0f}%
-
-## 2. 重要な課題
-
-"""
-    for issue in integrated_report.keyIssues:
-        markdown_report += f"""### 優先度{issue.priority}: {issue.title}
-
-- **影響グループ**: {', '.join(issue.affectedGroups)}
-- **説明**: {issue.description}
-- **関連指摘**: {', '.join(issue.relatedFindings)}
-
-"""
-
-    markdown_report += f"""## 3. 指摘事項一覧
-
-| ID | 種別 | 重要度 | 説明 |
-|----|------|--------|------|
-"""
-    for gr in request.groupReviews:
-        for finding in gr.findings:
-            markdown_report += f"| {finding.id} | {finding.findingType} | {finding.severity} | {finding.description} |\n"
-
-    markdown_report += f"""
-## 4. 統計情報
-
-- **レビュー対象グループ数**: {len(request.groupReviews)}
-- **総指摘件数**: {total_findings}
-  - エラー: {total_errors}
-  - 警告: {total_warnings}
-  - 情報: 0
-"""
-
-    return IntegrateResponse(
-        success=True,
-        report=markdown_report,
-        integratedReport=integrated_report,
-        tokensUsed={"input": 4500, "output": 2000},
-    )
+    except RuntimeError as e:
+        return IntegrateResponse(
+            success=False,
+            error=str(e),
+        )
+    except Exception as e:
+        return IntegrateResponse(
+            success=False,
+            error=f"結果統合中にエラーが発生しました: {str(e)}",
+        )

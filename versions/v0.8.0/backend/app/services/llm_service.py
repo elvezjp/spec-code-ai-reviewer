@@ -82,6 +82,24 @@ class LLMProvider(ABC):
         pass
 
     @abstractmethod
+    def send_message(
+        self, system_prompt: str, user_message: str
+    ) -> tuple[str, int, int]:
+        """汎用メッセージ送信（分割レビュー用）
+
+        Args:
+            system_prompt: システムプロンプト
+            user_message: ユーザーメッセージ
+
+        Returns:
+            tuple: (応答テキスト, 入力トークン数, 出力トークン数)
+
+        Raises:
+            RuntimeError: LLM API呼び出しに失敗した場合
+        """
+        pass
+
+    @abstractmethod
     def test_connection(self) -> dict:
         """接続テストを実行する
 

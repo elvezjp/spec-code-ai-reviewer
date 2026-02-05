@@ -111,6 +111,28 @@ class BedrockProvider(LLMProvider):
                 f"レビュー実行中にエラーが発生しました: {str(e)}"
             )
 
+    def send_message(
+        self, system_prompt: str, user_message: str
+    ) -> tuple[str, int, int]:
+        try:
+            response = self._client.converse(
+                modelId=self._model_id,
+                messages=[{
+                    "role": "user",
+                    "content": [{"text": user_message}],
+                }],
+                system=[{"text": system_prompt}],
+                inferenceConfig={"maxTokens": self._max_tokens},
+            )
+            usage = response.get("usage", {})
+            return (
+                response["output"]["message"]["content"][0]["text"],
+                usage.get("inputTokens", 0),
+                usage.get("outputTokens", 0),
+            )
+        except Exception as e:
+            raise RuntimeError(f"Bedrock API エラー: {str(e)}") from e
+
     def test_connection(self) -> dict:
         """Bedrock接続状態を確認する
 

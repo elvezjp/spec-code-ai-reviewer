@@ -88,6 +88,27 @@ class OpenAIProvider(LLMProvider):
                 f"レビュー実行中にエラーが発生しました: {str(e)}"
             )
 
+    def send_message(
+        self, system_prompt: str, user_message: str
+    ) -> tuple[str, int, int]:
+        try:
+            response = self._client.chat.completions.create(
+                model=self._model_id,
+                max_completion_tokens=self._max_tokens,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message},
+                ],
+            )
+            usage = response.usage
+            return (
+                response.choices[0].message.content or "",
+                usage.prompt_tokens if usage else 0,
+                usage.completion_tokens if usage else 0,
+            )
+        except Exception as e:
+            raise RuntimeError(f"OpenAI API エラー: {str(e)}") from e
+
     def test_connection(self) -> dict:
         """OpenAI API接続状態を確認する
 
