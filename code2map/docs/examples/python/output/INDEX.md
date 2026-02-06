@@ -1,0 +1,51 @@
+# Index: user_management_service.py
+
+## Classes
+- UserAlreadyExistsException (L11–L13) -> parts/UserAlreadyExistsException.class.py
+- UserNotFoundException (L16–L18) -> parts/UserNotFoundException.class.py
+- User (L22–L27) -> parts/User.class.py
+- UserManagementService (L30–L231) -> parts/UserManagementService.class.py
+
+## Methods
+- UserManagementService#__init__ (L46–L48) -> parts/UserManagementService___init__.py
+  - role: ユーザー格納用の辞書（キー: ユーザーID）
+- UserManagementService#register_user (L50–L81) -> parts/UserManagementService_register_user.py
+  - role: 新規ユーザーを登録する
+  - calls: User, UserAlreadyExistsException, self._validate_age, self._validate_email, self._validate_user_id, self._validate_user_name
+  - side effects: exceptions
+- UserManagementService#update_user (L83–L120) -> parts/UserManagementService_update_user.py
+  - role: ユーザー情報を更新する
+  - calls: self._find_user_or_throw, self._validate_age, self._validate_email, self._validate_user_name
+- UserManagementService#delete_user (L122–L137) -> parts/UserManagementService_delete_user.py
+  - role: ユーザーを削除する
+  - calls: self._find_user_or_throw
+- UserManagementService#find_by_id (L139–L149) -> parts/UserManagementService_find_by_id.py
+  - role: ユーザーIDでユーザーを検索する
+  - calls: self._users.get
+- UserManagementService#find_all (L151–L158) -> parts/UserManagementService_find_all.py
+  - role: 全ユーザーを取得する
+  - calls: list, self._users.values
+- UserManagementService#find_by_age_range (L160–L175) -> parts/UserManagementService_find_by_age_range.py
+  - role: 年齢範囲でユーザーを検索する
+  - calls: result.append, self._users.values
+- UserManagementService#find_by_email_domain (L177–L192) -> parts/UserManagementService_find_by_email_domain.py
+  - role: メールドメインでユーザーを検索する
+  - calls: result.append, self._users.values, user.email.endswith
+- UserManagementService#get_user_count (L194–L201) -> parts/UserManagementService_get_user_count.py
+  - role: 登録ユーザー数を取得する
+  - calls: len
+- UserManagementService#_validate_user_id (L205–L209) -> parts/UserManagementService__validate_user_id.py
+  - calls: ValueError, len, user_id.strip
+  - side effects: exceptions
+- UserManagementService#_validate_user_name (L211–L215) -> parts/UserManagementService__validate_user_name.py
+  - calls: ValueError, len, user_name.strip
+  - side effects: exceptions
+- UserManagementService#_validate_email (L217–L221) -> parts/UserManagementService__validate_email.py
+  - calls: ValueError, email.strip, self.EMAIL_PATTERN.match
+  - side effects: exceptions
+- UserManagementService#_validate_age (L223–L225) -> parts/UserManagementService__validate_age.py
+  - calls: ValueError
+  - side effects: exceptions
+- UserManagementService#_find_user_or_throw (L227–L231) -> parts/UserManagementService__find_user_or_throw.py
+  - calls: UserNotFoundException, self._users.get
+  - side effects: exceptions

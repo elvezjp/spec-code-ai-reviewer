@@ -1,0 +1,58 @@
+# Index: UserManagementService.java
+
+## Classes
+- UserManagementService (L14–L210) -> parts/UserManagementService.class.java
+- User (L215–L235) -> parts/User.class.java
+- UserAlreadyExistsException (L237–L239) -> parts/UserAlreadyExistsException.class.java
+- UserNotFoundException (L241–L243) -> parts/UserNotFoundException.class.java
+
+## Methods
+- UserManagementService#registerUser (L40–L57) -> parts/UserManagementService_registerUser.java
+  - role: 新規ユーザーを登録する @param userId ユーザーID（必須、20文字以内） @param userName ユーザー名（必須、50文字以内） @param email メールアドレス（必須、形式チェックあり） @param age 年齢（0以上150以下） @return 登録されたユーザー @throws IllegalArgumentException 入力値が不正な場合 @throws UserAlreadyExistsException 同一IDのユーザーが既に存在する場合
+  - calls: users.containsKey, users.put, validateAge, validateEmail, validateUserId, validateUserName
+  - side effects: network, exceptions
+- UserManagementService#updateUser (L69–L89) -> parts/UserManagementService_updateUser.java
+  - role: ユーザー情報を更新する @param userId 更新対象のユーザーID @param userName 新しいユーザー名（nullの場合は更新しない） @param email 新しいメールアドレス（nullの場合は更新しない） @param age 新しい年齢（負の値の場合は更新しない） @return 更新されたユーザー @throws UserNotFoundException ユーザーが見つからない場合
+  - calls: email.isEmpty, existingUser.setAge, existingUser.setEmail, existingUser.setUserName, findUserOrThrow, userName.isEmpty, validateAge, validateEmail, validateUserName
+- UserManagementService#deleteUser (L98–L102) -> parts/UserManagementService_deleteUser.java
+  - role: ユーザーを削除する @param userId 削除対象のユーザーID @return 削除されたユーザー @throws UserNotFoundException ユーザーが見つからない場合
+  - calls: findUserOrThrow, users.remove
+- UserManagementService#findById (L110–L112) -> parts/UserManagementService_findById.java
+  - role: ユーザーIDでユーザーを検索する @param userId 検索対象のユーザーID @return 見つかったユーザー（Optional）
+  - calls: Optional.ofNullable, users.get
+- UserManagementService#findAll (L119–L121) -> parts/UserManagementService_findAll.java
+  - role: 全ユーザーを取得する @return 全ユーザーのリスト
+  - calls: users.values
+- UserManagementService#findByAgeRange (L130–L138) -> parts/UserManagementService_findByAgeRange.java
+  - role: 年齢範囲でユーザーを検索する @param minAge 最小年齢（含む） @param maxAge 最大年齢（含む） @return 条件に一致するユーザーのリスト
+  - calls: result.add, user.getAge, users.values
+- UserManagementService#findByEmailDomain (L146–L155) -> parts/UserManagementService_findByEmailDomain.java
+  - role: メールドメインでユーザーを検索する @param domain メールドメイン（例: "example
+  - calls: endsWith, result.add, user.getEmail, users.values
+- UserManagementService#getUserCount (L162–L164) -> parts/UserManagementService_getUserCount.java
+  - role: 登録ユーザー数を取得する @return 登録ユーザー数
+  - calls: users.size
+- UserManagementService#validateUserId (L168–L176) -> parts/UserManagementService_validateUserId.java
+  - calls: isEmpty, userId.length, userId.trim
+  - side effects: exceptions
+- UserManagementService#validateUserName (L178–L186) -> parts/UserManagementService_validateUserName.java
+  - calls: isEmpty, userName.length, userName.trim
+  - side effects: exceptions
+- UserManagementService#validateEmail (L188–L195) -> parts/UserManagementService_validateEmail.java
+  - calls: EMAIL_PATTERN.matcher, email.trim, isEmpty, matches
+  - side effects: exceptions
+- UserManagementService#validateAge (L197–L201) -> parts/UserManagementService_validateAge.java
+  - side effects: exceptions
+- UserManagementService#findUserOrThrow (L203–L209) -> parts/UserManagementService_findUserOrThrow.java
+  - calls: users.get
+  - side effects: exceptions
+- User#getUserId (L228–L228) -> parts/User_getUserId.java
+- User#getUserName (L229–L229) -> parts/User_getUserName.java
+- User#setUserName (L230–L230) -> parts/User_setUserName.java
+- User#getEmail (L231–L231) -> parts/User_getEmail.java
+- User#setEmail (L232–L232) -> parts/User_setEmail.java
+- User#getAge (L233–L233) -> parts/User_getAge.java
+- User#setAge (L234–L234) -> parts/User_setAge.java
+- User#<init> (L221–L226) -> parts/User_<init>.java
+- UserAlreadyExistsException#<init> (L238–L238) -> parts/UserAlreadyExistsException_<init>.java
+- UserNotFoundException#<init> (L242–L242) -> parts/UserNotFoundException_<init>.java
