@@ -190,12 +190,28 @@ async def structure_matching(request: StructureMatchingRequest):
         provider = get_llm_provider(request.llmConfig)
 
         # システムプロンプト構築（prompt_builder使用）
-        role = "設計書とソースコードの構造を分析する専門家"
+        # roleの設定（systemPrompt.roleがあれば使用）
+        if request.systemPrompt and request.systemPrompt.role:
+            role = request.systemPrompt.role
+        else:
+            role = "設計書とソースコードの構造を分析する専門家"
 
-        purpose = (
-            "設計書の構造（セクション一覧）とコードの構造（シンボル一覧）を比較し、"
-            "関連性の高い設計書セクションとコードシンボルをグループにまとめる"
-        )
+        # purposeの設定（systemPrompt.purposeを引用して構造マッチングの目的を説明）
+        if request.systemPrompt and request.systemPrompt.purpose:
+            purpose = (
+                "最終的な目的:\n"
+                "```\n"
+                f"{request.systemPrompt.purpose}\n"
+                "```\n\n"
+                "この目的を達成するため、まず設計書の構造（セクション一覧）と"
+                "コードの構造（シンボル一覧）を比較し、"
+                "関連性の高い設計書セクションとコードシンボルをグループにまとめてください。"
+            )
+        else:
+            purpose = (
+                "設計書の構造（セクション一覧）とコードの構造（シンボル一覧）を比較し、"
+                "関連性の高い設計書セクションとコードシンボルをグループにまとめる"
+            )
 
         output_format = """以下のJSON形式で出力してください:
 
@@ -232,14 +248,6 @@ async def structure_matching(request: StructureMatchingRequest):
             "- 【重要】出力するdoc_sectionsのidは、設計書MAP.jsonに記載されたid値を正確にそのまま使用してください（例: MD1, MD2, ...）",
             "- 【重要】出力するcode_symbolsのidは、コードMAP.jsonに記載されたid値を正確にそのまま使用してください（例: CD1, CD2, ...）",
         ]
-
-        # request.systemPromptがある場合は注意事項に追加
-        if request.systemPrompt and request.systemPrompt.notes:
-            notes_parts.extend([
-                "",
-                "【ユーザー指定の注意事項】",
-                request.systemPrompt.notes,
-            ])
 
         notes = "\n".join(notes_parts)
 
@@ -347,53 +355,44 @@ async def review_group(request: GroupReviewRequest):
         provider = get_llm_provider(request.llmConfig)
 
         # システムプロンプト構築（prompt_builder使用）
-        role = "設計書とソースコードの整合性をレビューする専門家"
+        # roleの設定（systemPrompt.roleがあれば使用）
+        if request.systemPrompt and request.systemPrompt.role:
+            role = request.systemPrompt.role
+        else:
+            role = "設計書とソースコードの整合性をレビューする専門家"
 
-        purpose = "設計書の記述とコード実装の整合性を確認し、指摘事項を報告する"
+        # purposeの設定（systemPrompt.purposeを引用してグループレビューの目的を説明）
+        if request.systemPrompt and request.systemPrompt.purpose:
+            purpose = (
+                "最終的な目的:\n"
+                "```\n"
+                f"{request.systemPrompt.purpose}\n"
+                "```\n\n"
+                "この目的を達成するため、以下のグループ（関連する設計書セクションとコード）について、"
+                "設計書の記述とコード実装の整合性を確認し、指摘事項を報告してください。"
+            )
+        else:
+            purpose = "設計書の記述とコード実装の整合性を確認し、指摘事項を報告する"
 
-        output_format = """以下のJSON形式で出力してください:
-
-```json
-{
-  "summary": "全体的な整合性の評価",
-  "findings": [
-    {
-      "id": "F001",
-      "type": "inconsistency|missing_in_code|missing_in_doc|suggestion",
-      "severity": "error|warning|info",
-      "doc_location": {
-        "section": "セクション名",
-        "line": 25
-      },
-      "code_location": {
-        "filename": "ファイル名",
-        "symbol": "シンボル名",
-        "line": 45
-      },
-      "description": "指摘内容",
-      "recommendation": "推奨対応"
-    }
-  ]
-}
-```"""
+        # output_formatの設定（systemPrompt.formatがあれば使用）
+        if request.systemPrompt and request.systemPrompt.format:
+            output_format = request.systemPrompt.format
+        else:
+            output_format = """マークダウン形式で、以下の内容を出力してください：
+1. サマリー（このグループの整合性評価）
+2. 突合結果一覧（テーブル形式: 設計書箇所、コード箇所、判定、指摘内容）
+3. 詳細（問題点と推奨事項）"""
 
         # 注意事項の構築
         notes_parts = [
-            "- 必ず指定されたJSON形式のみで応答してください",
-            "- 指摘がない場合はfindingsを空配列にしてください",
-            "- レビュー観点:",
-            "  1. 設計書の記述とコード実装の整合性",
-            "  2. 設計書に記載があるがコードに実装されていない機能",
-            "  3. コードに実装があるが設計書に記載がない機能",
-            "  4. 命名の一貫性",
-            "  5. その他の懸念事項",
+            "- 提供されている設計書・コードは元ファイルの一部分であり、完全な情報が含まれていない可能性があります",
+            "- 最後に複数グループのレビュー結果を統合するので、統合時への申し送り事項があれば記載してください",
         ]
 
         # request.systemPromptがある場合は注意事項に追加
         if request.systemPrompt and request.systemPrompt.notes:
             notes_parts.extend([
                 "",
-                "【ユーザー指定の注意事項】",
                 request.systemPrompt.notes,
             ])
 
@@ -433,38 +432,9 @@ async def review_group(request: GroupReviewRequest):
             system_prompt, user_message
         )
 
-        # JSON応答パース
-        result = _extract_json(response_text)
-
-        findings = []
-        for f in result.get("findings", []):
-            findings.append(
-                ReviewFinding(
-                    id=f.get("id", ""),
-                    findingType=f.get("type", "suggestion"),
-                    severity=f.get("severity", "info"),
-                    docLocation=f.get("doc_location"),
-                    codeLocation=f.get("code_location"),
-                    description=f.get("description", ""),
-                    recommendation=f.get("recommendation", ""),
-                )
-            )
-
+        # Markdown形式のレスポンスをそのまま格納
         review_result = GroupReviewResult(
-            summary=result.get("summary", ""),
-            findings=findings,
-            statistics={
-                "totalFindings": len(findings),
-                "errors": sum(
-                    1 for f in findings if f.severity == "error"
-                ),
-                "warnings": sum(
-                    1 for f in findings if f.severity == "warning"
-                ),
-                "info": sum(
-                    1 for f in findings if f.severity == "info"
-                ),
-            },
+            report=response_text,
         )
 
         return GroupReviewResponse(
@@ -472,13 +442,6 @@ async def review_group(request: GroupReviewRequest):
             groupId=request.groupId,
             reviewResult=review_result,
             tokensUsed={"input": input_tokens, "output": output_tokens},
-        )
-
-    except json.JSONDecodeError as e:
-        return GroupReviewResponse(
-            success=False,
-            groupId=request.groupId,
-            error=f"AIの応答をJSONとして解析できませんでした: {str(e)}",
         )
     except RuntimeError as e:
         return GroupReviewResponse(
@@ -506,14 +469,33 @@ async def integrate_reviews(request: IntegrateRequest):
         provider = get_llm_provider(request.llmConfig)
 
         # システムプロンプト構築（prompt_builder使用）
-        role = "レビュー結果を統合するエキスパート"
+        # roleの設定（systemPrompt.roleがあれば使用）
+        if request.systemPrompt and request.systemPrompt.role:
+            role = request.systemPrompt.role
+        else:
+            role = "レビュー結果を統合するエキスパート"
 
-        purpose = (
-            "複数のグループレビュー結果を統合し、最終的なレビューレポートを"
-            "Markdown形式で生成する"
-        )
+        # purposeの設定（systemPrompt.purposeを引用して統合の目的を説明）
+        if request.systemPrompt and request.systemPrompt.purpose:
+            purpose = (
+                "最終的な目的:\n"
+                "```\n"
+                f"{request.systemPrompt.purpose}\n"
+                "```\n\n"
+                "複数のグループに分けてレビューを行いました。"
+                "各グループのレビュー結果を統合し、最終的なレビューレポートを生成してください。"
+            )
+        else:
+            purpose = (
+                "複数のグループレビュー結果を統合し、最終的なレビューレポートを"
+                "Markdown形式で生成する"
+            )
 
-        output_format = "Markdown形式のレビューレポートを出力してください。"
+        # output_formatの設定（systemPrompt.formatがあれば使用）
+        if request.systemPrompt and request.systemPrompt.format:
+            output_format = request.systemPrompt.format
+        else:
+            output_format = "Markdown形式のレビューレポートを出力してください。"
 
         # 注意事項の構築
         notes_parts = [
@@ -523,19 +505,11 @@ async def integrate_reviews(request: IntegrateRequest):
         ]
 
         # request.systemPromptがある場合は注意事項に追加
-        if request.systemPrompt:
-            if request.systemPrompt.format:
-                notes_parts.extend([
-                    "",
-                    "【ユーザー指定の出力フォーマット】",
-                    request.systemPrompt.format,
-                ])
-            if request.systemPrompt.notes:
-                notes_parts.extend([
-                    "",
-                    "【ユーザー指定の注意事項】",
-                    request.systemPrompt.notes,
-                ])
+        if request.systemPrompt and request.systemPrompt.notes:
+            notes_parts.extend([
+                "",
+                request.systemPrompt.notes,
+            ])
 
         notes = "\n".join(notes_parts)
 
@@ -559,15 +533,9 @@ async def integrate_reviews(request: IntegrateRequest):
         for gr in request.groupReviews:
             user_parts.extend([
                 f"### {gr.groupName} ({gr.groupId})\n",
-                f"**サマリー**: {gr.summary}\n",
+                gr.report if gr.report else f"**サマリー**: {gr.summary}\n",
+                "",
             ])
-            if gr.findings:
-                user_parts.append("**指摘事項**:\n")
-                for f in gr.findings:
-                    user_parts.append(
-                        f"- [{f.severity}] {f.id}: {f.description}"
-                    )
-                user_parts.append("")
 
         user_message = "\n".join(user_parts)
 
@@ -576,50 +544,16 @@ async def integrate_reviews(request: IntegrateRequest):
             system_prompt, user_message
         )
 
-        # 統計情報をグループレビュー結果から集計
-        total_findings = sum(
-            len(gr.findings) for gr in request.groupReviews
-        )
-        total_errors = sum(
-            sum(1 for f in gr.findings if f.severity == "error")
-            for gr in request.groupReviews
-        )
-        total_warnings = sum(
-            sum(1 for f in gr.findings if f.severity == "warning")
-            for gr in request.groupReviews
-        )
-        total_info = sum(
-            sum(1 for f in gr.findings if f.severity == "info")
-            for gr in request.groupReviews
-        )
-
         # IntegratedReport構築
-        # 重複指摘の検出
-        seen_descriptions = set()
-        deduplicated = []
-        for gr in request.groupReviews:
-            for f in gr.findings:
-                if f.description not in seen_descriptions:
-                    seen_descriptions.add(f.description)
-                else:
-                    deduplicated.append(f.id)
-
         integrated_report = IntegratedReport(
-            overallSummary=f"レビュー対象: {len(request.groupReviews)}グループ, "
-            f"総指摘件数: {total_findings}件",
-            consistencyScore=0.0,  # AIレポートから抽出可能だが、簡易実装
+            overallSummary=f"レビュー対象: {len(request.groupReviews)}グループ",
+            consistencyScore=0.0,
             keyIssues=[],
             crossGroupIssues=[],
             statistics={
                 "totalGroupsReviewed": len(request.groupReviews),
-                "totalFindings": total_findings,
-                "bySeverity": {
-                    "error": total_errors,
-                    "warning": total_warnings,
-                    "info": total_info,
-                },
             },
-            deduplicatedFindings=deduplicated,
+            deduplicatedFindings=[],
         )
 
         return IntegrateResponse(

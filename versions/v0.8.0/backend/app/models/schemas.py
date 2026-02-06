@@ -472,8 +472,9 @@ class ReviewFinding(BaseModel):
 class GroupReviewResult(BaseModel):
     """グループレビュー結果"""
 
-    summary: str
-    findings: list[ReviewFinding] = []
+    report: str = ""  # AIが生成したMarkdown形式のレビューレポート
+    summary: str = ""  # 後方互換性のため維持（空文字可）
+    findings: list[ReviewFinding] = []  # 後方互換性のため維持（空配列可）
     statistics: dict = {}  # { totalFindings, errors, warnings, info }
 
 
@@ -497,8 +498,9 @@ class GroupReviewSummary(BaseModel):
 
     groupId: str
     groupName: str
-    summary: str
-    findings: list[ReviewFinding] = []
+    report: str = ""  # グループレビューのMarkdownレポート
+    summary: str = ""  # 後方互換性のため維持
+    findings: list[ReviewFinding] = []  # 後方互換性のため維持
 
 
 class IntegrateRequest(BaseModel):
