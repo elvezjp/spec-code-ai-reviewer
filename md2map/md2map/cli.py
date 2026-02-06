@@ -44,6 +44,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="分割対象の最大見出し深さ 1-6（デフォルト: 3）",
     )
     build_parser.add_argument(
+        "--id-prefix",
+        default="MD",
+        help="セクションIDのプレフィックス（デフォルト: MD → MD1, MD2, ...）",
+    )
+    build_parser.add_argument(
         "--verbose", action="store_true", help="詳細ログを出力"
     )
     build_parser.add_argument(
@@ -84,6 +89,11 @@ def cmd_build(args: argparse.Namespace) -> int:
     sections, warnings = parser.parse(str(input_path), args.max_depth)
     warnings.extend(read_warnings)
 
+    # セクションIDの割り当て
+    id_prefix = args.id_prefix
+    for i, section in enumerate(sections, start=1):
+        section.id = f"{id_prefix}{i}"
+
     # 警告出力
     for warning in warnings:
         logger.warning(warning)
@@ -93,7 +103,7 @@ def cmd_build(args: argparse.Namespace) -> int:
         print(f"\n=== Detected Sections ({len(sections)}) ===\n")
         for section in sections:
             indent = "  " * (section.level - 1)
-            print(f"{indent}[H{section.level}] {section.title} ({section.line_range()})")
+            print(f"{indent}[{section.id}] [H{section.level}] {section.title} ({section.line_range()})")
 
         print(f"\n=== Files to be generated ===\n")
         print(f"  {args.out}/INDEX.md")

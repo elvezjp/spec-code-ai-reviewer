@@ -21,6 +21,7 @@ class Section:
         links: リンク一覧 [(text, url), ...]
         part_file: 生成されたパートファイルの相対パス
         word_count: 単語数/文字数
+        id: セクションの一意識別子（{prefix}{連番} 形式）
     """
 
     # 基本情報
@@ -42,6 +43,7 @@ class Section:
     # 出力情報
     part_file: Optional[str] = None
     word_count: int = 0
+    id: Optional[str] = None
 
     def display_name(self) -> str:
         """表示用名前を返す

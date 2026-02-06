@@ -130,6 +130,35 @@ class TestCLIBuild:
             # 警告メッセージ
             assert "warning" in result.stderr.lower()
 
+    def test_build_with_id_prefix(self):
+        """--id-prefix オプション"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = subprocess.run(
+                [
+                    "uv", "run", "md2map", "build",
+                    str(FIXTURES_DIR / "simple.md"),
+                    "--out", tmpdir,
+                    "--id-prefix", "DOC",
+                ],
+                capture_output=True,
+                text=True,
+            )
+
+            assert result.returncode == 0
+
+            # MAP.json にカスタムプレフィックスのIDが含まれる
+            map_path = Path(tmpdir) / "MAP.json"
+            data = json.loads(map_path.read_text())
+            ids = [entry.get("id") for entry in data]
+            assert "DOC1" in ids
+            assert "DOC2" in ids
+
+            # INDEX.md にもカスタムプレフィックスのIDが含まれる
+            index_path = Path(tmpdir) / "INDEX.md"
+            content = index_path.read_text()
+            assert "[DOC1]" in content
+            assert "[DOC2]" in content
+
 
 class TestCLIOutput:
     """出力内容のテスト"""
@@ -170,6 +199,7 @@ class TestCLIOutput:
 
             # 必須フィールド
             entry = data[0]
+            assert "id" in entry  # ID フィールド（v0.2.0 で追加）
             assert "section" in entry
             assert "level" in entry
             assert "path" in entry
@@ -179,6 +209,10 @@ class TestCLIOutput:
             assert "word_count" in entry
             assert "part_file" in entry
             assert "checksum" in entry
+
+            # ID のフォーマット確認
+            assert entry["id"].startswith("MD")
+            assert entry["id"][2:].isdigit()
 
     def test_parts_file_content(self):
         """パートファイルの内容"""

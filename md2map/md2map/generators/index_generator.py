@@ -41,17 +41,19 @@ def generate_index(
     lines.append("## 構造ツリー\n\n")
     for section in sections:
         indent = "  " * (section.level - 1)
+        id_label = f"[{section.id}] " if section.id else ""
         if section.part_file:
             link = f"[{section.part_file}]({section.part_file})"
         else:
             link = ""
-        lines.append(f"{indent}- {section.title} ({section.line_range()}) → {link}\n")
+        lines.append(f"{indent}- {id_label}{section.title} ({section.line_range()}) → {link}\n")
     lines.append("\n")
 
     # セクション詳細
     lines.append("## セクション詳細\n\n")
     for section in sections:
-        lines.append(f"### {section.title} (H{section.level})\n")
+        id_label = f"[{section.id}] " if section.id else ""
+        lines.append(f"### {id_label}{section.title} (H{section.level})\n")
         lines.append(f"- lines: {section.line_range()}\n")
 
         if section.summary:
