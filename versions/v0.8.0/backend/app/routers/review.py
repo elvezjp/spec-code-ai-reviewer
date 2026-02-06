@@ -29,6 +29,7 @@ from app.models.schemas import (
     IntegratedReport,
 )
 from app.services.llm_service import get_llm_provider
+from app.services.prompt_builder import build_system_prompt
 
 # pyproject.tomlからバージョンを取得
 APP_VERSION = version("spec-code-ai-reviewer-backend")
@@ -188,22 +189,51 @@ async def structure_matching(request: StructureMatchingRequest):
     try:
         provider = get_llm_provider(request.llmConfig)
 
-        system_prompt = (
-            "あなたは設計書とソースコードの構造を分析する専門家です。\n"
-            "設計書の構造（セクション一覧）とコードの構造（シンボル一覧）を比較し、\n"
-            "関連性の高い設計書セクションとコードシンボルをグループにまとめてください。\n"
-            "必ず指定されたJSON形式のみで応答してください。\n\n"
-            "【重要】出力するdoc_sectionsのidは、設計書MAP.jsonに記載された"
-            "id値を正確にそのまま使用してください（例: MD1, MD2, ...）。\n"
-            "【重要】出力するcode_symbolsのidは、コードMAP.jsonに記載された"
-            "id値を正確にそのまま使用してください（例: CD1, CD2, ...）。"
+        # システムプロンプト構築（prompt_builder使用）
+        role = "設計書とソースコードの構造を分析する専門家"
+
+        purpose = (
+            "設計書の構造（セクション一覧）とコードの構造（シンボル一覧）を比較し、"
+            "関連性の高い設計書セクションとコードシンボルをグループにまとめる"
         )
 
-        # ユーザーメッセージ構築
+        output_format = """以下のJSON形式で出力してください:
+
+```json
+{
+  "groups": [
+    {
+      "id": "group1",
+      "name": "グループの表示名",
+      "doc_sections": [
+        {
+          "id": "MAP.jsonのid値をそのまま使用（例: MD1）",
+          "title": "MAP.jsonのtitle値",
+          "path": "MAP.jsonのpath値"
+        }
+      ],
+      "code_symbols": [
+        {
+          "id": "MAP.jsonのid値をそのまま使用（例: CD1）",
+          "filename": "MAP.jsonのoriginal_file値",
+          "symbol": "MAP.jsonのsymbol値"
+        }
+      ],
+      "reason": "グループ化の理由"
+    }
+  ]
+}
+```"""
+
+        notes = """- 必ず指定されたJSON形式のみで応答してください
+- 設計書の複数セクションと、複数のコード部分が対応する場合もあります
+- 【重要】出力するdoc_sectionsのidは、設計書MAP.jsonに記載されたid値を正確にそのまま使用してください（例: MD1, MD2, ...）
+- 【重要】出力するcode_symbolsのidは、コードMAP.jsonに記載されたid値を正確にそのまま使用してください（例: CD1, CD2, ...）"""
+
+        system_prompt = build_system_prompt(role, purpose, output_format, notes)
+
+        # ユーザーメッセージ構築（データのみ）
         user_parts = [
-            "# 構造マッチング依頼\n",
-            "以下の設計書構造とコード構造を比較し、関連性の高いグループを特定してください。",
-            "設計書の複数セクションと、複数のコード部分が対応する場合もあります。\n",
             "## 設計書構造\n",
             "### INDEX.md",
             request.document.indexMd,
@@ -221,44 +251,6 @@ async def structure_matching(request: StructureMatchingRequest):
                     code_file.mapJson, ensure_ascii=False, indent=2
                 ),
             ])
-
-        user_parts.extend([
-            "\n## 出力形式\n",
-            "以下のJSON形式で出力してください:",
-            "",
-            "**注意**: doc_sectionsのidは設計書MAP.jsonのid値を、"
-            "code_symbolsのidはコードMAP.jsonのid値を、"
-            "正確にそのまま使用してください（後工程でのマッチングに使用されます）。\n",
-            "```json",
-            json.dumps(
-                {
-                    "groups": [
-                        {
-                            "id": "group1",
-                            "name": "グループの表示名",
-                            "doc_sections": [
-                                {
-                                    "id": "MAP.jsonのid値をそのまま使用（例: MD1）",
-                                    "title": "MAP.jsonのtitle値",
-                                    "path": "MAP.jsonのpath値",
-                                }
-                            ],
-                            "code_symbols": [
-                                {
-                                    "id": "MAP.jsonのid値をそのまま使用（例: CD1）",
-                                    "filename": "MAP.jsonのoriginal_file値",
-                                    "symbol": "MAP.jsonのsymbol値",
-                                }
-                            ],
-                            "reason": "グループ化の理由",
-                        }
-                    ]
-                },
-                ensure_ascii=False,
-                indent=2,
-            ),
-            "```",
-        ])
 
         user_message = "\n".join(user_parts)
 
@@ -341,16 +333,50 @@ async def review_group(request: GroupReviewRequest):
     try:
         provider = get_llm_provider(request.llmConfig)
 
-        system_prompt = (
-            "あなたは設計書とソースコードの整合性をレビューする専門家です。\n"
-            "設計書の記述とコード実装の整合性を確認し、指摘事項を報告してください。\n"
-            "必ず指定されたJSON形式のみで応答してください。"
-        )
+        # システムプロンプト構築（prompt_builder使用）
+        role = "設計書とソースコードの整合性をレビューする専門家"
 
-        # ユーザーメッセージ構築
+        purpose = "設計書の記述とコード実装の整合性を確認し、指摘事項を報告する"
+
+        output_format = """以下のJSON形式で出力してください:
+
+```json
+{
+  "summary": "全体的な整合性の評価",
+  "findings": [
+    {
+      "id": "F001",
+      "type": "inconsistency|missing_in_code|missing_in_doc|suggestion",
+      "severity": "error|warning|info",
+      "doc_location": {
+        "section": "セクション名",
+        "line": 25
+      },
+      "code_location": {
+        "filename": "ファイル名",
+        "symbol": "シンボル名",
+        "line": 45
+      },
+      "description": "指摘内容",
+      "recommendation": "推奨対応"
+    }
+  ]
+}
+```"""
+
+        notes = """- 必ず指定されたJSON形式のみで応答してください
+- 指摘がない場合はfindingsを空配列にしてください
+- レビュー観点:
+  1. 設計書の記述とコード実装の整合性
+  2. 設計書に記載があるがコードに実装されていない機能
+  3. コードに実装があるが設計書に記載がない機能
+  4. 命名の一貫性
+  5. その他の懸念事項"""
+
+        system_prompt = build_system_prompt(role, purpose, output_format, notes)
+
+        # ユーザーメッセージ構築（データのみ）
         user_parts = [
-            "# レビュー依頼\n",
-            "以下の設計書セクションとコードの整合性をレビューしてください。\n",
             f"## レビュー対象グループ: {request.groupName}\n",
             f"- グループID: {request.groupId}",
             f"- 設計書セクション: {', '.join(p.title for p in request.documentParts)}",
@@ -373,50 +399,6 @@ async def review_group(request: GroupReviewRequest):
                 f"### {part.filename}:{part.symbol} ({part.symbolType}, L{part.startLine}-L{part.endLine})\n",
                 f"```\n{part.content}\n```\n",
             ])
-
-        # レビュー観点
-        user_parts.extend([
-            "## レビュー観点\n",
-            "1. 設計書の記述とコード実装の整合性",
-            "2. 設計書に記載があるがコードに実装されていない機能",
-            "3. コードに実装があるが設計書に記載がない機能",
-            "4. 命名の一貫性",
-            "5. その他の懸念事項\n",
-        ])
-
-        # 出力形式
-        user_parts.extend([
-            "## 出力形式\n",
-            "以下のJSON形式で出力してください:",
-            "```json",
-            json.dumps(
-                {
-                    "summary": "全体的な整合性の評価",
-                    "findings": [
-                        {
-                            "id": "F001",
-                            "type": "inconsistency|missing_in_code|missing_in_doc|suggestion",
-                            "severity": "error|warning|info",
-                            "doc_location": {
-                                "section": "セクション名",
-                                "line": 25,
-                            },
-                            "code_location": {
-                                "filename": "ファイル名",
-                                "symbol": "シンボル名",
-                                "line": 45,
-                            },
-                            "description": "指摘内容",
-                            "recommendation": "推奨対応",
-                        }
-                    ],
-                },
-                ensure_ascii=False,
-                indent=2,
-            ),
-            "```",
-            "\n指摘がない場合はfindingsを空配列にしてください。",
-        ])
 
         user_message = "\n".join(user_parts)
 
@@ -497,26 +479,37 @@ async def integrate_reviews(request: IntegrateRequest):
     try:
         provider = get_llm_provider(request.llmConfig)
 
-        system_prompt = (
-            "あなたはレビュー結果を統合するエキスパートです。\n"
+        # システムプロンプト構築（prompt_builder使用）
+        role = "レビュー結果を統合するエキスパート"
+
+        purpose = (
             "複数のグループレビュー結果を統合し、最終的なレビューレポートを"
-            "Markdown形式で生成してください。"
+            "Markdown形式で生成する"
         )
 
-        # ユーザーメッセージ構築
-        user_parts = [
-            "# レビュー結果統合依頼\n",
-            "以下のグループレビュー結果を統合し、最終レポートを生成してください。\n",
+        output_format = "Markdown形式のレビューレポートを出力してください。"
+
+        # 注意事項の構築
+        notes_parts = [
+            "- 各グループのレビュー結果を統合し、重複する指摘を排除してください",
+            "- グループ間にまたがる問題があれば特定してください",
+            "- 全体的な整合性評価を記述してください",
         ]
 
-        # システムプロンプト設定（注意事項・出力フォーマット）
+        # request.systemPromptがある場合は注意事項に追加
         if request.systemPrompt:
-            user_parts.extend([
-                "## システムプロンプト設定\n",
-                "以下の注意事項・出力フォーマットに従ってレポートを作成してください:\n",
-                request.systemPrompt,
+            notes_parts.extend([
                 "",
+                "【ユーザー指定の注意事項・出力フォーマット】",
+                request.systemPrompt,
             ])
+
+        notes = "\n".join(notes_parts)
+
+        system_prompt = build_system_prompt(role, purpose, output_format, notes)
+
+        # ユーザーメッセージ構築（データのみ）
+        user_parts = []
 
         # 構造マッチング結果
         user_parts.extend([
@@ -542,25 +535,6 @@ async def integrate_reviews(request: IntegrateRequest):
                         f"- [{f.severity}] {f.id}: {f.description}"
                     )
                 user_parts.append("")
-
-        # 統合指示
-        user_parts.extend([
-            "## 統合指示\n",
-            "1. 各グループのレビュー結果を統合し、重複する指摘を排除してください",
-            "2. グループ間にまたがる問題があれば特定してください",
-            "3. 全体的な整合性評価を記述してください",
-        ])
-
-        if request.systemPrompt:
-            user_parts.append(
-                "4. システムプロンプト設定に記載された出力フォーマットに"
-                "従って最終レポートを生成してください"
-            )
-
-        user_parts.extend([
-            "\n## 出力\n",
-            "Markdown形式のレビューレポートを出力してください。",
-        ])
 
         user_message = "\n".join(user_parts)
 
