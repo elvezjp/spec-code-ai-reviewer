@@ -206,4 +206,9 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+# Mac OS
 .DS_Store
+
+# Example output (override parts/ exclusion above)
+!docs/examples/output/parts/
+!docs/examples/output/parts/**

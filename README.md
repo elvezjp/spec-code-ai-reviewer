@@ -100,6 +100,7 @@ uv run md2map build document.md --dry-run
 |--------|---------|-------------|
 | `--out <DIR>` | `./md2map-out` | Output directory |
 | `--max-depth <N>` | `3` | Maximum heading depth to process (1-6) |
+| `--id-prefix <PREFIX>` | `MD` | Section ID prefix (MD1, MD2, ...) |
 | `--verbose` | false | Output detailed logs |
 | `--dry-run` | false | Preview only, no file generation |
 
@@ -114,22 +115,17 @@ For details, see `uv run md2map build --help`.
 
 ## Structure Tree
 
-- specification.md
-  - Introduction
-    - Background
-    - Purpose
-  - Requirements
-    - Functional Requirements
-    - Non-Functional Requirements
-  - Design
+- [MD1] Introduction (L1–L25) → [parts/Introduction.md](parts/Introduction.md)
+  - [MD2] Background (L3–L10) → [parts/Introduction_Background.md](parts/Introduction_Background.md)
+  - [MD3] Purpose (L11–L25) → [parts/Introduction_Purpose.md](parts/Introduction_Purpose.md)
+- [MD4] Requirements (L26–L50) → [parts/Requirements.md](parts/Requirements.md)
 
 ## Section Details
 
-### Introduction
-- **Path**: specification.md > Introduction
-- **Lines**: 1-25
-- **Summary**: This document describes the system specification...
-- **Keywords**: system, specification, overview
+### [MD1] Introduction (H1)
+- lines: L1–L25
+- summary: This document describes the system specification...
+- keywords: system, specification, overview
 ```
 
 ### MAP.json
@@ -137,6 +133,7 @@ For details, see `uv run md2map build --help`.
 ```json
 [
   {
+    "id": "MD1",
     "section": "Introduction",
     "level": 1,
     "path": "Introduction",
@@ -157,6 +154,7 @@ Each part file includes a metadata header:
 ```markdown
 <!--
 md2map fragment
+id: MD1
 original: specification.md
 lines: 1-25
 section: Introduction

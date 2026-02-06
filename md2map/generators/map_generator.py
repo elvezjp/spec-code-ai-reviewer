@@ -52,7 +52,10 @@ def generate_map(
         part_path = os.path.join(out_dir, section.part_file)
         checksum = calculate_checksum(part_path)
 
-        entry: Dict[str, Any] = {
+        entry: Dict[str, Any] = {}
+        if section.id:
+            entry["id"] = section.id
+        entry.update({
             "section": section.title,
             "level": section.level,
             "path": section.path,
@@ -62,7 +65,7 @@ def generate_map(
             "word_count": section.word_count,
             "part_file": section.part_file,
             "checksum": checksum,
-        }
+        })
         entries.append(entry)
 
     # JSON書き込み
