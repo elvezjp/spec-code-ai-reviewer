@@ -1,4 +1,5 @@
 // code2map fragment (non-buildable)
+// id: CD11
 // original: docs/examples/java/UserManagementService.java
 // lines: 178-186
 // symbol: UserManagementService#validateUserName

@@ -100,6 +100,7 @@ uv run code2map build your_code.py --dry-run
 |-----------|-----------|------|
 | `--out <DIR>` | `./code2map-out` | 出力ディレクトリ |
 | `--lang {java,python}` | 自動検出 | 言語の明示指定 |
+| `--id-prefix <PREFIX>` | `CD` | シンボルIDのプレフィックス（CD1, CD2, ...） |
 | `--verbose` | false | 詳細ログを出力 |
 | `--dry-run` | false | ファイル生成せずプレビューのみ |
 
@@ -113,13 +114,13 @@ uv run code2map build your_code.py --dry-run
 # Index: user_management.py
 
 ## Classes
-- UserManager (L10–L150) → parts/UserManager.class.py
+- [CD1] UserManager (L10–L150) → parts/UserManager.class.py
   - role: ユーザー管理を行うメインクラス
   - calls: Database.connect, Logger.info
   - side effects: DB操作, ログ出力
 
 ## Methods
-- UserManager#create_user (L45–L80) → parts/UserManager_create_user.py
+- [CD2] UserManager#create_user (L45–L80) → parts/UserManager_create_user.py
   - role: 新規ユーザーを作成する
   - calls: validate_email, hash_password
   - side effects: DB操作
@@ -130,6 +131,7 @@ uv run code2map build your_code.py --dry-run
 ```json
 [
   {
+    "id": "CD1",
     "symbol": "UserManager",
     "type": "class",
     "original_file": "user_management.py",

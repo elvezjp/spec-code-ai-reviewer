@@ -100,6 +100,7 @@ uv run md2map build document.md --dry-run
 |-----------|-----------|------|
 | `--out <DIR>` | `./md2map-out` | 出力ディレクトリ |
 | `--max-depth <N>` | `3` | 処理する見出しの最大深度（1-6） |
+| `--id-prefix <PREFIX>` | `MD` | セクションIDのプレフィックス（MD1, MD2, ...） |
 | `--verbose` | false | 詳細ログを出力 |
 | `--dry-run` | false | ファイル生成せずプレビューのみ |
 
@@ -114,22 +115,17 @@ uv run md2map build document.md --dry-run
 
 ## 構造ツリー
 
-- specification.md
-  - はじめに
-    - 背景
-    - 目的
-  - 要件
-    - 機能要件
-    - 非機能要件
-  - 設計
+- [MD1] はじめに (L1–L25) → [parts/はじめに.md](parts/はじめに.md)
+  - [MD2] 背景 (L3–L10) → [parts/はじめに_背景.md](parts/はじめに_背景.md)
+  - [MD3] 目的 (L11–L25) → [parts/はじめに_目的.md](parts/はじめに_目的.md)
+- [MD4] 要件 (L26–L50) → [parts/要件.md](parts/要件.md)
 
 ## セクション詳細
 
-### はじめに
-- **パス**: specification.md > はじめに
-- **行**: 1-25
-- **要約**: 本ドキュメントはシステム仕様を記述しています...
-- **キーワード**: システム, 仕様, 概要
+### [MD1] はじめに (H1)
+- lines: L1–L25
+- summary: 本ドキュメントはシステム仕様を記述しています...
+- keywords: システム, 仕様, 概要
 ```
 
 ### MAP.json
@@ -137,6 +133,7 @@ uv run md2map build document.md --dry-run
 ```json
 [
   {
+    "id": "MD1",
     "section": "はじめに",
     "level": 1,
     "path": "はじめに",
@@ -157,6 +154,7 @@ uv run md2map build document.md --dry-run
 ```markdown
 <!--
 md2map fragment
+id: MD1
 original: specification.md
 lines: 1-25
 section: はじめに

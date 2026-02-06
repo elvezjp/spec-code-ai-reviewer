@@ -128,6 +128,36 @@ class TestGenerateHeader:
         assert header.startswith("<!--")
         assert "-->" in header
 
+    def test_header_with_id(self):
+        """ID付きヘッダのフォーマット"""
+        section = Section(
+            title="Test Section",
+            level=2,
+            start_line=10,
+            end_line=20,
+            original_file="test.md",
+            id="MD1",
+        )
+
+        header = generate_header(section)
+
+        assert "id: MD1" in header
+        assert "md2map fragment" in header
+
+    def test_header_without_id(self):
+        """IDなしの場合はid行を出力しない"""
+        section = Section(
+            title="Test Section",
+            level=2,
+            start_line=10,
+            end_line=20,
+            original_file="test.md",
+        )
+
+        header = generate_header(section)
+
+        assert "id:" not in header
+
 
 class TestGenerateParts:
     """generate_parts のテスト"""
@@ -262,6 +292,46 @@ class TestGenerateIndex:
             assert "[WARNING] Test warning 1" in content
             assert "[WARNING] Test warning 2" in content
 
+    def test_generate_index_with_ids(self):
+        """ID付きの INDEX.md"""
+        sections = [
+            Section(
+                title="Main",
+                level=1,
+                start_line=1,
+                end_line=10,
+                original_file="test.md",
+                path="Main",
+                part_file="parts/Main.md",
+                id="MD1",
+            ),
+            Section(
+                title="Sub",
+                level=2,
+                start_line=5,
+                end_line=10,
+                original_file="test.md",
+                path="Main > Sub",
+                part_file="parts/Main_Sub.md",
+                id="MD2",
+            ),
+        ]
+        sections[1].parent = sections[0]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / "INDEX.md"
+            generate_index(sections, [], str(output_path), "test.md")
+
+            content = output_path.read_text()
+
+            # 構造ツリーにIDが含まれる
+            assert "[MD1] Main (L1–L10)" in content
+            assert "[MD2] Sub (L5–L10)" in content
+
+            # セクション詳細にIDが含まれる
+            assert "### [MD1] Main (H1)" in content
+            assert "### [MD2] Sub (H2)" in content
+
 
 class TestGenerateMap:
     """generate_map のテスト"""
@@ -307,6 +377,77 @@ class TestGenerateMap:
             assert entry["part_file"] == "parts/Test_Section.md"
             assert "checksum" in entry
             assert len(entry["checksum"]) == 64  # SHA-256
+
+    def test_generate_map_with_id(self):
+        """ID付きの MAP.json"""
+        sections = [
+            Section(
+                title="Test Section",
+                level=1,
+                start_line=1,
+                end_line=10,
+                original_file="test.md",
+                path="Test Section",
+                word_count=50,
+                part_file="parts/Test_Section.md",
+                id="MD1",
+            ),
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # パートファイルを作成
+            parts_dir = Path(tmpdir) / "parts"
+            parts_dir.mkdir()
+            part_file = parts_dir / "Test_Section.md"
+            part_file.write_text("# Test Section\nContent here.")
+
+            output_path = Path(tmpdir) / "MAP.json"
+            generate_map(sections, tmpdir, str(output_path))
+
+            # JSON をパース
+            data = json.loads(output_path.read_text())
+
+            assert len(data) == 1
+            entry = data[0]
+
+            # ID が先頭に含まれる
+            assert entry["id"] == "MD1"
+            # IDが最初のキーであることを確認
+            assert list(entry.keys())[0] == "id"
+
+    def test_generate_map_without_id(self):
+        """IDなしの場合はidフィールドを含まない"""
+        sections = [
+            Section(
+                title="Test Section",
+                level=1,
+                start_line=1,
+                end_line=10,
+                original_file="test.md",
+                path="Test Section",
+                word_count=50,
+                part_file="parts/Test_Section.md",
+            ),
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # パートファイルを作成
+            parts_dir = Path(tmpdir) / "parts"
+            parts_dir.mkdir()
+            part_file = parts_dir / "Test_Section.md"
+            part_file.write_text("# Test Section\nContent here.")
+
+            output_path = Path(tmpdir) / "MAP.json"
+            generate_map(sections, tmpdir, str(output_path))
+
+            # JSON をパース
+            data = json.loads(output_path.read_text())
+
+            assert len(data) == 1
+            entry = data[0]
+
+            # IDフィールドが存在しない
+            assert "id" not in entry
 
 
 class TestCalculateChecksum:

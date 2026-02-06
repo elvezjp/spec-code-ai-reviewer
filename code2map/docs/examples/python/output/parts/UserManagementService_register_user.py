@@ -1,4 +1,5 @@
 # code2map fragment (non-buildable)
+# id: CD6
 # original: docs/examples/python/user_management_service.py
 # lines: 50-81
 # symbol: UserManagementService#register_user

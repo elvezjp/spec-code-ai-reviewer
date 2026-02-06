@@ -68,9 +68,10 @@ def generate_header(section: Section) -> str:
     Returns:
         HTMLコメント形式のヘッダ
     """
+    id_line = f"id: {section.id}\n" if section.id else ""
     return f"""<!--
 md2map fragment
-original: {section.original_file}
+{id_line}original: {section.original_file}
 lines: {section.start_line}-{section.end_line}
 section: {section.title}
 level: {section.level}

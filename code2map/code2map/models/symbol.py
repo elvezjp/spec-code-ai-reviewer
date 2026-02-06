@@ -20,6 +20,7 @@ class Symbol:
     dependencies: List[str] = field(default_factory=list)
     side_effects: List[str] = field(default_factory=list)
     part_file: Optional[str] = None
+    id: Optional[str] = None
 
     def display_name(self) -> str:
         if self.kind == "method" and self.parent:

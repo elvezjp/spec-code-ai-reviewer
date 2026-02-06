@@ -1,4 +1,5 @@
 // code2map fragment (non-buildable)
+// id: CD4
 // original: docs/examples/java/UserManagementService.java
 // lines: 98-102
 // symbol: UserManagementService#deleteUser

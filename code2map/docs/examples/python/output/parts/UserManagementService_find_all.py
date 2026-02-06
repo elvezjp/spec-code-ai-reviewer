@@ -1,4 +1,5 @@
 # code2map fragment (non-buildable)
+# id: CD10
 # original: docs/examples/python/user_management_service.py
 # lines: 151-158
 # symbol: UserManagementService#find_all

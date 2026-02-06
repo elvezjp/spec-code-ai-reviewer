@@ -1,4 +1,5 @@
 // code2map fragment (non-buildable)
+// id: CD12
 // original: docs/examples/java/UserManagementService.java
 // lines: 188-195
 // symbol: UserManagementService#validateEmail

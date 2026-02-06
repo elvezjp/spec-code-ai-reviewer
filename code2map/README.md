@@ -100,6 +100,7 @@ uv run code2map build your_code.py --dry-run
 |--------|---------|-------------|
 | `--out <DIR>` | `./code2map-out` | Output directory |
 | `--lang {java,python}` | Auto-detect | Explicitly specify language |
+| `--id-prefix <PREFIX>` | `CD` | Symbol ID prefix (CD1, CD2, ...) |
 | `--verbose` | false | Output detailed logs |
 | `--dry-run` | false | Preview only, no file generation |
 
@@ -113,13 +114,13 @@ For details, see `uv run code2map build --help`.
 # Index: user_management.py
 
 ## Classes
-- UserManager (L10–L150) → parts/UserManager.class.py
+- [CD1] UserManager (L10–L150) → parts/UserManager.class.py
   - role: Main class for user management
   - calls: Database.connect, Logger.info
   - side effects: DB operations, logging
 
 ## Methods
-- UserManager#create_user (L45–L80) → parts/UserManager_create_user.py
+- [CD2] UserManager#create_user (L45–L80) → parts/UserManager_create_user.py
   - role: Create a new user
   - calls: validate_email, hash_password
   - side effects: DB operations
@@ -130,6 +131,7 @@ For details, see `uv run code2map build --help`.
 ```json
 [
   {
+    "id": "CD1",
     "symbol": "UserManager",
     "type": "class",
     "original_file": "user_management.py",

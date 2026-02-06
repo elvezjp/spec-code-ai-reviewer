@@ -60,7 +60,8 @@ def generate_index(
     if classes:
         parts.append("\n## Classes")
         for symbol in classes:
-            line = f"- {symbol.display_name()} ({symbol.line_range()})"
+            id_label = f"[{symbol.id}] " if symbol.id else ""
+            line = f"- {id_label}{symbol.display_name()} ({symbol.line_range()})"
             if symbol.part_file:
                 line += f" -> {symbol.part_file}"
             parts.append(line)
@@ -68,7 +69,8 @@ def generate_index(
     if methods:
         parts.append("\n## Methods")
         for symbol in methods:
-            line = f"- {symbol.display_name()} ({symbol.line_range()})"
+            id_label = f"[{symbol.id}] " if symbol.id else ""
+            line = f"- {id_label}{symbol.display_name()} ({symbol.line_range()})"
             if symbol.part_file:
                 line += f" -> {symbol.part_file}"
             parts.append(line)
@@ -85,7 +87,8 @@ def generate_index(
     if functions:
         parts.append("\n## Functions")
         for symbol in functions:
-            line = f"- {symbol.display_name()} ({symbol.line_range()})"
+            id_label = f"[{symbol.id}] " if symbol.id else ""
+            line = f"- {id_label}{symbol.display_name()} ({symbol.line_range()})"
             if symbol.part_file:
                 line += f" -> {symbol.part_file}"
             parts.append(line)

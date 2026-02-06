@@ -1,4 +1,5 @@
 // code2map fragment (non-buildable)
+// id: CD10
 // original: docs/examples/java/UserManagementService.java
 // lines: 168-176
 // symbol: UserManagementService#validateUserId

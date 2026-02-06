@@ -1,4 +1,5 @@
 // code2map fragment (non-buildable)
+// id: CD6
 // original: docs/examples/java/UserManagementService.java
 // lines: 119-121
 // symbol: UserManagementService#findAll
