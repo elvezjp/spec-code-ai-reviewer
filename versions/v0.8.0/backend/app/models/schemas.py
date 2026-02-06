@@ -425,34 +425,17 @@ class StructureMatchingResponse(BaseModel):
 # =============================================================================
 
 
-class GroupDocumentPart(BaseModel):
-    """グループレビュー用の設計書パーツ"""
-
-    title: str
-    path: str
-    startLine: int
-    endLine: int
-    content: str
-
-
-class GroupCodePart(BaseModel):
-    """グループレビュー用のコードパーツ"""
-
-    filename: str
-    symbol: str
-    symbolType: str
-    startLine: int
-    endLine: int
-    content: str
-
-
 class GroupReviewRequest(BaseModel):
-    """グループレビューAPIのリクエスト"""
+    """グループレビューAPIのリクエスト
+
+    documentContent, codeContent はフロントエンドで結合済みのテキストを受け取る。
+    これにより、片方のみ分割の場合でも全体テキストを渡せる。
+    """
 
     groupId: str
     groupName: str
-    documentParts: list[GroupDocumentPart]
-    codeParts: list[GroupCodePart]
+    documentContent: str  # 結合済みの設計書内容
+    codeContent: str  # 結合済みのコード内容
     reviewOptions: dict = {}
     systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None

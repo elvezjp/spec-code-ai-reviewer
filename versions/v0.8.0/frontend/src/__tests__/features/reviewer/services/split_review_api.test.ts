@@ -230,25 +230,8 @@ describe('executeGroupReview', () => {
     const result = await executeGroupReview({
       groupId: 'group1',
       groupName: 'ユーザー管理',
-      documentParts: [
-        {
-          title: 'ユーザー登録',
-          path: 'ユーザー管理 > ユーザー登録',
-          startLine: 1,
-          endLine: 20,
-          content: '## ユーザー登録\n\nユーザーを登録する機能',
-        },
-      ],
-      codeParts: [
-        {
-          filename: 'user_service.py',
-          symbol: 'register',
-          symbolType: 'method',
-          startLine: 10,
-          endLine: 25,
-          content: 'def register(self, user):\n    # 登録処理',
-        },
-      ],
+      documentContent: '### ユーザー登録 (L1-L20)\n\n## ユーザー登録\n\nユーザーを登録する機能',
+      codeContent: '### user_service.py:register (method, L10-L25)\n\n```\ndef register(self, user):\n    # 登録処理\n```',
     })
 
     expect(result.success).toBe(true)
@@ -281,8 +264,8 @@ describe('executeGroupReview', () => {
     await executeGroupReview({
       groupId: 'group1',
       groupName: 'テストグループ',
-      documentParts: [],
-      codeParts: [],
+      documentContent: '',
+      codeContent: '',
       systemPrompt: {
         role: 'カスタムレビュアー',
         purpose: 'カスタム目的',
@@ -316,8 +299,8 @@ describe('executeGroupReview', () => {
     const result = await executeGroupReview({
       groupId: 'group1',
       groupName: 'テスト',
-      documentParts: [],
-      codeParts: [],
+      documentContent: '',
+      codeContent: '',
     })
 
     expect(result.success).toBe(false)
@@ -332,8 +315,8 @@ describe('executeGroupReview', () => {
       executeGroupReview({
         groupId: 'group1',
         groupName: 'テスト',
-        documentParts: [],
-        codeParts: [],
+        documentContent: '',
+        codeContent: '',
       })
     ).rejects.toThrow('Connection timeout')
   })

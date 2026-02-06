@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), tailwindcss()],
     optimizeDeps: {
       exclude: ['react-diff-viewer-continued'],
+      include: ['classnames'],
     },
     build: {
       commonjsOptions: {

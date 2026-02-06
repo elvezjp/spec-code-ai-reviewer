@@ -405,29 +405,15 @@ async def review_group(request: GroupReviewRequest):
         system_prompt = build_system_prompt(role, purpose, output_format, notes)
 
         # ユーザーメッセージ構築（データのみ）
+        # documentContent, codeContent はフロントエンドで結合済みのテキスト
         user_parts = [
             f"## レビュー対象グループ: {request.groupName}\n",
-            f"- グループID: {request.groupId}",
-            f"- 設計書セクション: {', '.join(p.title for p in request.documentParts)}",
-            f"- 対応コード: {', '.join(p.symbol for p in request.codeParts)}\n",
+            f"- グループID: {request.groupId}\n",
+            "## 設計書内容\n",
+            request.documentContent,
+            "\n## コード内容\n",
+            request.codeContent,
         ]
-
-        # 設計書内容
-        user_parts.append("## 設計書内容\n")
-        for part in request.documentParts:
-            user_parts.extend([
-                f"### {part.title} (L{part.startLine}-L{part.endLine})\n",
-                part.content,
-                "",
-            ])
-
-        # コード内容
-        user_parts.append("## コード内容\n")
-        for part in request.codeParts:
-            user_parts.extend([
-                f"### {part.filename}:{part.symbol} ({part.symbolType}, L{part.startLine}-L{part.endLine})\n",
-                f"```\n{part.content}\n```\n",
-            ])
 
         user_message = "\n".join(user_parts)
 

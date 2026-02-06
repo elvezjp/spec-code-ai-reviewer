@@ -26,8 +26,6 @@ from app.models.schemas import (
     DocumentStructure,
     CodeFileStructure,
     GroupReviewRequest,
-    GroupDocumentPart,
-    GroupCodePart,
     IntegrateRequest,
     GroupReviewSummary,
     SystemPrompt,
@@ -231,25 +229,8 @@ class TestGroupReviewAPI:
         request = GroupReviewRequest(
             groupId="group1",
             groupName="ユーザー管理",
-            documentParts=[
-                GroupDocumentPart(
-                    title="ユーザー登録",
-                    path="ユーザー管理 > ユーザー登録",
-                    startLine=1,
-                    endLine=20,
-                    content="## ユーザー登録\n\nユーザーを登録する機能"
-                )
-            ],
-            codeParts=[
-                GroupCodePart(
-                    filename="user_service.py",
-                    symbol="register",
-                    symbolType="method",
-                    startLine=10,
-                    endLine=25,
-                    content="def register(self, user):\n    # 登録処理"
-                )
-            ]
+            documentContent="### ユーザー登録 (L1-L20)\n\n## ユーザー登録\n\nユーザーを登録する機能",
+            codeContent="### user_service.py:register (method, L10-L25)\n\n```\ndef register(self, user):\n    # 登録処理\n```",
         )
 
         response = client.post("/api/review/group", json=request.model_dump())
@@ -274,25 +255,8 @@ class TestGroupReviewAPI:
         request = GroupReviewRequest(
             groupId="group1",
             groupName="テストグループ",
-            documentParts=[
-                GroupDocumentPart(
-                    title="テスト",
-                    path="テスト",
-                    startLine=1,
-                    endLine=5,
-                    content="テスト内容"
-                )
-            ],
-            codeParts=[
-                GroupCodePart(
-                    filename="test.py",
-                    symbol="test_func",
-                    symbolType="function",
-                    startLine=1,
-                    endLine=3,
-                    content="def test_func(): pass"
-                )
-            ],
+            documentContent="### テスト (L1-L5)\n\nテスト内容",
+            codeContent="### test.py:test_func (function, L1-L3)\n\n```\ndef test_func(): pass\n```",
             systemPrompt=SystemPrompt(
                 role="カスタムレビュアー",
                 purpose="カスタム目的",
@@ -320,8 +284,8 @@ class TestGroupReviewAPI:
         request = GroupReviewRequest(
             groupId="group1",
             groupName="テスト",
-            documentParts=[],
-            codeParts=[]
+            documentContent="",
+            codeContent=""
         )
 
         response = client.post("/api/review/group", json=request.model_dump())

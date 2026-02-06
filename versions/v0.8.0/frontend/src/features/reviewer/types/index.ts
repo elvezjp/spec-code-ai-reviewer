@@ -276,28 +276,11 @@ export interface StructureMatchingResponse {
 // Group Review Types
 // =============================================================================
 
-export interface GroupDocumentPart {
-  title: string
-  path: string
-  startLine: number
-  endLine: number
-  content: string
-}
-
-export interface GroupCodePart {
-  filename: string
-  symbol: string
-  symbolType: string
-  startLine: number
-  endLine: number
-  content: string
-}
-
 export interface GroupReviewRequest {
   groupId: string
   groupName: string
-  documentParts: GroupDocumentPart[]
-  codeParts: GroupCodePart[]
+  documentContent: string // フロントエンドで結合済みの設計書内容
+  codeContent: string // フロントエンドで結合済みのコード内容
   reviewOptions?: Record<string, unknown>
   systemPrompt?: SystemPromptValues // ユーザー指定のシステムプロンプト
   llmConfig?: LlmConfig

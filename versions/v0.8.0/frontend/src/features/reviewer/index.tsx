@@ -30,7 +30,7 @@ import {
 } from './components'
 import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport, useSplitSettings } from './hooks'
 import { testLlmConnection, executeStructureMatching, executeGroupReview, executeIntegrate } from './services/api'
-import type { SplitReviewState, GroupReviewState, GroupDocumentPart, GroupCodePart, ReviewExecutionData } from './types'
+import type { SplitReviewState, GroupReviewState, ReviewExecutionData } from './types'
 
 const APP_INFO = {
   name: 'spec-code-ai-reviewer',
@@ -278,30 +278,30 @@ export function Reviewer() {
       for (let i = 0; i < groups.length; i++) {
         const group = groups[i]
 
-        // Build document parts for this group (IDベースでマッチング)
-        const documentParts: GroupDocumentPart[] = group.docSections.map((section) => {
-          const part = splitPreviewResult.documentParts?.find((p) => p.id === section.id)
-          return {
-            title: section.title,
-            path: section.path,
-            startLine: part?.startLine || 0,
-            endLine: part?.endLine || 0,
-            content: part?.content || '',
-          }
-        })
+        // Build document content for this group
+        // 設計書が一括モードの場合は全体のMarkdownを使用、分割モードの場合はIDベースでマッチング
+        const documentContent = splitSettings.documentMode === 'batch'
+          ? (specMarkdown || '')
+          : group.docSections.map((section) => {
+              const part = splitPreviewResult.documentParts?.find((p) => p.id === section.id)
+              const startLine = part?.startLine || 0
+              const endLine = part?.endLine || 0
+              const content = part?.content || ''
+              return `### ${section.title} (L${startLine}-L${endLine})\n\n${content}`
+            }).join('\n\n')
 
-        // Build code parts for this group (IDベースでマッチング)
-        const codeParts: GroupCodePart[] = group.codeSymbols.map((sym) => {
-          const part = splitPreviewResult.codeParts?.find((p) => p.id === sym.id)
-          return {
-            filename: sym.filename,
-            symbol: sym.symbol,
-            symbolType: part?.symbolType || 'unknown',
-            startLine: part?.startLine || 0,
-            endLine: part?.endLine || 0,
-            content: part?.content || '',
-          }
-        })
+        // Build code content for this group
+        // コードが一括モードの場合は全体のコードを使用、分割モードの場合はIDベースでマッチング
+        const codeContent = splitSettings.codeMode === 'batch'
+          ? (codeWithLineNumbers || '')
+          : group.codeSymbols.map((sym) => {
+              const part = splitPreviewResult.codeParts?.find((p) => p.id === sym.id)
+              const symbolType = part?.symbolType || 'unknown'
+              const startLine = part?.startLine || 0
+              const endLine = part?.endLine || 0
+              const content = part?.content || ''
+              return `### ${sym.filename}:${sym.symbol} (${symbolType}, L${startLine}-L${endLine})\n\n\`\`\`\n${content}\n\`\`\``
+            }).join('\n\n')
 
         // Retry loop: execute group review, pause on error for retry/skip
         let resolved = false
@@ -322,8 +322,8 @@ export function Reviewer() {
             const groupResponse = await executeGroupReview({
               groupId: group.groupId,
               groupName: group.groupName,
-              documentParts,
-              codeParts,
+              documentContent,
+              codeContent,
               systemPrompt: currentPromptValues,
               llmConfig: llmConfig || undefined,
             })
