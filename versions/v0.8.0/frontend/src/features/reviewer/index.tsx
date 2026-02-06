@@ -218,6 +218,7 @@ export function Reviewer() {
       const documentIndexMd = splitPreviewResult.documentIndex || ''
       const documentMapJson = {
         sections: splitPreviewResult.documentParts?.map((p) => ({
+          id: p.id,  // IDを含める（LLMがマッチングに使用）
           title: p.section,
           level: p.level,
           path: p.path,
@@ -233,6 +234,7 @@ export function Reviewer() {
           indexMd: splitPreviewResult.codeIndex || '',
           mapJson: {
             symbols: codeParts.map((p) => ({
+              id: p.id,  // IDを含める（LLMがマッチングに使用）
               name: p.symbol,
               symbolType: p.symbolType,
               parentSymbol: p.parentSymbol,
@@ -275,9 +277,9 @@ export function Reviewer() {
       for (let i = 0; i < groups.length; i++) {
         const group = groups[i]
 
-        // Build document parts for this group
+        // Build document parts for this group (IDベースでマッチング)
         const documentParts: GroupDocumentPart[] = group.docSections.map((section) => {
-          const part = splitPreviewResult.documentParts?.find((p) => p.path === section.path)
+          const part = splitPreviewResult.documentParts?.find((p) => p.id === section.id)
           return {
             title: section.title,
             path: section.path,
@@ -287,9 +289,9 @@ export function Reviewer() {
           }
         })
 
-        // Build code parts for this group
+        // Build code parts for this group (IDベースでマッチング)
         const codeParts: GroupCodePart[] = group.codeSymbols.map((sym) => {
-          const part = splitPreviewResult.codeParts?.find((p) => p.symbol === sym.symbol)
+          const part = splitPreviewResult.codeParts?.find((p) => p.id === sym.id)
           return {
             filename: sym.filename,
             symbol: sym.symbol,

@@ -166,6 +166,7 @@ export interface SplitSettings {
 }
 
 export interface DocumentPart {
+  id: string
   section: string
   level: number
   path: string
@@ -176,6 +177,7 @@ export interface DocumentPart {
 }
 
 export interface CodePart {
+  id: string
   symbol: string
   symbolType: string // class, method, function
   parentSymbol: string | null
@@ -241,11 +243,13 @@ export interface StructureMatchingRequest {
 }
 
 export interface MatchedDocSection {
+  id: string
   title: string
   path: string
 }
 
 export interface MatchedCodeSymbol {
+  id: string
   filename: string
   symbol: string
 }

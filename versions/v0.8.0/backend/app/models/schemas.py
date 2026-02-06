@@ -285,6 +285,7 @@ class SplitMarkdownRequest(BaseModel):
 class DocumentPart(BaseModel):
     """分割された設計書パーツ"""
 
+    id: str  # セクションID (MD1, MD2, ...)
     section: str  # セクション名
     level: int  # 見出しレベル (1-6)
     path: str  # パス (親セクション > 子セクション)
@@ -313,6 +314,7 @@ class SplitCodeRequest(BaseModel):
 class CodePart(BaseModel):
     """分割されたコードパーツ"""
 
+    id: str  # シンボルID (CD1, CD2, ...)
     symbol: str  # シンボル名 (クラス名、関数名など)
     symbolType: str  # class, method, function
     parentSymbol: str | None = None  # 親シンボル (メソッドの場合のクラス名)
@@ -383,6 +385,7 @@ class StructureMatchingRequest(BaseModel):
 class MatchedDocSection(BaseModel):
     """マッチングされた設計書セクション"""
 
+    id: str  # セクションID (MD1, MD2, ...)
     title: str
     path: str
 
@@ -390,6 +393,7 @@ class MatchedDocSection(BaseModel):
 class MatchedCodeSymbol(BaseModel):
     """マッチングされたコードシンボル"""
 
+    id: str  # シンボルID (CD1, CD2, ...)
     filename: str
     symbol: str
 

@@ -112,6 +112,10 @@ async def split_markdown(request: SplitMarkdownRequest):
                     error="ファイルの読み込みに失敗しました",
                 )
 
+            # セクションIDの割り当て（md2mapのCLIと同様）
+            for i, section in enumerate(sections, start=1):
+                section.id = f"MD{i}"
+
             # パーツ生成（section.part_fileを設定するために必要）
             out_dir = os.path.join(tmpdir, "output")
             md2map_generate_parts(sections, lines, out_dir)
@@ -134,6 +138,7 @@ async def split_markdown(request: SplitMarkdownRequest):
                 )
                 parts.append(
                     DocumentPart(
+                        id=section.id,
                         section=section.title,
                         level=section.level,
                         path=section.path,
@@ -220,6 +225,10 @@ async def split_code(request: SplitCodeRequest):
             # 行を読み込み（code2mapはsplitlines()の行リストを返す）
             c2m_lines = code2map_read_lines(input_path)
 
+            # シンボルIDの割り当て（code2mapのCLIと同様）
+            for i, symbol in enumerate(symbols, start=1):
+                symbol.id = f"CD{i}"
+
             # パーツ生成（symbol.part_fileを設定するために必要）
             out_dir = os.path.join(tmpdir, "output")
             code2map_generate_parts(symbols, c2m_lines, out_dir)
@@ -242,6 +251,7 @@ async def split_code(request: SplitCodeRequest):
                 )
                 parts.append(
                     CodePart(
+                        id=symbol.id,
                         symbol=symbol.name,
                         symbolType=symbol.kind,
                         parentSymbol=symbol.parent,
@@ -290,10 +300,10 @@ async def structure_matching(request: StructureMatchingRequest):
             "設計書の構造（セクション一覧）とコードの構造（シンボル一覧）を比較し、\n"
             "関連性の高い設計書セクションとコードシンボルをグループにまとめてください。\n"
             "必ず指定されたJSON形式のみで応答してください。\n\n"
-            "【重要】出力するdoc_sectionsのtitleとpathは、設計書MAP.jsonに記載された"
-            "titleとpathの値を正確にそのまま使用してください。\n"
-            "【重要】出力するcode_symbolsのfilenameとsymbolは、コードMAP.jsonに記載された"
-            "original_fileとsymbolの値を正確にそのまま使用してください。"
+            "【重要】出力するdoc_sectionsのidは、設計書MAP.jsonに記載された"
+            "id値を正確にそのまま使用してください（例: MD1, MD2, ...）。\n"
+            "【重要】出力するcode_symbolsのidは、コードMAP.jsonに記載された"
+            "id値を正確にそのまま使用してください（例: CD1, CD2, ...）。"
         )
 
         # ユーザーメッセージ構築
@@ -323,8 +333,8 @@ async def structure_matching(request: StructureMatchingRequest):
             "\n## 出力形式\n",
             "以下のJSON形式で出力してください:",
             "",
-            "**注意**: doc_sectionsのtitle/pathは設計書MAP.jsonの値を、"
-            "code_symbolsのfilename/symbolはコードMAP.jsonの値を、"
+            "**注意**: doc_sectionsのidは設計書MAP.jsonのid値を、"
+            "code_symbolsのidはコードMAP.jsonのid値を、"
             "正確にそのまま使用してください（後工程でのマッチングに使用されます）。\n",
             "```json",
             json.dumps(
@@ -335,14 +345,16 @@ async def structure_matching(request: StructureMatchingRequest):
                             "name": "グループの表示名",
                             "doc_sections": [
                                 {
-                                    "title": "MAP.jsonのtitle値をそのまま使用",
-                                    "path": "MAP.jsonのpath値をそのまま使用",
+                                    "id": "MAP.jsonのid値をそのまま使用（例: MD1）",
+                                    "title": "MAP.jsonのtitle値",
+                                    "path": "MAP.jsonのpath値",
                                 }
                             ],
                             "code_symbols": [
                                 {
-                                    "filename": "MAP.jsonのoriginal_file値をそのまま使用",
-                                    "symbol": "MAP.jsonのsymbol値をそのまま使用",
+                                    "id": "MAP.jsonのid値をそのまま使用（例: CD1）",
+                                    "filename": "MAP.jsonのoriginal_file値",
+                                    "symbol": "MAP.jsonのsymbol値",
                                 }
                             ],
                             "reason": "グループ化の理由",
@@ -371,6 +383,7 @@ async def structure_matching(request: StructureMatchingRequest):
 
             doc_sections = [
                 MatchedDocSection(
+                    id=ds.get("id", ""),
                     title=ds.get("title", ""),
                     path=ds.get("path", ds.get("title", "")),
                 )
@@ -379,6 +392,7 @@ async def structure_matching(request: StructureMatchingRequest):
 
             code_symbols = [
                 MatchedCodeSymbol(
+                    id=cs.get("id", ""),
                     filename=cs.get("filename", ""),
                     symbol=cs.get("symbol", ""),
                 )
