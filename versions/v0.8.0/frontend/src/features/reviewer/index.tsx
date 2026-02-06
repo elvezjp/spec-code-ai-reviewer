@@ -188,11 +188,6 @@ export function Reviewer() {
     )
   }, [codeFiles, specMarkdown, specFiles, executeSplitPreview])
 
-  // Split review resume handler (skip errored group and continue)
-  const handleSplitResume = useCallback(() => {
-    errorActionRef.current = { action: 'skip', groupId: '' }
-  }, [])
-
   const handleRetryGroup = useCallback((groupId: string) => {
     errorActionRef.current = { action: 'retry', groupId }
   }, [])
@@ -200,6 +195,54 @@ export function Reviewer() {
   const handleSkipGroup = useCallback((groupId: string) => {
     errorActionRef.current = { action: 'skip', groupId }
   }, [])
+
+  // Integrate retry handler - re-execute only the integration phase
+  const handleRetryIntegrate = useCallback(async () => {
+    const { structureMatchingResult, groupReviews } = splitReviewState
+
+    if (!structureMatchingResult) return
+
+    setSplitReviewState((prev) => ({
+      ...prev,
+      phase: 'integrate',
+      error: undefined,
+    }))
+
+    try {
+      const groupReviewSummaries = groupReviews
+        .filter((g) => g.status === 'completed' && g.result)
+        .map((g) => ({
+          groupId: g.groupId,
+          groupName: g.groupName,
+          report: g.result!.report,
+        }))
+
+      const integrateResponse = await executeIntegrate({
+        structureMatching: structureMatchingResult,
+        groupReviews: groupReviewSummaries,
+        systemPrompt: currentPromptValues,
+        llmConfig: llmConfig || undefined,
+      })
+
+      if (!integrateResponse.success) {
+        throw new Error(integrateResponse.error || '結果統合に失敗しました')
+      }
+
+      setSplitReviewState((prev) => ({
+        ...prev,
+        phase: 'completed',
+        integrateResult: integrateResponse,
+      }))
+
+      screenManager.showResult()
+    } catch (error) {
+      setSplitReviewState((prev) => ({
+        ...prev,
+        phase: 'error',
+        error: error instanceof Error ? error.message : '結果統合に失敗しました',
+      }))
+    }
+  }, [splitReviewState, llmConfig, currentPromptValues, screenManager])
 
   // Split review execution
   const executeSplitReviewFlow = useCallback(async () => {
@@ -433,6 +476,11 @@ export function Reviewer() {
       }))
     }
   }, [splitPreviewResult, codeFiles, llmConfig, screenManager, currentPromptValues])
+
+  // Structure matching retry handler - re-execute from the beginning
+  const handleRetryStructureMatching = useCallback(() => {
+    executeSplitReviewFlow()
+  }, [executeSplitReviewFlow])
 
   const handleReviewExecute = async () => {
     if (!specMarkdown || !codeWithLineNumbers) return
@@ -709,9 +757,10 @@ export function Reviewer() {
     <SplitExecutingScreen
       state={splitReviewState}
       onBack={screenManager.showMain}
-      onResume={handleSplitResume}
+      onRetryStructureMatching={handleRetryStructureMatching}
       onRetryGroup={handleRetryGroup}
       onSkipGroup={handleSkipGroup}
+      onRetryIntegrate={handleRetryIntegrate}
     />
   ) : (
     <ExecutingScreen currentExecution={currentExecutionNumber} totalExecutions={2} />

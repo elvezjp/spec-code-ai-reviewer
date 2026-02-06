@@ -952,7 +952,15 @@ UIに現在の保存状態を表示する:
 
 **フェーズ2: グループレビュー**
 
-マッチングされた各グループ（関連する設計書セクション + コードシンボル）に対してレビューを実行する。
+マッチングされた各グループに対してレビューを実行する。グループレビューAPIには、フロントエンドで結合済みの設計書内容（documentContent）とコード内容（codeContent）を渡す。
+
+**片方が一括モードの場合の動作:**
+
+| モード | documentContent | codeContent |
+|--------|-----------------|-------------|
+| 両方分割 | 該当グループのセクションを結合 | 該当グループのシンボルを結合 |
+| 設計書のみ分割 | 該当グループのセクションを結合 | 全体のコード（行番号付き） |
+| コードのみ分割 | 全体の設計書（Markdown） | 該当グループのシンボルを結合 |
 
 - グループごとにシステムプロンプト設定を適用
 - 各グループのレビュー結果はMarkdown形式で出力
@@ -2215,7 +2223,7 @@ Markdownをセクション単位で分割する（md2map使用）。
 
 #### POST /api/review/group
 
-グループレビュー（分割レビュー フェーズ2）。1グループ（関連する設計書パーツ + コードパーツ）をレビューする。
+グループレビュー（分割レビュー フェーズ2）。1グループをレビューする。フロントエンドで結合済みの設計書内容とコード内容を受け取る。
 
 **リクエスト:**
 
@@ -2223,30 +2231,17 @@ Markdownをセクション単位で分割する（md2map使用）。
 {
   "groupId": "group1",
   "groupName": "ユーザー管理",
-  "documentParts": [
-    {
-      "title": "ユーザー管理",
-      "path": "ユーザー管理",
-      "startLine": 1,
-      "endLine": 50,
-      "content": "## ユーザー管理\n\n..."
-    }
-  ],
-  "codeParts": [
-    {
-      "filename": "UserService.java",
-      "symbol": "UserService",
-      "symbolType": "class",
-      "startLine": 1,
-      "endLine": 100,
-      "content": "public class UserService {...}"
-    }
-  ],
+  "documentContent": "### ユーザー管理 (L1-L50)\n\n## ユーザー管理\n\n...",
+  "codeContent": "### UserService.java:UserService (class, L1-L100)\n\n```\npublic class UserService {...}\n```",
   "reviewOptions": {},
   "systemPrompt": {...},
   "llmConfig": {...}
 }
 ```
+
+**備考:**
+- `documentContent`: フロントエンドで結合済みの設計書内容。設計書が一括モードの場合は全体のMarkdown、分割モードの場合は該当セクションを結合したテキスト。
+- `codeContent`: フロントエンドで結合済みのコード内容。コードが一括モードの場合は全体のコード（行番号付き）、分割モードの場合は該当シンボルを結合したテキスト。
 
 **レスポンス:**
 
