@@ -248,6 +248,7 @@ export function Reviewer() {
       const structureMatchingResponse = await executeStructureMatching({
         document: { indexMd: documentIndexMd, mapJson: documentMapJson },
         codeFiles: codeFileStructures,
+        systemPrompt: currentPromptValues,
         llmConfig: llmConfig || undefined,
       })
 
@@ -323,6 +324,7 @@ export function Reviewer() {
               groupName: group.groupName,
               documentParts,
               codeParts,
+              systemPrompt: currentPromptValues,
               llmConfig: llmConfig || undefined,
             })
 
@@ -407,7 +409,7 @@ export function Reviewer() {
       const integrateResponse = await executeIntegrate({
         structureMatching: structureMatchingResponse,
         groupReviews: groupReviewSummaries,
-        systemPrompt: systemPromptText,
+        systemPrompt: currentPromptValues,
         llmConfig: llmConfig || undefined,
       })
 
@@ -430,7 +432,7 @@ export function Reviewer() {
         error: error instanceof Error ? error.message : 'レビュー実行に失敗しました',
       }))
     }
-  }, [splitPreviewResult, codeFiles, llmConfig, screenManager, systemPromptText])
+  }, [splitPreviewResult, codeFiles, llmConfig, screenManager, currentPromptValues])
 
   const handleReviewExecute = async () => {
     if (!specMarkdown || !codeWithLineNumbers) return

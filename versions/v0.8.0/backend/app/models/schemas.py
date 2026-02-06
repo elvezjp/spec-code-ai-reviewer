@@ -379,6 +379,7 @@ class StructureMatchingRequest(BaseModel):
 
     document: DocumentStructure
     codeFiles: list[CodeFileStructure]
+    systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None
 
 
@@ -452,6 +453,7 @@ class GroupReviewRequest(BaseModel):
     documentParts: list[GroupDocumentPart]
     codeParts: list[GroupCodePart]
     reviewOptions: dict = {}
+    systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None
 
 
@@ -505,7 +507,7 @@ class IntegrateRequest(BaseModel):
     structureMatching: dict  # 構造マッチング結果
     groupReviews: list[GroupReviewSummary]
     integrationOptions: dict = {}  # { deduplicateFindings, checkCrossGroupIssues }
-    systemPrompt: str | None = None  # システムプロンプト設定（注意事項・出力フォーマット情報を含む）
+    systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None
 
 

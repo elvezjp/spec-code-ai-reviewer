@@ -239,6 +239,7 @@ export interface CodeFileStructure {
 export interface StructureMatchingRequest {
   document: DocumentStructure
   codeFiles: CodeFileStructure[]
+  systemPrompt?: SystemPromptValues // ユーザー指定のシステムプロンプト
   llmConfig?: LlmConfig
 }
 
@@ -297,6 +298,7 @@ export interface GroupReviewRequest {
   documentParts: GroupDocumentPart[]
   codeParts: GroupCodePart[]
   reviewOptions?: Record<string, unknown>
+  systemPrompt?: SystemPromptValues // ユーザー指定のシステムプロンプト
   llmConfig?: LlmConfig
 }
 
@@ -344,7 +346,7 @@ export interface IntegrateRequest {
   structureMatching: StructureMatchingResponse
   groupReviews: GroupReviewSummary[]
   integrationOptions?: Record<string, unknown>
-  systemPrompt?: string // システムプロンプト設定（注意事項・出力フォーマット情報を含む）
+  systemPrompt?: SystemPromptValues // ユーザー指定のシステムプロンプト
   llmConfig?: LlmConfig
 }
 

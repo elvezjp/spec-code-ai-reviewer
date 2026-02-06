@@ -225,10 +225,23 @@ async def structure_matching(request: StructureMatchingRequest):
 }
 ```"""
 
-        notes = """- 必ず指定されたJSON形式のみで応答してください
-- 設計書の複数セクションと、複数のコード部分が対応する場合もあります
-- 【重要】出力するdoc_sectionsのidは、設計書MAP.jsonに記載されたid値を正確にそのまま使用してください（例: MD1, MD2, ...）
-- 【重要】出力するcode_symbolsのidは、コードMAP.jsonに記載されたid値を正確にそのまま使用してください（例: CD1, CD2, ...）"""
+        # 注意事項の構築
+        notes_parts = [
+            "- 必ず指定されたJSON形式のみで応答してください",
+            "- 設計書の複数セクションと、複数のコード部分が対応する場合もあります",
+            "- 【重要】出力するdoc_sectionsのidは、設計書MAP.jsonに記載されたid値を正確にそのまま使用してください（例: MD1, MD2, ...）",
+            "- 【重要】出力するcode_symbolsのidは、コードMAP.jsonに記載されたid値を正確にそのまま使用してください（例: CD1, CD2, ...）",
+        ]
+
+        # request.systemPromptがある場合は注意事項に追加
+        if request.systemPrompt and request.systemPrompt.notes:
+            notes_parts.extend([
+                "",
+                "【ユーザー指定の注意事項】",
+                request.systemPrompt.notes,
+            ])
+
+        notes = "\n".join(notes_parts)
 
         system_prompt = build_system_prompt(role, purpose, output_format, notes)
 
@@ -364,14 +377,27 @@ async def review_group(request: GroupReviewRequest):
 }
 ```"""
 
-        notes = """- 必ず指定されたJSON形式のみで応答してください
-- 指摘がない場合はfindingsを空配列にしてください
-- レビュー観点:
-  1. 設計書の記述とコード実装の整合性
-  2. 設計書に記載があるがコードに実装されていない機能
-  3. コードに実装があるが設計書に記載がない機能
-  4. 命名の一貫性
-  5. その他の懸念事項"""
+        # 注意事項の構築
+        notes_parts = [
+            "- 必ず指定されたJSON形式のみで応答してください",
+            "- 指摘がない場合はfindingsを空配列にしてください",
+            "- レビュー観点:",
+            "  1. 設計書の記述とコード実装の整合性",
+            "  2. 設計書に記載があるがコードに実装されていない機能",
+            "  3. コードに実装があるが設計書に記載がない機能",
+            "  4. 命名の一貫性",
+            "  5. その他の懸念事項",
+        ]
+
+        # request.systemPromptがある場合は注意事項に追加
+        if request.systemPrompt and request.systemPrompt.notes:
+            notes_parts.extend([
+                "",
+                "【ユーザー指定の注意事項】",
+                request.systemPrompt.notes,
+            ])
+
+        notes = "\n".join(notes_parts)
 
         system_prompt = build_system_prompt(role, purpose, output_format, notes)
 
@@ -498,11 +524,18 @@ async def integrate_reviews(request: IntegrateRequest):
 
         # request.systemPromptがある場合は注意事項に追加
         if request.systemPrompt:
-            notes_parts.extend([
-                "",
-                "【ユーザー指定の注意事項・出力フォーマット】",
-                request.systemPrompt,
-            ])
+            if request.systemPrompt.format:
+                notes_parts.extend([
+                    "",
+                    "【ユーザー指定の出力フォーマット】",
+                    request.systemPrompt.format,
+                ])
+            if request.systemPrompt.notes:
+                notes_parts.extend([
+                    "",
+                    "【ユーザー指定の注意事項】",
+                    request.systemPrompt.notes,
+                ])
 
         notes = "\n".join(notes_parts)
 
