@@ -43,6 +43,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     build.add_argument("input_file")
     build.add_argument("--out", default="./code2map-out")
     build.add_argument("--lang", choices=["java", "python"], default=None)
+    build.add_argument("--id-prefix", default="CD", help="Symbol ID prefix (default: CD)")
     build.add_argument("--verbose", action="store_true")
     build.add_argument("--dry-run", action="store_true")
 
@@ -89,6 +90,11 @@ def main() -> None:
     symbols, warnings = parser_impl.parse(str(input_path))
     for warning in warnings:
         logger.warning(warning)
+
+    # シンボルIDの割り当て
+    id_prefix = args.id_prefix
+    for i, symbol in enumerate(symbols, start=1):
+        symbol.id = f"{id_prefix}{i}"
 
     lines = read_lines(str(input_path))
     out_dir = args.out

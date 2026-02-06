@@ -64,10 +64,14 @@ def generate_parts(
         prefix = _comment_prefix(symbol.language, ext)
         header_lines = [
             f"{prefix} code2map fragment (non-buildable)",
+        ]
+        if symbol.id:
+            header_lines.append(f"{prefix} id: {symbol.id}")
+        header_lines.extend([
             f"{prefix} original: {Path(symbol.original_file).as_posix()}",
             f"{prefix} lines: {symbol.start_line}-{symbol.end_line}",
             f"{prefix} symbol: {symbol.display_name()}",
-        ]
+        ])
         notes: List[str] = []
         if symbol.dependencies:
             notes.append("references " + ", ".join(symbol.dependencies))

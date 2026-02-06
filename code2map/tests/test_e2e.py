@@ -153,7 +153,7 @@ def test_cli_input_file_not_found(tmp_path: Path) -> None:
 def test_cli_unsupported_extension(tmp_path: Path) -> None:
     """Test error with unsupported file extension."""
     output_dir = tmp_path / "out"
-    
+
     with patch.object(sys, "argv", [
         "code2map", "build",
         "tests/fixtures/sample.txt",
@@ -162,4 +162,55 @@ def test_cli_unsupported_extension(tmp_path: Path) -> None:
         with pytest.raises(SystemExit) as exc_info:
             main()
         assert exc_info.value.code == 1
+
+
+def test_cli_build_with_id_prefix(tmp_path: Path) -> None:
+    """Test `--id-prefix` option."""
+    output_dir = tmp_path / "out"
+
+    with patch.object(sys, "argv", [
+        "code2map", "build",
+        "tests/fixtures/sample.py",
+        "--out", str(output_dir),
+        "--id-prefix", "CODE",
+    ]):
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+    # MAP.json にカスタムプレフィックスのIDが含まれる
+    data = json.loads((output_dir / "MAP.json").read_text(encoding="utf-8"))
+    ids = [entry.get("id") for entry in data]
+    assert "CODE1" in ids
+    assert "CODE2" in ids
+
+    # INDEX.md にもカスタムプレフィックスのIDが含まれる
+    index = (output_dir / "INDEX.md").read_text(encoding="utf-8")
+    assert "[CODE1]" in index
+    assert "[CODE2]" in index
+
+
+def test_cli_build_default_id_prefix(tmp_path: Path) -> None:
+    """Test default ID prefix (CD)."""
+    output_dir = tmp_path / "out"
+
+    with patch.object(sys, "argv", [
+        "code2map", "build",
+        "tests/fixtures/sample.py",
+        "--out", str(output_dir),
+    ]):
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+    # MAP.json にデフォルトプレフィックスのIDが含まれる
+    data = json.loads((output_dir / "MAP.json").read_text(encoding="utf-8"))
+    entry = data[0]
+    assert "id" in entry
+    assert entry["id"].startswith("CD")
+    assert entry["id"][2:].isdigit()
+
+    # INDEX.md にデフォルトプレフィックスのIDが含まれる
+    index = (output_dir / "INDEX.md").read_text(encoding="utf-8")
+    assert "[CD" in index
 
