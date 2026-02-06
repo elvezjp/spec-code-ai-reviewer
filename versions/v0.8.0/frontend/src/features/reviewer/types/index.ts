@@ -268,6 +268,7 @@ export interface StructureMatchingResponse {
   success: boolean
   groups: MatchedGroup[]
   totalGroups: number
+  tokensUsed?: { input: number; output: number }
   error?: string
 }
 
@@ -369,6 +370,7 @@ export interface IntegrateResponse {
   success: boolean
   report?: string // AIが生成した統合レビューレポート（Markdown形式）
   integratedReport?: IntegratedReport
+  reviewMeta?: ReviewMeta // 一括レビューと同様のメタ情報
   tokensUsed?: { input: number; output: number }
   error?: string
 }
@@ -386,6 +388,7 @@ export interface GroupReviewState {
   groupName: string
   status: GroupReviewStatus
   result?: GroupReviewResult
+  tokensUsed?: { input: number; output: number }
   error?: string
 }
 

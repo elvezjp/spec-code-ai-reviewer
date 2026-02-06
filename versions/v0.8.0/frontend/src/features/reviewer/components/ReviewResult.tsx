@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@core/index'
 import { ExecutionInfo } from './ExecutionInfo'
-import type { ReviewExecutionData, SimpleJudgment, SplitReviewState, IntegratedReport } from '../types'
+import type { ReviewExecutionData, SimpleJudgment, SplitReviewState } from '../types'
 
 interface ReviewResultProps {
   results: (ReviewExecutionData | null)[]
@@ -24,6 +24,7 @@ interface ReviewResultProps {
   onBack: () => void
   // 分割レビュー用（オプション）
   splitReviewState?: SplitReviewState
+  splitReviewData?: ReviewExecutionData // 分割レビュー用のダウンロードデータ
   isSplitMode?: boolean
 }
 
@@ -37,31 +38,11 @@ export function ReviewResult({
   getSimpleJudgment,
   onBack,
   splitReviewState,
+  splitReviewData,
   isSplitMode = false,
 }: ReviewResultProps) {
   const currentResult = results[currentTab - 1]
   const splitResult = splitReviewState?.integrateResult?.integratedReport
-
-  // 分割レビュー用の簡易判定
-  const getSplitReviewJudgment = (report: IntegratedReport): SimpleJudgment => {
-    const errorCount = report.keyIssues.filter((i) => i.priority === 1).length
-    const warningCount = report.keyIssues.filter((i) => i.priority === 2).length
-    const infoCount = report.keyIssues.filter((i) => i.priority >= 3).length
-
-    let status: SimpleJudgment['status'] = 'ok'
-    if (errorCount > 0) {
-      status = 'ng'
-    } else if (warningCount > 0) {
-      status = 'warning'
-    }
-
-    return {
-      status,
-      ngCount: errorCount,
-      warningCount,
-      okCount: infoCount,
-    }
-  }
 
   const statusConfig = {
     ng: {
@@ -165,11 +146,11 @@ export function ReviewResult({
   }
 
   // 分割モードかつ結果がある場合
-  if (isSplitMode && splitResult) {
-    const splitJudgment = getSplitReviewJudgment(splitResult)
+  if (isSplitMode && splitReviewState?.integrateResult) {
     // APIから返されたMarkdownレポートを使用
-    const splitReportText = splitReviewState?.integrateResult?.report || ''
-    const tokensUsed = splitReviewState?.integrateResult?.tokensUsed
+    const splitReportText = splitReviewState.integrateResult.report || ''
+    // 一括レビューと同じ方法で簡易判定を行う
+    const splitJudgment = getSimpleJudgment(splitReportText)
 
     return (
       <div className="max-w-4xl mx-auto p-6">
@@ -188,7 +169,7 @@ export function ReviewResult({
           <h2 className="text-lg font-semibold text-gray-800 mb-4">簡易判定</h2>
           {renderSimpleJudgment(splitJudgment)}
           <p className="text-xs text-gray-400 mt-3">
-            ※ この判定は主要な課題の優先度に基づいています。詳細レポートを確認してください。
+            ※ この判定はキーワードに基づく簡易的なものです。AIの出力によっては正しく判定されない場合があります。詳細レポートを確認してください。
           </p>
         </div>
 
@@ -196,11 +177,13 @@ export function ReviewResult({
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">実行情報</h2>
           <ExecutionInfo
-            version="v0.8.0"
-            modelId="-"
-            executedAt={new Date().toISOString()}
-            inputTokens={tokensUsed?.input}
-            outputTokens={tokensUsed?.output}
+            version={splitReviewData?.reviewMeta.version || 'unknown'}
+            modelId={splitReviewData?.reviewMeta.modelId || 'unknown'}
+            executedAt={splitReviewData?.reviewMeta.executedAt || new Date().toISOString()}
+            inputTokens={splitReviewData?.reviewMeta.inputTokens}
+            outputTokens={splitReviewData?.reviewMeta.outputTokens}
+            designs={splitReviewData?.reviewMeta.designs}
+            programs={splitReviewData?.reviewMeta.programs}
           >
             {renderGroupsTable()}
           </ExecutionInfo>
@@ -231,7 +214,7 @@ export function ReviewResult({
           </div>
         </div>
 
-        {/* Zip download - 将来的に拡張予定 */}
+        {/* Zip download */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <Package className="w-5 h-5" /> レビュー実行データ一式ダウンロード
@@ -258,14 +241,16 @@ export function ReviewResult({
           </div>
 
           <button
-            disabled
-            className="w-full bg-gray-300 text-gray-500 font-bold py-3 rounded-lg shadow-md cursor-not-allowed flex items-center justify-center gap-2"
+            onClick={() => splitReviewData && onDownloadZip(splitReviewData, 1)}
+            disabled={!splitReviewData}
+            className={`w-full font-bold py-3 rounded-lg shadow-md transition flex items-center justify-center gap-2 ${
+              splitReviewData
+                ? 'bg-green-500 hover:bg-green-600 text-white'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
           >
-            <Download className="w-5 h-5" /> 一式ダウンロード（ZIP）- 準備中
+            <Download className="w-5 h-5" /> 一式ダウンロード（ZIP）
           </button>
-          <p className="text-xs text-gray-400 mt-2 text-center">
-            ※ 分割レビューの一式ダウンロードは今後のバージョンで対応予定です。
-          </p>
         </div>
       </div>
     )

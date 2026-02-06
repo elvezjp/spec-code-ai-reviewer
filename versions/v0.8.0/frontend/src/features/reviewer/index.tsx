@@ -30,7 +30,7 @@ import {
 } from './components'
 import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport, useSplitSettings } from './hooks'
 import { testLlmConnection, executeStructureMatching, executeGroupReview, executeIntegrate } from './services/api'
-import type { SplitReviewState, GroupReviewState, MatchedGroup, GroupDocumentPart, GroupCodePart } from './types'
+import type { SplitReviewState, GroupReviewState, MatchedGroup, GroupDocumentPart, GroupCodePart, ReviewExecutionData } from './types'
 
 const APP_INFO = {
   name: 'spec-code-ai-reviewer',
@@ -333,6 +333,7 @@ export function Reviewer() {
                 ...groupReviewResults[i],
                 status: 'completed',
                 result: groupResponse.reviewResult,
+                tokensUsed: groupResponse.tokensUsed,
               }
               resolved = true
             } else {
@@ -716,6 +717,51 @@ export function Reviewer() {
     <ExecutingScreen currentExecution={currentExecutionNumber} totalExecutions={2} />
   )
 
+  // 分割レビュー用のダウンロードデータを構築
+  // reviewMetaはAPIから取得し、designs/programs・トークン合計はローカルで補完
+  const splitReviewData: ReviewExecutionData | undefined = (() => {
+    if (!isSplitEnabled || splitReviewState.phase !== 'completed' || !splitReviewState.integrateResult?.report) {
+      return undefined
+    }
+
+    // 全フェーズのトークンを合計
+    const structureTokens = splitReviewState.structureMatchingResult?.tokensUsed || { input: 0, output: 0 }
+    const groupTokens = splitReviewState.groupReviews.reduce(
+      (acc, g) => ({
+        input: acc.input + (g.tokensUsed?.input || 0),
+        output: acc.output + (g.tokensUsed?.output || 0),
+      }),
+      { input: 0, output: 0 }
+    )
+    const integrateTokens = splitReviewState.integrateResult.tokensUsed || { input: 0, output: 0 }
+    const totalInputTokens = structureTokens.input + groupTokens.input + integrateTokens.input
+    const totalOutputTokens = structureTokens.output + groupTokens.output + integrateTokens.output
+
+    return {
+      systemPrompt: currentPromptValues,
+      specMarkdown: specMarkdown || '',
+      codeWithLineNumbers: codeWithLineNumbers || '',
+      report: splitReviewState.integrateResult.report,
+      reviewMeta: {
+        version: splitReviewState.integrateResult.reviewMeta?.version || 'unknown',
+        modelId: splitReviewState.integrateResult.reviewMeta?.modelId || 'unknown',
+        executedAt: splitReviewState.integrateResult.reviewMeta?.executedAt || new Date().toISOString(),
+        inputTokens: totalInputTokens,
+        outputTokens: totalOutputTokens,
+        // designs/programsはAPIに含まれないためローカルで構築
+        designs: specFiles.map((f) => ({
+          filename: f.filename,
+          role: f.isMain ? 'メイン設計書' : '参考資料',
+          type: f.type,
+          tool: f.tool,
+        })),
+        programs: codeFiles.map((f) => ({
+          filename: f.filename,
+        })),
+      },
+    }
+  })()
+
   const resultScreen = (
     <ReviewResult
       results={reviewResults}
@@ -727,6 +773,7 @@ export function Reviewer() {
       getSimpleJudgment={getSimpleJudgment}
       onBack={screenManager.showMain}
       splitReviewState={splitReviewState}
+      splitReviewData={splitReviewData}
       isSplitMode={isSplitEnabled && splitReviewState.phase === 'completed'}
     />
   )

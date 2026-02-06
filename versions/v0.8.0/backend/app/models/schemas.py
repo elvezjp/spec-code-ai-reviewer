@@ -416,6 +416,7 @@ class StructureMatchingResponse(BaseModel):
     success: bool
     groups: list[MatchedGroup] = []
     totalGroups: int = 0
+    tokensUsed: dict = {}  # トークン使用量 {"input": N, "output": M}
     error: str | None = None
 
 
@@ -543,5 +544,6 @@ class IntegrateResponse(BaseModel):
     success: bool
     report: str | None = None  # AIが生成した統合レビューレポート（Markdown形式）
     integratedReport: IntegratedReport | None = None
+    reviewMeta: ReviewMeta | None = None  # 一括レビューと同様のメタ情報
     tokensUsed: dict = {}
     error: str | None = None
