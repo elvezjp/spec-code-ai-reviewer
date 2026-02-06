@@ -10,6 +10,14 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
+    optimizeDeps: {
+      exclude: ['react-diff-viewer-continued'],
+    },
+    build: {
+      commonjsOptions: {
+        include: [/react-diff-viewer-continued/, /node_modules/],
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

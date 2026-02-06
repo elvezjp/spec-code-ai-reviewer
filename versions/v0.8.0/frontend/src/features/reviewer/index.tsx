@@ -30,7 +30,7 @@ import {
 } from './components'
 import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport, useSplitSettings } from './hooks'
 import { testLlmConnection, executeStructureMatching, executeGroupReview, executeIntegrate } from './services/api'
-import type { SplitReviewState, GroupReviewState, MatchedGroup, GroupDocumentPart, GroupCodePart, ReviewExecutionData } from './types'
+import type { SplitReviewState, GroupReviewState, GroupDocumentPart, GroupCodePart, ReviewExecutionData } from './types'
 
 const APP_INFO = {
   name: 'spec-code-ai-reviewer',
@@ -227,7 +227,7 @@ export function Reviewer() {
         })) || [],
       }
 
-      const codeFileStructures = codeFiles.map((cf, index) => {
+      const codeFileStructures = codeFiles.map((cf) => {
         const codeParts = splitPreviewResult.codeParts || []
         return {
           filename: cf.filename,

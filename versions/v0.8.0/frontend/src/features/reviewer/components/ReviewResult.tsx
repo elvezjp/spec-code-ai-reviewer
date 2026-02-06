@@ -42,7 +42,6 @@ export function ReviewResult({
   isSplitMode = false,
 }: ReviewResultProps) {
   const currentResult = results[currentTab - 1]
-  const splitResult = splitReviewState?.integrateResult?.integratedReport
 
   const statusConfig = {
     ng: {

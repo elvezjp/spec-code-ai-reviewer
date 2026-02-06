@@ -375,9 +375,11 @@ describe('executeIntegrate', () => {
 
     const result = await executeIntegrate({
       structureMatching: {
+        success: true,
+        totalGroups: 2,
         groups: [
-          { groupId: 'group1', groupName: 'ユーザー管理' },
-          { groupId: 'group2', groupName: '認証' },
+          { groupId: 'group1', groupName: 'ユーザー管理', docSections: [], codeSymbols: [], reason: '', estimatedTokens: 0 },
+          { groupId: 'group2', groupName: '認証', docSections: [], codeSymbols: [], reason: '', estimatedTokens: 0 },
         ],
       },
       groupReviews: [
@@ -428,7 +430,7 @@ describe('executeIntegrate', () => {
     })
 
     await executeIntegrate({
-      structureMatching: { groups: [] },
+      structureMatching: { success: true, totalGroups: 0, groups: [] },
       groupReviews: [
         {
           groupId: 'group1',
@@ -466,7 +468,7 @@ describe('executeIntegrate', () => {
     })
 
     const result = await executeIntegrate({
-      structureMatching: { groups: [] },
+      structureMatching: { success: true, totalGroups: 0, groups: [] },
       groupReviews: [],
     })
 
@@ -479,7 +481,7 @@ describe('executeIntegrate', () => {
 
     await expect(
       executeIntegrate({
-        structureMatching: { groups: [] },
+        structureMatching: { success: true, totalGroups: 0, groups: [] },
         groupReviews: [],
       })
     ).rejects.toThrow('Service unavailable')
