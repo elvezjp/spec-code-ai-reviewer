@@ -1,4 +1,5 @@
 // code2map fragment (non-buildable)
+// id: CD15
 // original: docs/examples/java/UserManagementService.java
 // lines: 215-235
 // symbol: User

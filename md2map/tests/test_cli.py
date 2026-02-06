@@ -199,7 +199,7 @@ class TestCLIOutput:
 
             # 必須フィールド
             entry = data[0]
-            assert "id" in entry  # ID フィールド（v0.2.0 で追加）
+            assert "id" in entry
             assert "section" in entry
             assert "level" in entry
             assert "path" in entry
