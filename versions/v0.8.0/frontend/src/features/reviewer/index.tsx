@@ -30,7 +30,7 @@ import {
 } from './components'
 import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport, useSplitSettings } from './hooks'
 import { testLlmConnection, executeStructureMatching, executeGroupReview, executeIntegrate } from './services/api'
-import type { SplitReviewState, GroupReviewState, MatchedGroup, GroupDocumentPart, GroupCodePart } from './types'
+import type { SplitReviewState, GroupReviewState, ReviewExecutionData } from './types'
 
 const APP_INFO = {
   name: 'spec-code-ai-reviewer',
@@ -188,11 +188,6 @@ export function Reviewer() {
     )
   }, [codeFiles, specMarkdown, specFiles, executeSplitPreview])
 
-  // Split review resume handler (skip errored group and continue)
-  const handleSplitResume = useCallback(() => {
-    errorActionRef.current = { action: 'skip', groupId: '' }
-  }, [])
-
   const handleRetryGroup = useCallback((groupId: string) => {
     errorActionRef.current = { action: 'retry', groupId }
   }, [])
@@ -200,6 +195,54 @@ export function Reviewer() {
   const handleSkipGroup = useCallback((groupId: string) => {
     errorActionRef.current = { action: 'skip', groupId }
   }, [])
+
+  // Integrate retry handler - re-execute only the integration phase
+  const handleRetryIntegrate = useCallback(async () => {
+    const { structureMatchingResult, groupReviews } = splitReviewState
+
+    if (!structureMatchingResult) return
+
+    setSplitReviewState((prev) => ({
+      ...prev,
+      phase: 'integrate',
+      error: undefined,
+    }))
+
+    try {
+      const groupReviewSummaries = groupReviews
+        .filter((g) => g.status === 'completed' && g.result)
+        .map((g) => ({
+          groupId: g.groupId,
+          groupName: g.groupName,
+          report: g.result!.report,
+        }))
+
+      const integrateResponse = await executeIntegrate({
+        structureMatching: structureMatchingResult,
+        groupReviews: groupReviewSummaries,
+        systemPrompt: currentPromptValues,
+        llmConfig: llmConfig || undefined,
+      })
+
+      if (!integrateResponse.success) {
+        throw new Error(integrateResponse.error || '結果統合に失敗しました')
+      }
+
+      setSplitReviewState((prev) => ({
+        ...prev,
+        phase: 'completed',
+        integrateResult: integrateResponse,
+      }))
+
+      screenManager.showResult()
+    } catch (error) {
+      setSplitReviewState((prev) => ({
+        ...prev,
+        phase: 'error',
+        error: error instanceof Error ? error.message : '結果統合に失敗しました',
+      }))
+    }
+  }, [splitReviewState, llmConfig, currentPromptValues, screenManager])
 
   // Split review execution
   const executeSplitReviewFlow = useCallback(async () => {
@@ -218,6 +261,7 @@ export function Reviewer() {
       const documentIndexMd = splitPreviewResult.documentIndex || ''
       const documentMapJson = {
         sections: splitPreviewResult.documentParts?.map((p) => ({
+          id: p.id,  // IDを含める（LLMがマッチングに使用）
           title: p.section,
           level: p.level,
           path: p.path,
@@ -226,13 +270,14 @@ export function Reviewer() {
         })) || [],
       }
 
-      const codeFileStructures = codeFiles.map((cf, index) => {
+      const codeFileStructures = codeFiles.map((cf) => {
         const codeParts = splitPreviewResult.codeParts || []
         return {
           filename: cf.filename,
           indexMd: splitPreviewResult.codeIndex || '',
           mapJson: {
             symbols: codeParts.map((p) => ({
+              id: p.id,  // IDを含める（LLMがマッチングに使用）
               name: p.symbol,
               symbolType: p.symbolType,
               parentSymbol: p.parentSymbol,
@@ -246,6 +291,7 @@ export function Reviewer() {
       const structureMatchingResponse = await executeStructureMatching({
         document: { indexMd: documentIndexMd, mapJson: documentMapJson },
         codeFiles: codeFileStructures,
+        systemPrompt: currentPromptValues,
         llmConfig: llmConfig || undefined,
       })
 
@@ -275,30 +321,30 @@ export function Reviewer() {
       for (let i = 0; i < groups.length; i++) {
         const group = groups[i]
 
-        // Build document parts for this group
-        const documentParts: GroupDocumentPart[] = group.docSections.map((section) => {
-          const part = splitPreviewResult.documentParts?.find((p) => p.path === section.path)
-          return {
-            title: section.title,
-            path: section.path,
-            startLine: part?.startLine || 0,
-            endLine: part?.endLine || 0,
-            content: part?.content || '',
-          }
-        })
+        // Build document content for this group
+        // 設計書が一括モードの場合は全体のMarkdownを使用、分割モードの場合はIDベースでマッチング
+        const documentContent = splitSettings.documentMode === 'batch'
+          ? (specMarkdown || '')
+          : group.docSections.map((section) => {
+              const part = splitPreviewResult.documentParts?.find((p) => p.id === section.id)
+              const startLine = part?.startLine || 0
+              const endLine = part?.endLine || 0
+              const content = part?.content || ''
+              return `### ${section.title} (L${startLine}-L${endLine})\n\n${content}`
+            }).join('\n\n')
 
-        // Build code parts for this group
-        const codeParts: GroupCodePart[] = group.codeSymbols.map((sym) => {
-          const part = splitPreviewResult.codeParts?.find((p) => p.symbol === sym.symbol)
-          return {
-            filename: sym.filename,
-            symbol: sym.symbol,
-            symbolType: part?.symbolType || 'unknown',
-            startLine: part?.startLine || 0,
-            endLine: part?.endLine || 0,
-            content: part?.content || '',
-          }
-        })
+        // Build code content for this group
+        // コードが一括モードの場合は全体のコードを使用、分割モードの場合はIDベースでマッチング
+        const codeContent = splitSettings.codeMode === 'batch'
+          ? (codeWithLineNumbers || '')
+          : group.codeSymbols.map((sym) => {
+              const part = splitPreviewResult.codeParts?.find((p) => p.id === sym.id)
+              const symbolType = part?.symbolType || 'unknown'
+              const startLine = part?.startLine || 0
+              const endLine = part?.endLine || 0
+              const content = part?.content || ''
+              return `### ${sym.filename}:${sym.symbol} (${symbolType}, L${startLine}-L${endLine})\n\n\`\`\`\n${content}\n\`\`\``
+            }).join('\n\n')
 
         // Retry loop: execute group review, pause on error for retry/skip
         let resolved = false
@@ -319,8 +365,9 @@ export function Reviewer() {
             const groupResponse = await executeGroupReview({
               groupId: group.groupId,
               groupName: group.groupName,
-              documentParts,
-              codeParts,
+              documentContent,
+              codeContent,
+              systemPrompt: currentPromptValues,
               llmConfig: llmConfig || undefined,
             })
 
@@ -329,6 +376,7 @@ export function Reviewer() {
                 ...groupReviewResults[i],
                 status: 'completed',
                 result: groupResponse.reviewResult,
+                tokensUsed: groupResponse.tokensUsed,
               }
               resolved = true
             } else {
@@ -398,14 +446,13 @@ export function Reviewer() {
         .map((g) => ({
           groupId: g.groupId,
           groupName: g.groupName,
-          summary: g.result!.summary,
-          findings: g.result!.findings,
+          report: g.result!.report,
         }))
 
       const integrateResponse = await executeIntegrate({
         structureMatching: structureMatchingResponse,
         groupReviews: groupReviewSummaries,
-        systemPrompt: systemPromptText,
+        systemPrompt: currentPromptValues,
         llmConfig: llmConfig || undefined,
       })
 
@@ -428,7 +475,12 @@ export function Reviewer() {
         error: error instanceof Error ? error.message : 'レビュー実行に失敗しました',
       }))
     }
-  }, [splitPreviewResult, codeFiles, llmConfig, screenManager, systemPromptText])
+  }, [splitPreviewResult, codeFiles, llmConfig, screenManager, currentPromptValues])
+
+  // Structure matching retry handler - re-execute from the beginning
+  const handleRetryStructureMatching = useCallback(() => {
+    executeSplitReviewFlow()
+  }, [executeSplitReviewFlow])
 
   const handleReviewExecute = async () => {
     if (!specMarkdown || !codeWithLineNumbers) return
@@ -705,13 +757,59 @@ export function Reviewer() {
     <SplitExecutingScreen
       state={splitReviewState}
       onBack={screenManager.showMain}
-      onResume={handleSplitResume}
+      onRetryStructureMatching={handleRetryStructureMatching}
       onRetryGroup={handleRetryGroup}
       onSkipGroup={handleSkipGroup}
+      onRetryIntegrate={handleRetryIntegrate}
     />
   ) : (
     <ExecutingScreen currentExecution={currentExecutionNumber} totalExecutions={2} />
   )
+
+  // 分割レビュー用のダウンロードデータを構築
+  // reviewMetaはAPIから取得し、designs/programs・トークン合計はローカルで補完
+  const splitReviewData: ReviewExecutionData | undefined = (() => {
+    if (!isSplitEnabled || splitReviewState.phase !== 'completed' || !splitReviewState.integrateResult?.report) {
+      return undefined
+    }
+
+    // 全フェーズのトークンを合計
+    const structureTokens = splitReviewState.structureMatchingResult?.tokensUsed || { input: 0, output: 0 }
+    const groupTokens = splitReviewState.groupReviews.reduce(
+      (acc, g) => ({
+        input: acc.input + (g.tokensUsed?.input || 0),
+        output: acc.output + (g.tokensUsed?.output || 0),
+      }),
+      { input: 0, output: 0 }
+    )
+    const integrateTokens = splitReviewState.integrateResult.tokensUsed || { input: 0, output: 0 }
+    const totalInputTokens = structureTokens.input + groupTokens.input + integrateTokens.input
+    const totalOutputTokens = structureTokens.output + groupTokens.output + integrateTokens.output
+
+    return {
+      systemPrompt: currentPromptValues,
+      specMarkdown: specMarkdown || '',
+      codeWithLineNumbers: codeWithLineNumbers || '',
+      report: splitReviewState.integrateResult.report,
+      reviewMeta: {
+        version: splitReviewState.integrateResult.reviewMeta?.version || 'unknown',
+        modelId: splitReviewState.integrateResult.reviewMeta?.modelId || 'unknown',
+        executedAt: splitReviewState.integrateResult.reviewMeta?.executedAt || new Date().toISOString(),
+        inputTokens: totalInputTokens,
+        outputTokens: totalOutputTokens,
+        // designs/programsはAPIに含まれないためローカルで構築
+        designs: specFiles.map((f) => ({
+          filename: f.filename,
+          role: f.isMain ? 'メイン設計書' : '参考資料',
+          type: f.type,
+          tool: f.tool,
+        })),
+        programs: codeFiles.map((f) => ({
+          filename: f.filename,
+        })),
+      },
+    }
+  })()
 
   const resultScreen = (
     <ReviewResult
@@ -724,6 +822,7 @@ export function Reviewer() {
       getSimpleJudgment={getSimpleJudgment}
       onBack={screenManager.showMain}
       splitReviewState={splitReviewState}
+      splitReviewData={splitReviewData}
       isSplitMode={isSplitEnabled && splitReviewState.phase === 'completed'}
     />
   )

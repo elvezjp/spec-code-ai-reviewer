@@ -209,5 +209,6 @@ __marimo__/
 # Mac OS
 .DS_Store
 
-# Keep example output
+# Example output (override parts/ exclusion above)
 !docs/examples/output/parts/
+!docs/examples/output/parts/**

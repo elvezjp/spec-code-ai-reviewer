@@ -166,6 +166,7 @@ export interface SplitSettings {
 }
 
 export interface DocumentPart {
+  id: string
   section: string
   level: number
   path: string
@@ -176,6 +177,7 @@ export interface DocumentPart {
 }
 
 export interface CodePart {
+  id: string
   symbol: string
   symbolType: string // class, method, function
   parentSymbol: string | null
@@ -237,15 +239,18 @@ export interface CodeFileStructure {
 export interface StructureMatchingRequest {
   document: DocumentStructure
   codeFiles: CodeFileStructure[]
+  systemPrompt?: SystemPromptValues // ユーザー指定のシステムプロンプト
   llmConfig?: LlmConfig
 }
 
 export interface MatchedDocSection {
+  id: string
   title: string
   path: string
 }
 
 export interface MatchedCodeSymbol {
+  id: string
   filename: string
   symbol: string
 }
@@ -263,6 +268,7 @@ export interface StructureMatchingResponse {
   success: boolean
   groups: MatchedGroup[]
   totalGroups: number
+  tokensUsed?: { input: number; output: number }
   error?: string
 }
 
@@ -270,29 +276,13 @@ export interface StructureMatchingResponse {
 // Group Review Types
 // =============================================================================
 
-export interface GroupDocumentPart {
-  title: string
-  path: string
-  startLine: number
-  endLine: number
-  content: string
-}
-
-export interface GroupCodePart {
-  filename: string
-  symbol: string
-  symbolType: string
-  startLine: number
-  endLine: number
-  content: string
-}
-
 export interface GroupReviewRequest {
   groupId: string
   groupName: string
-  documentParts: GroupDocumentPart[]
-  codeParts: GroupCodePart[]
+  documentContent: string // フロントエンドで結合済みの設計書内容
+  codeContent: string // フロントエンドで結合済みのコード内容
   reviewOptions?: Record<string, unknown>
+  systemPrompt?: SystemPromptValues // ユーザー指定のシステムプロンプト
   llmConfig?: LlmConfig
 }
 
@@ -307,14 +297,7 @@ export interface ReviewFinding {
 }
 
 export interface GroupReviewResult {
-  summary: string
-  findings: ReviewFinding[]
-  statistics: {
-    totalFindings: number
-    errors: number
-    warnings: number
-    info: number
-  }
+  report: string // AIが生成したMarkdown形式のレビューレポート
 }
 
 export interface GroupReviewResponse {
@@ -332,15 +315,14 @@ export interface GroupReviewResponse {
 export interface GroupReviewSummary {
   groupId: string
   groupName: string
-  summary: string
-  findings: ReviewFinding[]
+  report: string // グループレビューのMarkdownレポート
 }
 
 export interface IntegrateRequest {
   structureMatching: StructureMatchingResponse
   groupReviews: GroupReviewSummary[]
   integrationOptions?: Record<string, unknown>
-  systemPrompt?: string // システムプロンプト設定（注意事項・出力フォーマット情報を含む）
+  systemPrompt?: SystemPromptValues // ユーザー指定のシステムプロンプト
   llmConfig?: LlmConfig
 }
 
@@ -371,6 +353,7 @@ export interface IntegrateResponse {
   success: boolean
   report?: string // AIが生成した統合レビューレポート（Markdown形式）
   integratedReport?: IntegratedReport
+  reviewMeta?: ReviewMeta // 一括レビューと同様のメタ情報
   tokensUsed?: { input: number; output: number }
   error?: string
 }
@@ -388,6 +371,7 @@ export interface GroupReviewState {
   groupName: string
   status: GroupReviewStatus
   result?: GroupReviewResult
+  tokensUsed?: { input: number; output: number }
   error?: string
 }
 

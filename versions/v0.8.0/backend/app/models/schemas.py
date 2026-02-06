@@ -285,6 +285,7 @@ class SplitMarkdownRequest(BaseModel):
 class DocumentPart(BaseModel):
     """分割された設計書パーツ"""
 
+    id: str  # セクションID (MD1, MD2, ...)
     section: str  # セクション名
     level: int  # 見出しレベル (1-6)
     path: str  # パス (親セクション > 子セクション)
@@ -313,6 +314,7 @@ class SplitCodeRequest(BaseModel):
 class CodePart(BaseModel):
     """分割されたコードパーツ"""
 
+    id: str  # シンボルID (CD1, CD2, ...)
     symbol: str  # シンボル名 (クラス名、関数名など)
     symbolType: str  # class, method, function
     parentSymbol: str | None = None  # 親シンボル (メソッドの場合のクラス名)
@@ -377,12 +379,14 @@ class StructureMatchingRequest(BaseModel):
 
     document: DocumentStructure
     codeFiles: list[CodeFileStructure]
+    systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None
 
 
 class MatchedDocSection(BaseModel):
     """マッチングされた設計書セクション"""
 
+    id: str  # セクションID (MD1, MD2, ...)
     title: str
     path: str
 
@@ -390,6 +394,7 @@ class MatchedDocSection(BaseModel):
 class MatchedCodeSymbol(BaseModel):
     """マッチングされたコードシンボル"""
 
+    id: str  # シンボルID (CD1, CD2, ...)
     filename: str
     symbol: str
 
@@ -411,6 +416,7 @@ class StructureMatchingResponse(BaseModel):
     success: bool
     groups: list[MatchedGroup] = []
     totalGroups: int = 0
+    tokensUsed: dict = {}  # トークン使用量 {"input": N, "output": M}
     error: str | None = None
 
 
@@ -419,35 +425,19 @@ class StructureMatchingResponse(BaseModel):
 # =============================================================================
 
 
-class GroupDocumentPart(BaseModel):
-    """グループレビュー用の設計書パーツ"""
-
-    title: str
-    path: str
-    startLine: int
-    endLine: int
-    content: str
-
-
-class GroupCodePart(BaseModel):
-    """グループレビュー用のコードパーツ"""
-
-    filename: str
-    symbol: str
-    symbolType: str
-    startLine: int
-    endLine: int
-    content: str
-
-
 class GroupReviewRequest(BaseModel):
-    """グループレビューAPIのリクエスト"""
+    """グループレビューAPIのリクエスト
+
+    documentContent, codeContent はフロントエンドで結合済みのテキストを受け取る。
+    これにより、片方のみ分割の場合でも全体テキストを渡せる。
+    """
 
     groupId: str
     groupName: str
-    documentParts: list[GroupDocumentPart]
-    codeParts: list[GroupCodePart]
+    documentContent: str  # 結合済みの設計書内容
+    codeContent: str  # 結合済みのコード内容
     reviewOptions: dict = {}
+    systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None
 
 
@@ -466,9 +456,7 @@ class ReviewFinding(BaseModel):
 class GroupReviewResult(BaseModel):
     """グループレビュー結果"""
 
-    summary: str
-    findings: list[ReviewFinding] = []
-    statistics: dict = {}  # { totalFindings, errors, warnings, info }
+    report: str = ""  # AIが生成したMarkdown形式のレビューレポート
 
 
 class GroupReviewResponse(BaseModel):
@@ -491,8 +479,7 @@ class GroupReviewSummary(BaseModel):
 
     groupId: str
     groupName: str
-    summary: str
-    findings: list[ReviewFinding] = []
+    report: str = ""  # グループレビューのMarkdownレポート
 
 
 class IntegrateRequest(BaseModel):
@@ -501,7 +488,7 @@ class IntegrateRequest(BaseModel):
     structureMatching: dict  # 構造マッチング結果
     groupReviews: list[GroupReviewSummary]
     integrationOptions: dict = {}  # { deduplicateFindings, checkCrossGroupIssues }
-    systemPrompt: str | None = None  # システムプロンプト設定（注意事項・出力フォーマット情報を含む）
+    systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None
 
 
@@ -540,5 +527,6 @@ class IntegrateResponse(BaseModel):
     success: bool
     report: str | None = None  # AIが生成した統合レビューレポート（Markdown形式）
     integratedReport: IntegratedReport | None = None
+    reviewMeta: ReviewMeta | None = None  # 一括レビューと同様のメタ情報
     tokensUsed: dict = {}
     error: str | None = None

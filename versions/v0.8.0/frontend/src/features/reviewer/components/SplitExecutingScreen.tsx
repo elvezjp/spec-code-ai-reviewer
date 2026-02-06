@@ -1,17 +1,15 @@
 import { useState } from 'react'
-import { CheckCircle, Loader2, Circle, Play, AlertCircle, SkipForward, RotateCcw, ChevronDown, ChevronRight, Ban } from 'lucide-react'
-import { Card } from '@core/index'
-import type {
-  SplitReviewState,
-  ReviewFinding,
-} from '../types'
+import { CheckCircle, Loader2, Circle, AlertCircle, SkipForward, RotateCcw, ChevronDown, ChevronRight, Ban } from 'lucide-react'
+import { Card, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@core/index'
+import type { SplitReviewState } from '../types'
 
 interface SplitExecutingScreenProps {
   state: SplitReviewState
   onBack: () => void
-  onResume: () => void
+  onRetryStructureMatching: () => void
   onRetryGroup: (groupId: string) => void
   onSkipGroup: (groupId: string) => void
+  onRetryIntegrate: () => void
 }
 
 type StepStatus = 'completed' | 'in_progress' | 'pending' | 'error' | 'skipped'
@@ -64,36 +62,6 @@ function getPhaseStatus(
   return 'pending'
 }
 
-function SeverityBadge({ severity }: { severity: string }) {
-  const config = {
-    error: { text: 'エラー', className: 'bg-red-100 text-red-700' },
-    warning: { text: '警告', className: 'bg-yellow-100 text-yellow-700' },
-    info: { text: '情報', className: 'bg-blue-100 text-blue-700' },
-  }
-  const { text, className } = config[severity as keyof typeof config] || config.info
-  return <span className={`px-2 py-0.5 text-xs rounded ${className}`}>{text}</span>
-}
-
-function FindingItem({ finding }: { finding: ReviewFinding }) {
-  return (
-    <div className="bg-gray-50 rounded p-2 text-xs">
-      <div className="flex items-center gap-2 mb-1">
-        <SeverityBadge severity={finding.severity} />
-        <span className="text-gray-700">{finding.description}</span>
-      </div>
-      <div className="text-gray-500 pl-2">
-        {finding.docLocation && (
-          <span>設計書: {finding.docLocation.section} L{finding.docLocation.line}</span>
-        )}
-        {finding.docLocation && finding.codeLocation && <span> / </span>}
-        {finding.codeLocation && (
-          <span>コード: {finding.codeLocation.symbol} L{finding.codeLocation.line}</span>
-        )}
-      </div>
-    </div>
-  )
-}
-
 function StepCard({
   stepLabel,
   title,
@@ -140,17 +108,25 @@ function StepCard({
 export function SplitExecutingScreen({
   state,
   onBack,
-  onResume,
+  onRetryStructureMatching,
   onRetryGroup,
   onSkipGroup,
+  onRetryIntegrate,
 }: SplitExecutingScreenProps) {
   const isPaused = state.phase === 'paused'
+  const isError = state.phase === 'error'
   const hasErrorGroup = state.groupReviews.some((g) => g.status === 'error')
   const isErrorPaused = isPaused && hasErrorGroup
 
-  const structureMatchingStatus = getPhaseStatus(state.phase, 'structure-matching')
+  // エラーがどのフェーズで発生したかを判定
+  const isStructureMatchingError = isError && !state.structureMatchingResult
+  const allGroupsProcessed = state.groupReviews.length > 0 &&
+    state.groupReviews.every((g) => g.status === 'completed' || g.status === 'skipped')
+  const isIntegrateError = isError && state.structureMatchingResult && allGroupsProcessed && !state.integrateResult
+
+  const structureMatchingStatus = isStructureMatchingError ? 'error' : getPhaseStatus(state.phase, 'structure-matching')
   const groupReviewStatus = getPhaseStatus(state.phase, 'group-review')
-  const integrateStatus = getPhaseStatus(state.phase, 'integrate')
+  const integrateStatus = isIntegrateError ? 'error' : getPhaseStatus(state.phase, 'integrate')
 
   const groups = state.structureMatchingResult?.groups || []
   const completedGroups = state.groupReviews.filter((g) => g.status === 'completed' || g.status === 'skipped').length
@@ -188,18 +164,67 @@ export function SplitExecutingScreen({
             </div>
           </div>
 
+          {isStructureMatchingError && (
+            <>
+              <p className="text-sm text-red-600 mt-2">
+                構造マッチングでエラーが発生しました。
+              </p>
+              <div className="flex items-center justify-center gap-3 mt-3">
+                <button
+                  onClick={onRetryStructureMatching}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  リトライ
+                </button>
+              </div>
+            </>
+          )}
+
           {isErrorPaused && (
             <>
               <p className="text-sm text-red-600 mt-2">
-                グループレビューでエラーが発生しました。該当ステップでリトライまたはスキップを選択してください。
+                グループレビューでエラーが発生しました。リトライまたはスキップを選択してください。
               </p>
-              <button
-                onClick={onResume}
-                className="inline-flex items-center gap-2 px-4 py-2 mt-3 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition"
-              >
-                <Play className="w-4 h-4" />
-                再開（エラーをスキップ）
-              </button>
+              <div className="flex items-center justify-center gap-3 mt-3">
+                <button
+                  onClick={() => {
+                    const errorGroup = state.groupReviews.find((g) => g.status === 'error')
+                    if (errorGroup) onRetryGroup(errorGroup.groupId)
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  リトライ
+                </button>
+                <button
+                  onClick={() => {
+                    const errorGroup = state.groupReviews.find((g) => g.status === 'error')
+                    if (errorGroup) onSkipGroup(errorGroup.groupId)
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white text-sm rounded-md transition"
+                >
+                  <SkipForward className="w-4 h-4" />
+                  スキップ
+                </button>
+              </div>
+            </>
+          )}
+
+          {isIntegrateError && (
+            <>
+              <p className="text-sm text-red-600 mt-2">
+                結果統合でエラーが発生しました。
+              </p>
+              <div className="flex items-center justify-center gap-3 mt-3">
+                <button
+                  onClick={onRetryIntegrate}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  リトライ
+                </button>
+              </div>
             </>
           )}
         </div>
@@ -217,8 +242,42 @@ export function SplitExecutingScreen({
               </div>
             )}
             {structureMatchingStatus === 'completed' && state.structureMatchingResult && (
-              <div className="text-sm text-gray-700">
-                マッチング結果: {state.structureMatchingResult.totalGroups} グループ
+              <div className="text-sm text-gray-700 space-y-2">
+                <div>マッチング結果: {state.structureMatchingResult.totalGroups} グループ</div>
+                <div className="overflow-x-auto">
+                  <Table className="min-w-full text-sm">
+                    <TableHead>
+                      <TableRow>
+                        <TableHeaderCell>グループ名</TableHeaderCell>
+                        <TableHeaderCell>設計書セクション</TableHeaderCell>
+                        <TableHeaderCell>プログラムシンボル</TableHeaderCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {state.structureMatchingResult.groups.map((group) => (
+                        <TableRow key={group.groupId}>
+                          <TableCell>{group.groupName}</TableCell>
+                          <TableCell>
+                            {group.docSections.length > 0
+                              ? group.docSections.map((s) => s.title).join(', ')
+                              : '（分割なし）'}
+                          </TableCell>
+                          <TableCell>
+                            {group.codeSymbols.length > 0
+                              ? group.codeSymbols.map((s) => s.symbol).join(', ')
+                              : '（分割なし）'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+            {structureMatchingStatus === 'error' && state.error && (
+              <div className="text-sm text-red-600">
+                <span className="text-gray-500">エラー: </span>
+                {state.error}
               </div>
             )}
           </StepCard>
@@ -238,17 +297,19 @@ export function SplitExecutingScreen({
               >
                 <div className="space-y-2 text-sm">
                   <div>
-                    <span className="text-gray-500">設計: </span>
+                    <span className="text-gray-500">設計書: </span>
                     <span className="text-gray-700">
-                      {group.docSections.map((s) => s.title).join('、')}
+                      {group.docSections.length > 0
+                        ? group.docSections.map((s) => s.title).join('、')
+                        : '（分割なし）'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-500">コード: </span>
+                    <span className="text-gray-500">プログラム: </span>
                     <span className="text-gray-700">
                       {group.codeSymbols.length > 0
                         ? group.codeSymbols.map((s) => s.symbol).join('、')
-                        : '（なし）'}
+                        : '（分割なし）'}
                     </span>
                   </div>
 
@@ -261,29 +322,9 @@ export function SplitExecutingScreen({
 
                   {status === 'completed' && result && (
                     <div className="mt-2 pt-2 border-t">
-                      <div className="text-gray-700">
-                        <span className="text-gray-500">サマリー: </span>
-                        {result.summary}
-                        {result.statistics && (
-                          <span className="ml-2 text-gray-500">
-                            （{result.statistics.errors > 0 && `エラー${result.statistics.errors}件`}
-                            {result.statistics.warnings > 0 && ` 警告${result.statistics.warnings}件`}）
-                          </span>
-                        )}
+                      <div className="text-gray-700 text-xs whitespace-pre-wrap max-h-40 overflow-y-auto">
+                        {result.report}
                       </div>
-
-                      {result.findings.length > 0 && (
-                        <div className="mt-2 space-y-2">
-                          {result.findings.slice(0, 3).map((finding) => (
-                            <FindingItem key={finding.id} finding={finding} />
-                          ))}
-                          {result.findings.length > 3 && (
-                            <div className="text-gray-500 text-xs">
-                              ...他 {result.findings.length - 3} 件
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
                   )}
 
@@ -299,24 +340,6 @@ export function SplitExecutingScreen({
                         <span className="text-gray-500">エラー: </span>
                         {reviewState.error}
                       </div>
-                      {isPaused && (
-                        <div className="flex items-center gap-3 mt-3">
-                          <button
-                            onClick={() => onRetryGroup(group.groupId)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            リトライ
-                          </button>
-                          <button
-                            onClick={() => onSkipGroup(group.groupId)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-400 hover:bg-gray-500 text-white text-sm rounded-md transition"
-                          >
-                            <SkipForward className="w-3.5 h-3.5" />
-                            スキップ
-                          </button>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -332,16 +355,10 @@ export function SplitExecutingScreen({
                 <span>結果を統合中...</span>
               </div>
             )}
-            {integrateStatus === 'completed' && state.integrateResult?.integratedReport && (
-              <div className="text-sm text-gray-700">
-                <div className="mb-2">
-                  <span className="text-gray-500">総合評価: </span>
-                  {state.integrateResult.integratedReport.overallSummary}
-                </div>
-                <div>
-                  <span className="text-gray-500">整合性スコア: </span>
-                  {Math.round(state.integrateResult.integratedReport.consistencyScore * 100)}%
-                </div>
+            {integrateStatus === 'error' && state.error && (
+              <div className="text-sm text-red-600">
+                <span className="text-gray-500">エラー: </span>
+                {state.error}
               </div>
             )}
           </StepCard>
