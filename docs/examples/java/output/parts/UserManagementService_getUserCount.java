@@ -1,4 +1,5 @@
 // code2map fragment (non-buildable)
+// id: CD9
 // original: docs/examples/java/UserManagementService.java
 // lines: 162-164
 // symbol: UserManagementService#getUserCount

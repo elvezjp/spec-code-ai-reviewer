@@ -1,5 +1,6 @@
 [
   {
+    "id": "CD1",
     "symbol": "UserAlreadyExistsException",
     "type": "class",
     "original_file": "user_management_service.py",
@@ -9,6 +10,7 @@
     "checksum": "8339ad395029291f6a6e4aea9ed4b4ebaa5114e7085f1a02bdcc0e8648957f0e"
   },
   {
+    "id": "CD2",
     "symbol": "UserNotFoundException",
     "type": "class",
     "original_file": "user_management_service.py",
@@ -18,6 +20,7 @@
     "checksum": "a284c0893a30f17d982fe207f612c2fb0f794613e386773db36a9369bed94152"
   },
   {
+    "id": "CD3",
     "symbol": "User",
     "type": "class",
     "original_file": "user_management_service.py",
@@ -27,6 +30,7 @@
     "checksum": "fdf90c0b801caf45354cd6d1f3a336c60986a5151d6d1a981fd70aadb667e9b0"
   },
   {
+    "id": "CD4",
     "symbol": "UserManagementService",
     "type": "class",
     "original_file": "user_management_service.py",
@@ -36,6 +40,7 @@
     "checksum": "9e2e771d5eefc53766ff022696f54a14ade2b53051de134985cc3ab945b8a8f8"
   },
   {
+    "id": "CD5",
     "symbol": "UserManagementService#__init__",
     "type": "method",
     "original_file": "user_management_service.py",
@@ -45,6 +50,7 @@
     "checksum": "e81ac1c573c02300af0dd1ef7cc5c359dd2a4a6e7f1cebc1b21180966ef38631"
   },
   {
+    "id": "CD6",
     "symbol": "UserManagementService#register_user",
     "type": "method",
     "original_file": "user_management_service.py",
@@ -54,6 +60,7 @@
     "checksum": "23fc49f50a9f9919328a354ad16b8044cf007752d937286e0edf4571afefca50"
   },
   {
+    "id": "CD7",
     "symbol": "UserManagementService#update_user",
     "type": "method",
     "original_file": "user_management_service.py",
@@ -63,6 +70,7 @@
     "checksum": "b85eccf358a2df0e354b82bcf8d174e42153c5639488557b3e6925fd54764e3c"
   },
   {
+    "id": "CD8",
     "symbol": "UserManagementService#delete_user",
     "type": "method",
     "original_file": "user_management_service.py",
@@ -72,6 +80,7 @@
     "checksum": "631dae920b109877067748f0ee621f3a25f23b7e3bb522a2da563e50ebaa0c4d"
   },
   {
+    "id": "CD9",
     "symbol": "UserManagementService#find_by_id",
     "type": "method",
     "original_file": "user_management_service.py",
@@ -81,6 +90,7 @@
     "checksum": "fc8c9cae0eee16ae2d3987befc8e0db5ec933590ec2a8d8c5e411c2972ee30b6"
   },
   {
+    "id": "CD10",
     "symbol": "UserManagementService#find_all",
     "type": "method",
     "original_file": "user_management_service.py",
@@ -90,6 +100,7 @@
     "checksum": "a7bb735f248c9a874ab6fd81fbd7f30276c17b38918e8e080fe467754c9e6e82"
   },
   {
+    "id": "CD11",
     "symbol": "UserManagementService#find_by_age_range",
     "type": "method",
     "original_file": "user_management_service.py",
@@ -99,6 +110,7 @@
     "checksum": "d92c94d373b8bbb69bb9117b3bef62c3de4d4235ecef5084270985d832ad659a"
   },
   {
+    "id": "CD12",
     "symbol": "UserManagementService#find_by_email_domain",
     "type": "method",
     "original_file": "user_management_service.py",
@@ -108,6 +120,7 @@
     "checksum": "71f5afbb8c69dbce067ea9e75101b056dce7ba4da040ea4e26e193fce283f84b"
   },
   {
+    "id": "CD13",
     "symbol": "UserManagementService#get_user_count",
     "type": "method",
     "original_file": "user_management_service.py",
@@ -117,6 +130,7 @@
     "checksum": "ddd7420d3c45dbcee242f6a8b66de911225538e8f56b181729e5b420a5a15a38"
   },
   {
+    "id": "CD14",
     "symbol": "UserManagementService#_validate_user_id",
     "type": "method",
     "original_file": "user_management_service.py",
@@ -126,6 +140,7 @@
     "checksum": "144a59cc4490583fb31453e652d40836969b8ae29cc45d65e9b45239dfb884f6"
   },
   {
+    "id": "CD15",
     "symbol": "UserManagementService#_validate_user_name",
     "type": "method",
     "original_file": "user_management_service.py",
@@ -135,6 +150,7 @@
     "checksum": "66ae1474c0e72ad449bb99fddd61f43501de1efd7fbb79400e1e1f8c1dd5ec69"
   },
   {
+    "id": "CD16",
     "symbol": "UserManagementService#_validate_email",
     "type": "method",
     "original_file": "user_management_service.py",
@@ -144,6 +160,7 @@
     "checksum": "edad6793d75a8e2c4f5018dfb8e9b304cf88e51deb50275926743963813f0d75"
   },
   {
+    "id": "CD17",
     "symbol": "UserManagementService#_validate_age",
     "type": "method",
     "original_file": "user_management_service.py",
@@ -153,6 +170,7 @@
     "checksum": "2c0a3140d23ea43eef00ab5cb85e2e20c5d023fc7e3cb8c0abda512a03febda2"
   },
   {
+    "id": "CD18",
     "symbol": "UserManagementService#_find_user_or_throw",
     "type": "method",
     "original_file": "user_management_service.py",

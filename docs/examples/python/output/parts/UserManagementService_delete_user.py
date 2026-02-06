@@ -1,4 +1,5 @@
 # code2map fragment (non-buildable)
+# id: CD8
 # original: docs/examples/python/user_management_service.py
 # lines: 122-137
 # symbol: UserManagementService#delete_user

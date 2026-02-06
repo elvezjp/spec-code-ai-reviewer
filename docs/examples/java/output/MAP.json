@@ -1,5 +1,6 @@
 [
   {
+    "id": "CD1",
     "symbol": "UserManagementService",
     "type": "class",
     "original_file": "UserManagementService.java",
@@ -9,6 +10,7 @@
     "checksum": "158a816f82e556679baf4da5b00ce92901714a254990f8cb1f98940d4b7e8642"
   },
   {
+    "id": "CD2",
     "symbol": "UserManagementService#registerUser",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -18,6 +20,7 @@
     "checksum": "758f03cdd6ecfc3c5e94919cf31d55a57d9c517fc8717724a6ddbe72e754aaae"
   },
   {
+    "id": "CD3",
     "symbol": "UserManagementService#updateUser",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -27,6 +30,7 @@
     "checksum": "02a2059cde1070b57ee5202960e1012593d38dc0b6ddc1074be19a3c340ef4d3"
   },
   {
+    "id": "CD4",
     "symbol": "UserManagementService#deleteUser",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -36,6 +40,7 @@
     "checksum": "9581d7d6ee3db6079fd8f5f4409655b37f8437e4db694ccc1c3ce180c80f96f9"
   },
   {
+    "id": "CD5",
     "symbol": "UserManagementService#findById",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -45,6 +50,7 @@
     "checksum": "bbefdd40a2d78b3ea1ed7c8ee92caec888129a1a51207b219eca8ebb3ad39da6"
   },
   {
+    "id": "CD6",
     "symbol": "UserManagementService#findAll",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -54,6 +60,7 @@
     "checksum": "e674df188addac42a3b95fb046641602fdac9e32fb0cb078ce069fb8217751e0"
   },
   {
+    "id": "CD7",
     "symbol": "UserManagementService#findByAgeRange",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -63,6 +70,7 @@
     "checksum": "f44a4f60d1d21dc4ce7023c30cf319f93811f396d834f1eb371b8f5e3b9a5858"
   },
   {
+    "id": "CD8",
     "symbol": "UserManagementService#findByEmailDomain",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -72,6 +80,7 @@
     "checksum": "835dde707335a147d034eba1163a9f4b703f0fba7e1585b317883b8d90848c2a"
   },
   {
+    "id": "CD9",
     "symbol": "UserManagementService#getUserCount",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -81,6 +90,7 @@
     "checksum": "9327f387a7d8070b4ab4fbc158d5f7c15c767166a52dadf14f3af70b29347975"
   },
   {
+    "id": "CD10",
     "symbol": "UserManagementService#validateUserId",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -90,6 +100,7 @@
     "checksum": "78eeb72d264309ce5f32dd1ac809453abb9108a0fd6457be31d907439167b1e5"
   },
   {
+    "id": "CD11",
     "symbol": "UserManagementService#validateUserName",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -99,6 +110,7 @@
     "checksum": "de7edf373a375ef18fef9fd2003cf8124e3321bf123dd1a2186df50ffe6eae61"
   },
   {
+    "id": "CD12",
     "symbol": "UserManagementService#validateEmail",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -108,6 +120,7 @@
     "checksum": "f25ba88c27785dc498f743408ee1cf66f0c06bbe34161f8cb9aa2229393b69cd"
   },
   {
+    "id": "CD13",
     "symbol": "UserManagementService#validateAge",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -117,6 +130,7 @@
     "checksum": "9051fe6f1f5751f2f959b1f7b5f26aa569804ba84a29bcca6ee2e12de14c5ee2"
   },
   {
+    "id": "CD14",
     "symbol": "UserManagementService#findUserOrThrow",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -126,6 +140,7 @@
     "checksum": "c982873eb414e925510563ef03963fb781815fae5a0d2596fd25eaa5d6e97d43"
   },
   {
+    "id": "CD15",
     "symbol": "User",
     "type": "class",
     "original_file": "UserManagementService.java",
@@ -135,6 +150,7 @@
     "checksum": "02be989401e7eefb2e9976262b5f1fffaf416b2f5921912629b59ff92a80071e"
   },
   {
+    "id": "CD16",
     "symbol": "User#getUserId",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -144,6 +160,7 @@
     "checksum": "55c461d73c3075b153e9633715d47a38f3ce10bf38bf9e0e38a8d4f789d1389a"
   },
   {
+    "id": "CD17",
     "symbol": "User#getUserName",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -153,6 +170,7 @@
     "checksum": "03bef59b832e0f203fea1d2201bc1b2aaddcdba005129c58eb204ca3e0bb4df5"
   },
   {
+    "id": "CD18",
     "symbol": "User#setUserName",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -162,6 +180,7 @@
     "checksum": "c157de00168a0183e97d7b742347b790d7cbca421d628beacd202d5c66323d3a"
   },
   {
+    "id": "CD19",
     "symbol": "User#getEmail",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -171,6 +190,7 @@
     "checksum": "dc0955e235112ce5675a02b7910fb0ad7651446956d063ef08c47a05fd45a047"
   },
   {
+    "id": "CD20",
     "symbol": "User#setEmail",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -180,6 +200,7 @@
     "checksum": "1066290156d25144e72616e09831d6bad4e5658d28a3b3ab7fb393e7c1b37c61"
   },
   {
+    "id": "CD21",
     "symbol": "User#getAge",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -189,6 +210,7 @@
     "checksum": "e3490aaa524deabd7dd4ec72208f4321d1b5c9407191a2d615dc2d08a95e604d"
   },
   {
+    "id": "CD22",
     "symbol": "User#setAge",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -198,6 +220,7 @@
     "checksum": "b60364a641abc5c7b03449f5516e1d2b348d3e092d8baf8818d0d97553ad1bda"
   },
   {
+    "id": "CD23",
     "symbol": "User#<init>",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -207,6 +230,7 @@
     "checksum": "253a1801d7ecc476861e05ff6dc655509e49f8ab74294b4380e7e7d78537d063"
   },
   {
+    "id": "CD24",
     "symbol": "UserAlreadyExistsException",
     "type": "class",
     "original_file": "UserManagementService.java",
@@ -216,6 +240,7 @@
     "checksum": "4b9597326072e1a5f738dfcd2eaed367a21f50f1be85e97be18fd5592b4e803c"
   },
   {
+    "id": "CD25",
     "symbol": "UserAlreadyExistsException#<init>",
     "type": "method",
     "original_file": "UserManagementService.java",
@@ -225,6 +250,7 @@
     "checksum": "14e2fd984bdc86ff87cdae392fce60c1b9c2fefd76d0261c524923e7a6cbc04d"
   },
   {
+    "id": "CD26",
     "symbol": "UserNotFoundException",
     "type": "class",
     "original_file": "UserManagementService.java",
@@ -234,6 +260,7 @@
     "checksum": "8388ddde6b7167ddfd23ef48b1c696ba7e95027da62355eca2e54223b679bae3"
   },
   {
+    "id": "CD27",
     "symbol": "UserNotFoundException#<init>",
     "type": "method",
     "original_file": "UserManagementService.java",

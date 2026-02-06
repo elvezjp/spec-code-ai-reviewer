@@ -18,7 +18,10 @@ def generate_map(entries: List[Tuple[Symbol, str]], output_path: str) -> None:
     for symbol, fragment in entries:
         if not symbol.part_file:
             continue
-        payload.append(
+        entry = {}
+        if symbol.id:
+            entry["id"] = symbol.id
+        entry.update(
             {
                 "symbol": symbol.display_name(),
                 "type": symbol.kind,
@@ -29,6 +32,7 @@ def generate_map(entries: List[Tuple[Symbol, str]], output_path: str) -> None:
                 "checksum": _checksum(fragment),
             }
         )
+        payload.append(entry)
 
     content = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
     write_text(output_path, content)

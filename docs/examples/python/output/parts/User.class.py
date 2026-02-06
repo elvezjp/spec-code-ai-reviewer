@@ -1,4 +1,5 @@
 # code2map fragment (non-buildable)
+# id: CD3
 # original: docs/examples/python/user_management_service.py
 # lines: 22-27
 # symbol: User

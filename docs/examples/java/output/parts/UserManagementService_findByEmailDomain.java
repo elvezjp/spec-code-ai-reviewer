@@ -1,4 +1,5 @@
 // code2map fragment (non-buildable)
+// id: CD8
 // original: docs/examples/java/UserManagementService.java
 // lines: 146-155
 // symbol: UserManagementService#findByEmailDomain

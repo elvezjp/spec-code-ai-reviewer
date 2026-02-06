@@ -1,4 +1,5 @@
 // code2map fragment (non-buildable)
+// id: CD25
 // original: docs/examples/java/UserManagementService.java
 // lines: 238-238
 // symbol: UserAlreadyExistsException#<init>

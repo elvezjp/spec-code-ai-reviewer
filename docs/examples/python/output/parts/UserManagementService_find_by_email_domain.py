@@ -1,4 +1,5 @@
 # code2map fragment (non-buildable)
+# id: CD12
 # original: docs/examples/python/user_management_service.py
 # lines: 177-192
 # symbol: UserManagementService#find_by_email_domain
