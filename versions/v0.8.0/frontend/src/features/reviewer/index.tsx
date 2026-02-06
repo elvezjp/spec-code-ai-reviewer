@@ -402,8 +402,7 @@ export function Reviewer() {
         .map((g) => ({
           groupId: g.groupId,
           groupName: g.groupName,
-          summary: g.result!.summary,
-          findings: g.result!.findings,
+          report: g.result!.report,
         }))
 
       const integrateResponse = await executeIntegrate({

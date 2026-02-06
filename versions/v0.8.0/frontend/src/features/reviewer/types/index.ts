@@ -313,14 +313,7 @@ export interface ReviewFinding {
 }
 
 export interface GroupReviewResult {
-  summary: string
-  findings: ReviewFinding[]
-  statistics: {
-    totalFindings: number
-    errors: number
-    warnings: number
-    info: number
-  }
+  report: string // AIが生成したMarkdown形式のレビューレポート
 }
 
 export interface GroupReviewResponse {
@@ -338,8 +331,7 @@ export interface GroupReviewResponse {
 export interface GroupReviewSummary {
   groupId: string
   groupName: string
-  summary: string
-  findings: ReviewFinding[]
+  report: string // グループレビューのMarkdownレポート
 }
 
 export interface IntegrateRequest {

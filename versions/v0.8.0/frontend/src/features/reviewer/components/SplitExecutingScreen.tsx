@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { CheckCircle, Loader2, Circle, Play, AlertCircle, SkipForward, RotateCcw, ChevronDown, ChevronRight, Ban } from 'lucide-react'
 import { Card } from '@core/index'
-import type {
-  SplitReviewState,
-  ReviewFinding,
-} from '../types'
+import type { SplitReviewState } from '../types'
 
 interface SplitExecutingScreenProps {
   state: SplitReviewState
@@ -62,36 +59,6 @@ function getPhaseStatus(
   if (currentIndex > targetIndex) return 'completed'
   if (currentIndex === targetIndex) return 'in_progress'
   return 'pending'
-}
-
-function SeverityBadge({ severity }: { severity: string }) {
-  const config = {
-    error: { text: 'エラー', className: 'bg-red-100 text-red-700' },
-    warning: { text: '警告', className: 'bg-yellow-100 text-yellow-700' },
-    info: { text: '情報', className: 'bg-blue-100 text-blue-700' },
-  }
-  const { text, className } = config[severity as keyof typeof config] || config.info
-  return <span className={`px-2 py-0.5 text-xs rounded ${className}`}>{text}</span>
-}
-
-function FindingItem({ finding }: { finding: ReviewFinding }) {
-  return (
-    <div className="bg-gray-50 rounded p-2 text-xs">
-      <div className="flex items-center gap-2 mb-1">
-        <SeverityBadge severity={finding.severity} />
-        <span className="text-gray-700">{finding.description}</span>
-      </div>
-      <div className="text-gray-500 pl-2">
-        {finding.docLocation && (
-          <span>設計書: {finding.docLocation.section} L{finding.docLocation.line}</span>
-        )}
-        {finding.docLocation && finding.codeLocation && <span> / </span>}
-        {finding.codeLocation && (
-          <span>コード: {finding.codeLocation.symbol} L{finding.codeLocation.line}</span>
-        )}
-      </div>
-    </div>
-  )
 }
 
 function StepCard({
@@ -261,29 +228,10 @@ export function SplitExecutingScreen({
 
                   {status === 'completed' && result && (
                     <div className="mt-2 pt-2 border-t">
-                      <div className="text-gray-700">
-                        <span className="text-gray-500">サマリー: </span>
-                        {result.summary}
-                        {result.statistics && (
-                          <span className="ml-2 text-gray-500">
-                            （{result.statistics.errors > 0 && `エラー${result.statistics.errors}件`}
-                            {result.statistics.warnings > 0 && ` 警告${result.statistics.warnings}件`}）
-                          </span>
-                        )}
+                      <div className="text-gray-700 text-xs whitespace-pre-wrap max-h-40 overflow-y-auto">
+                        {result.report.slice(0, 500)}
+                        {result.report.length > 500 && '...'}
                       </div>
-
-                      {result.findings.length > 0 && (
-                        <div className="mt-2 space-y-2">
-                          {result.findings.slice(0, 3).map((finding) => (
-                            <FindingItem key={finding.id} finding={finding} />
-                          ))}
-                          {result.findings.length > 3 && (
-                            <div className="text-gray-500 text-xs">
-                              ...他 {result.findings.length - 3} 件
-                            </div>
-                          )}
-                        </div>
-                      )}
                     </div>
                   )}
 
