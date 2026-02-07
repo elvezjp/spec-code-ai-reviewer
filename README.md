@@ -18,9 +18,17 @@ https://github.com/user-attachments/assets/78926022-1498-4d9a-923c-cdf3a9f06534
 - **Design document conversion**: Convert Excel (.xlsx, .xls) to Markdown (using MarkItDown, excel2md)
 - **Program conversion**: Add line numbers to any text file (add-line-numbers compatible)
 - **Cross-check review**: Verify consistency between the design doc and code using LLMs (Bedrock / Anthropic / OpenAI)
+- **Split review**: Semantically split large design docs and code that exceed token limits for review (using md2map / code2map)
 - **Report output**: Generate a Markdown review report
 
 For detailed feature specs, see [latest/spec.md](latest/spec.md).
+
+### Split Review for Large Files
+
+LLMs have input token limits, so large design documents or source code with thousands of lines may not be reviewable as-is.
+Naive line-based splitting can cut through sections, classes, or functions, losing context and reducing review accuracy.
+
+This application uses [md2map](https://github.com/elvezjp/md2map) and [code2map](https://github.com/elvezjp/code2map) to split Markdown design documents and source code into semantically meaningful units, grouping related parts together for cross-check review.
 
 ## System Architecture
 
@@ -524,6 +532,11 @@ sudo nginx -s reload
 - The `latest` symlink is updated automatically by `git pull` (Git tracks symlinks)
 - `pm2 reload` only restarts existing processes. When adding a new version, run `pm2 delete all && pm2 start` to rebuild.
 - `spec-code-ai-reviewer.conf` uses the `$backend_port` variable, so only `version-map.conf` needs updating
+
+## Related Projects
+- [excel2md](https://github.com/elvezjp/excel2md)
+- [code2map](https://github.com/elvezjp/code2map)
+- [md2map](https://github.com/elvezjp/md2map)
 
 ## Update History
 

@@ -18,9 +18,17 @@ https://github.com/user-attachments/assets/78926022-1498-4d9a-923c-cdf3a9f06534
 - **設計書変換**: Excel (.xlsx, .xls) → Markdown形式に変換（MarkItDown、excel2md使用）
 - **プログラム変換**: 任意のテキストファイルに行番号を付与（add-line-numbers準拠）
 - **突合レビュー**: LLM（Bedrock / Anthropic / OpenAI）を使用して設計書とコードの整合性を検証
+- **分割レビュー**: トークン上限を超える設計書・コードをセマンティック分割してレビュー（md2map / code2map使用）
 - **レポート出力**: マークダウン形式のレビューレポートを生成
 
 機能仕様の詳細については[latest/spec.md](latest/spec.md)を参照してください。
+
+### 大規模ファイルの分割レビュー
+
+LLMには入力トークンの上限があるため、大規模な設計書や数千行のコードはそのままではレビューできない場合があります。
+単純な行数での分割ではセクションやクラス・関数の途中で切れてしまい、文脈が失われレビュー精度が低下します。
+
+このアプリケーションでは、[md2map](https://github.com/elvezjp/md2map)と[code2map](https://github.com/elvezjp/code2map)を使用して、Markdown設計書とソースコードを意味のある単位に分割し、関連する部分をグループ化して突合レビューすることが可能です。
 
 ## システム構成
 
@@ -525,6 +533,11 @@ sudo nginx -s reload
 - `latest` シンボリックリンクは `git pull` で自動更新される（Gitがシンボリックリンクを追跡）
 - `pm2 reload` は既存プロセスの再起動のみ。新バージョン追加時は `pm2 delete all && pm2 start` で再構成が必要
 - `spec-code-ai-reviewer.conf` は `$backend_port` 変数を使用するため、`version-map.conf` の更新のみでOK
+
+## 関連プロジェクト
+- [excel2md](https://github.com/elvezjp/excel2md)
+- [code2map](https://github.com/elvezjp/code2map)
+- [md2map](https://github.com/elvezjp/md2map)
 
 ## 更新履歴
 
