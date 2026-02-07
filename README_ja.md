@@ -382,7 +382,7 @@ spec-code-ai-reviewer/
 └── README.md                    # 本ファイル
 ```
 
-## Git Subtrees
+## 関連プロジェクト
 
 このリポジトリには以下の外部リポジトリを git subtree で追加しています。
 
@@ -533,11 +533,6 @@ sudo nginx -s reload
 - `latest` シンボリックリンクは `git pull` で自動更新される（Gitがシンボリックリンクを追跡）
 - `pm2 reload` は既存プロセスの再起動のみ。新バージョン追加時は `pm2 delete all && pm2 start` で再構成が必要
 - `spec-code-ai-reviewer.conf` は `$backend_port` 変数を使用するため、`version-map.conf` の更新のみでOK
-
-## 関連プロジェクト
-- [excel2md](https://github.com/elvezjp/excel2md)
-- [code2map](https://github.com/elvezjp/code2map)
-- [md2map](https://github.com/elvezjp/md2map)
 
 ## 更新履歴
 

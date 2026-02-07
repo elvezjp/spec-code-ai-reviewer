@@ -381,7 +381,7 @@ spec-code-ai-reviewer/
 └── README.md                    # This file
 ```
 
-## Git Subtrees
+## Related Projects
 
 This repository includes the following external repositories via git subtree.
 
@@ -532,11 +532,6 @@ sudo nginx -s reload
 - The `latest` symlink is updated automatically by `git pull` (Git tracks symlinks)
 - `pm2 reload` only restarts existing processes. When adding a new version, run `pm2 delete all && pm2 start` to rebuild.
 - `spec-code-ai-reviewer.conf` uses the `$backend_port` variable, so only `version-map.conf` needs updating
-
-## Related Projects
-- [excel2md](https://github.com/elvezjp/excel2md)
-- [code2map](https://github.com/elvezjp/code2map)
-- [md2map](https://github.com/elvezjp/md2map)
 
 ## Update History
 
