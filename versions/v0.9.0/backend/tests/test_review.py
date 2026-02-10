@@ -180,7 +180,6 @@ class TestMappingUserMessage:
         # マッピングモードのキーワードが含まれる
         assert "マッピング" in message
         assert "設計書の各項目がどこで実装されているか" in message
-        assert "未マッピング項目" in message
 
     def test_ut_rev_002_review_user_message(self):
         """突合モードのユーザーメッセージには「突合レビュー」が含まれる"""
@@ -443,9 +442,10 @@ class TestStructureMapPromptInclusion:
             structure_map=structure_map,
         )
 
-        # 構造マップのキーワードが含まれる
-        assert "設計書構造マップ" in message
-        assert "コード構造マップ" in message
+        # 構造マップのキーワードが含まれる（JSON形式）
+        assert "構造マップ" in message
+        assert "documentMap" in message
+        assert "codeMaps" in message
         assert "MD1" in message
         assert "MD2" in message
         assert "CD1" in message

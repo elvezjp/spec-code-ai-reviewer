@@ -43,6 +43,86 @@ APP_VERSION = version("spec-code-ai-reviewer-backend")
 
 router = APIRouter()
 
+# ---------------------------------------------------------------------------
+# フォールバック用プロンプト定数（分割レビュー）
+# request.systemPrompt で指定されなかった場合に使用するデフォルト値
+# ---------------------------------------------------------------------------
+
+# --- 構造マッチング（フェーズ1） ---
+_SM_ROLE_DEFAULT = "設計書とソースコードの構造を分析する専門家"
+_SM_ROLE_MAPPING = "設計書とソースコードのマッピングを行う専門家"
+
+_SM_PURPOSE_DEFAULT = (
+    "設計書の構造（セクション一覧）とコードの構造（シンボル一覧）を比較し、"
+    "関連性の高い設計書セクションとコードシンボルをグループにまとめる"
+)
+_SM_PURPOSE_MAPPING = (
+    "設計書の構造（セクション一覧）とコードの構造（シンボル一覧）を比較し、"
+    "設計書の各項目がどのコード要素で実装されているかを推定してグループにまとめる"
+)
+_SM_PURPOSE_SUFFIX_DEFAULT = (
+    "この目的を達成するため、まず設計書の構造（セクション一覧）と"
+    "コードの構造（シンボル一覧）を比較し、"
+    "関連性の高い設計書セクションとコードシンボルをグループにまとめてください。"
+)
+_SM_PURPOSE_SUFFIX_MAPPING = (
+    "この目的を達成するため、設計書の構造（セクション一覧）と"
+    "コードの構造（シンボル一覧）を比較し、"
+    "設計書の各項目がどのコード要素で実装されているかを推定してグループにまとめてください。"
+)
+
+# --- グループレビュー（フェーズ2） ---
+_GR_ROLE_DEFAULT = "設計書とソースコードの整合性をレビューする専門家"
+_GR_ROLE_MAPPING = "設計書とソースコードのマッピングを行う専門家"
+
+_GR_PURPOSE_DEFAULT = "設計書の記述とコード実装の整合性を確認し、指摘事項を報告する"
+_GR_PURPOSE_MAPPING = "設計書の各項目がコードのどこで実装されているかを特定する"
+_GR_PURPOSE_SUFFIX_DEFAULT = (
+    "この目的を達成するため、以下のグループ（関連する設計書セクションとコード）について、"
+    "設計書の記述とコード実装の整合性を確認し、指摘事項を報告してください。"
+)
+_GR_PURPOSE_SUFFIX_MAPPING = (
+    "この目的を達成するため、以下のグループ（関連する設計書セクションとコード）について、"
+    "設計書の各項目がコードのどこで実装されているかを特定してください。"
+)
+
+_GR_FORMAT_DEFAULT = """マークダウン形式で、以下の内容を出力してください：
+1. サマリー（このグループの整合性評価）
+2. 突合結果一覧（テーブル形式: 設計書箇所、コード箇所、判定、指摘内容）
+3. 詳細（問題点と推奨事項）"""
+
+_GR_FORMAT_MAPPING = """マークダウン形式で、以下の内容を出力してください：
+1. マッピングサマリー（このグループのマッピング評価）
+2. マッピング一覧（テーブル形式: 設計書項目、実装ファイル:行、実装要素、確信度、備考）
+3. 未マッピング項目（実装箇所が特定できなかった項目）"""
+
+# --- 結果統合（フェーズ3） ---
+_INT_ROLE_DEFAULT = "レビュー結果を統合するエキスパート"
+_INT_ROLE_MAPPING = "マッピング結果を統合するエキスパート"
+
+_INT_PURPOSE_DEFAULT = (
+    "複数のグループレビュー結果を統合し、最終的なレビューレポートを"
+    "Markdown形式で生成する"
+)
+_INT_PURPOSE_MAPPING = (
+    "複数のグループマッピング結果を統合し、最終的なマッピングレポートを"
+    "Markdown形式で生成する"
+)
+_INT_PURPOSE_SUFFIX_DEFAULT = (
+    "複数のグループに分けてレビューを行いました。"
+    "各グループのレビュー結果を統合し、1つの最終的なレビューレポートを生成してください。"
+)
+_INT_PURPOSE_SUFFIX_MAPPING = (
+    "複数のグループに分けてマッピングを行いました。"
+    "各グループのマッピング結果を統合し、1つの最終的なマッピングレポートを生成してください。"
+)
+
+_INT_FORMAT_DEFAULT = "Markdown形式のレビューレポートを出力してください。"
+_INT_FORMAT_MAPPING = (
+    "Markdown形式のマッピングレポートを出力してください。"
+    "全体のカバレッジ率を含めてください。"
+)
+
 # ファイルサイズ制限（変換済みテキストベース）
 MAX_DESIGN_SIZE = 10 * 1024 * 1024  # 10MB
 MAX_CODE_SIZE = 5 * 1024 * 1024  # 5MB
@@ -159,6 +239,23 @@ async def test_llm_connection(request: TestConnectionRequest):
 # ---------------------------------------------------------------------------
 
 
+def _build_purpose(user_purpose: str | None, suffix: str, fallback: str) -> str:
+    """systemPrompt.purposeの有無に応じてpurposeを構築する
+
+    user_purposeがある場合はコードブロックで引用し、suffixを付加する。
+    ない場合はfallbackをそのまま返す。
+    """
+    if user_purpose:
+        return (
+            "最終的な目的:\n"
+            "```\n"
+            f"{user_purpose}\n"
+            "```\n\n"
+            f"{suffix}"
+        )
+    return fallback
+
+
 def _estimate_tokens(text: str) -> int:
     """簡易トークン数推定（日本語考慮）"""
     # 日本語は1文字あたり約1.5トークン、英数字は約0.25トークン
@@ -201,47 +298,15 @@ async def structure_matching(request: StructureMatchingRequest):
         # モード判定
         is_mapping_mode = request.mode == ReviewMode.MAPPING
 
-        # システムプロンプト構築（prompt_builder使用）
-        # roleの設定（systemPrompt.roleがあれば使用）
-        if request.systemPrompt and request.systemPrompt.role:
-            role = request.systemPrompt.role
-        elif is_mapping_mode:
-            role = "設計書とソースコードのマッピングを行う専門家"
-        else:
-            role = "設計書とソースコードの構造を分析する専門家"
-
-        # purposeの設定（systemPrompt.purposeを引用して構造マッチングの目的を説明）
-        if request.systemPrompt and request.systemPrompt.purpose:
-            base_purpose = (
-                "最終的な目的:\n"
-                "```\n"
-                f"{request.systemPrompt.purpose}\n"
-                "```\n\n"
-            )
-            if is_mapping_mode:
-                purpose = (
-                    base_purpose +
-                    "この目的を達成するため、設計書の構造（セクション一覧）と"
-                    "コードの構造（シンボル一覧）を比較し、"
-                    "設計書の各項目がどのコード要素で実装されているかを推定してグループにまとめてください。"
-                )
-            else:
-                purpose = (
-                    base_purpose +
-                    "この目的を達成するため、まず設計書の構造（セクション一覧）と"
-                    "コードの構造（シンボル一覧）を比較し、"
-                    "関連性の高い設計書セクションとコードシンボルをグループにまとめてください。"
-                )
-        elif is_mapping_mode:
-            purpose = (
-                "設計書の構造（セクション一覧）とコードの構造（シンボル一覧）を比較し、"
-                "設計書の各項目がどのコード要素で実装されているかを推定してグループにまとめる"
-            )
-        else:
-            purpose = (
-                "設計書の構造（セクション一覧）とコードの構造（シンボル一覧）を比較し、"
-                "関連性の高い設計書セクションとコードシンボルをグループにまとめる"
-            )
+        # システムプロンプト構築
+        sp = request.systemPrompt
+        role = (sp.role if sp and sp.role
+                else (_SM_ROLE_MAPPING if is_mapping_mode else _SM_ROLE_DEFAULT))
+        purpose = _build_purpose(
+            sp.purpose if sp else None,
+            _SM_PURPOSE_SUFFIX_MAPPING if is_mapping_mode else _SM_PURPOSE_SUFFIX_DEFAULT,
+            _SM_PURPOSE_MAPPING if is_mapping_mode else _SM_PURPOSE_DEFAULT,
+        )
 
         output_format = """以下のJSON形式で出力してください:
 
@@ -392,53 +457,17 @@ async def review_group(request: GroupReviewRequest):
         # モード判定
         is_mapping_mode = request.mode == ReviewMode.MAPPING
 
-        # システムプロンプト構築（prompt_builder使用）
-        # roleの設定（systemPrompt.roleがあれば使用）
-        if request.systemPrompt and request.systemPrompt.role:
-            role = request.systemPrompt.role
-        elif is_mapping_mode:
-            role = "設計書とソースコードのマッピングを行う専門家"
-        else:
-            role = "設計書とソースコードの整合性をレビューする専門家"
-
-        # purposeの設定（systemPrompt.purposeを引用してグループレビューの目的を説明）
-        if request.systemPrompt and request.systemPrompt.purpose:
-            base_purpose = (
-                "最終的な目的:\n"
-                "```\n"
-                f"{request.systemPrompt.purpose}\n"
-                "```\n\n"
-            )
-            if is_mapping_mode:
-                purpose = (
-                    base_purpose +
-                    "この目的を達成するため、以下のグループ（関連する設計書セクションとコード）について、"
-                    "設計書の各項目がコードのどこで実装されているかを特定してください。"
-                )
-            else:
-                purpose = (
-                    base_purpose +
-                    "この目的を達成するため、以下のグループ（関連する設計書セクションとコード）について、"
-                    "設計書の記述とコード実装の整合性を確認し、指摘事項を報告してください。"
-                )
-        elif is_mapping_mode:
-            purpose = "設計書の各項目がコードのどこで実装されているかを特定する"
-        else:
-            purpose = "設計書の記述とコード実装の整合性を確認し、指摘事項を報告する"
-
-        # output_formatの設定（systemPrompt.formatがあれば使用）
-        if request.systemPrompt and request.systemPrompt.format:
-            output_format = request.systemPrompt.format
-        elif is_mapping_mode:
-            output_format = """マークダウン形式で、以下の内容を出力してください：
-1. マッピングサマリー（このグループのマッピング評価）
-2. マッピング一覧（テーブル形式: 設計書項目、実装ファイル:行、実装要素、確信度、備考）
-3. 未マッピング項目（実装箇所が特定できなかった項目）"""
-        else:
-            output_format = """マークダウン形式で、以下の内容を出力してください：
-1. サマリー（このグループの整合性評価）
-2. 突合結果一覧（テーブル形式: 設計書箇所、コード箇所、判定、指摘内容）
-3. 詳細（問題点と推奨事項）"""
+        # システムプロンプト構築
+        sp = request.systemPrompt
+        role = (sp.role if sp and sp.role
+                else (_GR_ROLE_MAPPING if is_mapping_mode else _GR_ROLE_DEFAULT))
+        purpose = _build_purpose(
+            sp.purpose if sp else None,
+            _GR_PURPOSE_SUFFIX_MAPPING if is_mapping_mode else _GR_PURPOSE_SUFFIX_DEFAULT,
+            _GR_PURPOSE_MAPPING if is_mapping_mode else _GR_PURPOSE_DEFAULT,
+        )
+        output_format = (sp.format if sp and sp.format
+                         else (_GR_FORMAT_MAPPING if is_mapping_mode else _GR_FORMAT_DEFAULT))
 
         # 注意事項の構築
         notes_parts = [
@@ -446,22 +475,9 @@ async def review_group(request: GroupReviewRequest):
             "- 最後に複数グループのレビュー結果を統合するので、統合時への申し送り事項があれば記載してください",
         ]
 
-        # マッピングモードの場合は追加の注意事項
-        if is_mapping_mode:
-            notes_parts.extend([
-                "",
-                "- 確信度は以下の基準で判定してください：",
-                "  - 高: 設計書の記述とコードが明確に対応",
-                "  - 中: 対応関係は推測できるが完全一致ではない",
-                "  - 低: 関連性はあるが確証がない",
-            ])
-
-        # request.systemPromptがある場合は注意事項に追加
-        if request.systemPrompt and request.systemPrompt.notes:
-            notes_parts.extend([
-                "",
-                request.systemPrompt.notes,
-            ])
+        # ユーザー指定の注意事項を追加
+        if sp and sp.notes:
+            notes_parts.extend(["", sp.notes])
 
         notes = "\n".join(notes_parts)
 
@@ -492,16 +508,6 @@ async def review_group(request: GroupReviewRequest):
             "\n## コード内容\n",
             request.codeContent,
         ])
-
-        # マッピングモードの場合は指示を追加
-        if is_mapping_mode:
-            user_parts.extend([
-                "\n## マッピング観点",
-                "1. 設計書の各項目に対応するコードの関数/メソッド/クラスを特定",
-                "2. 実装ファイル名と行番号を明示",
-                "3. 確信度（高/中/低）を付与",
-                "4. 対応するコードが見つからない場合は未マッピングとして報告",
-            ])
 
         user_message = "\n".join(user_parts)
 
@@ -551,77 +557,29 @@ async def integrate_reviews(request: IntegrateRequest):
         # モード判定
         is_mapping_mode = request.mode == ReviewMode.MAPPING
 
-        # システムプロンプト構築（prompt_builder使用）
-        # roleの設定（systemPrompt.roleがあれば使用）
-        if request.systemPrompt and request.systemPrompt.role:
-            role = request.systemPrompt.role
-        elif is_mapping_mode:
-            role = "マッピング結果を統合するエキスパート"
-        else:
-            role = "レビュー結果を統合するエキスパート"
-
-        # purposeの設定（systemPrompt.purposeを引用して統合の目的を説明）
-        if request.systemPrompt and request.systemPrompt.purpose:
-            base_purpose = (
-                "最終的な目的:\n"
-                "```\n"
-                f"{request.systemPrompt.purpose}\n"
-                "```\n\n"
-            )
-            if is_mapping_mode:
-                purpose = (
-                    base_purpose +
-                    "複数のグループに分けてマッピングを行いました。"
-                    "各グループのマッピング結果を統合し、1つの最終的なマッピングレポートを生成してください。"
-                )
-            else:
-                purpose = (
-                    base_purpose +
-                    "複数のグループに分けてレビューを行いました。"
-                    "各グループのレビュー結果を統合し、1つの最終的なレビューレポートを生成してください。"
-                )
-        elif is_mapping_mode:
-            purpose = (
-                "複数のグループマッピング結果を統合し、最終的なマッピングレポートを"
-                "Markdown形式で生成する"
-            )
-        else:
-            purpose = (
-                "複数のグループレビュー結果を統合し、最終的なレビューレポートを"
-                "Markdown形式で生成する"
-            )
-
-        # output_formatの設定（systemPrompt.formatがあれば使用）
-        if request.systemPrompt and request.systemPrompt.format:
-            output_format = request.systemPrompt.format
-        elif is_mapping_mode:
-            output_format = "Markdown形式のマッピングレポートを出力してください。全体のカバレッジ率を含めてください。"
-        else:
-            output_format = "Markdown形式のレビューレポートを出力してください。"
+        # システムプロンプト構築
+        sp = request.systemPrompt
+        role = (sp.role if sp and sp.role
+                else (_INT_ROLE_MAPPING if is_mapping_mode else _INT_ROLE_DEFAULT))
+        purpose = _build_purpose(
+            sp.purpose if sp else None,
+            _INT_PURPOSE_SUFFIX_MAPPING if is_mapping_mode else _INT_PURPOSE_SUFFIX_DEFAULT,
+            _INT_PURPOSE_MAPPING if is_mapping_mode else _INT_PURPOSE_DEFAULT,
+        )
+        output_format = (sp.format if sp and sp.format
+                         else (_INT_FORMAT_MAPPING if is_mapping_mode else _INT_FORMAT_DEFAULT))
 
         # 注意事項の構築
-        if is_mapping_mode:
-            notes_parts = [
-                "- 各グループのマッピング結果を統合し、重複するマッピングを排除してください",
-                "- グループ分けは参考に止め、元々の設計書、コードの記載、構造を尊重してください。",
-                "- 出力形式の指定に従い、全体を一括でマッピングした場合と同様になるよう出力してください。",
-                "- マッチング処理やグループマッピングで統合実行用に付与された付加情報は、レポートに含めないでください。",
-                "- 全体のカバレッジ率（マッピング件数 / 設計書項目件数 * 100）を算出してください。",
-            ]
-        else:
-            notes_parts = [
-                "- 各グループのレビュー結果を統合し、重複する指摘を排除してください",
-                "- グループ分けは参考に止め、元々の設計書、コードの記載、構造を尊重してください。",
-                "- 出力形式の指定に従い、全体を一括で評価した場合と同様になるよう出力してください。",
-                "- マッチング処理やグループレビューで統合実行用に付与された付加情報は、レポートに含めないでください。",
-            ]
+        notes_parts = [
+            "- 各グループの結果を統合し、重複を排除してください",
+            "- グループ分けは参考に止め、元々の設計書、コードの記載、構造を尊重してください。",
+            "- 出力形式の指定に従い、全体を一括実行した場合と同様になるよう出力してください。",
+            "- マッチング処理やグループレビューで統合実行用に付与された付加情報は、レポートに含めないでください。",
+        ]
 
-        # request.systemPromptがある場合は注意事項に追加
-        if request.systemPrompt and request.systemPrompt.notes:
-            notes_parts.extend([
-                "",
-                request.systemPrompt.notes,
-            ])
+        # ユーザー指定の注意事項を追加
+        if sp and sp.notes:
+            notes_parts.extend(["", sp.notes])
 
         notes = "\n".join(notes_parts)
 
@@ -656,16 +614,6 @@ async def integrate_reviews(request: IntegrateRequest):
                 f"### {gr.groupName} ({gr.groupId})\n",
                 gr.report if gr.report else f"**サマリー**: {gr.summary}\n",
                 "",
-            ])
-
-        # マッピングモードの場合は統合指示を追加
-        if is_mapping_mode:
-            user_parts.extend([
-                "\n## 統合指示",
-                "1. 各グループのマッピング結果を統合してください",
-                "2. 重複するマッピングを排除してください",
-                "3. 全体のカバレッジ率を算出してください",
-                "4. システムプロンプト設定の出力フォーマットに従って最終レポートを生成してください",
             ])
 
         user_message = "\n".join(user_parts)
