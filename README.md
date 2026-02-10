@@ -18,6 +18,7 @@ https://github.com/user-attachments/assets/78926022-1498-4d9a-923c-cdf3a9f06534
 - **Design document conversion**: Convert Excel (.xlsx, .xls) to Markdown (using MarkItDown, excel2md)
 - **Program conversion**: Add line numbers to any text file (add-line-numbers compatible)
 - **Cross-check review**: Verify consistency between the design doc and code using LLMs (Bedrock / Anthropic / OpenAI)
+- **Mapping review**: Identify where each design document item is implemented in the source code and visualize it as a mapping table (with structure map for improved accuracy)
 - **Split review**: Semantically split large design docs and code that exceed token limits for review (using md2map / code2map)
 - **Report output**: Generate a Markdown review report
 
@@ -49,15 +50,18 @@ This application splits Markdown-converted design documents and source code into
 
 ## Usage
 
-1. **Upload design documents**: Select Excel (.xlsx, .xls) files (multiple allowed)
+1. **Select mode**: Choose cross-check mode (consistency verification) or mapping mode (trace design items to implementation locations)
+2. **Upload design documents**: Select Excel (.xlsx, .xls) files (multiple allowed)
    - **Role**: Select one main design document (others are treated as reference materials)
    - **Type**: Choose from 9 types such as design doc, requirements doc, coding guidelines, etc.
    - **Conversion tool**: Choose MarkItDown / excel2md (CSV) / excel2md (CSV+Mermaid)
-2. **Click "Convert to Markdown"**: Converted Markdown is shown in preview
-3. **Upload programs**: Select any source code files (multiple allowed)
-4. **Click "Convert with add-line-numbers"**: Line numbers are added and shown in preview
-5. **Click "Run Review"**: AI runs the review twice with the same settings
-6. **Review results**: Switch tabs to view each run, then copy or download
+3. **Click "Convert to Markdown"**: Converted Markdown is shown in preview
+4. **Upload programs**: Select any source code files (multiple allowed)
+5. **Click "Convert with add-line-numbers"**: Line numbers are added and shown in preview
+6. **Split settings** (optional): For large files, choose "batch" or "split" for design docs and programs respectively, then click "Run Split Preview" to verify the split result
+7. **Click "Run Review"**: AI runs the review twice with the same settings
+   - In mapping mode, a structure map (md2map / code2map) is automatically generated before execution and provided to the AI as structural information
+8. **Review results**: Switch tabs to view each run, then copy or download
 
 ### Switching LLM Providers and Credentials
 
@@ -341,35 +345,11 @@ spec-code-ai-reviewer/
 ├── versions/                    # All versions
 │   ├── README.md                # Version management notes
 │   ├── v0.5.0/                  # Old version
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.5.1/                  # Old version
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.5.2/                  # Old version
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.6.0/                  # Old version (Vite + React)
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.7.0/                  # Old version (Vite + React)
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.8.0/                  # Old version (Vite + React)
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   └── v0.9.0/                  # Latest (Vite + React)
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript

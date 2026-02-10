@@ -18,6 +18,7 @@ https://github.com/user-attachments/assets/78926022-1498-4d9a-923c-cdf3a9f06534
 - **設計書変換**: Excel (.xlsx, .xls) → Markdown形式に変換（MarkItDown、excel2md使用）
 - **プログラム変換**: 任意のテキストファイルに行番号を付与（add-line-numbers準拠）
 - **突合レビュー**: LLM（Bedrock / Anthropic / OpenAI）を使用して設計書とコードの整合性を検証
+- **マッピングレビュー**: 設計書の各項目がソースコードのどこで実装されているかを特定し、マッピング表として可視化（構造マップによる精度向上対応）
 - **分割レビュー**: トークン上限を超える設計書・コードをセマンティック分割してレビュー（md2map / code2map使用）
 - **レポート出力**: マークダウン形式のレビューレポートを生成
 
@@ -49,15 +50,18 @@ LLMには入力トークンの上限があるため、大規模な設計書や�
 
 ## 使い方
 
-1. **設計書をアップロード**: Excel (.xlsx, .xls) ファイルを選択（複数可）
+1. **モードを選択**: 突合モード（整合性検証）またはマッピングモード（設計項目と実装箇所の対応付け）を選択
+2. **設計書をアップロード**: Excel (.xlsx, .xls) ファイルを選択（複数可）
    - **役割**: メイン設計書を1つ選択（それ以外は参照資料として扱われる）
    - **種別**: 設計書/要件定義書/コーディング規約など9種類から選択
    - **変換ツール**: MarkItDown / excel2md (CSV) / excel2md (CSV+Mermaid) から選択
-2. **「マークダウンに変換」をクリック**: Markdown形式に変換されプレビュー表示
-3. **プログラムをアップロード**: 任意のソースコードファイルを選択（複数可）
-4. **「add-line-numbersで変換」をクリック**: 行番号が付与されプレビュー表示
-5. **「レビュー実行」をクリック**: AIが同じ設定で2回レビューを実行
-6. **結果を確認**: タブ切替で1回目・2回目の結果を個別に確認、コピーまたはダウンロード
+3. **「マークダウンに変換」をクリック**: Markdown形式に変換されプレビュー表示
+4. **プログラムをアップロード**: 任意のソースコードファイルを選択（複数可）
+5. **「add-line-numbersで変換」をクリック**: 行番号が付与されプレビュー表示
+6. **分割設定**（任意）: 大規模ファイルの場合、設計書・プログラムそれぞれ「一括」または「分割」を選択し、「分割プレビュー実行」で分割結果を確認
+7. **「レビュー実行」をクリック**: AIが同じ設定で2回レビューを実行
+   - マッピングモードでは、実行前に構造マップ（md2map / code2map）を自動生成し、AIに構造情報として提供します
+8. **結果を確認**: タブ切替で1回目・2回目の結果を個別に確認、コピーまたはダウンロード
 
 ### LLMプロバイダー・認証情報の切り替え
 
@@ -342,35 +346,11 @@ spec-code-ai-reviewer/
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
 │   ├── v0.5.0/                  # 旧バージョン
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.5.1/                  # 旧バージョン
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.5.2/                  # 旧バージョン
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.6.0/                  # 旧バージョン（Vite + React）
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.7.0/                  # 旧バージョン（Vite + React）
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.8.0/                  # 旧バージョン（Vite + React）
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   └── v0.9.0/                  # 最新版（Vite + React）
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
