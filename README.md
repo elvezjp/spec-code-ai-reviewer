@@ -21,7 +21,7 @@ https://github.com/user-attachments/assets/78926022-1498-4d9a-923c-cdf3a9f06534
 - **Split review**: Semantically split large design docs and code that exceed token limits for review (using md2map / code2map)
 - **Report output**: Generate a Markdown review report
 
-### Split Review for Large Files
+### Split Review for Large Files ([Details](docs/split-review.md))
 
 LLMs have input token limits, so large design documents or source code with thousands of lines may not be reviewable as-is.
 Naive line-based splitting can cut through sections, classes, or functions, losing context and reducing review accuracy.
