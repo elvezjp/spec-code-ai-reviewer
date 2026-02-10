@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   XCircle,
   AlertTriangle,
@@ -8,6 +9,8 @@ import {
   Save,
   Package,
   Download,
+  ChevronRight,
+  ChevronDown,
 } from 'lucide-react'
 import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@core/index'
 import { ExecutionInfo } from './ExecutionInfo'
@@ -52,6 +55,19 @@ export function ReviewResult({
 }: ReviewResultProps) {
   const currentResult = results[currentTab - 1]
   const isMappingMode = reviewMode === 'mapping'
+  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
+
+  const toggleNoteExpand = (key: string) => {
+    setExpandedNotes((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) {
+        next.delete(key)
+      } else {
+        next.add(key)
+      }
+      return next
+    })
+  }
 
   const statusConfig = {
     ng: {
@@ -115,6 +131,26 @@ export function ReviewResult({
     )
   }
 
+  // 備考セルの内容表示（折りたたみ状態は行単位で管理）
+  const noteTruncateLength = 20
+
+  const renderNoteContent = (note: string, isExpanded: boolean) => {
+    if (!note || note === '-') {
+      return <span className="text-gray-400">-</span>
+    }
+    if (note.length <= noteTruncateLength) {
+      return <span>{note}</span>
+    }
+    if (isExpanded) {
+      return <span>{note}</span>
+    }
+    return <span>{note.slice(0, noteTruncateLength)}...</span>
+  }
+
+  const isNoteTruncatable = (note: string) => {
+    return note && note !== '-' && note.length > noteTruncateLength
+  }
+
   // マッピング結果一覧の表示
   const renderMappingResultSection = (rawOutput: string | undefined) => {
     if (!rawOutput || !parseMappingResult || !calculateMappingSummary) {
@@ -131,34 +167,19 @@ export function ReviewResult({
     }
 
     const summary = calculateMappingSummary(mappingResult)
-    const coverageColor = summary.coveragePercent === 100
-      ? 'text-green-700'
-      : summary.coveragePercent >= 50
-        ? 'text-yellow-700'
-        : 'text-red-700'
 
     return (
       <div>
-        {/* サマリー */}
+        {/* サマリー（箇条書き） */}
         <div className="bg-gray-50 rounded-lg p-4 mb-4">
-          <div className="grid grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-gray-800">{summary.designItemCount}</div>
-              <div className="text-xs text-gray-500">設計書項目数</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">{summary.mappedCount}</div>
-              <div className="text-xs text-gray-500">マッピング済み</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-red-600">{summary.unmappedCount}</div>
-              <div className="text-xs text-gray-500">未マッピング</div>
-            </div>
-            <div>
-              <div className={`text-2xl font-bold ${coverageColor}`}>{summary.coveragePercent}%</div>
-              <div className="text-xs text-gray-500">カバレッジ</div>
-            </div>
-          </div>
+          <ul className="text-sm text-gray-700 space-y-1">
+            <li>設計書項目数: <span className="font-bold">{summary.designItemCount}</span>件</li>
+            <li>マッピング: <span className="font-bold text-green-600">{summary.mappedCount}</span>件 / 未マッピング: <span className="font-bold text-red-600">{summary.unmappedCount}</span>件</li>
+            <li>カバレッジ: <span className={`font-bold ${
+              summary.coveragePercent === 100 ? 'text-green-700' :
+              summary.coveragePercent >= 50 ? 'text-yellow-700' : 'text-red-700'
+            }`}>{summary.coveragePercent}%</span></li>
+          </ul>
         </div>
 
         {/* ファイルごとのマッピングテーブル */}
@@ -170,7 +191,7 @@ export function ReviewResult({
                 <TableHead>
                   <TableRow>
                     <TableHeaderCell>設計書項目</TableHeaderCell>
-                    <TableHeaderCell>実装要素</TableHeaderCell>
+                    <TableHeaderCell>実装要素（クラス/関数名）</TableHeaderCell>
                     <TableHeaderCell>実装箇所</TableHeaderCell>
                     <TableHeaderCell>確信度</TableHeaderCell>
                     <TableHeaderCell>備考</TableHeaderCell>
@@ -179,8 +200,14 @@ export function ReviewResult({
                 <TableBody>
                   {fileResult.items.map((item, idx) => {
                     const isUnmapped = item.confidence === '-'
+                    const noteKey = `${fileResult.designFile}-${idx}`
+                    const truncatable = isNoteTruncatable(item.note)
+                    const isExpanded = expandedNotes.has(noteKey)
                     return (
-                      <TableRow key={idx} className={isUnmapped ? 'bg-red-50' : ''}>
+                      <TableRow
+                        key={idx}
+                        className={isUnmapped ? 'bg-red-50' : ''}
+                      >
                         <TableCell>{item.designItem}</TableCell>
                         <TableCell className={isUnmapped ? 'text-gray-400' : ''}>{item.implementationElement}</TableCell>
                         <TableCell className={`font-mono text-xs ${isUnmapped ? 'text-gray-400' : ''}`}>{item.implementationLocation}</TableCell>
@@ -195,7 +222,19 @@ export function ReviewResult({
                             }>{item.confidence}</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-xs">{item.note}</TableCell>
+                        <TableCell
+                          className={truncatable ? 'cursor-pointer select-none' : ''}
+                          onClick={truncatable ? () => toggleNoteExpand(noteKey) : undefined}
+                        >
+                          <div className="flex items-start gap-1">
+                            {truncatable && (
+                              isExpanded
+                                ? <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                                : <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                            )}
+                            {renderNoteContent(item.note, isExpanded)}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     )
                   })}
@@ -206,8 +245,11 @@ export function ReviewResult({
         ))}
 
         {mappingResult.details && (
-          <div className="mt-4 bg-blue-50 rounded-lg p-3">
-            <p className="text-sm text-blue-700">{mappingResult.details}</p>
+          <div className="mt-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">補足説明</h3>
+            <div className="bg-gray-50 rounded-lg p-4 font-mono text-sm overflow-auto max-h-48">
+              <pre className="whitespace-pre-wrap text-gray-700">{mappingResult.details}</pre>
+            </div>
           </div>
         )}
       </div>
