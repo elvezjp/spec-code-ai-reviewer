@@ -91,35 +91,38 @@ export function useReviewExecution(): UseReviewExecutionReturn {
       }
     }
 
-    // 1. サマリーから数値を取得
-    const parseSummaryInt = (pattern: RegExp): number | null => {
+    // 1. サマリーから数値を取得（リスト形式・テーブル形式の両方に対応）
+    // リスト: "設計書項目数: 6"  テーブル: "| 設計書項目数 | 6 |"
+    const parseSummaryInt = (label: string): number | null => {
+      const pattern = new RegExp(`${label}[\\s*:|]*\\s*(\\d+)`)
       const m = reportText.match(pattern)
       return m ? parseInt(m[1], 10) : null
     }
 
-    let designItemCount = parseSummaryInt(/設計書項目数:\s*(\d+)/)
-    let mappedCount = parseSummaryInt(/マッピング済み:\s*(\d+)/)
-    let unmappedCount = parseSummaryInt(/未マッピング:\s*(\d+)/)
-    let coveragePercent = parseSummaryInt(/カバレッジ:\s*(\d+)/)
+    let designItemCount = parseSummaryInt('設計書項目数')
+    let mappedCount = parseSummaryInt('マッピング済み')
+    let unmappedCount = parseSummaryInt('未マッピング')
+    let coveragePercent = parseSummaryInt('カバレッジ')
 
     // 2. サマリーから取得できない場合、テーブル行数からカウント
     if (designItemCount === null) {
-      // マッピング一覧テーブル（6カラム）のデータ行をカウント
-      const tableRowPattern = /^\|[^|]+\|[^|]+\|[^|]+\|[^|]+\|[^|]+\|[^|]+\|$/gm
-      const tableRows = reportText.match(tableRowPattern) || []
-      // ヘッダー行と区切り行を除外
-      mappedCount = Math.max(0, tableRows.length - 2)
-
-      // 未マッピング項目テーブル（3カラム）のデータ行をカウント
-      const unmappedTablePattern = /未マッピング[\s\S]*?((?:^\|[^|]+\|[^|]+\|[^|]+\|$\n?)+)/m
-      const unmappedTableMatch = reportText.match(unmappedTablePattern)
-      if (unmappedTableMatch) {
-        const unmappedRows = unmappedTableMatch[1].match(/^\|[^|]+\|[^|]+\|[^|]+\|$/gm) || []
-        // ヘッダー行と区切り行を除外
-        unmappedCount = Math.max(0, unmappedRows.length - 2)
-      } else {
-        unmappedCount = 0
+      // 1列目が「設計書項目」のテーブルを特定してデータ行を数える
+      const countTableDataRows = (columnCount: number): number => {
+        const colPattern = Array(columnCount).fill('[^|]+').join('\\|')
+        const rowPattern = new RegExp(`^\\|${colPattern}\\|$`, 'gm')
+        const allRows = reportText.match(rowPattern) || []
+        // 1列目が「設計書項目」のヘッダー行を探す
+        const headerIndex = allRows.findIndex(row => /^\|\s*設計書項目/.test(row))
+        if (headerIndex < 0) return 0
+        // ヘッダー以降から罫線行（|---|---|）を除いたデータ行をカウント
+        const dataRows = allRows.slice(headerIndex + 1).filter(row => !/^\|[\s-:|]+\|$/.test(row))
+        return dataRows.length
       }
+
+      // マッピング一覧テーブル（6カラム）
+      mappedCount = countTableDataRows(6)
+      // 未マッピング項目テーブル（3カラム）
+      unmappedCount = countTableDataRows(3)
 
       designItemCount = mappedCount + unmappedCount
     } else {
