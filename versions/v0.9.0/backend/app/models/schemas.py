@@ -1,8 +1,68 @@
 """Pydantic スキーマ定義"""
 
-from typing import Literal
+from enum import Enum
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, AliasChoices, ConfigDict, model_validator
+
+
+# =============================================================================
+# Review Mode (v0.9.0)
+# =============================================================================
+
+
+class ReviewMode(str, Enum):
+    """レビューモード"""
+
+    REVIEW = "review"  # 突合モード
+    MAPPING = "mapping"  # マッピングモード
+
+
+# =============================================================================
+# Structure Map Models (v0.9.0)
+# =============================================================================
+
+
+class DocumentMapEntry(BaseModel):
+    """設計書の構造マップエントリ"""
+
+    id: str  # MD1, MD2, ...
+    section: str  # セクション名
+    level: int  # 見出しレベル
+    path: str  # 階層パス
+    original_file: str  # 元ファイル名
+    original_start_line: int
+    original_end_line: int
+    word_count: int
+    part_file: str
+    checksum: str
+
+
+class CodeMapEntry(BaseModel):
+    """コードの構造マップエントリ"""
+
+    id: str  # CD1, CD2, ...
+    symbol: str  # シンボル名（例: "UserService#createUser"）
+    type: str  # class, method, function
+    original_file: str  # 元ファイル名
+    original_start_line: int
+    original_end_line: int
+    part_file: str
+    checksum: str
+
+
+class CodeFileMap(BaseModel):
+    """コードファイルの構造マップ"""
+
+    filename: str
+    entries: list[CodeMapEntry]
+
+
+class StructureMapInfo(BaseModel):
+    """構造マップ情報"""
+
+    documentMap: list[DocumentMapEntry]  # 設計書のMAP.json
+    codeMaps: list[CodeFileMap]  # コードのMAP.json（ファイルごと）
 
 
 class ConvertResponse(BaseModel):
@@ -81,6 +141,10 @@ class ReviewRequest(BaseModel):
     systemPrompt: SystemPrompt
     llmConfig: LLMConfig | None = None  # オプション: 未指定時はシステムLLMを使用
     executedAt: str | None = None  # レビュー実行日時（ISO形式）- 指定時はその値を使用、未指定時はサーバー側で生成
+    # v0.9.0: マッピングモード対応
+    mode: ReviewMode = ReviewMode.REVIEW  # デフォルトは突合モード
+    useStructureMap: bool = False  # 構造マップを利用するか
+    structureMap: Optional[StructureMapInfo] = None  # 構造マップ情報
 
     @model_validator(mode='after')
     def validate_code_sources(self):
@@ -381,6 +445,8 @@ class StructureMatchingRequest(BaseModel):
     codeFiles: list[CodeFileStructure]
     systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None
+    # v0.9.0: マッピングモード対応
+    mode: ReviewMode = ReviewMode.REVIEW
 
 
 class MatchedDocSection(BaseModel):
@@ -439,6 +505,10 @@ class GroupReviewRequest(BaseModel):
     reviewOptions: dict = {}
     systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None
+    # v0.9.0: マッピングモード対応
+    mode: ReviewMode = ReviewMode.REVIEW
+    useStructureMap: bool = False
+    structureMap: Optional[StructureMapInfo] = None
 
 
 class ReviewFinding(BaseModel):
@@ -490,6 +560,10 @@ class IntegrateRequest(BaseModel):
     integrationOptions: dict = {}  # { deduplicateFindings, checkCrossGroupIssues }
     systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None
+    # v0.9.0: マッピングモード対応
+    mode: ReviewMode = ReviewMode.REVIEW
+    useStructureMap: bool = False
+    structureMap: Optional[StructureMapInfo] = None
 
 
 class KeyIssue(BaseModel):

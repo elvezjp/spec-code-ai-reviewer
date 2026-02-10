@@ -27,14 +27,15 @@ import {
   SplitExecutingScreen,
   MarkdownOrganizer,
   SplitSettingsSection,
+  ModeSelector,
 } from './components'
-import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport, useSplitSettings } from './hooks'
+import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport, useSplitSettings, useStructureMap } from './hooks'
 import { testLlmConnection, executeStructureMatching, executeGroupReview, executeIntegrate } from './services/api'
 import type { SplitReviewState, GroupReviewState, ReviewExecutionData } from './types'
 
 const APP_INFO = {
   name: 'spec-code-ai-reviewer',
-  version: 'v0.8.0',
+  version: 'v0.9.0',
   description: '設計書-Javaプログラム突合 AIレビュアー',
   copyright: '© 株式会社エルブズ',
   url: 'https://elvez.co.jp',
@@ -91,6 +92,10 @@ export function Reviewer() {
     saveConfigToBrowser,
     clearSavedConfig,
     hasSavedConfig,
+    // v0.9.0 追加
+    reviewMode,
+    handleModeChange,
+    availablePresets,
   } = useReviewerSettings()
 
   // Review execution
@@ -101,7 +106,19 @@ export function Reviewer() {
     executeReview,
     setCurrentTab,
     getSimpleJudgment,
+    getSimpleMappingJudgment,
   } = useReviewExecution()
+
+  // Structure Map (v0.9.0)
+  const {
+    structureMap,
+    isGenerating: isGeneratingStructureMap,
+    generateStructureMap,
+    clearStructureMap,
+  } = useStructureMap()
+
+  // useStructureMap フラグ導出（マッピングモード時は true）
+  const useStructureMapFlag = reviewMode === 'mapping'
 
   // Zip export
   const { downloadZip, downloadReport, copyReport, downloadSpecMarkdown, downloadCodeWithLineNumbers } =
@@ -495,6 +512,25 @@ export function Reviewer() {
 
     // 通常モード
     try {
+      // useStructureMap=true かつ構造マップ未生成の場合、ここで生成
+      let resolvedStructureMap = structureMap
+      if (useStructureMapFlag && !structureMap) {
+        // コードファイルの内容を取得
+        const codeFilesForMap = await Promise.all(
+          codeFiles.map(async (cf) => ({
+            filename: cf.filename,
+            content: await cf.file.text(),
+          }))
+        )
+        resolvedStructureMap = await generateStructureMap(
+          specMarkdown,
+          specFiles.find(f => f.isMain)?.filename || 'design.md',
+          codeFilesForMap,
+          null, // 分割プレビューで生成済みのものはない（通常モード）
+          []
+        )
+      }
+
       await executeReview({
         specFiles,
         codeFiles,
@@ -502,6 +538,10 @@ export function Reviewer() {
         codeWithLineNumbers,
         systemPrompt: currentPromptValues,
         llmConfig: llmConfig || undefined,
+        // v0.9.0 追加
+        mode: reviewMode,
+        useStructureMap: useStructureMapFlag,
+        structureMap: useStructureMapFlag ? resolvedStructureMap : null,
       })
       screenManager.showResult()
     } catch (error) {
@@ -590,6 +630,12 @@ export function Reviewer() {
             </button>
           </div>
         }
+      />
+
+      {/* Mode Selector (v0.9.0) */}
+      <ModeSelector
+        currentMode={reviewMode}
+        onModeChange={handleModeChange}
       />
 
       {/* Spec files section */}
@@ -761,6 +807,7 @@ export function Reviewer() {
       onRetryGroup={handleRetryGroup}
       onSkipGroup={handleSkipGroup}
       onRetryIntegrate={handleRetryIntegrate}
+      reviewMode={reviewMode}
     />
   ) : (
     <ExecutingScreen currentExecution={currentExecutionNumber} totalExecutions={2} />
@@ -820,6 +867,8 @@ export function Reviewer() {
       onDownloadReport={downloadReport}
       onDownloadZip={downloadZip}
       getSimpleJudgment={getSimpleJudgment}
+      getSimpleMappingJudgment={getSimpleMappingJudgment}
+      reviewMode={reviewMode}
       onBack={screenManager.showMain}
       splitReviewState={splitReviewState}
       splitReviewData={splitReviewData}

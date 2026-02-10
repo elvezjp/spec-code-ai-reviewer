@@ -1,12 +1,17 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import type { LlmConfig, SystemPromptValues } from '../types'
-import type { SpecType, SystemPromptPreset, ReviewerConfig, LlmSettings, Preset } from '@core/types'
+import type { SpecType, SystemPromptPreset, ReviewerConfig, LlmSettings, Preset, ReviewMode } from '@core/types'
 import {
   DEFAULT_SPEC_TYPES,
   DEFAULT_SYSTEM_PROMPTS,
   DEFAULT_LLM_SETTINGS,
 } from '@core/hooks/useSettings'
-import { PRESET_CATALOG } from '@core/data/presetCatalog'
+import {
+  PRESET_CATALOG,
+  getPresetCatalogByMode,
+  getDefaultPresetIdByMode,
+  getPresetById,
+} from '@core/data/presetCatalog'
 
 export interface ConfigLoadStatus {
   llm?: string
@@ -42,11 +47,17 @@ interface UseReviewerSettingsReturn {
   clearSavedConfig: () => void
   hasSavedConfig: () => boolean
   applyPreset: (preset: Preset) => void
+
+  // Review Mode (v0.9.0)
+  reviewMode: ReviewMode
+  handleModeChange: (mode: ReviewMode) => void
+  availablePresets: Preset[]
 }
 
 const STORAGE_KEY = 'reviewer-config'
 const SELECTED_MODEL_KEY = 'selected-model'
 const SELECTED_PROMPT_KEY = 'selected-system-prompt'
+const REVIEW_MODE_KEY = 'reviewer-mode'
 const CONFIG_FILE_PRESET_SUFFIX = ' (設定ファイル)'
 
 // 最初の:でのみ分割（モデル名に:が含まれる場合に対応）
@@ -71,6 +82,11 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
     purpose: '',
     format: '',
     notes: '',
+  })
+  // Review Mode (v0.9.0)
+  const [reviewMode, setReviewMode] = useState<ReviewMode>(() => {
+    const savedMode = localStorage.getItem(REVIEW_MODE_KEY)
+    return savedMode === 'mapping' ? 'mapping' : 'review'
   })
 
   // Derived values
@@ -491,6 +507,39 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
     return localStorage.getItem(STORAGE_KEY) !== null
   }, [])
 
+  // モードに応じたプリセットカタログを取得
+  const availablePresets = useMemo(
+    () => getPresetCatalogByMode(reviewMode),
+    [reviewMode]
+  )
+
+  // モード変更ハンドラー
+  const handleModeChange = useCallback((mode: ReviewMode) => {
+    setReviewMode(mode)
+    localStorage.setItem(REVIEW_MODE_KEY, mode)
+    // モードに応じたデフォルトプリセットを自動適用
+    const defaultPresetId = getDefaultPresetIdByMode(mode)
+    const defaultPreset = getPresetById(defaultPresetId)
+    if (defaultPreset) {
+      // プリセットを適用（applyPresetと同様のロジック）
+      const systemPromptPreset: SystemPromptPreset = {
+        name: defaultPreset.name,
+        role: defaultPreset.systemPrompt.role,
+        purpose: defaultPreset.systemPrompt.purpose,
+        format: defaultPreset.systemPrompt.format,
+        notes: defaultPreset.systemPrompt.notes,
+      }
+      setSelectedPreset(systemPromptPreset.name)
+      setCurrentPromptValues({
+        role: systemPromptPreset.role,
+        purpose: systemPromptPreset.purpose,
+        format: systemPromptPreset.format,
+        notes: systemPromptPreset.notes,
+      })
+      localStorage.setItem(SELECTED_PROMPT_KEY, systemPromptPreset.name)
+    }
+  }, [])
+
   // Load saved config on mount
   useEffect(() => {
     const savedConfig = localStorage.getItem(STORAGE_KEY)
@@ -621,5 +670,9 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
     clearSavedConfig,
     hasSavedConfig,
     applyPreset,
+    // Review Mode (v0.9.0)
+    reviewMode,
+    handleModeChange,
+    availablePresets,
   }
 }

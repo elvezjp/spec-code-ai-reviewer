@@ -1,6 +1,16 @@
 // 画面状態
 export type ScreenState = 'main' | 'executing' | 'result'
 
+// レビューモード
+export type ReviewMode = 'review' | 'mapping'
+
+// モード設定
+export interface ModeConfig {
+  mode: ReviewMode
+  label: string
+  description: string
+}
+
 // アプリケーション情報
 export interface AppInfo {
   name: string

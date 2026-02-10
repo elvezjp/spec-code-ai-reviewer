@@ -5,6 +5,10 @@
 """
 
 from datetime import datetime
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.schemas import StructureMapInfo, ReviewMode
 
 
 def build_system_prompt(role: str, purpose: str, format: str, notes: str) -> str:
@@ -32,6 +36,52 @@ def build_system_prompt(role: str, purpose: str, format: str, notes: str) -> str
 {notes}"""
 
 
+def _build_structure_map_section(structure_map: "StructureMapInfo") -> str:
+    """構造マップ情報をプロンプト用テキストに変換する
+
+    Args:
+        structure_map: 構造マップ情報
+
+    Returns:
+        str: プロンプト用の構造マップセクション
+    """
+    sections = []
+
+    # 設計書の構造マップ
+    sections.append("# 設計書構造マップ")
+    sections.append(
+        "以下は設計書の構造解析結果です。各項目のID・セクション名・行範囲を示します。"
+    )
+    sections.append("")
+    sections.append("| ID | セクション | 階層パス | 行範囲 |")
+    sections.append("|-----|-----------|---------|--------|")
+    for entry in structure_map.documentMap:
+        sections.append(
+            f"| {entry.id} | {entry.section} | {entry.path} | "
+            f"L{entry.original_start_line}-L{entry.original_end_line} |"
+        )
+
+    sections.append("")
+
+    # コードの構造マップ（ファイルごと）
+    sections.append("# コード構造マップ")
+    sections.append(
+        "以下はソースコードの構造解析結果です。"
+        "各シンボルのID・名前・種別・行範囲を示します。"
+    )
+    for code_file in structure_map.codeMaps:
+        sections.append(f"\n## {code_file.filename}")
+        sections.append("| ID | シンボル | 種別 | 行範囲 |")
+        sections.append("|-----|---------|------|--------|")
+        for entry in code_file.entries:
+            sections.append(
+                f"| {entry.id} | {entry.symbol} | {entry.type} | "
+                f"L{entry.original_start_line}-L{entry.original_end_line} |"
+            )
+
+    return "\n".join(sections)
+
+
 def build_user_message(
     spec_markdown: str | None,
     spec_filename: str | None,
@@ -39,6 +89,9 @@ def build_user_message(
     codes: list[dict],
     legacy_code_with_line_numbers: str | None = None,
     legacy_code_filename: str | None = None,
+    mode: "ReviewMode | None" = None,
+    use_structure_map: bool = False,
+    structure_map: "StructureMapInfo | None" = None,
 ) -> str:
     """ユーザーメッセージを組み立てる
 
@@ -49,6 +102,9 @@ def build_user_message(
         codes: コードのリスト
         legacy_code_with_line_numbers: 後方互換用の単一コード文字列
         legacy_code_filename: 後方互換用の単一コードのファイル名
+        mode: レビューモード（v0.9.0: review または mapping）
+        use_structure_map: 構造マップを利用するか（v0.9.0）
+        structure_map: 構造マップ情報（v0.9.0）
 
     Returns:
         str: 組み立てられたユーザーメッセージ
@@ -56,6 +112,11 @@ def build_user_message(
     Raises:
         ValueError: 設計書またはコードが指定されていない場合
     """
+    # モードのインポート（遅延インポート）
+    from app.models.schemas import ReviewMode
+
+    # デフォルトモードは突合モード
+    actual_mode = mode if mode is not None else ReviewMode.REVIEW
     code_blocks = codes.copy()
     design_blocks = designs.copy()
 
@@ -134,6 +195,50 @@ def build_user_message(
         ]
     )
 
+    # 構造マップ情報（useStructureMap=true かつ構造マップがある場合）
+    structure_section = ""
+    if use_structure_map and structure_map:
+        structure_section = f"""
+---
+{_build_structure_map_section(structure_map)}
+---
+
+上記の構造マップを参考に、設計書の各項目（ID: MD1, MD2, ...）と
+コードの各シンボル（ID: CD1, CD2, ...）の対応関係を特定してください。
+"""
+
+    # マッピングモードの場合は専用のメッセージを生成
+    if actual_mode == ReviewMode.MAPPING:
+        return f"""以下の設計書とソースコードについて、設計書の各項目がどこで実装されているかマッピングしてください。
+
+# レビュー対象一覧
+{review_targets_text}
+
+# 設計書詳細
+{designs_text}
+
+# プログラム詳細
+{programs_text}
+{structure_section}
+# 指示
+1. 設計書の各項目（見出し、要件、機能など）を抽出してください
+2. 各項目に対応するソースコードの実装箇所を特定してください
+3. マッピング結果を指定のフォーマットで出力してください
+4. 実装箇所が特定できない項目は「未マッピング項目」として報告してください"""
+
+    # 突合モード（既存動作）
+    # useStructureMap=true の場合は構造マップセクションを含める
+    structure_info_for_review = ""
+    if use_structure_map and structure_map:
+        structure_info_for_review = f"""
+
+---
+{_build_structure_map_section(structure_map)}
+---
+
+上記の構造情報を参考に、設計書とプログラムの整合性を確認してください。
+"""
+
     return f"""以下の設計書とプログラムを突合レビューしてください。
 
 # レビュー対象一覧
@@ -143,7 +248,7 @@ def build_user_message(
 {designs_text}
 
 # プログラム詳細
-{programs_text}"""
+{programs_text}{structure_info_for_review}"""
 
 
 def build_review_meta(

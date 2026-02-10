@@ -11,7 +11,8 @@ import {
 } from 'lucide-react'
 import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@core/index'
 import { ExecutionInfo } from './ExecutionInfo'
-import type { ReviewExecutionData, SimpleJudgment, SplitReviewState } from '../types'
+import type { ReviewExecutionData, SimpleJudgment, SimpleMappingJudgment, SplitReviewState } from '../types'
+import type { ReviewMode } from '@core/types'
 
 interface ReviewResultProps {
   results: (ReviewExecutionData | null)[]
@@ -26,6 +27,9 @@ interface ReviewResultProps {
   splitReviewState?: SplitReviewState
   splitReviewData?: ReviewExecutionData // 分割レビュー用のダウンロードデータ
   isSplitMode?: boolean
+  // v0.9.0 マッピングモード対応
+  reviewMode?: ReviewMode
+  getSimpleMappingJudgment?: (reportText: string) => SimpleMappingJudgment
 }
 
 export function ReviewResult({
@@ -40,8 +44,12 @@ export function ReviewResult({
   splitReviewState,
   splitReviewData,
   isSplitMode = false,
+  // v0.9.0 マッピングモード対応
+  reviewMode = 'review',
+  getSimpleMappingJudgment,
 }: ReviewResultProps) {
   const currentResult = results[currentTab - 1]
+  const isMappingMode = reviewMode === 'mapping'
 
   const statusConfig = {
     ng: {
@@ -105,12 +113,36 @@ export function ReviewResult({
     )
   }
 
+  // マッピング用簡易判定の表示 (v0.9.0)
+  const renderMappingJudgment = (judgment: SimpleMappingJudgment) => {
+    const config = statusConfig[judgment.status]
+    const countText = `設計書項目: ${judgment.designItemCount}件 / マッピング: ${judgment.mappedCount}件 / 未マッピング: ${judgment.unmappedCount}件`
+
+    return (
+      <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4`}>
+        <div className="flex items-center gap-3">
+          <span className={`${config.iconBg} rounded-full p-2`}>{config.icon}</span>
+          <div>
+            <div className={`font-bold ${config.textColor} text-lg`}>
+              マッピングカバレッジ: {judgment.coveragePercent}%
+            </div>
+            <div className="text-sm text-gray-600">{countText}</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ZIPファイル名はモードによって切り替え
+  const resultFileName = isMappingMode ? 'mapping-result.md' : 'review-result.md'
+  const resultFileDesc = isMappingMode ? 'AIマッピング結果' : 'AIレビュー結果'
+
   const downloadFiles = [
-    { name: 'README.md', desc: 'レビュー情報と同梱ファイルの説明' },
+    { name: 'README.md', desc: '実行情報と同梱ファイルの説明' },
     { name: 'system-prompt.md', desc: 'システムプロンプト（役割・目的・出力形式・注意事項）' },
     { name: 'spec-markdown.md', desc: '変換後の設計書（マークダウン形式）' },
     { name: 'code-numbered.txt', desc: '行番号付きプログラム' },
-    { name: 'review-result.md', desc: 'AIレビュー結果' },
+    { name: resultFileName, desc: resultFileDesc },
   ]
 
   // 分割レビュー用のグループ一覧テーブル（カスタム領域）
@@ -148,15 +180,19 @@ export function ReviewResult({
   if (isSplitMode && splitReviewState?.integrateResult) {
     // APIから返されたMarkdownレポートを使用
     const splitReportText = splitReviewState.integrateResult.report || ''
-    // 一括レビューと同じ方法で簡易判定を行う
-    const splitJudgment = getSimpleJudgment(splitReportText)
+    // モードに応じた簡易判定を行う
+    const splitJudgment = isMappingMode && getSimpleMappingJudgment
+      ? getSimpleMappingJudgment(splitReportText)
+      : getSimpleJudgment(splitReportText)
+
+    const headerTitle = isMappingMode ? '分割マッピング結果' : '分割レビュー結果'
 
     return (
       <div className="max-w-4xl mx-auto p-6">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-xl font-bold text-gray-800">分割レビュー結果</h1>
+            <h1 className="text-xl font-bold text-gray-800">{headerTitle}</h1>
             <button onClick={onBack} className="text-blue-500 hover:text-blue-700">
               ← 戻る
             </button>
@@ -166,13 +202,17 @@ export function ReviewResult({
         {/* Simple judgment */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">簡易判定</h2>
-          {renderSimpleJudgment(splitJudgment)}
+          {isMappingMode && 'coveragePercent' in splitJudgment
+            ? renderMappingJudgment(splitJudgment as SimpleMappingJudgment)
+            : renderSimpleJudgment(splitJudgment as SimpleJudgment)}
           <p className="text-xs text-gray-400 mt-3">
-            ※ この判定はキーワードに基づく簡易的なものです。AIの出力によっては正しく判定されない場合があります。詳細レポートを確認してください。
+            {isMappingMode
+              ? '※ この判定はキーワードに基づく簡易的なものです。設計書項目件数はAIの判定ごとに異なる場合があります。詳細レポートを確認してください。'
+              : '※ この判定はキーワードに基づく簡易的なものです。AIの出力によっては正しく判定されない場合があります。詳細レポートを確認してください。'}
           </p>
         </div>
 
-        {/* Execution info */}
+        {/* Execution info - 見出し共通化 */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">実行情報</h2>
           <ExecutionInfo
@@ -213,13 +253,13 @@ export function ReviewResult({
           </div>
         </div>
 
-        {/* Zip download */}
+        {/* Zip download - 見出し共通化 */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <Package className="w-5 h-5" /> レビュー実行データ一式ダウンロード
+            <Package className="w-5 h-5" /> 実行データ一式ダウンロード
           </h2>
           <p className="text-sm text-gray-600 mb-4">
-            レビュー実行の入出力データを一式ダウンロードできます。
+            実行の入出力データを一式ダウンロードできます。
           </p>
 
           {/* Download file list */}
@@ -256,12 +296,13 @@ export function ReviewResult({
   }
 
   // 通常モード
+  const headerTitle = isMappingMode ? 'マッピング結果' : 'レビュー結果'
   return (
     <div className="max-w-4xl mx-auto p-6">
       {/* Header with tabs */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-xl font-bold text-gray-800">レビュー結果</h1>
+          <h1 className="text-xl font-bold text-gray-800">{headerTitle}</h1>
           <button onClick={onBack} className="text-blue-500 hover:text-blue-700">
             ← 戻る
           </button>
@@ -289,13 +330,16 @@ export function ReviewResult({
 
       {currentResult && (
         <>
-          {/* Simple judgment */}
+          {/* Simple judgment - モード別切り替え */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">簡易判定</h2>
-            {renderSimpleJudgment(getSimpleJudgment(currentResult.report))}
+            {isMappingMode && getSimpleMappingJudgment
+              ? renderMappingJudgment(getSimpleMappingJudgment(currentResult.report))
+              : renderSimpleJudgment(getSimpleJudgment(currentResult.report))}
             <p className="text-xs text-gray-400 mt-3">
-              ※
-              この判定はキーワードに基づく簡易的なものです。AIの出力によっては正しく判定されない場合があります。詳細レポートを確認してください。
+              {isMappingMode
+                ? '※ この判定はキーワードに基づく簡易的なものです。設計書項目件数はAIの判定ごとに異なる場合があります。詳細レポートを確認してください。'
+                : '※ この判定はキーワードに基づく簡易的なものです。AIの出力によっては正しく判定されない場合があります。詳細レポートを確認してください。'}
             </p>
           </div>
 
@@ -338,13 +382,13 @@ export function ReviewResult({
             </div>
           </div>
 
-          {/* Zip download */}
+          {/* Zip download - 見出し共通化 */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <Package className="w-5 h-5" /> レビュー実行データ一式ダウンロード
+              <Package className="w-5 h-5" /> 実行データ一式ダウンロード
             </h2>
             <p className="text-sm text-gray-600 mb-4">
-              レビュー実行の入出力データを一式ダウンロードできます。
+              実行の入出力データを一式ダウンロードできます。
             </p>
 
             {/* Download file list */}

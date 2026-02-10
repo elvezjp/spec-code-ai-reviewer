@@ -336,7 +336,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # Dev Nginx config
 │   ├── spec-code-ai-reviewer.conf  # Production Nginx config
 │   └── version-map.conf         # Version switch map (shared)
-├── latest -> versions/v0.8.0    # Symlink to latest
+├── latest -> versions/v0.9.0    # Symlink to latest
 │
 ├── versions/                    # All versions
 │   ├── README.md                # Version management notes
@@ -365,7 +365,12 @@ spec-code-ai-reviewer/
 │   │   ├── frontend/            # Vite + React + TypeScript
 │   │   ├── config-file-generator-spec.md
 │   │   └── spec.md
-│   └── v0.8.0/                  # Latest (Vite + React)
+│   ├── v0.8.0/                  # Old version (Vite + React)
+│   │   ├── backend/
+│   │   ├── frontend/            # Vite + React + TypeScript
+│   │   ├── config-file-generator-spec.md
+│   │   └── spec.md
+│   └── v0.9.0/                  # Latest (Vite + React)
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -432,7 +437,8 @@ Example: v0.2.5 -> 8000 + (2 x 10) + 5 = 8025
 
 | Version | Port |
 |-----------|------|
-| v0.8.0 (latest) | 8080 |
+| v0.9.0 (latest) | 8090 |
+| v0.8.0 | 8080 |
 | v0.7.0 | 8070 |
 | v0.6.0 | 8060 |
 | v0.5.2 | 8052 |

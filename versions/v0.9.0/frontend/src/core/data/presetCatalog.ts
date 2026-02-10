@@ -1,15 +1,22 @@
-import type { Preset } from '../types'
+import type { Preset, ReviewMode } from '../types'
 
-// デフォルトプリセットのID（useSettings.tsなどから参照）
-export const DEFAULT_PRESET_ID = 'standard-review'
+// デフォルトプリセットのID
+export const DEFAULT_REVIEW_PRESET_ID = 'standard-review'
+export const DEFAULT_MAPPING_PRESET_ID = 'standard-mapping'
 
-export const PRESET_CATALOG: Preset[] = [
+// 後方互換のため維持
+export const DEFAULT_PRESET_ID = DEFAULT_REVIEW_PRESET_ID
+
+// ========================================
+// 突合用プリセットカタログ
+// ========================================
+export const REVIEW_PRESET_CATALOG: Preset[] = [
   {
     id: 'standard-review',
     name: '標準レビュープリセット',
     description:
       '設計書とプログラムコードを突合し、整合性を検証する汎用的なレビューを行います。',
-    tags: ['汎用', '設計書', '突合'],
+    tags: ['突合', '汎用', '設計書'],
     systemPrompt: {
       role: 'あなたは設計書とプログラムコードを突合し、整合性を検証するレビュアーです。',
       purpose: `設計書の内容がプログラムに正しく実装されているかを検証し、差異や問題点を報告してください。
@@ -48,7 +55,7 @@ export const PRESET_CATALOG: Preset[] = [
     name: 'React/TypeScript コンポーネント',
     description:
       'Reactコンポーネントの設計と実装の整合性を確認します。UI、状態管理、アクセシビリティを検証します。',
-    tags: ['React', 'TypeScript', 'フロントエンド'],
+    tags: ['突合', 'React', 'TypeScript', 'フロントエンド'],
     systemPrompt: {
       role: 'あなたはフロントエンド設計とReact/TypeScript実装に精通したレビュアーです。',
       purpose:
@@ -117,7 +124,7 @@ export const PRESET_CATALOG: Preset[] = [
     name: 'SQL/データベース設計',
     description:
       'データベーススキーマ設計、SQLクエリ、インデックス設計、正規化、パフォーマンスの整合性を確認します。',
-    tags: ['SQL', 'データベース', 'パフォーマンス'],
+    tags: ['突合', 'SQL', 'データベース', 'パフォーマンス'],
     systemPrompt: {
       role: 'あなたはデータベース設計とSQL最適化に精通したレビュアーです。',
       purpose:
@@ -190,7 +197,7 @@ export const PRESET_CATALOG: Preset[] = [
     name: 'API契約（OpenAPI/Swagger）',
     description:
       'OpenAPI/Swagger仕様とAPI実装の整合性を確認します。エンドポイント定義、スキーマ、認証、エラーハンドリングを検証します。',
-    tags: ['API', 'OpenAPI', 'REST'],
+    tags: ['突合', 'API', 'OpenAPI', 'REST'],
     systemPrompt: {
       role: 'あなたはAPI設計に精通したレビュアーです。',
       purpose:
@@ -268,7 +275,7 @@ export const PRESET_CATALOG: Preset[] = [
     id: 'test-code-review',
     name: 'テストコードレビュー',
     description: 'テスト設計とテストコードの整合性を確認します。',
-    tags: ['テスト', '品質', 'TDD'],
+    tags: ['突合', 'テスト', '品質', 'TDD'],
     systemPrompt: {
       role: 'あなたはテスト設計に精通したレビュアーです。',
       purpose:
@@ -336,7 +343,7 @@ export const PRESET_CATALOG: Preset[] = [
     name: 'セキュリティ・認証認可レビュー',
     description:
       'セキュリティ要件、認証・認可設計と実装の整合性を確認します。OWASP Top 10、認証フロー、権限設計を検証します。',
-    tags: ['セキュリティ', 'OWASP', '認証', '認可'],
+    tags: ['突合', 'セキュリティ', 'OWASP', '認証', '認可'],
     systemPrompt: {
       role: 'あなたはセキュリティ設計と認証・認可設計に精通したレビュアーです。',
       purpose:
@@ -414,7 +421,7 @@ export const PRESET_CATALOG: Preset[] = [
     name: 'エラーハンドリング・ログレビュー',
     description:
       'エラー処理設計、ログ設計と実装の整合性を確認します。例外設計、ログレベル、機密情報保護を検証します。',
-    tags: ['エラーハンドリング', 'ログ', '運用', '監視'],
+    tags: ['突合', 'エラーハンドリング', 'ログ', '運用', '監視'],
     systemPrompt: {
       role: 'あなたはエラーハンドリング設計とログ設計に精通したレビュアーです。',
       purpose:
@@ -496,7 +503,7 @@ export const PRESET_CATALOG: Preset[] = [
     name: 'バッチ/ETLレビュー',
     description:
       'バッチ処理・ETL処理の設計と実装の整合性を確認します。処理フロー、再実行性、障害対応、運用監視を検証します。',
-    tags: ['バッチ', 'ETL', '運用', 'パフォーマンス'],
+    tags: ['突合', 'バッチ', 'ETL', '運用', 'パフォーマンス'],
     systemPrompt: {
       role: 'あなたはバッチ処理・ETL設計に精通したレビュアーです。',
       purpose:
@@ -547,3 +554,155 @@ export const PRESET_CATALOG: Preset[] = [
     ],
   },
 ]
+
+// ========================================
+// マッピング用プリセットカタログ
+// ========================================
+export const MAPPING_PRESET_CATALOG: Preset[] = [
+  {
+    id: 'standard-mapping',
+    name: '標準マッピングプリセット',
+    description: '設計書の各項目がソースコードのどこで実装されているかを特定します。',
+    tags: ['マッピング', '汎用', '設計書', 'トレーサビリティ'],
+    systemPrompt: {
+      role: 'あなたは設計書とソースコードのマッピングを行う専門家です。',
+      purpose: `設計書の各項目（機能、要件、処理ロジックなど）がソースコードのどこで実装されているかを特定し、マッピング表を作成してください。
+
+以下の情報を特定してください：
+1. 設計書の項目（見出し番号、項目名）
+2. 実装箇所（ファイル名、行番号範囲）
+3. 実装要素（クラス名、関数名、メソッド名）
+4. マッピングの確信度（高/中/低）`,
+      format: `マークダウン形式で、以下の順に出力してください：
+
+1. **マッピングサマリー**
+   - マッピング実行日時
+   - 対象ファイル
+   - マッピング件数（高確信/中確信/低確信）
+
+2. **マッピング一覧**（テーブル形式）
+| 設計書項目 | 設計内容 | 実装ファイル:行 | 実装要素 | 確信度 | 備考 |
+|-----------|---------|----------------|---------|-------|------|
+
+3. **未マッピング項目**
+   - 実装箇所を特定できなかった設計書項目のリスト
+
+4. **マッピング詳細**
+   - 各マッピングの根拠説明（必要に応じて）`,
+      notes: `- 設計書の見出し番号や項目番号を必ず明示してください
+- ソースコードの行番号を必ず添えてください
+- 1つの設計項目が複数箇所で実装されている場合はすべて列挙してください
+- 確信度は以下の基準で判定してください：
+  - 高: 設計書の記述とコードが明確に対応
+  - 中: 対応関係は推測できるが完全一致ではない
+  - 低: 関連性はあるが確証がない
+- 実装箇所が特定できない項目は「未マッピング項目」に記載してください`,
+    },
+    specTypes: [
+      { type: '設計書', note: '各機能の実装箇所を特定してください' },
+      { type: '要件定義書', note: '各要件の実装箇所を特定してください' },
+      { type: '処理ロジック', note: '各処理の実装箇所を特定してください' },
+      { type: '処理フロー', note: '各処理ステップの実装箇所を特定してください' },
+      { type: 'インターフェース仕様', note: 'API/関数の実装箇所を特定してください' },
+    ],
+  },
+  {
+    id: 'api-mapping',
+    name: 'API エンドポイントマッピング',
+    description: 'API仕様書とコントローラー/ルーター実装のマッピングを行います。',
+    tags: ['マッピング', 'API', 'REST', 'OpenAPI'],
+    systemPrompt: {
+      role: 'あなたはAPI仕様とバックエンド実装のマッピングを行う専門家です。',
+      purpose: `API仕様書（OpenAPI/Swagger等）の各エンドポイント定義がソースコードのどこで実装されているかを特定してください。
+
+以下の情報を特定してください：
+1. APIエンドポイント（HTTPメソッド + パス）
+2. 実装箇所（コントローラー/ルーターファイル、行番号）
+3. ハンドラー関数名
+4. 関連するミドルウェア・バリデーション`,
+      format: `マークダウン形式で、以下の順に出力してください：
+
+1. **APIマッピングサマリー**
+   - 対象API数
+   - 実装済み/未実装の内訳
+
+2. **エンドポイントマッピング一覧**
+| メソッド | パス | 実装ファイル:行 | ハンドラー | ミドルウェア | 備考 |
+|---------|-----|----------------|-----------|-------------|------|
+
+3. **未実装エンドポイント**
+   - 仕様書にあるが実装が見つからないエンドポイント`,
+      notes: `- HTTPメソッド（GET/POST/PUT/DELETE等）を明示してください
+- ルーティング定義とハンドラー実装の両方を特定してください
+- 認証・認可ミドルウェアの適用状況も記載してください`,
+    },
+    specTypes: [
+      { type: 'OpenAPI仕様書', note: '各エンドポイントの実装箇所を特定してください' },
+      { type: 'API設計書', note: '各APIの実装箇所を特定してください' },
+    ],
+  },
+  {
+    id: 'database-mapping',
+    name: 'データベーススキーママッピング',
+    description: 'ER図/テーブル定義とモデル/エンティティ実装のマッピングを行います。',
+    tags: ['マッピング', 'データベース', 'SQL', 'ORM'],
+    systemPrompt: {
+      role: 'あなたはデータベース設計と実装のマッピングを行う専門家です。',
+      purpose: `データベース設計書（ER図、テーブル定義）の各テーブル/カラムがソースコードのモデル/エンティティとしてどこで定義されているかを特定してください。`,
+      format: `マークダウン形式で、以下の順に出力してください：
+
+1. **テーブルマッピング一覧**
+| テーブル名 | モデル/エンティティ | 実装ファイル:行 | 備考 |
+|-----------|-------------------|----------------|------|
+
+2. **カラムマッピング詳細**（テーブルごと）
+
+3. **リレーション実装状況**`,
+      notes: `- ORM（Prisma/TypeORM/SQLAlchemy等）の定義形式を考慮してください
+- マイグレーションファイルとの対応も確認してください`,
+    },
+    specTypes: [
+      { type: 'ER図', note: '各テーブルの実装箇所を特定してください' },
+      { type: 'テーブル定義書', note: '各カラムの実装箇所を特定してください' },
+    ],
+  },
+]
+
+// ========================================
+// 統合プリセットカタログ（突合 + マッピング）
+// ========================================
+export const PRESET_CATALOG: Preset[] = [
+  ...REVIEW_PRESET_CATALOG,
+  ...MAPPING_PRESET_CATALOG,
+]
+
+// ========================================
+// ヘルパー関数
+// ========================================
+
+/**
+ * モードに応じたプリセットカタログを取得
+ */
+export function getPresetCatalogByMode(mode: ReviewMode): Preset[] {
+  if (mode === 'mapping') {
+    return MAPPING_PRESET_CATALOG
+  }
+  return REVIEW_PRESET_CATALOG
+}
+
+/**
+ * モードに応じたデフォルトプリセットIDを取得
+ */
+export function getDefaultPresetIdByMode(mode: ReviewMode): string {
+  if (mode === 'mapping') {
+    return DEFAULT_MAPPING_PRESET_ID
+  }
+  return DEFAULT_REVIEW_PRESET_ID
+}
+
+/**
+ * プリセットIDからプリセットを取得
+ */
+export function getPresetById(id: string): Preset | undefined {
+  return PRESET_CATALOG.find((p) => p.id === id)
+}

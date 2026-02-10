@@ -364,6 +364,57 @@ export interface IntegrateResponse {
 
 export type SplitReviewPhase = 'idle' | 'structure-matching' | 'group-review' | 'integrate' | 'completed' | 'paused' | 'error'
 
+// =============================================================================
+// Structure Map Types (v0.9.0 - マッピングモード用)
+// =============================================================================
+
+// 設計書の構造マップエントリ（MAP.json）
+export interface DocumentMapEntry {
+  id: string              // MD1, MD2, ...
+  section: string         // セクション名
+  level: number           // 見出しレベル
+  path: string            // 階層パス（"親 > 子 > 孫"）
+  original_file: string   // 元ファイル名
+  original_start_line: number
+  original_end_line: number
+  word_count: number
+  part_file: string       // 分割ファイルパス
+  checksum: string
+}
+
+// コードの構造マップエントリ（MAP.json）
+export interface CodeMapEntry {
+  id: string              // CD1, CD2, ...
+  symbol: string          // クラス名/メソッド名（例: "UserService#createUser"）
+  type: string            // class, method, function
+  original_file: string   // 元ファイル名
+  original_start_line: number
+  original_end_line: number
+  part_file: string       // 分割ファイルパス
+  checksum: string
+}
+
+// 構造マップ情報（APIリクエストに含める）
+export interface StructureMapInfo {
+  documentMap: DocumentMapEntry[]   // 設計書のMAP.json
+  codeMaps: {                       // コードのMAP.json（ファイルごと）
+    filename: string
+    entries: CodeMapEntry[]
+  }[]
+}
+
+// マッピング用簡易判定のステータス
+export type MappingStatus = 'ok' | 'warning' | 'ng'
+
+// マッピング用簡易判定
+export interface SimpleMappingJudgment {
+  status: MappingStatus
+  designItemCount: number   // 設計書項目件数
+  mappedCount: number       // マッピングできた件数
+  unmappedCount: number     // 未マッピング件数
+  coveragePercent: number   // カバレッジ率（0-100）
+}
+
 export type GroupReviewStatus = 'pending' | 'in_progress' | 'completed' | 'error' | 'skipped'
 
 export interface GroupReviewState {

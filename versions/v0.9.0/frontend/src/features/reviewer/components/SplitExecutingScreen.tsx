@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CheckCircle, Loader2, Circle, AlertCircle, SkipForward, RotateCcw, ChevronDown, ChevronRight, Ban } from 'lucide-react'
 import { Card, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@core/index'
 import type { SplitReviewState } from '../types'
+import type { ReviewMode } from '@core/types'
 
 interface SplitExecutingScreenProps {
   state: SplitReviewState
@@ -10,6 +11,8 @@ interface SplitExecutingScreenProps {
   onRetryGroup: (groupId: string) => void
   onSkipGroup: (groupId: string) => void
   onRetryIntegrate: () => void
+  // v0.9.0 追加
+  reviewMode?: ReviewMode
 }
 
 type StepStatus = 'completed' | 'in_progress' | 'pending' | 'error' | 'skipped'
@@ -112,7 +115,10 @@ export function SplitExecutingScreen({
   onRetryGroup,
   onSkipGroup,
   onRetryIntegrate,
+  reviewMode = 'review',
 }: SplitExecutingScreenProps) {
+  const isMappingMode = reviewMode === 'mapping'
+  const headerTitle = isMappingMode ? '分割マッピング実行中' : '分割レビュー実行中'
   const isPaused = state.phase === 'paused'
   const isError = state.phase === 'error'
   const hasErrorGroup = state.groupReviews.some((g) => g.status === 'error')
@@ -136,7 +142,7 @@ export function SplitExecutingScreen({
       {/* Header */}
       <Card>
         <div className="flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-800">分割レビュー実行中</h1>
+          <h1 className="text-xl font-bold text-gray-800">{headerTitle}</h1>
           <button onClick={onBack} className="text-blue-500 hover:text-blue-700">
             ← 戻る
           </button>

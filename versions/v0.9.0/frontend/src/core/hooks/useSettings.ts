@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect } from 'react'
-import type { Settings, LlmSettings, SpecType, SystemPromptPreset, ReviewerConfig } from '../types'
+import type { Settings, LlmSettings, SpecType, SystemPromptPreset, ReviewerConfig, ReviewMode } from '../types'
 import { PRESET_CATALOG, DEFAULT_PRESET_ID } from '../data/presetCatalog'
 
 const STORAGE_KEY = 'reviewer-settings'
+const REVIEW_MODE_KEY = 'reviewer-mode'
 
 // デフォルトのLLM設定
 const DEFAULT_LLM_SETTINGS: LlmSettings = {
@@ -46,11 +47,15 @@ interface UseSettingsReturn {
   saveToStorage: () => void
   clearStorage: () => void
   isModified: boolean
+  // Review Mode (v0.9.0)
+  reviewMode: ReviewMode
+  updateReviewMode: (mode: ReviewMode) => void
 }
 
 export function useSettings(): UseSettingsReturn {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
   const [isModified, setIsModified] = useState(false)
+  const [reviewMode, setReviewMode] = useState<ReviewMode>('review')
 
   // 初期読み込み
   useEffect(() => {
@@ -66,6 +71,12 @@ export function useSettings(): UseSettingsReturn {
       } catch {
         // パース失敗時はデフォルト値を使用
       }
+    }
+
+    // Review Mode の復元
+    const savedMode = localStorage.getItem(REVIEW_MODE_KEY)
+    if (savedMode === 'review' || savedMode === 'mapping') {
+      setReviewMode(savedMode)
     }
   }, [])
 
@@ -107,6 +118,12 @@ export function useSettings(): UseSettingsReturn {
     setIsModified(false)
   }, [])
 
+  // Review Mode 更新
+  const updateReviewMode = useCallback((mode: ReviewMode) => {
+    setReviewMode(mode)
+    localStorage.setItem(REVIEW_MODE_KEY, mode)
+  }, [])
+
   return {
     settings,
     updateLlmSettings,
@@ -116,6 +133,8 @@ export function useSettings(): UseSettingsReturn {
     saveToStorage,
     clearStorage,
     isModified,
+    reviewMode,
+    updateReviewMode,
   }
 }
 
