@@ -108,148 +108,119 @@ describe('useReviewExecution', () => {
     })
   })
 
-  describe('getSimpleMappingJudgment', () => {
-    it('空のレポートはngステータスとゼロカウント', () => {
+  describe('parseMappingResult', () => {
+    it('空文字列はnullを返す', () => {
       const { result } = renderHook(() => useReviewExecution())
-      const judgment = result.current.getSimpleMappingJudgment('')
-      expect(judgment.status).toBe('ng')
-      expect(judgment.designItemCount).toBe(0)
-      expect(judgment.mappedCount).toBe(0)
-      expect(judgment.unmappedCount).toBe(0)
-      expect(judgment.coveragePercent).toBe(0)
+      expect(result.current.parseMappingResult('')).toBeNull()
     })
 
-    it('マッピングテーブルの行数をカウント', () => {
+    it('無効なJSONはnullを返す', () => {
       const { result } = renderHook(() => useReviewExecution())
-      const report = `# マッピング結果
-
-## マッピング一覧
-| 設計書項目 | 設計内容 | 実装ファイル:行 | 実装要素 | 確信度 | 備考 |
-|-----------|---------|----------------|---------|-------|------|
-| 1.1 | ログイン機能 | auth.ts:10-20 | login() | 高 | - |
-| 1.2 | ログアウト機能 | auth.ts:30-40 | logout() | 高 | - |
-| 1.3 | セッション管理 | session.ts:5-15 | manage() | 中 | 要確認 |
-
-## 未マッピング項目
-なし
-`
-      const judgment = result.current.getSimpleMappingJudgment(report)
-      expect(judgment.mappedCount).toBe(3)
-      expect(judgment.designItemCount).toBe(3)
-      expect(judgment.coveragePercent).toBe(100)
-      expect(judgment.status).toBe('ok')
+      expect(result.current.parseMappingResult('これはJSONではない')).toBeNull()
     })
 
-    it('未マッピング項目のリストをカウント', () => {
+    it('filesプロパティがないJSONはnullを返す', () => {
       const { result } = renderHook(() => useReviewExecution())
-      const report = `# マッピング結果
-
-## マッピング一覧
-| 設計書項目 | 設計内容 | 実装ファイル:行 | 実装要素 | 確信度 | 備考 |
-|-----------|---------|----------------|---------|-------|------|
-| 1.1 | ログイン機能 | auth.ts:10-20 | login() | 高 | - |
-| 1.2 | ログアウト機能 | auth.ts:30-40 | logout() | 高 | - |
-
-## 未マッピング項目
-- 1.3 セッション管理
-- 1.4 権限チェック
-`
-      const judgment = result.current.getSimpleMappingJudgment(report)
-      expect(judgment.mappedCount).toBe(2)
-      expect(judgment.unmappedCount).toBe(2)
-      expect(judgment.designItemCount).toBe(4)
-      expect(judgment.coveragePercent).toBe(50)
-      expect(judgment.status).toBe('warning')
+      expect(result.current.parseMappingResult('{"data": []}')).toBeNull()
     })
 
-    it('「特定できなかった」キーワードからもカウント', () => {
+    it('正しいJSON応答をパースできる', () => {
       const { result } = renderHook(() => useReviewExecution())
-      const report = `# マッピング結果
-
-## マッピング一覧
-| 設計書項目 | 設計内容 | 実装ファイル:行 | 実装要素 | 確信度 | 備考 |
-|-----------|---------|----------------|---------|-------|------|
-| 1.1 | ログイン機能 | auth.ts:10-20 | login() | 高 | - |
-
-以下の項目は実装箇所を特定できなかった:
-- 項目A: 特定できなかった
-- 項目B: 特定できなかった
-- 項目C: 特定できなかった
-`
-      const judgment = result.current.getSimpleMappingJudgment(report)
-      expect(judgment.mappedCount).toBe(1)
-      // 「特定できなかった」が3回出現
-      expect(judgment.unmappedCount).toBeGreaterThanOrEqual(3)
+      const json = JSON.stringify({
+        files: [
+          {
+            designFile: 'spec.xlsx',
+            items: [
+              { designItem: '1.1 ログイン', implementationElement: 'login()', implementationLocation: 'auth.ts:10-20', confidence: '高', note: '' },
+              { designItem: '1.2 セッション', implementationElement: '-', implementationLocation: '-', confidence: '-', note: '未実装' },
+            ],
+          },
+        ],
+      })
+      const parsed = result.current.parseMappingResult(json)
+      expect(parsed).not.toBeNull()
+      expect(parsed!.files).toHaveLength(1)
+      expect(parsed!.files[0].items).toHaveLength(2)
     })
 
-    it('カバレッジ100%でokステータス', () => {
+    it('```json ブロックからJSONを抽出できる', () => {
       const { result } = renderHook(() => useReviewExecution())
-      const report = `## マッピング一覧
-| 設計書項目 | 設計内容 | 実装ファイル:行 | 実装要素 | 確信度 | 備考 |
-|-----------|---------|----------------|---------|-------|------|
-| 1.1 | 機能A | file.ts:1-10 | funcA() | 高 | - |
-`
-      const judgment = result.current.getSimpleMappingJudgment(report)
-      expect(judgment.coveragePercent).toBe(100)
-      expect(judgment.status).toBe('ok')
+      const rawOutput = '```json\n{"files": [{"designFile": "spec.xlsx", "items": []}]}\n```'
+      const parsed = result.current.parseMappingResult(rawOutput)
+      expect(parsed).not.toBeNull()
+      expect(parsed!.files).toHaveLength(1)
+    })
+  })
+
+  describe('calculateMappingSummary', () => {
+    it('全項目マッピング済みでカバレッジ100%', () => {
+      const { result } = renderHook(() => useReviewExecution())
+      const mappingResult = {
+        files: [{
+          designFile: 'spec.xlsx',
+          items: [
+            { designItem: '1.1', implementationElement: 'func()', implementationLocation: 'file.ts:1', confidence: '高' as const, note: '' },
+            { designItem: '1.2', implementationElement: 'func2()', implementationLocation: 'file.ts:10', confidence: '中' as const, note: '' },
+          ],
+        }],
+      }
+      const summary = result.current.calculateMappingSummary(mappingResult)
+      expect(summary.designItemCount).toBe(2)
+      expect(summary.mappedCount).toBe(2)
+      expect(summary.unmappedCount).toBe(0)
+      expect(summary.coveragePercent).toBe(100)
     })
 
-    it('カバレッジ0%以上100%未満でwarningステータス', () => {
+    it('未マッピング項目はconfidence="-"で判定', () => {
       const { result } = renderHook(() => useReviewExecution())
-      const report = `## マッピング一覧
-| 設計書項目 | 設計内容 | 実装ファイル:行 | 実装要素 | 確信度 | 備考 |
-|-----------|---------|----------------|---------|-------|------|
-| 1.1 | 機能A | file.ts:1-10 | funcA() | 高 | - |
-
-## 未マッピング項目
-- 1.2 機能B
-`
-      const judgment = result.current.getSimpleMappingJudgment(report)
-      expect(judgment.coveragePercent).toBe(50)
-      expect(judgment.status).toBe('warning')
+      const mappingResult = {
+        files: [{
+          designFile: 'spec.xlsx',
+          items: [
+            { designItem: '1.1', implementationElement: 'func()', implementationLocation: 'file.ts:1', confidence: '高' as const, note: '' },
+            { designItem: '1.2', implementationElement: '-', implementationLocation: '-', confidence: '-' as const, note: '未実装' },
+          ],
+        }],
+      }
+      const summary = result.current.calculateMappingSummary(mappingResult)
+      expect(summary.designItemCount).toBe(2)
+      expect(summary.mappedCount).toBe(1)
+      expect(summary.unmappedCount).toBe(1)
+      expect(summary.coveragePercent).toBe(50)
     })
 
-    it('カバレッジ0%でngステータス', () => {
+    it('複数ファイルの項目を合算', () => {
       const { result } = renderHook(() => useReviewExecution())
-      const report = `## マッピング一覧
-| 設計書項目 | 設計内容 | 実装ファイル:行 | 実装要素 | 確信度 | 備考 |
-|-----------|---------|----------------|---------|-------|------|
-
-## 未マッピング項目
-- すべての項目が特定できなかった
-`
-      const judgment = result.current.getSimpleMappingJudgment(report)
-      expect(judgment.mappedCount).toBe(0)
-      // テーブルデータ行がないので coveragePercent は 0
-      expect(judgment.status).toBe('ng')
+      const mappingResult = {
+        files: [
+          {
+            designFile: 'spec1.xlsx',
+            items: [
+              { designItem: '1.1', implementationElement: 'func()', implementationLocation: 'file.ts:1', confidence: '高' as const, note: '' },
+            ],
+          },
+          {
+            designFile: 'spec2.xlsx',
+            items: [
+              { designItem: '2.1', implementationElement: '-', implementationLocation: '-', confidence: '-' as const, note: '未実装' },
+              { designItem: '2.2', implementationElement: '-', implementationLocation: '-', confidence: '-' as const, note: '未実装' },
+            ],
+          },
+        ],
+      }
+      const summary = result.current.calculateMappingSummary(mappingResult)
+      expect(summary.designItemCount).toBe(3)
+      expect(summary.mappedCount).toBe(1)
+      expect(summary.unmappedCount).toBe(2)
+      expect(summary.coveragePercent).toBe(33) // Math.round(33.33...)
     })
 
-    it('設計項目数0でもngステータス', () => {
+    it('項目数0でカバレッジ0%', () => {
       const { result } = renderHook(() => useReviewExecution())
-      const report = '# 空のレポート\n\n何も見つかりませんでした。'
-      const judgment = result.current.getSimpleMappingJudgment(report)
-      expect(judgment.designItemCount).toBe(0)
-      expect(judgment.coveragePercent).toBe(0)
-      expect(judgment.status).toBe('ng')
-    })
-
-    it('カバレッジ率は整数に丸められる', () => {
-      const { result } = renderHook(() => useReviewExecution())
-      // 3項目中1つマッピング = 33.333...%
-      const report = `## マッピング一覧
-| 設計書項目 | 設計内容 | 実装ファイル:行 | 実装要素 | 確信度 | 備考 |
-|-----------|---------|----------------|---------|-------|------|
-| 1.1 | 機能A | file.ts:1-10 | funcA() | 高 | - |
-
-## 未マッピング項目
-- 1.2 機能B
-- 1.3 機能C
-`
-      const judgment = result.current.getSimpleMappingJudgment(report)
-      expect(judgment.mappedCount).toBe(1)
-      expect(judgment.unmappedCount).toBe(2)
-      expect(judgment.designItemCount).toBe(3)
-      expect(judgment.coveragePercent).toBe(33) // Math.round(33.33...)
+      const mappingResult = { files: [] }
+      const summary = result.current.calculateMappingSummary(mappingResult)
+      expect(summary.designItemCount).toBe(0)
+      expect(summary.coveragePercent).toBe(0)
     })
   })
 

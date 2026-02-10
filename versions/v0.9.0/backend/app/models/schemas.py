@@ -243,6 +243,7 @@ class ReviewResponse(BaseModel):
 
     success: bool
     report: str | None = None
+    rawOutput: str | None = None  # AIの生応答（メタ情報ヘッダーなし）
     reviewMeta: ReviewMeta | None = None
     error: str | None = None
 
@@ -600,6 +601,7 @@ class IntegrateResponse(BaseModel):
 
     success: bool
     report: str | None = None  # AIが生成した統合レビューレポート（Markdown形式）
+    rawOutput: str | None = None  # AIの生応答
     integratedReport: IntegratedReport | None = None
     reviewMeta: ReviewMeta | None = None  # 一括レビューと同様のメタ情報
     tokensUsed: dict = {}

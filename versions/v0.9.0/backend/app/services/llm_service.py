@@ -184,7 +184,7 @@ class LLMProvider(ABC):
         review_info_markdown = build_review_info_markdown(review_meta_dict)
         report = review_info_markdown + llm_output
         review_meta = ReviewMeta(**review_meta_dict)
-        return ReviewResponse(success=True, report=report, reviewMeta=review_meta)
+        return ReviewResponse(success=True, report=report, rawOutput=llm_output, reviewMeta=review_meta)
 
     def _build_error_response(self, error_message: str) -> ReviewResponse:
         """エラーレスポンスを構築する（共通処理）

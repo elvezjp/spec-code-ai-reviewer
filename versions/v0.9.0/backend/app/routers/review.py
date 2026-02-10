@@ -650,6 +650,7 @@ async def integrate_reviews(request: IntegrateRequest):
         return IntegrateResponse(
             success=True,
             report=response_text,
+            rawOutput=response_text,
             integratedReport=integrated_report,
             reviewMeta=review_meta,
             tokensUsed={"input": input_tokens, "output": output_tokens},

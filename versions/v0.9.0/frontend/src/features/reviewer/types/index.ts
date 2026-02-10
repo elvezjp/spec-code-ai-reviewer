@@ -52,6 +52,7 @@ export interface ReviewExecutionData {
   specMarkdown: string
   codeWithLineNumbers: string
   report: string
+  rawOutput?: string
   reviewMeta: ReviewMeta
 }
 
@@ -352,6 +353,7 @@ export interface IntegratedReport {
 export interface IntegrateResponse {
   success: boolean
   report?: string // AIが生成した統合レビューレポート（Markdown形式）
+  rawOutput?: string // AIの生応答
   integratedReport?: IntegratedReport
   reviewMeta?: ReviewMeta // 一括レビューと同様のメタ情報
   tokensUsed?: { input: number; output: number }
@@ -403,16 +405,37 @@ export interface StructureMapInfo {
   }[]
 }
 
-// マッピング用簡易判定のステータス
-export type MappingStatus = 'ok' | 'warning' | 'ng'
+// =============================================================================
+// Mapping Result Types (JSON応答)
+// =============================================================================
 
-// マッピング用簡易判定
-export interface SimpleMappingJudgment {
-  status: MappingStatus
-  designItemCount: number   // 設計書項目件数
-  mappedCount: number       // マッピングできた件数
-  unmappedCount: number     // 未マッピング件数
-  coveragePercent: number   // カバレッジ率（0-100）
+// マッピング項目（マッピング済み・未マッピング共通）
+export interface MappingItem {
+  designItem: string              // 設計書項目（見出し番号・項目名）
+  implementationElement: string   // 実装要素（クラス名、関数名）。未マッピング時は "-"
+  implementationLocation: string  // 実装箇所（ファイル:行番号範囲）。未マッピング時は "-"
+  confidence: '高' | '中' | '低' | '-'  // 確信度。未マッピング時は "-"
+  note: string                    // 備考
+}
+
+// 設計書ファイルごとのマッピング結果
+export interface DesignFileMappingResult {
+  designFile: string              // 設計書ファイル名
+  items: MappingItem[]            // そのファイルのマッピング項目一覧
+}
+
+// マッピング結果全体（AIからのJSON応答）
+export interface MappingResult {
+  files: DesignFileMappingResult[]
+  details?: string
+}
+
+// サマリー（フロントエンドで files から集計）
+export interface MappingSummary {
+  designItemCount: number
+  mappedCount: number
+  unmappedCount: number
+  coveragePercent: number
 }
 
 export type GroupReviewStatus = 'pending' | 'in_progress' | 'completed' | 'error' | 'skipped'

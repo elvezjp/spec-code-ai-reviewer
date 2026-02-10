@@ -6,7 +6,8 @@ import type {
   SystemPromptValues,
   LlmConfig,
   SimpleJudgment,
-  SimpleMappingJudgment,
+  MappingResult,
+  MappingSummary,
   StructureMapInfo,
 } from '../types'
 import type { ReviewMode } from '@core/types'
@@ -32,7 +33,8 @@ interface UseReviewExecutionReturn {
   setCurrentTab: (tab: number) => void
   clearResults: () => void
   getSimpleJudgment: (reportText: string) => SimpleJudgment
-  getSimpleMappingJudgment: (reportText: string) => SimpleMappingJudgment
+  parseMappingResult: (rawOutput: string) => MappingResult | null
+  calculateMappingSummary: (result: MappingResult) => MappingSummary
 }
 
 const REVIEW_EXECUTION_COUNT = 2
@@ -79,85 +81,43 @@ export function useReviewExecution(): UseReviewExecutionReturn {
     return { status, ngCount, warningCount, okCount }
   }, [])
 
-  // マッピング用簡易判定ロジック
-  const getSimpleMappingJudgment = useCallback((reportText: string): SimpleMappingJudgment => {
-    if (!reportText) {
-      return {
-        status: 'ng',
-        designItemCount: 0,
-        mappedCount: 0,
-        unmappedCount: 0,
-        coveragePercent: 0,
+  // マッピング結果JSONパーサー
+  const parseMappingResult = useCallback((rawOutput: string): MappingResult | null => {
+    if (!rawOutput) return null
+
+    try {
+      // ```json ... ``` ブロックからJSONを抽出
+      const jsonBlockMatch = rawOutput.match(/```json\s*([\s\S]*?)```/)
+      const jsonStr = jsonBlockMatch ? jsonBlockMatch[1].trim() : rawOutput.trim()
+      const parsed = JSON.parse(jsonStr)
+
+      // 最低限の構造バリデーション
+      if (!parsed.files || !Array.isArray(parsed.files)) return null
+
+      return parsed as MappingResult
+    } catch {
+      return null
+    }
+  }, [])
+
+  // マッピングサマリー集計（フロントエンド計算）
+  const calculateMappingSummary = useCallback((result: MappingResult): MappingSummary => {
+    let designItemCount = 0
+    let unmappedCount = 0
+
+    for (const file of result.files) {
+      for (const item of file.items) {
+        designItemCount++
+        if (item.confidence === '-') {
+          unmappedCount++
+        }
       }
     }
 
-    // 1. サマリーから数値を取得（リスト形式・テーブル形式の両方に対応）
-    // リスト: "設計書項目数: 6"  テーブル: "| 設計書項目数 | 6 |"
-    const parseSummaryInt = (label: string): number | null => {
-      const pattern = new RegExp(`${label}[\\s*:|]*\\s*(\\d+)`)
-      const m = reportText.match(pattern)
-      return m ? parseInt(m[1], 10) : null
-    }
+    const mappedCount = designItemCount - unmappedCount
+    const coveragePercent = designItemCount > 0 ? Math.round((mappedCount / designItemCount) * 100) : 0
 
-    let designItemCount = parseSummaryInt('設計書項目数')
-    let mappedCount = parseSummaryInt('マッピング済み')
-    let unmappedCount = parseSummaryInt('未マッピング')
-    let coveragePercent = parseSummaryInt('カバレッジ')
-
-    // 2. サマリーから取得できない場合、テーブル行数からカウント
-    if (designItemCount === null) {
-      // 1列目が「設計書項目」のテーブルを特定してデータ行を数える
-      const countTableDataRows = (columnCount: number): number => {
-        const colPattern = Array(columnCount).fill('[^|]+').join('\\|')
-        const rowPattern = new RegExp(`^\\|${colPattern}\\|$`, 'gm')
-        const allRows = reportText.match(rowPattern) || []
-        // 1列目が「設計書項目」のヘッダー行を探す
-        const headerIndex = allRows.findIndex(row => /^\|\s*設計書項目/.test(row))
-        if (headerIndex < 0) return 0
-        // ヘッダー以降から罫線行（|---|---|）を除いたデータ行をカウント
-        const dataRows = allRows.slice(headerIndex + 1).filter(row => !/^\|[\s-:|]+\|$/.test(row))
-        return dataRows.length
-      }
-
-      // マッピング一覧テーブル（6カラム）
-      mappedCount = countTableDataRows(6)
-      // 未マッピング項目テーブル（3カラム）
-      unmappedCount = countTableDataRows(3)
-
-      designItemCount = mappedCount + unmappedCount
-    } else {
-      // サマリーから項目数は取得できたが、内訳が欠けている場合の補完
-      if (mappedCount === null && unmappedCount !== null) {
-        mappedCount = designItemCount - unmappedCount
-      } else if (unmappedCount === null && mappedCount !== null) {
-        unmappedCount = designItemCount - mappedCount
-      }
-      mappedCount = mappedCount ?? 0
-      unmappedCount = unmappedCount ?? 0
-    }
-
-    // 3. カバレッジが取得できていなければ計算
-    if (coveragePercent === null) {
-      coveragePercent = designItemCount > 0 ? Math.round((mappedCount / designItemCount) * 100) : 0
-    }
-
-    // ステータス判定
-    let status: SimpleMappingJudgment['status']
-    if (designItemCount === 0 || coveragePercent === 0) {
-      status = 'ng'
-    } else if (coveragePercent === 100) {
-      status = 'ok'
-    } else {
-      status = 'warning'
-    }
-
-    return {
-      status,
-      designItemCount,
-      mappedCount,
-      unmappedCount,
-      coveragePercent,
-    }
+    return { designItemCount, mappedCount, unmappedCount, coveragePercent }
   }, [])
 
   const executeReview = useCallback(
@@ -251,6 +211,7 @@ export function useReviewExecution(): UseReviewExecutionReturn {
             specMarkdown,
             codeWithLineNumbers,
             report: result.report!,
+            rawOutput: result.rawOutput,
             reviewMeta: result.reviewMeta!,
           }
 
@@ -286,6 +247,7 @@ export function useReviewExecution(): UseReviewExecutionReturn {
     setCurrentTab,
     clearResults,
     getSimpleJudgment,
-    getSimpleMappingJudgment,
+    parseMappingResult,
+    calculateMappingSummary,
   }
 }

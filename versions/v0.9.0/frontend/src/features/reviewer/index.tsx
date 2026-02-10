@@ -105,7 +105,8 @@ export function Reviewer() {
     executeReview,
     setCurrentTab,
     getSimpleJudgment,
-    getSimpleMappingJudgment,
+    parseMappingResult,
+    calculateMappingSummary,
   } = useReviewExecution()
 
   // Structure Map
@@ -852,6 +853,7 @@ export function Reviewer() {
       specMarkdown: specMarkdown || '',
       codeWithLineNumbers: codeWithLineNumbers || '',
       report: splitReviewState.integrateResult.report,
+      rawOutput: splitReviewState.integrateResult.rawOutput,
       reviewMeta: {
         version: splitReviewState.integrateResult.reviewMeta?.version || 'unknown',
         modelId: splitReviewState.integrateResult.reviewMeta?.modelId || 'unknown',
@@ -881,7 +883,8 @@ export function Reviewer() {
       onDownloadReport={downloadReport}
       onDownloadZip={downloadZip}
       getSimpleJudgment={getSimpleJudgment}
-      getSimpleMappingJudgment={getSimpleMappingJudgment}
+      parseMappingResult={parseMappingResult}
+      calculateMappingSummary={calculateMappingSummary}
       reviewMode={reviewMode}
       onBack={screenManager.showMain}
       splitReviewState={splitReviewState}

@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@core/index'
 import { ExecutionInfo } from './ExecutionInfo'
-import type { ReviewExecutionData, SimpleJudgment, SimpleMappingJudgment, SplitReviewState } from '../types'
+import type { ReviewExecutionData, SimpleJudgment, MappingResult, MappingSummary, SplitReviewState } from '../types'
 import type { ReviewMode } from '@core/types'
 
 interface ReviewResultProps {
@@ -29,7 +29,8 @@ interface ReviewResultProps {
   isSplitMode?: boolean
   // マッピングモード対応
   reviewMode?: ReviewMode
-  getSimpleMappingJudgment?: (reportText: string) => SimpleMappingJudgment
+  parseMappingResult?: (rawOutput: string) => MappingResult | null
+  calculateMappingSummary?: (result: MappingResult) => MappingSummary
 }
 
 export function ReviewResult({
@@ -46,7 +47,8 @@ export function ReviewResult({
   isSplitMode = false,
   // マッピングモード対応
   reviewMode = 'review',
-  getSimpleMappingJudgment,
+  parseMappingResult,
+  calculateMappingSummary,
 }: ReviewResultProps) {
   const currentResult = results[currentTab - 1]
   const isMappingMode = reviewMode === 'mapping'
@@ -113,22 +115,101 @@ export function ReviewResult({
     )
   }
 
-  // マッピング用簡易判定の表示
-  const renderMappingJudgment = (judgment: SimpleMappingJudgment) => {
-    const config = statusConfig[judgment.status]
-    const countText = `設計書項目: ${judgment.designItemCount}件 / マッピング: ${judgment.mappedCount}件 / 未マッピング: ${judgment.unmappedCount}件`
+  // マッピング結果一覧の表示
+  const renderMappingResultSection = (rawOutput: string | undefined) => {
+    if (!rawOutput || !parseMappingResult || !calculateMappingSummary) {
+      return null
+    }
+
+    const mappingResult = parseMappingResult(rawOutput)
+    if (!mappingResult) {
+      return (
+        <p className="text-sm text-gray-500">
+          マッピング結果のJSON解析に失敗しました。詳細レポートを確認してください。
+        </p>
+      )
+    }
+
+    const summary = calculateMappingSummary(mappingResult)
+    const coverageColor = summary.coveragePercent === 100
+      ? 'text-green-700'
+      : summary.coveragePercent >= 50
+        ? 'text-yellow-700'
+        : 'text-red-700'
 
     return (
-      <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4`}>
-        <div className="flex items-center gap-3">
-          <span className={`${config.iconBg} rounded-full p-2`}>{config.icon}</span>
-          <div>
-            <div className={`font-bold ${config.textColor} text-lg`}>
-              マッピングカバレッジ: {judgment.coveragePercent}%
+      <div>
+        {/* サマリー */}
+        <div className="bg-gray-50 rounded-lg p-4 mb-4">
+          <div className="grid grid-cols-4 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-gray-800">{summary.designItemCount}</div>
+              <div className="text-xs text-gray-500">設計書項目数</div>
             </div>
-            <div className="text-sm text-gray-600">{countText}</div>
+            <div>
+              <div className="text-2xl font-bold text-green-600">{summary.mappedCount}</div>
+              <div className="text-xs text-gray-500">マッピング済み</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-red-600">{summary.unmappedCount}</div>
+              <div className="text-xs text-gray-500">未マッピング</div>
+            </div>
+            <div>
+              <div className={`text-2xl font-bold ${coverageColor}`}>{summary.coveragePercent}%</div>
+              <div className="text-xs text-gray-500">カバレッジ</div>
+            </div>
           </div>
         </div>
+
+        {/* ファイルごとのマッピングテーブル */}
+        {mappingResult.files.map((fileResult) => (
+          <div key={fileResult.designFile} className="mb-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">{fileResult.designFile}</h3>
+            <div className="overflow-x-auto">
+              <Table className="min-w-full text-sm">
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>設計書項目</TableHeaderCell>
+                    <TableHeaderCell>実装要素</TableHeaderCell>
+                    <TableHeaderCell>実装箇所</TableHeaderCell>
+                    <TableHeaderCell>確信度</TableHeaderCell>
+                    <TableHeaderCell>備考</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {fileResult.items.map((item, idx) => {
+                    const isUnmapped = item.confidence === '-'
+                    return (
+                      <TableRow key={idx} className={isUnmapped ? 'bg-red-50' : ''}>
+                        <TableCell>{item.designItem}</TableCell>
+                        <TableCell className={isUnmapped ? 'text-gray-400' : ''}>{item.implementationElement}</TableCell>
+                        <TableCell className={`font-mono text-xs ${isUnmapped ? 'text-gray-400' : ''}`}>{item.implementationLocation}</TableCell>
+                        <TableCell>
+                          {isUnmapped ? (
+                            <span className="text-gray-400">-</span>
+                          ) : (
+                            <span className={
+                              item.confidence === '高' ? 'text-green-600 font-medium' :
+                              item.confidence === '中' ? 'text-yellow-600 font-medium' :
+                              'text-red-600 font-medium'
+                            }>{item.confidence}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs">{item.note}</TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        ))}
+
+        {mappingResult.details && (
+          <div className="mt-4 bg-blue-50 rounded-lg p-3">
+            <p className="text-sm text-blue-700">{mappingResult.details}</p>
+          </div>
+        )}
       </div>
     )
   }
@@ -180,10 +261,7 @@ export function ReviewResult({
   if (isSplitMode && splitReviewState?.integrateResult) {
     // APIから返されたMarkdownレポートを使用
     const splitReportText = splitReviewState.integrateResult.report || ''
-    // モードに応じた簡易判定を行う
-    const splitJudgment = isMappingMode && getSimpleMappingJudgment
-      ? getSimpleMappingJudgment(splitReportText)
-      : getSimpleJudgment(splitReportText)
+    const splitRawOutput = splitReviewState.integrateResult.rawOutput
 
     const headerTitle = isMappingMode ? '分割マッピング結果' : '分割レビュー結果'
 
@@ -199,17 +277,22 @@ export function ReviewResult({
           </div>
         </div>
 
-        {/* Simple judgment */}
+        {/* マッピングモード: マッピング結果一覧 / レビューモード: 簡易判定 */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">簡易判定</h2>
-          {isMappingMode && 'coveragePercent' in splitJudgment
-            ? renderMappingJudgment(splitJudgment as SimpleMappingJudgment)
-            : renderSimpleJudgment(splitJudgment as SimpleJudgment)}
-          <p className="text-xs text-gray-400 mt-3">
-            {isMappingMode
-              ? '※ この判定はキーワードに基づく簡易的なものです。設計書項目件数はAIの判定ごとに異なる場合があります。詳細レポートを確認してください。'
-              : '※ この判定はキーワードに基づく簡易的なものです。AIの出力によっては正しく判定されない場合があります。詳細レポートを確認してください。'}
-          </p>
+          {isMappingMode ? (
+            <>
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">マッピング結果一覧</h2>
+              {renderMappingResultSection(splitRawOutput)}
+            </>
+          ) : (
+            <>
+              <h2 className="text-lg font-semibold text-gray-800 mb-4">簡易判定</h2>
+              {renderSimpleJudgment(getSimpleJudgment(splitReportText))}
+              <p className="text-xs text-gray-400 mt-3">
+                ※ この判定はキーワードに基づく簡易的なものです。AIの出力によっては正しく判定されない場合があります。詳細レポートを確認してください。
+              </p>
+            </>
+          )}
         </div>
 
         {/* Execution info - 見出し共通化 */}
@@ -330,17 +413,22 @@ export function ReviewResult({
 
       {currentResult && (
         <>
-          {/* Simple judgment - モード別切り替え */}
+          {/* マッピングモード: マッピング結果一覧 / レビューモード: 簡易判定 */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">簡易判定</h2>
-            {isMappingMode && getSimpleMappingJudgment
-              ? renderMappingJudgment(getSimpleMappingJudgment(currentResult.report))
-              : renderSimpleJudgment(getSimpleJudgment(currentResult.report))}
-            <p className="text-xs text-gray-400 mt-3">
-              {isMappingMode
-                ? '※ この判定はキーワードに基づく簡易的なものです。設計書項目件数はAIの判定ごとに異なる場合があります。詳細レポートを確認してください。'
-                : '※ この判定はキーワードに基づく簡易的なものです。AIの出力によっては正しく判定されない場合があります。詳細レポートを確認してください。'}
-            </p>
+            {isMappingMode ? (
+              <>
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">マッピング結果一覧</h2>
+                {renderMappingResultSection(currentResult.rawOutput)}
+              </>
+            ) : (
+              <>
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">簡易判定</h2>
+                {renderSimpleJudgment(getSimpleJudgment(currentResult.report))}
+                <p className="text-xs text-gray-400 mt-3">
+                  ※ この判定はキーワードに基づく簡易的なものです。AIの出力によっては正しく判定されない場合があります。詳細レポートを確認してください。
+                </p>
+              </>
+            )}
           </div>
 
           {/* Execution info */}

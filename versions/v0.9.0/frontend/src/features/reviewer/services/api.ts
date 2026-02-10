@@ -68,7 +68,7 @@ export async function addLineNumbers(
 
 export async function executeReview(
   request: ReviewRequest
-): Promise<{ success: boolean; report?: string; reviewMeta?: ReviewResult['reviewMeta']; error?: string }> {
+): Promise<{ success: boolean; report?: string; rawOutput?: string; reviewMeta?: ReviewResult['reviewMeta']; error?: string }> {
   const response = await fetch(`${getBackendUrl()}/api/review`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
