@@ -1,0 +1,50 @@
+[
+  {
+    "id": "MD1",
+    "section": "設計書: 20260121AIオーディター形式サンプルコーディング規約.xlsx",
+    "level": 1,
+    "path": "設計書: 20260121AIオーディター形式サンプルコーディング規約.xlsx",
+    "original_file": "20260121AIオーディター形式サンプルコーディング規約.md",
+    "original_start_line": 1,
+    "original_end_line": 5,
+    "word_count": 88,
+    "part_file": "parts/設計書_20260121AIオーディター形式サンプルコーディング規約.xlsx.md",
+    "checksum": "8cc966f37c1cf29f23a719422122e58ac82be53702d56eb54034579f6bcf16ea"
+  },
+  {
+    "id": "MD2",
+    "section": "コーディング規約一覧",
+    "level": 2,
+    "path": "設計書: 20260121AIオーディター形式サンプルコーディング規約.xlsx > コーディング規約一覧",
+    "original_file": "20260121AIオーディター形式サンプルコーディング規約.md",
+    "original_start_line": 6,
+    "original_end_line": 21,
+    "word_count": 566,
+    "part_file": "parts/設計書_20260121AIオーディター形式サンプルコーディング規約.xlsx_コーディング規約一覧.md",
+    "checksum": "25223084942762a15e881fed67cb8f400749e0fac5814949fcd0dbeb0b1de75a"
+  },
+  {
+    "id": "MD3",
+    "section": "命名規則全般（1）",
+    "level": 2,
+    "path": "設計書: 20260121AIオーディター形式サンプルコーディング規約.xlsx > 命名規則全般（1）",
+    "original_file": "20260121AIオーディター形式サンプルコーディング規約.md",
+    "original_start_line": 22,
+    "original_end_line": 33,
+    "word_count": 140,
+    "part_file": "parts/設計書_20260121AIオーディター形式サンプルコーディング規約.xlsx_命名規則全般（1）.md",
+    "checksum": "c1e233a5fd48b5cda19ad9c83198cf5437dd065f53d1678ddc2c94b38d3fce3a"
+  },
+  {
+    "id": "MD4",
+    "section": "コーディングスタイル（1）",
+    "level": 2,
+    "path": "設計書: 20260121AIオーディター形式サンプルコーディング規約.xlsx > コーディングスタイル（1）",
+    "original_file": "20260121AIオーディター形式サンプルコーディング規約.md",
+    "original_start_line": 34,
+    "original_end_line": 48,
+    "word_count": 246,
+    "part_file": "parts/設計書_20260121AIオーディター形式サンプルコーディング規約.xlsx_コーディングスタイル（1）.md",
+    "checksum": "c50890ccde27a492d14be056fb802f087b20e1071270b81757043a2b9cc5a6ff"
+  }
+]

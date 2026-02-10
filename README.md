@@ -11,16 +11,31 @@
 
 A web application that uses AI to cross-check design documents (Excel format) against program code and verify consistency.
 
-https://github.com/user-attachments/assets/fa387d12-1c8a-4bf2-aeb4-758595479982
+https://github.com/user-attachments/assets/78926022-1498-4d9a-923c-cdf3a9f06534
 
 ## Features
 
 - **Design document conversion**: Convert Excel (.xlsx, .xls) to Markdown (using MarkItDown, excel2md)
 - **Program conversion**: Add line numbers to any text file (add-line-numbers compatible)
 - **Cross-check review**: Verify consistency between the design doc and code using LLMs (Bedrock / Anthropic / OpenAI)
+- **Split review**: Semantically split large design docs and code that exceed token limits for review (using md2map / code2map)
 - **Report output**: Generate a Markdown review report
 
-For detailed feature specs, see [latest/spec.md](latest/spec.md).
+### Split Review for Large Files
+
+LLMs have input token limits, so large design documents or source code with thousands of lines may not be reviewable as-is.
+Naive line-based splitting can cut through sections, classes, or functions, losing context and reducing review accuracy.
+
+This application splits Markdown-converted design documents and source code into semantically meaningful units, grouping related parts together for cross-check review.
+
+**Design document / code splitting**:
+- [md2map](https://github.com/elvezjp/md2map): Splits Markdown-converted design documents into section-level files and creates a JSON map.
+- [code2map](https://github.com/elvezjp/code2map): Splits source code into class/function-level files and creates a JSON map.
+
+**AI-powered split review** (executed in 3 steps):
+1. **Structure matching**: AI analyzes the JSON maps of the design document and code, and groups highly related design document sections and code together.
+2. **Group review**: For each group, AI performs a cross-check review by combining the split design document sections and code.
+3. **Result integration**: AI integrates the review results from all groups and generates the final review report.
 
 ## System Architecture
 
@@ -123,7 +138,7 @@ For v0.6.0 and later, start frontend and backend separately.
 **Terminal 1: Start backend**
 
 ```bash
-cd versions/v0.7.0/backend
+cd versions/v0.8.0/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -131,7 +146,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **Terminal 2: Start frontend**
 
 ```bash
-cd versions/v0.7.0/frontend
+cd versions/v0.8.0/frontend
 npm install
 npm run dev
 ```
@@ -185,12 +200,12 @@ You can switch versions from the top-left balloon (routing via Cookie + Nginx ma
 Run tests in each version's directory.
 
 ```bash
-# v0.7.0 backend tests
-cd versions/v0.7.0/backend
+# v0.8.0 backend tests
+cd versions/v0.8.0/backend
 uv run pytest tests/ -v
 
-# v0.7.0 frontend tests
-cd versions/v0.7.0/frontend
+# v0.8.0 frontend tests
+cd versions/v0.8.0/frontend
 npm test
 
 # v0.5.2 and earlier tests (backend only)
@@ -321,7 +336,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # Dev Nginx config
 │   ├── spec-code-ai-reviewer.conf  # Production Nginx config
 │   └── version-map.conf         # Version switch map (shared)
-├── latest -> versions/v0.7.0    # Symlink to latest
+├── latest -> versions/v0.8.0    # Symlink to latest
 │
 ├── versions/                    # All versions
 │   ├── README.md                # Version management notes
@@ -345,7 +360,12 @@ spec-code-ai-reviewer/
 │   │   ├── frontend/            # Vite + React + TypeScript
 │   │   ├── config-file-generator-spec.md
 │   │   └── spec.md
-│   └── v0.7.0/                  # Latest (Vite + React)
+│   ├── v0.7.0/                  # Old version (Vite + React)
+│   │   ├── backend/
+│   │   ├── frontend/            # Vite + React + TypeScript
+│   │   ├── config-file-generator-spec.md
+│   │   └── spec.md
+│   └── v0.8.0/                  # Latest (Vite + React)
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -361,20 +381,24 @@ spec-code-ai-reviewer/
 │   └── README.md
 │
 ├── add-line-numbers/            # Subtree (elvezjp)
+├── code2map/                    # Subtree (elvezjp)
 ├── excel2md/                    # Subtree (elvezjp)
 ├── markitdown/                  # Subtree (Microsoft)
+├── md2map/                      # Subtree (elvezjp)
 └── README.md                    # This file
 ```
 
-## Git Subtrees
+## Related Projects
 
 This repository includes the following external repositories via git subtree.
 
 | Directory | Repository | Description |
 |-------------|-----------|-------------|
 | `add-line-numbers/` | https://github.com/elvezjp/add-line-numbers | Tool to add line numbers to files |
+| `code2map/` | https://github.com/elvezjp/code2map | Source code to mind map conversion tool |
 | `excel2md/` | https://github.com/elvezjp/excel2md | Excel to CSV Markdown conversion tool |
 | `markitdown/` | https://github.com/microsoft/markitdown | Tool to convert various file formats to Markdown |
+| `md2map/` | https://github.com/elvezjp/md2map | Markdown to mind map conversion tool |
 
 ### Updating Subtrees
 
@@ -382,11 +406,17 @@ This repository includes the following external repositories via git subtree.
 # Update add-line-numbers
 git subtree pull --prefix=add-line-numbers https://github.com/elvezjp/add-line-numbers.git main --squash
 
+# Update code2map
+git subtree pull --prefix=code2map https://github.com/elvezjp/code2map.git main --squash
+
 # Update excel2md
 git subtree pull --prefix=excel2md https://github.com/elvezjp/excel2md.git main --squash
 
 # Update markitdown
 git subtree pull --prefix=markitdown https://github.com/microsoft/markitdown.git main --squash
+
+# Update md2map
+git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --squash
 ```
 
 ## Version Management
@@ -402,7 +432,8 @@ Example: v0.2.5 -> 8000 + (2 x 10) + 5 = 8025
 
 | Version | Port |
 |-----------|------|
-| v0.7.0 (latest) | 8070 |
+| v0.8.0 (latest) | 8080 |
+| v0.7.0 | 8070 |
 | v0.6.0 | 8060 |
 | v0.5.2 | 8052 |
 | v0.5.1 | 8051 |

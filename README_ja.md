@@ -11,16 +11,31 @@
 
 設計書（Excel形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
 
-https://github.com/user-attachments/assets/fa387d12-1c8a-4bf2-aeb4-758595479982
+https://github.com/user-attachments/assets/78926022-1498-4d9a-923c-cdf3a9f06534
 
 ## 機能
 
 - **設計書変換**: Excel (.xlsx, .xls) → Markdown形式に変換（MarkItDown、excel2md使用）
 - **プログラム変換**: 任意のテキストファイルに行番号を付与（add-line-numbers準拠）
 - **突合レビュー**: LLM（Bedrock / Anthropic / OpenAI）を使用して設計書とコードの整合性を検証
+- **分割レビュー**: トークン上限を超える設計書・コードをセマンティック分割してレビュー（md2map / code2map使用）
 - **レポート出力**: マークダウン形式のレビューレポートを生成
 
-機能仕様の詳細については[latest/spec.md](latest/spec.md)を参照してください。
+### 大規模ファイルの分割レビュー
+
+LLMには入力トークンの上限があるため、大規模な設計書や数千行のコードはそのままではレビューできない場合があります。
+単純な行数での分割ではセクションやクラス・関数の途中で切れてしまい、文脈が失われレビュー精度が低下します。
+
+このアプリケーションでは、マークダウン変換した設計書とソースコードを意味のある単位に分割し、関連する部分をグループ化して突合レビューすることが可能です。
+
+**設計書・コード分割**:
+- [md2map](https://github.com/elvezjp/md2map): マークダウン変換した設計書をセクション単位でファイル分割し、JSONマップを作成します。
+- [code2map](https://github.com/elvezjp/code2map): ソースコードをクラス・関数単位でファイル分割し、JSONマップを作成します。
+
+**AIによる分割レビュー**（3ステップで実行）:
+1. **構造マッチング**: 設計書とコードのJSONマップをAIが分析し、関連性の高い設計書セクションとコードをグループにまとめます。
+2. **グループレビュー**: 各グループに対して、分割した設計書とコードを組み合わせて、AIが突合レビューを行います。
+3. **結果統合**: 全グループのレビュー結果をAIが統合し、最終的なレビューレポートを生成します。
 
 ## システム構成
 
@@ -123,7 +138,7 @@ v0.6.0以降はフロントエンドとバックエンドを別々に起動し�
 **ターミナル1: バックエンド起動**
 
 ```bash
-cd versions/v0.7.0/backend
+cd versions/v0.8.0/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -131,7 +146,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **ターミナル2: フロントエンド起動**
 
 ```bash
-cd versions/v0.7.0/frontend
+cd versions/v0.8.0/frontend
 npm install
 npm run dev
 ```
@@ -185,12 +200,12 @@ docker-compose down
 各バージョンのディレクトリでテストを実行します。
 
 ```bash
-# v0.7.0 バックエンドのテスト
-cd versions/v0.7.0/backend
+# v0.8.0 バックエンドのテスト
+cd versions/v0.8.0/backend
 uv run pytest tests/ -v
 
-# v0.7.0 フロントエンドのテスト
-cd versions/v0.7.0/frontend
+# v0.8.0 フロントエンドのテスト
+cd versions/v0.8.0/frontend
 npm test
 
 # v0.5.2以前のテスト（バックエンドのみ）
@@ -322,7 +337,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # 開発用Nginx設定
 │   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.7.0    # シンボリックリンク（最新版を指す）
+├── latest -> versions/v0.8.0    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
@@ -346,7 +361,12 @@ spec-code-ai-reviewer/
 │   │   ├── frontend/            # Vite + React + TypeScript
 │   │   ├── config-file-generator-spec.md
 │   │   └── spec.md
-│   └── v0.7.0/                  # 最新版（Vite + React）
+│   ├── v0.7.0/                  # 旧バージョン（Vite + React）
+│   │   ├── backend/
+│   │   ├── frontend/            # Vite + React + TypeScript
+│   │   ├── config-file-generator-spec.md
+│   │   └── spec.md
+│   └── v0.8.0/                  # 最新版（Vite + React）
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -362,20 +382,24 @@ spec-code-ai-reviewer/
 │   └── README.md
 │
 ├── add-line-numbers/            # サブツリー（elvezjp）
+├── code2map/                    # サブツリー（elvezjp）
 ├── excel2md/                    # サブツリー（elvezjp）
 ├── markitdown/                  # サブツリー（Microsoft）
+├── md2map/                      # サブツリー（elvezjp）
 └── README.md                    # 本ファイル
 ```
 
-## Git Subtrees
+## 関連プロジェクト
 
 このリポジトリには以下の外部リポジトリを git subtree で追加しています。
 
 | ディレクトリ | リポジトリ | 説明 |
 |-------------|-----------|------|
 | `add-line-numbers/` | https://github.com/elvezjp/add-line-numbers | ファイルに行番号を追加するツール |
+| `code2map/` | https://github.com/elvezjp/code2map | ソースコード→マインドマップ変換ツール |
 | `excel2md/` | https://github.com/elvezjp/excel2md | Excel→CSVマークダウン変換ツール |
 | `markitdown/` | https://github.com/microsoft/markitdown | 各種ファイル形式をMarkdownに変換するツール |
+| `md2map/` | https://github.com/elvezjp/md2map | Markdown→マインドマップ変換ツール |
 
 ### Subtree の更新方法
 
@@ -383,11 +407,17 @@ spec-code-ai-reviewer/
 # add-line-numbers を更新
 git subtree pull --prefix=add-line-numbers https://github.com/elvezjp/add-line-numbers.git main --squash
 
+# code2map を更新
+git subtree pull --prefix=code2map https://github.com/elvezjp/code2map.git main --squash
+
 # excel2md を更新
 git subtree pull --prefix=excel2md https://github.com/elvezjp/excel2md.git main --squash
 
 # markitdown を更新
 git subtree pull --prefix=markitdown https://github.com/microsoft/markitdown.git main --squash
+
+# md2map を更新
+git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --squash
 ```
 
 ## バージョン管理
@@ -403,7 +433,8 @@ git subtree pull --prefix=markitdown https://github.com/microsoft/markitdown.git
 
 | バージョン | ポート |
 |-----------|-------|
-| v0.7.0 (latest) | 8070 |
+| v0.8.0 (latest) | 8080 |
+| v0.7.0 | 8070 |
 | v0.6.0 | 8060 |
 | v0.5.2 | 8052 |
 | v0.5.1 | 8051 |

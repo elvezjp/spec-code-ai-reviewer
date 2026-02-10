@@ -1,0 +1,38 @@
+[project]
+name = "code2map"
+version = "0.1.1"
+description = "Transform large source code into semantic maps for AI-driven analysis and review"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "code2map developers" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "javalang>=0.13.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+code2map = "code2map.cli:main"
+
+[project.urls]
+Repository = "https://github.com/example/code2map"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
