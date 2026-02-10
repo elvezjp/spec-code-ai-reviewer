@@ -746,6 +746,22 @@ export function Reviewer() {
         />
       </div>
 
+      {/* Structure Map info (mapping mode only) */}
+      {reviewMode === 'mapping' && (
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800">構造マップ</h2>
+          <p className="text-xs text-gray-400 mt-2">
+            <a href="https://github.com/elvezjp/md2map" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">md2map</a>
+            {' / '}
+            <a href="https://github.com/elvezjp/code2map" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">code2map</a>
+            {' '}を使って設計書・コードの全体構造を解析し、AIへの入力に含めます。
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            一括実行・分割実行の設定とは独立して、全体構造を把握するための参考情報としてAIに渡されます。
+          </p>
+        </div>
+      )}
+
       {/* Review button */}
       <Card>
         <Button
