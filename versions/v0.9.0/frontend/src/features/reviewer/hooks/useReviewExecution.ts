@@ -91,31 +91,52 @@ export function useReviewExecution(): UseReviewExecutionReturn {
       }
     }
 
-    // マッピング一覧テーブルの行数をカウント
-    // | 設計書項目 | ... のようなテーブル行を探す
-    const tableRowPattern = /^\|[^|]+\|[^|]+\|[^|]+\|[^|]+\|[^|]+\|[^|]+\|$/gm
-    const tableRows = reportText.match(tableRowPattern) || []
-    // ヘッダー行と区切り行を除外（最初の2行）
-    const dataRows = tableRows.slice(2)
-    const mappedCount = dataRows.length
-
-    // 未マッピング項目のカウント
-    // 「未マッピング」セクションのリスト項目を探す
-    const unmappedSectionMatch = reportText.match(/未マッピング(?:項目)?[\s\S]*?((?:^[-*]\s+.+$\n?)+)/m)
-    let unmappedCount = 0
-    if (unmappedSectionMatch) {
-      const unmappedListItems = unmappedSectionMatch[1].match(/^[-*]\s+.+$/gm) || []
-      unmappedCount = unmappedListItems.length
+    // 1. サマリーから数値を取得
+    const parseSummaryInt = (pattern: RegExp): number | null => {
+      const m = reportText.match(pattern)
+      return m ? parseInt(m[1], 10) : null
     }
 
-    // 「実装箇所を特定できなかった」のような文言からもカウント
-    const notFoundPattern = /特定できなかった|見つからなかった|未実装/g
-    const notFoundMatches = reportText.match(notFoundPattern) || []
-    // 未マッピングセクションの項目と重複しないよう、大きい方を採用
-    unmappedCount = Math.max(unmappedCount, notFoundMatches.length)
+    let designItemCount = parseSummaryInt(/設計書項目数:\s*(\d+)/)
+    let mappedCount = parseSummaryInt(/マッピング済み:\s*(\d+)/)
+    let unmappedCount = parseSummaryInt(/未マッピング:\s*(\d+)/)
+    let coveragePercent = parseSummaryInt(/カバレッジ:\s*(\d+)/)
 
-    const designItemCount = mappedCount + unmappedCount
-    const coveragePercent = designItemCount > 0 ? Math.round((mappedCount / designItemCount) * 100) : 0
+    // 2. サマリーから取得できない場合、テーブル行数からカウント
+    if (designItemCount === null) {
+      // マッピング一覧テーブル（6カラム）のデータ行をカウント
+      const tableRowPattern = /^\|[^|]+\|[^|]+\|[^|]+\|[^|]+\|[^|]+\|[^|]+\|$/gm
+      const tableRows = reportText.match(tableRowPattern) || []
+      // ヘッダー行と区切り行を除外
+      mappedCount = Math.max(0, tableRows.length - 2)
+
+      // 未マッピング項目テーブル（3カラム）のデータ行をカウント
+      const unmappedTablePattern = /未マッピング[\s\S]*?((?:^\|[^|]+\|[^|]+\|[^|]+\|$\n?)+)/m
+      const unmappedTableMatch = reportText.match(unmappedTablePattern)
+      if (unmappedTableMatch) {
+        const unmappedRows = unmappedTableMatch[1].match(/^\|[^|]+\|[^|]+\|[^|]+\|$/gm) || []
+        // ヘッダー行と区切り行を除外
+        unmappedCount = Math.max(0, unmappedRows.length - 2)
+      } else {
+        unmappedCount = 0
+      }
+
+      designItemCount = mappedCount + unmappedCount
+    } else {
+      // サマリーから項目数は取得できたが、内訳が欠けている場合の補完
+      if (mappedCount === null && unmappedCount !== null) {
+        mappedCount = designItemCount - unmappedCount
+      } else if (unmappedCount === null && mappedCount !== null) {
+        unmappedCount = designItemCount - mappedCount
+      }
+      mappedCount = mappedCount ?? 0
+      unmappedCount = unmappedCount ?? 0
+    }
+
+    // 3. カバレッジが取得できていなければ計算
+    if (coveragePercent === null) {
+      coveragePercent = designItemCount > 0 ? Math.round((mappedCount / designItemCount) * 100) : 0
+    }
 
     // ステータス判定
     let status: SimpleMappingJudgment['status']
