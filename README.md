@@ -138,7 +138,7 @@ For v0.6.0 and later, start frontend and backend separately.
 **Terminal 1: Start backend**
 
 ```bash
-cd versions/v0.8.0/backend
+cd versions/v0.9.0/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -146,7 +146,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **Terminal 2: Start frontend**
 
 ```bash
-cd versions/v0.8.0/frontend
+cd versions/v0.9.0/frontend
 npm install
 npm run dev
 ```
@@ -200,12 +200,12 @@ You can switch versions from the top-left balloon (routing via Cookie + Nginx ma
 Run tests in each version's directory.
 
 ```bash
-# v0.8.0 backend tests
-cd versions/v0.8.0/backend
+# v0.9.0 backend tests
+cd versions/v0.9.0/backend
 uv run pytest tests/ -v
 
-# v0.8.0 frontend tests
-cd versions/v0.8.0/frontend
+# v0.9.0 frontend tests
+cd versions/v0.9.0/frontend
 npm test
 
 # v0.5.2 and earlier tests (backend only)

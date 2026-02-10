@@ -41,14 +41,14 @@
 3. 変更に対する**テストを作成**
    ```bash
    # バックエンドのテストを実行
-   cd versions/v0.7.0/backend
+   cd versions/v0.9.0/backend
    uv run pytest tests/ -v
 
    # バックエンドのカバレッジ付きテスト
    uv run pytest tests/ --cov=app --cov-report=html
 
    # フロントエンドのテストを実行
-   cd versions/v0.7.0/frontend
+   cd versions/v0.9.0/frontend
    npm run test:run
 
    # フロントエンドのカバレッジ付きテスト
@@ -89,7 +89,7 @@ git clone https://github.com/YOUR-USERNAME/spec-code-ai-reviewer.git
 cd spec-code-ai-reviewer
 
 # バックエンドの依存関係をインストール
-cd versions/v0.7.0/backend
+cd versions/v0.9.0/backend
 uv sync
 
 # フロントエンドの依存関係をインストール
@@ -101,7 +101,7 @@ npm install
 
 ```bash
 # バックエンド：すべてのテストを実行
-cd versions/v0.7.0/backend
+cd versions/v0.9.0/backend
 uv run pytest tests/ -v
 
 # バックエンド：特定のテストファイルを実行
@@ -111,7 +111,7 @@ uv run pytest tests/test_convert.py -v
 uv run pytest tests/ --cov=app --cov-report=html
 
 # フロントエンド：すべてのテストを実行
-cd versions/v0.7.0/frontend
+cd versions/v0.9.0/frontend
 npm run test:run
 
 # フロントエンド：ウォッチモードでテストを実行
@@ -174,7 +174,7 @@ Closes #123
 ## バージョン管理
 
 貢献する際は：
-- 最新バージョン（`versions/v0.7.0/`）に焦点を当てる
+- 最新バージョン（`versions/v0.9.0/`）に焦点を当てる
 - 可能な限り後方互換性を維持する
 - 破壊的変更は明確にドキュメント化する
 
