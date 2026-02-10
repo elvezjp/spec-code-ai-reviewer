@@ -26,7 +26,16 @@ https://github.com/user-attachments/assets/78926022-1498-4d9a-923c-cdf3a9f06534
 LLMs have input token limits, so large design documents or source code with thousands of lines may not be reviewable as-is.
 Naive line-based splitting can cut through sections, classes, or functions, losing context and reducing review accuracy.
 
-This application uses [md2map](https://github.com/elvezjp/md2map) and [code2map](https://github.com/elvezjp/code2map) to split Markdown design documents and source code into semantically meaningful units, grouping related parts together for cross-check review.
+This application splits Markdown-converted design documents and source code into semantically meaningful units, grouping related parts together for cross-check review.
+
+**Design document / code splitting**:
+- [md2map](https://github.com/elvezjp/md2map): Splits Markdown-converted design documents into section-level files and creates a JSON map.
+- [code2map](https://github.com/elvezjp/code2map): Splits source code into class/function-level files and creates a JSON map.
+
+**AI-powered split review** (executed in 3 steps):
+1. **Structure matching**: AI analyzes the JSON maps of the design document and code, and groups highly related design document sections and code together.
+2. **Group review**: For each group, AI performs a cross-check review by combining the split design document sections and code.
+3. **Result integration**: AI integrates the review results from all groups and generates the final review report.
 
 ## System Architecture
 
