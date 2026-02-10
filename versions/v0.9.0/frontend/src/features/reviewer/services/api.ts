@@ -119,7 +119,7 @@ export async function organizeMarkdown(
 }
 
 // =============================================================================
-// Split API (v0.8.0)
+// Split API
 // =============================================================================
 
 export async function splitMarkdown(
@@ -147,7 +147,7 @@ export async function splitCode(
 }
 
 // =============================================================================
-// Split Review APIs (v0.8.0 - New)
+// Split Review APIs
 // =============================================================================
 
 export async function executeStructureMatching(

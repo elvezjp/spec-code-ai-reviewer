@@ -102,9 +102,9 @@ def build_user_message(
         codes: コードのリスト
         legacy_code_with_line_numbers: 後方互換用の単一コード文字列
         legacy_code_filename: 後方互換用の単一コードのファイル名
-        mode: レビューモード（v0.9.0: review または mapping）
-        use_structure_map: 構造マップを利用するか（v0.9.0）
-        structure_map: 構造マップ情報（v0.9.0）
+        mode: レビューモード（review または mapping）
+        use_structure_map: 構造マップを利用するか
+        structure_map: 構造マップ情報
 
     Returns:
         str: 組み立てられたユーザーメッセージ

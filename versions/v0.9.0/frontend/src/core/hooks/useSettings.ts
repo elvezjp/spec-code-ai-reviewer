@@ -47,7 +47,7 @@ interface UseSettingsReturn {
   saveToStorage: () => void
   clearStorage: () => void
   isModified: boolean
-  // Review Mode (v0.9.0)
+  // Review Mode
   reviewMode: ReviewMode
   updateReviewMode: (mode: ReviewMode) => void
 }

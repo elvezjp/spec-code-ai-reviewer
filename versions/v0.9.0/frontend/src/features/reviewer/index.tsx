@@ -92,7 +92,6 @@ export function Reviewer() {
     saveConfigToBrowser,
     clearSavedConfig,
     hasSavedConfig,
-    // v0.9.0 追加
     reviewMode,
     handleModeChange,
     availablePresets,
@@ -109,7 +108,7 @@ export function Reviewer() {
     getSimpleMappingJudgment,
   } = useReviewExecution()
 
-  // Structure Map (v0.9.0)
+  // Structure Map
   const {
     structureMap,
     isGenerating: isGeneratingStructureMap,
@@ -124,7 +123,7 @@ export function Reviewer() {
   const { downloadZip, downloadReport, copyReport, downloadSpecMarkdown, downloadCodeWithLineNumbers } =
     useZipExport()
 
-  // Split settings (v0.8.0)
+  // Split settings
   const {
     settings: splitSettings,
     previewResult: splitPreviewResult,
@@ -135,7 +134,7 @@ export function Reviewer() {
     isSplitEnabled,
   } = useSplitSettings()
 
-  // Split review execution state (v0.8.0)
+  // Split review execution state
   const [splitReviewState, setSplitReviewState] = useState<SplitReviewState>({
     phase: 'idle',
     groupReviews: [],
@@ -538,7 +537,6 @@ export function Reviewer() {
         codeWithLineNumbers,
         systemPrompt: currentPromptValues,
         llmConfig: llmConfig || undefined,
-        // v0.9.0 追加
         mode: reviewMode,
         useStructureMap: useStructureMapFlag,
         structureMap: useStructureMapFlag ? resolvedStructureMap : null,
@@ -632,7 +630,7 @@ export function Reviewer() {
         }
       />
 
-      {/* Mode Selector (v0.9.0) */}
+      {/* Mode Selector */}
       <ModeSelector
         currentMode={reviewMode}
         onModeChange={handleModeChange}
@@ -733,7 +731,7 @@ export function Reviewer() {
         isVisible={!!(specMarkdown || codeWithLineNumbers)}
       />
 
-      {/* Split settings (v0.8.0) */}
+      {/* Split settings */}
       <div className="mb-6">
         <SplitSettingsSection
           settings={splitSettings}

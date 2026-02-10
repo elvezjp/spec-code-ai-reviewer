@@ -154,7 +154,7 @@ export interface CodeFileForApi {
 }
 
 // =============================================================================
-// Split Types (v0.8.0)
+// Split Types
 // =============================================================================
 
 export type SplitMode = 'batch' | 'split'
@@ -365,7 +365,7 @@ export interface IntegrateResponse {
 export type SplitReviewPhase = 'idle' | 'structure-matching' | 'group-review' | 'integrate' | 'completed' | 'paused' | 'error'
 
 // =============================================================================
-// Structure Map Types (v0.9.0 - マッピングモード用)
+// Structure Map Types
 // =============================================================================
 
 // 設計書の構造マップエントリ（MAP.json）

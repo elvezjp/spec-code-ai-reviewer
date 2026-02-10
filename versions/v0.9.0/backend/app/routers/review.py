@@ -28,7 +28,7 @@ from app.models.schemas import (
     IntegrateRequest,
     IntegrateResponse,
     IntegratedReport,
-    # v0.9.0: マッピングモード対応
+    # マッピングモード対応
     ReviewMode,
 )
 from app.services.llm_service import get_llm_provider
@@ -193,12 +193,12 @@ async def structure_matching(request: StructureMatchingRequest):
     AIが設計書のINDEX.md / MAP.jsonとコードのINDEX.md / MAP.jsonを分析し、
     関連する設計書セクションとコードシンボルをグループ化する。
 
-    v0.9.0: マッピングモード対応。mode=mapping の場合はマッピング観点でグループ化する。
+    mode=mapping の場合はマッピング観点でグループ化する。
     """
     try:
         provider = get_llm_provider(request.llmConfig)
 
-        # v0.9.0: モード判定
+        # モード判定
         is_mapping_mode = request.mode == ReviewMode.MAPPING
 
         # システムプロンプト構築（prompt_builder使用）
@@ -384,12 +384,12 @@ async def review_group(request: GroupReviewRequest):
 
     1グループ（関連する設計書パーツ + コードパーツ）をレビューする。
 
-    v0.9.0: マッピングモード対応。mode=mapping の場合はマッピング用プロンプトを使用。
+    mode=mapping の場合はマッピング用プロンプトを使用。
     """
     try:
         provider = get_llm_provider(request.llmConfig)
 
-        # v0.9.0: モード判定
+        # モード判定
         is_mapping_mode = request.mode == ReviewMode.MAPPING
 
         # システムプロンプト構築（prompt_builder使用）
@@ -467,7 +467,7 @@ async def review_group(request: GroupReviewRequest):
 
         system_prompt = build_system_prompt(role, purpose, output_format, notes)
 
-        # v0.9.0: 構造マップ情報
+        # 構造マップ情報
         structure_section = ""
         if request.useStructureMap and request.structureMap:
             structure_section = f"""
@@ -543,12 +543,12 @@ async def integrate_reviews(request: IntegrateRequest):
     全グループのレビュー結果を統合し、最終レポートを生成する。
     システムプロンプト設定に基づいて、AIがMarkdown形式のレビューレポートを生成する。
 
-    v0.9.0: マッピングモード対応。mode=mapping の場合はマッピング結果を統合する。
+    mode=mapping の場合はマッピング結果を統合する。
     """
     try:
         provider = get_llm_provider(request.llmConfig)
 
-        # v0.9.0: モード判定
+        # モード判定
         is_mapping_mode = request.mode == ReviewMode.MAPPING
 
         # システムプロンプト構築（prompt_builder使用）
@@ -630,7 +630,7 @@ async def integrate_reviews(request: IntegrateRequest):
         # ユーザーメッセージ構築（データのみ）
         user_parts = []
 
-        # v0.9.0: 構造マップ情報（全体）
+        # 構造マップ情報（全体）
         if request.useStructureMap and request.structureMap:
             user_parts.extend([
                 "## 全体構造マップ（参考情報）\n",

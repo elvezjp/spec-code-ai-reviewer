@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, AliasChoices, ConfigDict, model_validator
 
 
 # =============================================================================
-# Review Mode (v0.9.0)
+# Review Mode
 # =============================================================================
 
 
@@ -19,7 +19,7 @@ class ReviewMode(str, Enum):
 
 
 # =============================================================================
-# Structure Map Models (v0.9.0)
+# Structure Map Models
 # =============================================================================
 
 
@@ -141,7 +141,7 @@ class ReviewRequest(BaseModel):
     systemPrompt: SystemPrompt
     llmConfig: LLMConfig | None = None  # オプション: 未指定時はシステムLLMを使用
     executedAt: str | None = None  # レビュー実行日時（ISO形式）- 指定時はその値を使用、未指定時はサーバー側で生成
-    # v0.9.0: マッピングモード対応
+    # マッピングモード対応
     mode: ReviewMode = ReviewMode.REVIEW  # デフォルトは突合モード
     useStructureMap: bool = False  # 構造マップを利用するか
     structureMap: Optional[StructureMapInfo] = None  # 構造マップ情報
@@ -334,7 +334,7 @@ class OrganizeMarkdownResponse(BaseModel):
 
 
 # =============================================================================
-# Split API スキーマ (v0.8.0)
+# Split API スキーマ
 # =============================================================================
 
 
@@ -445,7 +445,7 @@ class StructureMatchingRequest(BaseModel):
     codeFiles: list[CodeFileStructure]
     systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None
-    # v0.9.0: マッピングモード対応
+    # マッピングモード対応
     mode: ReviewMode = ReviewMode.REVIEW
 
 
@@ -505,7 +505,7 @@ class GroupReviewRequest(BaseModel):
     reviewOptions: dict = {}
     systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None
-    # v0.9.0: マッピングモード対応
+    # マッピングモード対応
     mode: ReviewMode = ReviewMode.REVIEW
     useStructureMap: bool = False
     structureMap: Optional[StructureMapInfo] = None
@@ -560,7 +560,7 @@ class IntegrateRequest(BaseModel):
     integrationOptions: dict = {}  # { deduplicateFindings, checkCrossGroupIssues }
     systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None
-    # v0.9.0: マッピングモード対応
+    # マッピングモード対応
     mode: ReviewMode = ReviewMode.REVIEW
     useStructureMap: bool = False
     structureMap: Optional[StructureMapInfo] = None

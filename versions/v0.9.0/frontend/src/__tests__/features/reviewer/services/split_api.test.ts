@@ -1,5 +1,5 @@
 /**
- * Split API (v0.8.0) の単体テスト
+ * Split APIの単体テスト
  *
  * テストケース:
  * - UT-SPLA-001: splitMarkdown() - 正常系（基本的な分割）

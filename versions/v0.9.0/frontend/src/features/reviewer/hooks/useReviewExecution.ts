@@ -25,7 +25,6 @@ interface UseReviewExecutionReturn {
     codeWithLineNumbers: string
     systemPrompt: SystemPromptValues
     llmConfig?: LlmConfig
-    // v0.9.0 追加
     mode?: ReviewMode
     useStructureMap?: boolean
     structureMap?: StructureMapInfo | null
@@ -80,7 +79,7 @@ export function useReviewExecution(): UseReviewExecutionReturn {
     return { status, ngCount, warningCount, okCount }
   }, [])
 
-  // マッピング用簡易判定ロジック (v0.9.0)
+  // マッピング用簡易判定ロジック
   const getSimpleMappingJudgment = useCallback((reportText: string): SimpleMappingJudgment => {
     if (!reportText) {
       return {
@@ -145,7 +144,6 @@ export function useReviewExecution(): UseReviewExecutionReturn {
       codeWithLineNumbers: string
       systemPrompt: SystemPromptValues
       llmConfig?: LlmConfig
-      // v0.9.0 追加
       mode?: ReviewMode
       useStructureMap?: boolean
       structureMap?: StructureMapInfo | null
@@ -215,7 +213,6 @@ export function useReviewExecution(): UseReviewExecutionReturn {
             executedAt,
             executionNumber: i,
             llmConfig,
-            // v0.9.0 追加
             mode,
             useStructureMap,
             structureMap: useStructureMap ? structureMap : undefined,

@@ -11,7 +11,6 @@ interface SplitExecutingScreenProps {
   onRetryGroup: (groupId: string) => void
   onSkipGroup: (groupId: string) => void
   onRetryIntegrate: () => void
-  // v0.9.0 追加
   reviewMode?: ReviewMode
 }
 

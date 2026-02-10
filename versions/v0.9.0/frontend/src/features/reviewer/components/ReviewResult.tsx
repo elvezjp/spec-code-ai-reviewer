@@ -27,7 +27,7 @@ interface ReviewResultProps {
   splitReviewState?: SplitReviewState
   splitReviewData?: ReviewExecutionData // 分割レビュー用のダウンロードデータ
   isSplitMode?: boolean
-  // v0.9.0 マッピングモード対応
+  // マッピングモード対応
   reviewMode?: ReviewMode
   getSimpleMappingJudgment?: (reportText: string) => SimpleMappingJudgment
 }
@@ -44,7 +44,7 @@ export function ReviewResult({
   splitReviewState,
   splitReviewData,
   isSplitMode = false,
-  // v0.9.0 マッピングモード対応
+  // マッピングモード対応
   reviewMode = 'review',
   getSimpleMappingJudgment,
 }: ReviewResultProps) {
@@ -113,7 +113,7 @@ export function ReviewResult({
     )
   }
 
-  // マッピング用簡易判定の表示 (v0.9.0)
+  // マッピング用簡易判定の表示
   const renderMappingJudgment = (judgment: SimpleMappingJudgment) => {
     const config = statusConfig[judgment.status]
     const countText = `設計書項目: ${judgment.designItemCount}件 / マッピング: ${judgment.mappedCount}件 / 未マッピング: ${judgment.unmappedCount}件`

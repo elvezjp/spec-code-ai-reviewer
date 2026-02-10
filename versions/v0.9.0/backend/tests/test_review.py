@@ -1,4 +1,4 @@
-"""review.py のマッピングモード・構造マップテスト（v0.9.0）
+"""review.py のマッピングモード・構造マップテスト
 
 テストケース:
 - UT-REV-001: test_review_mode_parameter - モードパラメータのテスト

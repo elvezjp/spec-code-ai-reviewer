@@ -48,7 +48,7 @@ interface UseReviewerSettingsReturn {
   hasSavedConfig: () => boolean
   applyPreset: (preset: Preset) => void
 
-  // Review Mode (v0.9.0)
+  // Review Mode
   reviewMode: ReviewMode
   handleModeChange: (mode: ReviewMode) => void
   availablePresets: Preset[]
@@ -83,7 +83,7 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
     format: '',
     notes: '',
   })
-  // Review Mode (v0.9.0)
+  // Review Mode
   const [reviewMode, setReviewMode] = useState<ReviewMode>(() => {
     const savedMode = localStorage.getItem(REVIEW_MODE_KEY)
     return savedMode === 'mapping' ? 'mapping' : 'review'
@@ -670,7 +670,6 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
     clearSavedConfig,
     hasSavedConfig,
     applyPreset,
-    // Review Mode (v0.9.0)
     reviewMode,
     handleModeChange,
     availablePresets,
