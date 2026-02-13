@@ -49,6 +49,16 @@ export function SplitSettingsSection({
     prevHasCodeFilesRef.current = hasCodeFiles
   }, [hasDesignDoc, hasCodeFiles, previewResult, onClearPreview])
 
+  // 対応言語を判定
+  const supportedCodeFiles = codeFilenames.filter(name => {
+    const ext = name.toLowerCase().split('.').pop()
+    return ext === 'py' || ext === 'java'
+  })
+  const unsupportedCodeFiles = codeFilenames.filter(name => {
+    const ext = name.toLowerCase().split('.').pop()
+    return ext !== 'py' && ext !== 'java'
+  })
+
   const handleReviewModeChange = useCallback((mode: SplitMode) => {
     if (mode === 'split' && unsupportedCodeFiles.length > 0) {
       onShowToast('非対応言語が含まれます。一括をお試しください。')
@@ -67,16 +77,6 @@ export function SplitSettingsSection({
 
   const isSplitEnabled = settings.reviewMode === 'split'
   const canExecutePreview = isSplitEnabled && hasDesignDoc && hasCodeFiles
-
-  // 対応言語を判定
-  const supportedCodeFiles = codeFilenames.filter(name => {
-    const ext = name.toLowerCase().split('.').pop()
-    return ext === 'py' || ext === 'java'
-  })
-  const unsupportedCodeFiles = codeFilenames.filter(name => {
-    const ext = name.toLowerCase().split('.').pop()
-    return ext !== 'py' && ext !== 'java'
-  })
 
   useEffect(() => {
     if (settings.reviewMode === 'split' && unsupportedCodeFiles.length > 0) {
