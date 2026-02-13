@@ -112,11 +112,9 @@ export function Reviewer() {
     settings: splitSettings,
     previewResult: splitPreviewResult,
     isExecutingPreview: isSplitPreviewExecuting,
-    error: splitPreviewError,
     setSettings: setSplitSettings,
     executePreview: executeSplitPreview,
     clearPreview: clearSplitPreview,
-    clearError: clearSplitPreviewError,
     isSplitEnabled,
   } = useSplitSettings()
 
@@ -157,12 +155,6 @@ export function Reviewer() {
     }
     toastTimerRef.current = window.setTimeout(() => setToastMessage(''), 3000)
   }, [])
-
-  useEffect(() => {
-    if (!splitPreviewError) return
-    showToast(splitPreviewError)
-    clearSplitPreviewError()
-  }, [splitPreviewError, showToast, clearSplitPreviewError])
 
   useEffect(() => {
     const message = sessionStorage.getItem('preset-toast')
@@ -331,24 +323,28 @@ export function Reviewer() {
 
         // Build document content for this group
         // 設計書が一括モードの場合は全体のMarkdownを使用、分割モードの場合はIDベースでマッチング
-        const documentContent = group.docSections.map((section) => {
-          const part = splitPreviewResult.documentParts?.find((p) => p.id === section.id)
-          const startLine = part?.startLine || 0
-          const endLine = part?.endLine || 0
-          const content = part?.content || ''
-          return `### ${section.title} (L${startLine}-L${endLine})\n\n${content}`
-        }).join('\n\n')
+        const documentContent = splitSettings.documentMode === 'batch'
+          ? (specMarkdown || '')
+          : group.docSections.map((section) => {
+              const part = splitPreviewResult.documentParts?.find((p) => p.id === section.id)
+              const startLine = part?.startLine || 0
+              const endLine = part?.endLine || 0
+              const content = part?.content || ''
+              return `### ${section.title} (L${startLine}-L${endLine})\n\n${content}`
+            }).join('\n\n')
 
         // Build code content for this group
         // コードが一括モードの場合は全体のコードを使用、分割モードの場合はIDベースでマッチング
-        const codeContent = group.codeSymbols.map((sym) => {
-          const part = splitPreviewResult.codeParts?.find((p) => p.id === sym.id)
-          const symbolType = part?.symbolType || 'unknown'
-          const startLine = part?.startLine || 0
-          const endLine = part?.endLine || 0
-          const content = part?.content || ''
-          return `### ${sym.filename}:${sym.symbol} (${symbolType}, L${startLine}-L${endLine})\n\n\`\`\`\n${content}\n\`\`\``
-        }).join('\n\n')
+        const codeContent = splitSettings.codeMode === 'batch'
+          ? (codeWithLineNumbers || '')
+          : group.codeSymbols.map((sym) => {
+              const part = splitPreviewResult.codeParts?.find((p) => p.id === sym.id)
+              const symbolType = part?.symbolType || 'unknown'
+              const startLine = part?.startLine || 0
+              const endLine = part?.endLine || 0
+              const content = part?.content || ''
+              return `### ${sym.filename}:${sym.symbol} (${symbolType}, L${startLine}-L${endLine})\n\n\`\`\`\n${content}\n\`\`\``
+            }).join('\n\n')
 
         // Retry loop: execute group review, pause on error for retry/skip
         let resolved = false
@@ -696,7 +692,6 @@ export function Reviewer() {
         <SplitSettingsSection
           settings={splitSettings}
           onSettingsChange={setSplitSettings}
-          onShowToast={showToast}
           previewResult={splitPreviewResult}
           onExecutePreview={handleSplitPreviewExecute}
           onClearPreview={clearSplitPreview}
@@ -718,19 +713,17 @@ export function Reviewer() {
           レビュー実行
         </Button>
         {!isReviewEnabled && (
-          <p className="text-xs text-orange-500 mt-1 text-center">
+          <p className="text-xs text-orange-500 mt-3 text-center">
             ※ レビューを実行するには、設計書とプログラムを両方変換してください。
           </p>
         )}
         {isSplitEnabled && !splitPreviewResult && (
-          <p className="text-xs text-orange-500 mt-1 text-center">
-            ※ 分割レビューを実行するには、分割設定で「分割プレビュー」を行ってください。
+          <p className="text-xs text-orange-500 mt-3 text-center">
+            ※ 分割レビューを実行するには、先に「分割プレビュー実行」を行ってください。
           </p>
         )}
         <p className="text-xs text-gray-400 mt-1 text-center">
-          {isSplitEnabled
-            ? '※ 設計書とプログラムの関連を分析して、いくつかのグループに分割してレビューを実行します。'
-            : '※ 同じ設定でレビューを2回実行します。それぞれ個別に結果を確認できます。'}
+          ※ 同じ設定でレビューを2回実行します。それぞれ個別に結果を確認できます。
         </p>
       </Card>
 

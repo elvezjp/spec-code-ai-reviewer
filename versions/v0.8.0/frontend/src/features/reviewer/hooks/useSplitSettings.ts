@@ -22,17 +22,17 @@ interface UseSplitSettingsReturn {
     codeFiles: Array<{ filename: string; content: string }>
   ) => Promise<void>
   clearPreview: () => void
-  clearError: () => void
 
   // Computed
   isSplitEnabled: boolean
-  reviewMode: 'batch' | 'split'
+  reviewMode: 'batch' | 'document-split' | 'code-split' | 'both-split'
   estimatedReviewCount: number
 }
 
 const DEFAULT_SETTINGS: SplitSettings = {
-  reviewMode: 'batch',
+  documentMode: 'batch',
   documentMaxDepth: 2,
+  codeMode: 'batch',
 }
 
 export function useSplitSettings(): UseSplitSettingsReturn {
@@ -50,15 +50,6 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     setError(null)
 
     try {
-      if (settings.reviewMode === 'split') {
-        if (!designMarkdown) {
-          throw new Error('分割レビューには設計書が必要です')
-        }
-        if (codeFiles.length === 0) {
-          throw new Error('分割レビューにはプログラムが必要です')
-        }
-      }
-
       let documentParts: DocumentPart[] | null = null
       let documentIndex: string | null = null
       let codeParts: CodePart[] | null = null
@@ -66,7 +57,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
       let codeLanguage: string | null = null
 
       // 設計書分割
-      if (settings.reviewMode === 'split' && designMarkdown) {
+      if (settings.documentMode === 'split' && designMarkdown) {
         const response = await api.splitMarkdown({
           content: designMarkdown,
           filename: designFilename,
@@ -82,15 +73,13 @@ export function useSplitSettings(): UseSplitSettingsReturn {
       }
 
       // コード分割（対応言語のファイルのみ）
-      if (settings.reviewMode === 'split' && codeFiles.length > 0) {
+      if (settings.codeMode === 'split' && codeFiles.length > 0) {
         const allCodeParts: CodePart[] = []
         const allIndexContents: string[] = []
-        const unsupportedFiles: string[] = []
 
         for (const codeFile of codeFiles) {
           const ext = codeFile.filename.toLowerCase().split('.').pop()
           if (ext !== 'py' && ext !== 'java') {
-            unsupportedFiles.push(codeFile.filename)
             continue // 未対応言語はスキップ
           }
 
@@ -110,12 +99,6 @@ export function useSplitSettings(): UseSplitSettingsReturn {
           } else {
             console.warn(`Failed to split ${codeFile.filename}: ${response.error}`)
           }
-        }
-
-        if (unsupportedFiles.length > 0) {
-          throw new Error(
-            `未対応言語が含まれるため分割できません: ${unsupportedFiles.join(', ')}`
-          )
         }
 
         if (allCodeParts.length > 0) {
@@ -138,14 +121,10 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     } finally {
       setIsExecutingPreview(false)
     }
-  }, [settings.reviewMode, settings.documentMaxDepth])
+  }, [settings.documentMode, settings.codeMode, settings.documentMaxDepth])
 
   const clearPreview = useCallback(() => {
     setPreviewResult(null)
-    setError(null)
-  }, [])
-
-  const clearError = useCallback(() => {
     setError(null)
   }, [])
 
@@ -157,9 +136,20 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   }, [])
 
   // Computed values
-  const isSplitEnabled = settings.reviewMode === 'split'
+  const isSplitEnabled = settings.documentMode === 'split' || settings.codeMode === 'split'
 
-  const reviewMode = settings.reviewMode
+  const reviewMode = (() => {
+    if (settings.documentMode === 'split' && settings.codeMode === 'split') {
+      return 'both-split' as const
+    }
+    if (settings.documentMode === 'split') {
+      return 'document-split' as const
+    }
+    if (settings.codeMode === 'split') {
+      return 'code-split' as const
+    }
+    return 'batch' as const
+  })()
 
   // レビュー回数の推定
   const estimatedReviewCount = (() => {
@@ -169,10 +159,14 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     const codeCount = previewResult.codeParts?.length || 0
 
     switch (reviewMode) {
-      case 'split':
+      case 'both-split':
         // フェーズ1: 構造マッチング 1回
         // フェーズ2: ペアレビュー（最大 docCount + codeCount、実際は関連ペアのみ）
         return 1 + docCount + codeCount
+      case 'document-split':
+        return docCount
+      case 'code-split':
+        return codeCount
       default:
         return 1
     }
@@ -186,7 +180,6 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     setSettings: handleSetSettings,
     executePreview,
     clearPreview,
-    clearError,
     isSplitEnabled,
     reviewMode,
     estimatedReviewCount,

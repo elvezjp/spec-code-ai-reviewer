@@ -160,8 +160,9 @@ export interface CodeFileForApi {
 export type SplitMode = 'batch' | 'split'
 
 export interface SplitSettings {
-  reviewMode: SplitMode
+  documentMode: SplitMode
   documentMaxDepth: number // 1-6
+  codeMode: SplitMode
 }
 
 export interface DocumentPart {
