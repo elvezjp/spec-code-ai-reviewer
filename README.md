@@ -341,35 +341,11 @@ spec-code-ai-reviewer/
 ├── versions/                    # All versions
 │   ├── README.md                # Version management notes
 │   ├── v0.5.0/                  # Old version
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.5.1/                  # Old version
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.5.2/                  # Old version
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.6.0/                  # Old version (Vite + React)
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.7.0/                  # Old version (Vite + React)
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.8.0/                  # Old version (Vite + React)
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   └── v0.8.1/                  # Latest (Vite + React)
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
@@ -377,7 +353,8 @@ spec-code-ai-reviewer/
 │       └── spec.md
 │
 ├── docs/                        # Docs
-│   └── ec2-deployment-spec.md   # EC2 deployment spec
+│   ├── ec2-deployment-spec.md   # EC2 deployment spec
+│   └── split-review.md          # Split review feature details
 │
 ├── scripts/                     # Utility scripts
 │   └── sync_version.py          # Version sync script

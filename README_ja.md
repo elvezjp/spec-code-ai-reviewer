@@ -342,35 +342,11 @@ spec-code-ai-reviewer/
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
 │   ├── v0.5.0/                  # 旧バージョン
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.5.1/                  # 旧バージョン
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.5.2/                  # 旧バージョン
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.6.0/                  # 旧バージョン（Vite + React）
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.7.0/                  # 旧バージョン（Vite + React）
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.8.0/                  # 旧バージョン（Vite + React）
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   └── v0.8.1/                  # 最新版（Vite + React）
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
@@ -378,7 +354,8 @@ spec-code-ai-reviewer/
 │       └── spec.md
 │
 ├── docs/                        # ドキュメント
-│   └── ec2-deployment-spec.md   # EC2デプロイ仕様書
+│   ├── ec2-deployment-spec.md   # EC2デプロイ仕様書
+│   └── split-review.md          # 分割レビュー機能の詳細
 │
 ├── scripts/                     # ユーティリティスクリプト
 │   └── sync_version.py          # バージョン同期スクリプト
