@@ -718,22 +718,19 @@ export function Reviewer() {
           レビュー実行
         </Button>
         {!isReviewEnabled && (
-          <p className="text-xs text-orange-500 mt-3 text-center">
+          <p className="text-xs text-orange-500 mt-1 text-center">
             ※ レビューを実行するには、設計書とプログラムを両方変換してください。
           </p>
         )}
         {isSplitEnabled && !splitPreviewResult && (
-          <p className="text-xs text-orange-500 mt-3 text-center">
-            ※ 分割レビューを実行するには、先に「分割プレビュー」を行ってください。
-          </p>
-        )}
-        {isSplitEnabled && !isReviewEnabled && (
           <p className="text-xs text-orange-500 mt-1 text-center">
-            ※ 分割レビューは設計書とプログラムの両方が必要です。
+            ※ 分割レビューを実行するには、分割設定で「分割プレビュー」を行ってください。
           </p>
         )}
         <p className="text-xs text-gray-400 mt-1 text-center">
-          ※ 同じ設定でレビューを2回実行します。それぞれ個別に結果を確認できます。
+          {isSplitEnabled
+            ? '※ 設計書とプログラムの関連を分析して、いくつかのグループに分割してレビューを実行します。'
+            : '※ 同じ設定でレビューを2回実行します。それぞれ個別に結果を確認できます。'}
         </p>
       </Card>
 

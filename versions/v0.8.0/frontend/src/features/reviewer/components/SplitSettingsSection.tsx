@@ -118,34 +118,16 @@ export function SplitSettingsSection({
             <span className="text-sm text-gray-700">分割</span>
           </label>
           <span className="text-xs text-gray-400 ml-2">
-            ※ 分割は設計書とプログラムを両方分割してレビューします。
+            ※{' '}
+            <a href="https://github.com/elvezjp/md2map" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+              md2map
+            </a>
+            {' '}と{' '}
+            <a href="https://github.com/elvezjp/code2map" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+              code2map
+            </a>
+            {' '}の仕様に準拠した解析と分割を行います。
           </span>
-        </div>
-        <div className="text-xs text-gray-400 ml-24">
-          <span>※ </span>
-          <a
-            href="https://github.com/elvezjp/md2map"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:underline"
-          >
-            md2map
-          </a>
-          <span> と </span>
-          <a
-            href="https://github.com/elvezjp/code2map"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:underline"
-          >
-            code2map
-          </a>
-          <span> の仕様に準拠します。</span>
-          {!hasDesignDoc || !hasCodeFiles ? (
-            <span className="ml-2 text-amber-600">
-              ※ 分割は設計書とプログラムの両方が必要です。
-            </span>
-          ) : null}
         </div>
       </div>
 
