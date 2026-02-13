@@ -11,7 +11,7 @@
 
 A web application that uses AI to cross-check design documents (Excel format) against program code and verify consistency.
 
-https://github.com/user-attachments/assets/78926022-1498-4d9a-923c-cdf3a9f06534
+https://github.com/user-attachments/assets/de4afe27-bed4-4c4f-b037-c625418d6de6
 
 ## Features
 
@@ -138,7 +138,7 @@ For v0.6.0 and later, start frontend and backend separately.
 **Terminal 1: Start backend**
 
 ```bash
-cd versions/v0.8.0/backend
+cd versions/v0.8.1/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -146,7 +146,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **Terminal 2: Start frontend**
 
 ```bash
-cd versions/v0.8.0/frontend
+cd versions/v0.8.1/frontend
 npm install
 npm run dev
 ```
@@ -201,11 +201,11 @@ Run tests in each version's directory.
 
 ```bash
 # v0.8.0 backend tests
-cd versions/v0.8.0/backend
+cd versions/v0.8.1/backend
 uv run pytest tests/ -v
 
 # v0.8.0 frontend tests
-cd versions/v0.8.0/frontend
+cd versions/v0.8.1/frontend
 npm test
 
 # v0.5.2 and earlier tests (backend only)
@@ -336,43 +336,25 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # Dev Nginx config
 │   ├── spec-code-ai-reviewer.conf  # Production Nginx config
 │   └── version-map.conf         # Version switch map (shared)
-├── latest -> versions/v0.8.0    # Symlink to latest
+├── latest -> versions/v0.8.1    # Symlink to latest
 │
 ├── versions/                    # All versions
 │   ├── README.md                # Version management notes
 │   ├── v0.5.0/                  # Old version
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.5.1/                  # Old version
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.5.2/                  # Old version
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.6.0/                  # Old version (Vite + React)
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
 │   ├── v0.7.0/                  # Old version (Vite + React)
-│   │   ├── backend/
-│   │   ├── frontend/            # Vite + React + TypeScript
-│   │   ├── config-file-generator-spec.md
-│   │   └── spec.md
-│   └── v0.8.0/                  # Latest (Vite + React)
+│   ├── v0.8.0/                  # Old version (Vite + React)
+│   └── v0.8.1/                  # Latest (Vite + React)
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
 │       └── spec.md
 │
 ├── docs/                        # Docs
-│   └── ec2-deployment-spec.md   # EC2 deployment spec
+│   ├── ec2-deployment-spec.md   # EC2 deployment spec
+│   └── split-review.md          # Split review feature details
 │
 ├── scripts/                     # Utility scripts
 │   └── sync_version.py          # Version sync script
@@ -432,7 +414,8 @@ Example: v0.2.5 -> 8000 + (2 x 10) + 5 = 8025
 
 | Version | Port |
 |-----------|------|
-| v0.8.0 (latest) | 8080 |
+| v0.8.1 (latest) | 8081 |
+| v0.8.0 | 8080 |
 | v0.7.0 | 8070 |
 | v0.6.0 | 8060 |
 | v0.5.2 | 8052 |
