@@ -61,7 +61,7 @@ export function SplitSettingsSection({
 
   const handleReviewModeChange = useCallback((mode: SplitMode) => {
     if (mode === 'split' && unsupportedCodeFiles.length > 0) {
-      onShowToast('非対応言語が含まれます。一括をお試しください。')
+      onShowToast('非対応言語のプログラムが含まれています。分割レビュー方式は選択できません。')
       onSettingsChange({ ...settings, reviewMode: 'batch' })
       return
     }
@@ -80,7 +80,7 @@ export function SplitSettingsSection({
 
   useEffect(() => {
     if (settings.reviewMode === 'split' && unsupportedCodeFiles.length > 0) {
-      onShowToast('非対応言語が含まれます。一括をお試しください。')
+      onShowToast('非対応言語のプログラムが含まれています。分割レビュー方式は選択できません。')
       onSettingsChange({ ...settings, reviewMode: 'batch' })
     }
   }, [settings, unsupportedCodeFiles.length, onSettingsChange, onShowToast])
@@ -113,7 +113,7 @@ export function SplitSettingsSection({
               checked={settings.reviewMode === 'split'}
               onChange={() => handleReviewModeChange('split')}
               className="w-4 h-4 text-blue-600"
-              disabled={!hasDesignDoc || !hasCodeFiles}
+              disabled={!hasDesignDoc || !hasCodeFiles || unsupportedCodeFiles.length > 0}
             />
             <span className="text-sm text-gray-700">分割</span>
           </label>
@@ -126,9 +126,14 @@ export function SplitSettingsSection({
             <a href="https://github.com/elvezjp/code2map" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
               code2map
             </a>
-            {' '}の仕様に準拠した解析と分割を行います。
+            {' '}の仕様に準拠し、解析と分割を行います。
           </span>
         </div>
+        {unsupportedCodeFiles.length > 0 && (
+          <div className="text-xs text-amber-600">
+            ※ 非対応言語のプログラムが含まれているため、分割は選択できません。
+          </div>
+        )}
       </div>
 
       {/* 分割オプション */}
