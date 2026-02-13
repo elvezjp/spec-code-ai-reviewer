@@ -1,5 +1,5 @@
 /**
- * Split Review API (v0.8.0) の単体テスト
+ * Split Review API の単体テスト
  *
  * テストケース:
  * - UT-SRVA-001: executeStructureMatching() - 正常系（基本的なマッチング）
@@ -340,7 +340,7 @@ describe('executeIntegrate', () => {
         deduplicatedFindings: [],
       },
       reviewMeta: {
-        version: 'v0.8.0',
+        version: 'v0.8.1',
         modelId: 'claude-sonnet-4-20250514',
         provider: 'anthropic',
         executedAt: '2026-02-06T12:00:00Z',
@@ -382,7 +382,7 @@ describe('executeIntegrate', () => {
     expect(result.success).toBe(true)
     expect(result.report).toContain('統合レビューレポート')
     expect(result.integratedReport?.overallSummary).toContain('2グループ')
-    expect(result.reviewMeta?.version).toBe('v0.8.0')
+    expect(result.reviewMeta?.version).toBe('v0.8.1')
     expect(result.tokensUsed?.input).toBe(3000)
     expect(global.fetch).toHaveBeenCalledWith(
       '/api/review/integrate',
