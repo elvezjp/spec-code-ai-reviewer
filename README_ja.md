@@ -11,7 +11,7 @@
 
 設計書（Excel形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
 
-https://github.com/user-attachments/assets/de4afe27-bed4-4c4f-b037-c625418d6de6
+https://github.com/user-attachments/assets/bd026461-2b8e-4f57-bc36-7590a338d413
 
 ## 機能
 
@@ -453,6 +453,8 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 | `versions/README.md` | ディレクトリ構成、バージョン比較表、更新履歴を追加 |
 | `README.md` | ディレクトリ構成、ポート割り当て表を更新 |
 | `CHANGELOG.md` | 更新履歴を追記 |
+| `SECURITY.md` | サポートバージョンを更新 |
+| `CONTRIBUTING.md` | バージョン番号を更新 |
 
 #### ecosystem.config.js への追加例
 

@@ -11,7 +11,7 @@
 
 A web application that uses AI to cross-check design documents (Excel format) against program code and verify consistency.
 
-https://github.com/user-attachments/assets/de4afe27-bed4-4c4f-b037-c625418d6de6
+https://github.com/user-attachments/assets/bd026461-2b8e-4f57-bc36-7590a338d413
 
 ## Features
 
@@ -452,6 +452,8 @@ When adding a new version (e.g., v0.7.0), update the following files.
 | `versions/README.md` | Add directory structure, version comparison table, and update history |
 | `README.md` | Update directory structure and port table |
 | `CHANGELOG.md` | Append change history |
+| `SECURITY.md` | Update supported version |
+| `CONTRIBUTING.md` | Update version numbers |
 
 #### Example: Add to ecosystem.config.js
 
