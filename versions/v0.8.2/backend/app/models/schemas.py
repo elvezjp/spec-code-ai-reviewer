@@ -173,6 +173,7 @@ class ReviewMeta(BaseModel):
     programs: list[ProgramMeta]
     inputTokens: int
     outputTokens: int
+    reviewMode: Literal["batch", "split"] | None = None
 
 
 class ReviewResponse(BaseModel):

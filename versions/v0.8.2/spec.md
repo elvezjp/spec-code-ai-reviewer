@@ -1961,7 +1961,8 @@ OpenAI:
       }
     ],
     "inputTokens": 12500,
-    "outputTokens": 3200
+    "outputTokens": 3200,
+    "reviewMode": "batch"
   }
 }
 ```
@@ -1985,6 +1986,7 @@ OpenAI:
 | reviewMeta.programs | array | 対象プログラム一覧（filename） |
 | reviewMeta.inputTokens | number | 入力トークン数（Bedrockレスポンスから取得） |
 | reviewMeta.outputTokens | number | 出力トークン数（Bedrockレスポンスから取得） |
+| reviewMeta.reviewMode | string | レビューモード（"batch": 通常レビュー、"split": 分割レビュー） |
 
 ※ `report` にはバックエンドで「レビュー情報」セクションが自動的に付与され、その後にLLM出力が続く
 
@@ -2302,7 +2304,8 @@ Markdownをセクション単位で分割する（md2map使用）。
     "designs": [],
     "programs": [],
     "inputTokens": 5000,
-    "outputTokens": 2000
+    "outputTokens": 2000,
+    "reviewMode": "split"
   },
   "tokensUsed": {"input": 5000, "output": 2000}
 }

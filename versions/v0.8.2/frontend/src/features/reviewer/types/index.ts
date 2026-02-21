@@ -35,6 +35,7 @@ export interface ReviewMeta {
   outputTokens: number
   designs: DesignFileMeta[]
   programs: ProgramFileMeta[]
+  reviewMode?: 'batch' | 'split'
 }
 
 export interface DesignFileMeta {

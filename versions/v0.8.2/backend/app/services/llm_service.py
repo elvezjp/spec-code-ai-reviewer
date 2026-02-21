@@ -180,6 +180,7 @@ class LLMProvider(ABC):
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             executed_at=request.executedAt,
+            review_mode="batch",
         )
         review_info_markdown = build_review_info_markdown(review_meta_dict)
         report = review_info_markdown + llm_output

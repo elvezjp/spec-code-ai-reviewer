@@ -276,6 +276,50 @@ class TestBuildReviewMeta:
         assert result["designs"][0]["tool"] == "MarkItDown"
         assert result["provider"] == "anthropic"
 
+    def test_build_review_meta_review_mode_batch(self):
+        """reviewMode="batch" が reviewMode フィールドに格納される"""
+        result = build_review_meta(
+            version="v0.8.2",
+            model_id="claude-haiku-4-5-20251001",
+            provider="anthropic",
+            designs=[{"filename": "spec.xlsx"}],
+            codes=[{"filename": "main.py"}],
+            input_tokens=100,
+            output_tokens=50,
+            review_mode="batch",
+        )
+
+        assert result["reviewMode"] == "batch"
+
+    def test_build_review_meta_review_mode_split(self):
+        """reviewMode="split" が reviewMode フィールドに格納される"""
+        result = build_review_meta(
+            version="v0.8.2",
+            model_id="claude-haiku-4-5-20251001",
+            provider="bedrock",
+            designs=[{"filename": "spec.xlsx"}],
+            codes=[{"filename": "main.py"}],
+            input_tokens=200,
+            output_tokens=100,
+            review_mode="split",
+        )
+
+        assert result["reviewMode"] == "split"
+
+    def test_build_review_meta_review_mode_none(self):
+        """review_mode 未指定時は reviewMode が None になる"""
+        result = build_review_meta(
+            version="v0.8.2",
+            model_id="claude-haiku-4-5-20251001",
+            provider="openai",
+            designs=[{"filename": "spec.xlsx"}],
+            codes=[{"filename": "main.py"}],
+            input_tokens=100,
+            output_tokens=50,
+        )
+
+        assert result["reviewMode"] is None
+
 
 class TestBuildReviewInfoMarkdown:
     """build_review_info_markdown() のテスト"""
@@ -338,3 +382,124 @@ class TestBuildReviewInfoMarkdown:
         assert "openai" in result
         assert "### 設計書" not in result
         assert "### プログラム" not in result
+
+    def test_build_review_info_markdown_review_mode_batch(self):
+        """reviewMode="batch" の場合、レビューモード行に「一括」が表示される"""
+        review_meta = {
+            "version": "v0.8.2",
+            "modelId": "claude-haiku-4-5-20251001",
+            "provider": "bedrock",
+            "executedAt": "2025/01/01 10:00",
+            "designs": [
+                {
+                    "filename": "spec.xlsx",
+                    "role": "メイン",
+                    "isMain": True,
+                    "type": "設計書",
+                    "tool": "MarkItDown",
+                }
+            ],
+            "programs": [{"filename": "main.py"}],
+            "inputTokens": 1000,
+            "outputTokens": 500,
+            "reviewMode": "batch",
+        }
+
+        result = build_review_info_markdown(review_meta)
+
+        assert "レビューモード" in result
+        assert "一括" in result
+        assert "分割" not in result
+        assert "グループ分け結果" not in result
+
+    def test_build_review_info_markdown_review_mode_split_with_groups(self):
+        """reviewMode="split" かつ groups がある場合、グループ分け結果テーブルが表示される"""
+        review_meta = {
+            "version": "v0.8.2",
+            "modelId": "claude-haiku-4-5-20251001",
+            "provider": "bedrock",
+            "executedAt": "2025/01/01 10:00",
+            "designs": [
+                {
+                    "filename": "spec.xlsx",
+                    "role": "メイン",
+                    "isMain": True,
+                    "type": "設計書",
+                    "tool": "MarkItDown",
+                }
+            ],
+            "programs": [{"filename": "UserManagementService.java"}],
+            "inputTokens": 5000,
+            "outputTokens": 2000,
+            "reviewMode": "split",
+        }
+        groups = [
+            {
+                "groupId": "G1",
+                "groupName": "ユーザー管理",
+                "docSections": [{"id": "S1"}, {"id": "S2"}],
+                "codeSymbols": [{"symbol": "UserService#createUser"}],
+                "estimatedTokens": 3000,
+            },
+            {
+                "groupId": "G2",
+                "groupName": "認証",
+                "docSections": [{"id": "S3"}],
+                "codeSymbols": [{"symbol": "AuthService#login"}, {"symbol": "AuthService#logout"}],
+                "estimatedTokens": 2000,
+            },
+        ]
+
+        result = build_review_info_markdown(review_meta, groups=groups)
+
+        assert "レビューモード" in result
+        assert "分割" in result
+        assert "一括" not in result
+        assert "グループ分け結果" in result
+        assert "G1" in result
+        assert "G2" in result
+        assert "ユーザー管理" in result
+        assert "認証" in result
+        assert "S1, S2" in result
+        assert "UserService#createUser" in result
+        assert "3,000" in result
+
+    def test_build_review_info_markdown_review_mode_split_no_groups(self):
+        """reviewMode="split" だが groups が None の場合、グループ分け結果テーブルは表示されない"""
+        review_meta = {
+            "version": "v0.8.2",
+            "modelId": "claude-haiku-4-5-20251001",
+            "provider": "bedrock",
+            "executedAt": "2025/01/01 10:00",
+            "designs": [{"filename": "spec.xlsx", "role": "メイン", "isMain": True, "type": "設計書", "tool": "MarkItDown"}],
+            "programs": [{"filename": "main.py"}],
+            "inputTokens": 1000,
+            "outputTokens": 500,
+            "reviewMode": "split",
+        }
+
+        result = build_review_info_markdown(review_meta, groups=None)
+
+        assert "レビューモード" in result
+        assert "分割" in result
+        assert "グループ分け結果" not in result
+
+    def test_build_review_info_markdown_no_review_mode(self):
+        """reviewMode が None の場合、レビューモード行が表示されない"""
+        review_meta = {
+            "version": "v0.8.2",
+            "modelId": "claude-haiku-4-5-20251001",
+            "provider": "bedrock",
+            "executedAt": "2025/01/01 10:00",
+            "designs": [{"filename": "spec.xlsx", "role": "メイン", "isMain": True, "type": "設計書", "tool": "MarkItDown"}],
+            "programs": [{"filename": "main.py"}],
+            "inputTokens": 1000,
+            "outputTokens": 500,
+        }
+
+        result = build_review_info_markdown(review_meta)
+
+        assert "レビューモード" not in result
+        assert "一括" not in result
+        assert "分割" not in result
+        assert "グループ分け結果" not in result

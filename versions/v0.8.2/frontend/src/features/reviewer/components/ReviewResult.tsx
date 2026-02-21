@@ -183,6 +183,7 @@ export function ReviewResult({
             outputTokens={splitReviewData?.reviewMeta.outputTokens}
             designs={splitReviewData?.reviewMeta.designs}
             programs={splitReviewData?.reviewMeta.programs}
+            reviewMode={splitReviewData?.reviewMeta.reviewMode}
           >
             {renderGroupsTable()}
           </ExecutionInfo>
@@ -310,6 +311,7 @@ export function ReviewResult({
               outputTokens={currentResult.reviewMeta.outputTokens}
               designs={currentResult.reviewMeta.designs}
               programs={currentResult.reviewMeta.programs}
+              reviewMode={currentResult.reviewMeta.reviewMode}
             />
           </div>
 

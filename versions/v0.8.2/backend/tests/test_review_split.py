@@ -347,7 +347,11 @@ class TestIntegrateReviewsAPI:
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True
-        assert data["report"] == mock_report
+        # report は review_info_markdown + LLM応答テキストで構成される
+        assert mock_report in data["report"]
+        assert "# 設計書-Javaプログラム突合 AIレビュアー レビューレポート" in data["report"]
+        assert "レビューモード" in data["report"]
+        assert "分割" in data["report"]
         assert data["integratedReport"]["overallSummary"] == "レビュー対象: 2グループ"
         assert data["tokensUsed"]["input"] == 800
         assert data["tokensUsed"]["output"] == 300

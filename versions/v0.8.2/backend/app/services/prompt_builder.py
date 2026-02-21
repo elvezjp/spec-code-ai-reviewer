@@ -157,6 +157,7 @@ def build_review_meta(
     input_tokens: int,
     output_tokens: int,
     executed_at: str | None = None,
+    review_mode: str | None = None,
 ) -> dict:
     """レビューメタ情報を構築する
 
@@ -169,6 +170,7 @@ def build_review_meta(
         input_tokens: 入力トークン数
         output_tokens: 出力トークン数
         executed_at: レビュー実行日時（ISO形式）- 未指定時は現在日時を使用
+        review_mode: レビューモード ("batch" または "split")
 
     Returns:
         dict: ReviewMeta形式の辞書
@@ -204,14 +206,16 @@ def build_review_meta(
         "programs": [{"filename": c.get("filename", "code")} for c in codes],
         "inputTokens": input_tokens,
         "outputTokens": output_tokens,
+        "reviewMode": review_mode,
     }
 
 
-def build_review_info_markdown(review_meta: dict) -> str:
+def build_review_info_markdown(review_meta: dict, groups: list | None = None) -> str:
     """レビュー情報セクションのマークダウンを構築する
 
     Args:
         review_meta: ReviewMeta形式の辞書
+        groups: グループ情報のリスト（分割レビュー時のみ）
 
     Returns:
         str: マークダウン形式のレビュー情報
@@ -227,6 +231,7 @@ def build_review_info_markdown(review_meta: dict) -> str:
     output_tokens = review_meta.get("outputTokens", 0)
     designs = review_meta.get("designs", [])
     programs = review_meta.get("programs", [])
+    review_mode = review_meta.get("reviewMode")
 
     # 設計書テーブル
     design_rows = "\n".join(
@@ -259,6 +264,38 @@ def build_review_info_markdown(review_meta: dict) -> str:
     # プロバイダー行を追加
     provider_row = f"| プロバイダー | {provider} |" if provider else ""
 
+    # レビューモード行を追加
+    if review_mode == "batch":
+        review_mode_row = "| レビューモード | 一括 |"
+    elif review_mode == "split":
+        review_mode_row = "| レビューモード | 分割 |"
+    else:
+        review_mode_row = ""
+
+    # グループ分け結果セクション（分割レビューかつグループ情報がある場合のみ）
+    groups_section = ""
+    if review_mode == "split" and groups:
+        group_rows = []
+        for g in groups:
+            group_id = g.get("groupId", "")
+            group_name = g.get("groupName", "")
+            doc_sections = g.get("docSections", [])
+            code_symbols = g.get("codeSymbols", [])
+            estimated_tokens = g.get("estimatedTokens", 0)
+            doc_sections_str = ", ".join(ds.get("id", "") for ds in doc_sections)
+            code_symbols_str = ", ".join(cs.get("symbol", "") for cs in code_symbols)
+            group_rows.append(
+                f"| {group_id} | {group_name} | {doc_sections_str} | {code_symbols_str} | {estimated_tokens:,} |"
+            )
+        group_rows_str = "\n".join(group_rows)
+        groups_section = f"""### グループ分け結果
+
+| グループID | グループ名 | 設計書セクション | コードシンボル | 推定トークン |
+|-----------|-----------|----------------|--------------|------------|
+{group_rows_str}
+
+"""
+
     return f"""# 設計書-Javaプログラム突合 AIレビュアー レビューレポート
 
 ## レビュー情報
@@ -271,10 +308,11 @@ def build_review_info_markdown(review_meta: dict) -> str:
 | レビュー実行日時 | {executed_at_formatted} |
 | 入力トークン数 | {input_tokens:,} |
 | 出力トークン数 | {output_tokens:,} |
+{review_mode_row}
 
 {design_table}
 {program_table}
----
+{groups_section}---
 
 ## AIによるレビュー結果
 

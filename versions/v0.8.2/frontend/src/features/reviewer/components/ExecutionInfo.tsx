@@ -20,6 +20,7 @@ interface ExecutionInfoProps {
   outputTokens?: number
   designs?: DesignFileInfo[]
   programs?: ProgramFileInfo[]
+  reviewMode?: 'batch' | 'split'
   children?: ReactNode
 }
 
@@ -31,6 +32,7 @@ export function ExecutionInfo({
   outputTokens,
   designs,
   programs,
+  reviewMode,
   children,
 }: ExecutionInfoProps) {
   return (
@@ -48,6 +50,12 @@ export function ExecutionInfo({
             <div className="text-gray-800">
               入力 {(inputTokens || 0).toLocaleString()} / 出力 {(outputTokens || 0).toLocaleString()}
             </div>
+          </>
+        )}
+        {reviewMode !== undefined && (
+          <>
+            <div className="text-gray-600">レビューモード:</div>
+            <div className="text-gray-800">{reviewMode === 'batch' ? '一括' : '分割'}</div>
           </>
         )}
       </div>
