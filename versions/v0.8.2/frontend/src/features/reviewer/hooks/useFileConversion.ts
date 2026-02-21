@@ -241,6 +241,7 @@ export function useFileConversion(): UseFileConversionReturn {
         results.push({
           ...codeFile,
           contentWithLineNumbers: result.content,
+          lineCount: result.line_count,
         })
       }
 

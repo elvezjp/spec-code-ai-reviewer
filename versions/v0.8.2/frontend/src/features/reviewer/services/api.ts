@@ -54,7 +54,7 @@ export async function convertExcelToMarkdown(
 
 export async function addLineNumbers(
   file: File
-): Promise<{ success: boolean; content?: string; error?: string }> {
+): Promise<{ success: boolean; content?: string; line_count?: number; error?: string }> {
   const formData = new FormData()
   formData.append('file', file)
 

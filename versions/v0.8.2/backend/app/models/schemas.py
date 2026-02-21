@@ -30,6 +30,7 @@ class CodeFile(BaseModel):
 
     filename: str
     contentWithLineNumbers: str
+    lineCount: int | None = None
 
 
 class DesignFile(BaseModel):

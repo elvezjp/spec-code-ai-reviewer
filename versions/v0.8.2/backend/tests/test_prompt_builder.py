@@ -69,6 +69,7 @@ class TestBuildUserMessage:
                 {
                     "filename": "main.py",
                     "contentWithLineNumbers": "   1: def main():\n   2:     pass",
+                    "lineCount": 50,
                 }
             ],
         )
@@ -76,7 +77,7 @@ class TestBuildUserMessage:
         # レビュー対象一覧が含まれる
         assert "# レビュー対象一覧" in result
         assert "設計書: spec.xlsx" in result
-        assert "プログラム: main.py" in result
+        assert "プログラム: main.py（50行）" in result
 
         # 設計書詳細が含まれる
         assert "# 設計書詳細" in result
@@ -87,7 +88,7 @@ class TestBuildUserMessage:
 
         # プログラム詳細が含まれる
         assert "# プログラム詳細" in result
-        assert "## プログラム: main.py" in result
+        assert "## プログラム: main.py（50行）" in result
         assert "def main():" in result
 
     def test_ut_bed_003_multiple_files(self):
@@ -113,14 +114,17 @@ class TestBuildUserMessage:
                 {
                     "filename": "main.py",
                     "contentWithLineNumbers": "   1: main",
+                    "lineCount": 100,
                 },
                 {
                     "filename": "util.py",
                     "contentWithLineNumbers": "   1: util",
+                    "lineCount": 30,
                 },
                 {
                     "filename": "test.py",
                     "contentWithLineNumbers": "   1: test",
+                    "lineCount": 20,
                 },
             ],
         )
@@ -129,17 +133,45 @@ class TestBuildUserMessage:
         assert "## 設計書: spec1.xlsx" in result
         assert "## 設計書: api.xlsx" in result
 
-        # プログラムのセクション
-        assert "## プログラム: main.py" in result
-        assert "## プログラム: util.py" in result
-        assert "## プログラム: test.py" in result
+        # プログラムのセクション（総行数付き）
+        assert "## プログラム: main.py（100行）" in result
+        assert "## プログラム: util.py（30行）" in result
+        assert "## プログラム: test.py（20行）" in result
 
-        # レビュー対象一覧
+        # レビュー対象一覧（総行数付き）
         assert "設計書: spec1.xlsx" in result
         assert "設計書: api.xlsx" in result
+        assert "プログラム: main.py（100行）" in result
+        assert "プログラム: util.py（30行）" in result
+        assert "プログラム: test.py（20行）" in result
+
+    def test_build_user_message_line_count_none(self):
+        """lineCountがNoneの場合はファイル名のみ表示される"""
+        result = build_user_message(
+            spec_markdown=None,
+            spec_filename=None,
+            designs=[
+                {
+                    "filename": "spec.xlsx",
+                    "content": "## 機能仕様",
+                    "isMain": True,
+                    "type": "設計書",
+                }
+            ],
+            codes=[
+                {
+                    "filename": "main.py",
+                    "contentWithLineNumbers": "   1: def main():\n   2:     pass",
+                    "lineCount": None,
+                }
+            ],
+        )
+
+        # ファイル名のみ表示される（行数なし）
         assert "プログラム: main.py" in result
-        assert "プログラム: util.py" in result
-        assert "プログラム: test.py" in result
+        assert "## プログラム: main.py" in result
+        # （N行）が付かないことを確認
+        assert "main.py（" not in result
 
     def test_build_user_message_legacy_format(self):
         """後方互換: 旧形式のフィールドからメッセージ生成"""

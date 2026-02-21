@@ -14,6 +14,7 @@ export interface CodeFile {
   file: File
   filename: string
   contentWithLineNumbers?: string
+  lineCount?: number
 }
 
 export interface ConversionTool {

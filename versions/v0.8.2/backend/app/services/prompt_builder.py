@@ -116,9 +116,11 @@ def build_user_message(
     for code in code_blocks:
         filename = code.get("filename", "code")
         content = code.get("contentWithLineNumbers", "")
-        review_targets["programs"].append(f"- プログラム: {filename}")
+        line_count = code.get("lineCount")
+        filename_with_lines = f"{filename}（{line_count}行）" if line_count is not None else filename
+        review_targets["programs"].append(f"- プログラム: {filename_with_lines}")
         program_sections.append(
-            f"## プログラム: {filename}\n\n```\n{content}\n```"
+            f"## プログラム: {filename_with_lines}\n\n```\n{content}\n```"
         )
 
     designs_text = "\n\n".join(design_sections)
