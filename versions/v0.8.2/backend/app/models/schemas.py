@@ -492,6 +492,8 @@ class IntegrateRequest(BaseModel):
     integrationOptions: dict = {}  # { deduplicateFindings, checkCrossGroupIssues }
     systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None
+    designs: list[dict] = []  # 設計書ファイル情報（review_info_markdown生成用）
+    codes: list[dict] = []  # プログラムファイル情報（review_info_markdown生成用）
 
 
 class KeyIssue(BaseModel):

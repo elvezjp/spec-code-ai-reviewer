@@ -230,6 +230,8 @@ export function Reviewer() {
         groupReviews: groupReviewSummaries,
         systemPrompt: currentPromptValues,
         llmConfig: llmConfig || undefined,
+        designs: specFiles.map((f) => ({ filename: f.filename, isMain: f.isMain, type: f.type, tool: f.tool })),
+        codes: codeFiles.map((f) => ({ filename: f.filename })),
       })
 
       if (!integrateResponse.success) {
@@ -458,6 +460,8 @@ export function Reviewer() {
         groupReviews: groupReviewSummaries,
         systemPrompt: currentPromptValues,
         llmConfig: llmConfig || undefined,
+        designs: specFiles.map((f) => ({ filename: f.filename, isMain: f.isMain, type: f.type, tool: f.tool })),
+        codes: codeFiles.map((f) => ({ filename: f.filename })),
       })
 
       if (!integrateResponse.success) {
@@ -804,7 +808,8 @@ export function Reviewer() {
         executedAt: splitReviewState.integrateResult.reviewMeta?.executedAt || new Date().toISOString(),
         inputTokens: totalInputTokens,
         outputTokens: totalOutputTokens,
-        // designs/programsはAPIに含まれないためローカルで構築
+        reviewMode: 'split' as const,
+        // designs/programs/groupsはAPIに含まれないためローカルで構築
         designs: specFiles.map((f) => ({
           filename: f.filename,
           role: f.isMain ? 'メイン設計書' : '参考資料',
@@ -814,6 +819,7 @@ export function Reviewer() {
         programs: codeFiles.map((f) => ({
           filename: f.filename,
         })),
+        groups: splitReviewState.structureMatchingResult?.groups || [],
       },
     }
   })()

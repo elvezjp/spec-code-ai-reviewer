@@ -553,8 +553,8 @@ async def integrate_reviews(request: IntegrateRequest):
             version=f"v{APP_VERSION}",
             model_id=provider.model_id,
             provider=provider.provider_name,
-            designs=[],  # 分割レビューでは構造マッチング結果に含まれる
-            codes=[],    # 分割レビューでは構造マッチング結果に含まれる
+            designs=request.designs,
+            codes=request.codes,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             review_mode="split",
