@@ -34,7 +34,7 @@ import type { SplitReviewState, GroupReviewState, ReviewExecutionData } from './
 
 const APP_INFO = {
   name: 'spec-code-ai-reviewer',
-  version: 'v0.8.1',
+  version: 'v0.8.2',
   description: '設計書-Javaプログラム突合 AIレビュアー',
   copyright: '© 株式会社エルブズ',
   url: 'https://elvez.co.jp',
@@ -107,7 +107,7 @@ export function Reviewer() {
   const { downloadZip, downloadReport, copyReport, downloadSpecMarkdown, downloadCodeWithLineNumbers } =
     useZipExport()
 
-  // Split settings (v0.8.1)
+  // Split settings
   const {
     settings: splitSettings,
     previewResult: splitPreviewResult,
@@ -120,7 +120,7 @@ export function Reviewer() {
     isSplitEnabled,
   } = useSplitSettings()
 
-  // Split review execution state (v0.8.1)
+  // Split review execution state
   const [splitReviewState, setSplitReviewState] = useState<SplitReviewState>({
     phase: 'idle',
     groupReviews: [],
@@ -691,7 +691,7 @@ export function Reviewer() {
         isVisible={!!(specMarkdown || codeWithLineNumbers)}
       />
 
-      {/* Split settings (v0.8.1) */}
+      {/* Split settings */}
       <div className="mb-6">
         <SplitSettingsSection
           settings={splitSettings}

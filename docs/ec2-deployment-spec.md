@@ -120,7 +120,8 @@
 
 | バージョン | ポート | 計算式 | PM2プロセス名 |
 |-----------|-------|--------|--------------|
-| v0.8.1 (latest) | 8081 | 8000 + 8×10 + 1 | spec-code-ai-reviewer-v0.8.1 |
+| v0.8.2 (latest) | 8082 | 8000 + 8×10 + 2 | spec-code-ai-reviewer-v0.8.2 |
+| v0.8.1 | 8081 | 8000 + 8×10 + 1 | spec-code-ai-reviewer-v0.8.1 |
 | v0.8.0 | 8080 | 8000 + 8×10 + 0 | spec-code-ai-reviewer-v0.8.0 |
 | v0.7.0 | 8070 | 8000 + 7×10 + 0 | spec-code-ai-reviewer-v0.7.0 |
 | v0.6.0 | 8060 | 8000 + 6×10 + 0 | spec-code-ai-reviewer-v0.6.0 |
@@ -221,6 +222,7 @@ pm2 logs
 // 新バージョン追加時はここに1行追加するだけ
 // workers: 複数リクエスト同時処理に必要なワーカー数（省略時は1）
 const VERSIONS = [
+  { name: 'spec-code-ai-reviewer-v0.8.2', cwd: 'versions/v0.8.2', port: 8082, workers: 1 },
   { name: 'spec-code-ai-reviewer-v0.8.1', cwd: 'versions/v0.8.1', port: 8081, workers: 1 },
   { name: 'spec-code-ai-reviewer-v0.8.0', cwd: 'versions/v0.8.0', port: 8080, workers: 1 },
   { name: 'spec-code-ai-reviewer-v0.7.0', cwd: 'versions/v0.7.0', port: 8070, workers: 1 },
