@@ -34,7 +34,7 @@ import type { SplitReviewState, GroupReviewState, ReviewExecutionData } from './
 
 const APP_INFO = {
   name: 'spec-code-ai-reviewer',
-  version: 'v0.8.1',
+  version: 'v0.8.2',
   description: '設計書-Javaプログラム突合 AIレビュアー',
   copyright: '© 株式会社エルブズ',
   url: 'https://elvez.co.jp',
@@ -107,7 +107,7 @@ export function Reviewer() {
   const { downloadZip, downloadReport, copyReport, downloadSpecMarkdown, downloadCodeWithLineNumbers } =
     useZipExport()
 
-  // Split settings (v0.8.1)
+  // Split settings
   const {
     settings: splitSettings,
     previewResult: splitPreviewResult,
@@ -120,7 +120,7 @@ export function Reviewer() {
     isSplitEnabled,
   } = useSplitSettings()
 
-  // Split review execution state (v0.8.1)
+  // Split review execution state
   const [splitReviewState, setSplitReviewState] = useState<SplitReviewState>({
     phase: 'idle',
     groupReviews: [],
@@ -230,6 +230,8 @@ export function Reviewer() {
         groupReviews: groupReviewSummaries,
         systemPrompt: currentPromptValues,
         llmConfig: llmConfig || undefined,
+        designs: specFiles.map((f) => ({ filename: f.filename, isMain: f.isMain, type: f.type, tool: f.tool })),
+        codes: codeFiles.map((f) => ({ filename: f.filename })),
       })
 
       if (!integrateResponse.success) {
@@ -458,6 +460,8 @@ export function Reviewer() {
         groupReviews: groupReviewSummaries,
         systemPrompt: currentPromptValues,
         llmConfig: llmConfig || undefined,
+        designs: specFiles.map((f) => ({ filename: f.filename, isMain: f.isMain, type: f.type, tool: f.tool })),
+        codes: codeFiles.map((f) => ({ filename: f.filename })),
       })
 
       if (!integrateResponse.success) {
@@ -497,7 +501,7 @@ export function Reviewer() {
       return
     }
 
-    // 通常モード
+    // 一括モード
     try {
       await executeReview({
         specFiles,
@@ -691,7 +695,7 @@ export function Reviewer() {
         isVisible={!!(specMarkdown || codeWithLineNumbers)}
       />
 
-      {/* Split settings (v0.8.1) */}
+      {/* Split settings */}
       <div className="mb-6">
         <SplitSettingsSection
           settings={splitSettings}
@@ -804,7 +808,8 @@ export function Reviewer() {
         executedAt: splitReviewState.integrateResult.reviewMeta?.executedAt || new Date().toISOString(),
         inputTokens: totalInputTokens,
         outputTokens: totalOutputTokens,
-        // designs/programsはAPIに含まれないためローカルで構築
+        reviewMode: 'split' as const,
+        // designs/programs/groupsはAPIに含まれないためローカルで構築
         designs: specFiles.map((f) => ({
           filename: f.filename,
           role: f.isMain ? 'メイン設計書' : '参考資料',
@@ -814,6 +819,7 @@ export function Reviewer() {
         programs: codeFiles.map((f) => ({
           filename: f.filename,
         })),
+        groups: splitReviewState.structureMatchingResult?.groups || [],
       },
     }
   })()

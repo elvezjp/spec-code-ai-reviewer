@@ -11,7 +11,7 @@
 
 A web application that uses AI to cross-check design documents (Excel format) against program code and verify consistency.
 
-https://github.com/user-attachments/assets/de4afe27-bed4-4c4f-b037-c625418d6de6
+https://github.com/user-attachments/assets/bd026461-2b8e-4f57-bc36-7590a338d413
 
 ## Features
 
@@ -138,7 +138,7 @@ For v0.6.0 and later, start frontend and backend separately.
 **Terminal 1: Start backend**
 
 ```bash
-cd versions/v0.8.1/backend
+cd versions/v0.8.2/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -146,7 +146,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **Terminal 2: Start frontend**
 
 ```bash
-cd versions/v0.8.1/frontend
+cd versions/v0.8.2/frontend
 npm install
 npm run dev
 ```
@@ -201,11 +201,11 @@ Run tests in each version's directory.
 
 ```bash
 # v0.8.0 backend tests
-cd versions/v0.8.1/backend
+cd versions/v0.8.2/backend
 uv run pytest tests/ -v
 
 # v0.8.0 frontend tests
-cd versions/v0.8.1/frontend
+cd versions/v0.8.2/frontend
 npm test
 
 # v0.5.2 and earlier tests (backend only)
@@ -336,7 +336,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # Dev Nginx config
 │   ├── spec-code-ai-reviewer.conf  # Production Nginx config
 │   └── version-map.conf         # Version switch map (shared)
-├── latest -> versions/v0.8.1    # Symlink to latest
+├── latest -> versions/v0.8.2    # Symlink to latest
 │
 ├── versions/                    # All versions
 │   ├── README.md                # Version management notes
@@ -346,7 +346,8 @@ spec-code-ai-reviewer/
 │   ├── v0.6.0/                  # Old version (Vite + React)
 │   ├── v0.7.0/                  # Old version (Vite + React)
 │   ├── v0.8.0/                  # Old version (Vite + React)
-│   └── v0.8.1/                  # Latest (Vite + React)
+│   ├── v0.8.1/                  # Old version (Vite + React)
+│   └── v0.8.2/                  # Latest (Vite + React)
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -414,7 +415,8 @@ Example: v0.2.5 -> 8000 + (2 x 10) + 5 = 8025
 
 | Version | Port |
 |-----------|------|
-| v0.8.1 (latest) | 8081 |
+| v0.8.2 (latest) | 8082 |
+| v0.8.1 | 8081 |
 | v0.8.0 | 8080 |
 | v0.7.0 | 8070 |
 | v0.6.0 | 8060 |
@@ -450,6 +452,8 @@ When adding a new version (e.g., v0.7.0), update the following files.
 | `versions/README.md` | Add directory structure, version comparison table, and update history |
 | `README.md` | Update directory structure and port table |
 | `CHANGELOG.md` | Append change history |
+| `SECURITY.md` | Update supported version |
+| `CONTRIBUTING.md` | Update version numbers |
 
 #### Example: Add to ecosystem.config.js
 

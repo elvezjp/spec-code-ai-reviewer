@@ -147,7 +147,7 @@ export async function splitCode(
 }
 
 // =============================================================================
-// Split Review APIs (v0.8.1 - New)
+// Split Review APIs
 // =============================================================================
 
 export async function executeStructureMatching(

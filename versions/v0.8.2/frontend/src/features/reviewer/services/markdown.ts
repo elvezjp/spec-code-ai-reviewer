@@ -51,8 +51,16 @@ export function generateReadmeMarkdown(
     executedAt: string
     inputTokens: number
     outputTokens: number
+    reviewMode?: 'batch' | 'split'
     designs?: { filename: string; role: string; type: string; tool: string }[]
     programs?: { filename: string }[]
+    groups?: {
+      groupId: string
+      groupName: string
+      docSections: { id: string; title: string }[]
+      codeSymbols: { symbol: string }[]
+      estimatedTokens: number
+    }[]
   },
   executionNumber: number
 ): string {
@@ -62,6 +70,22 @@ export function generateReadmeMarkdown(
       .join('\n') || '  - なし'
   const programsList =
     reviewMeta.programs?.map((p) => `  - ${p.filename}`).join('\n') || '  - なし'
+
+  const groupsSection =
+    reviewMeta.reviewMode === 'split' && reviewMeta.groups && reviewMeta.groups.length > 0
+      ? `### グループ分け結果
+
+| グループID | グループ名 | 設計書セクション | コードシンボル | 推定トークン |
+|-----------|-----------|----------------|--------------|------------|
+${reviewMeta.groups
+  .map(
+    (g) =>
+      `| ${g.groupId} | ${g.groupName} | ${g.docSections.map((d) => d.id).join(', ')} | ${g.codeSymbols.map((c) => c.symbol).join(', ')} | ${g.estimatedTokens.toLocaleString()} |`
+  )
+  .join('\n')}
+
+`
+      : ''
 
   return `# レビュー実行データ（${executionNumber}回目）
 
@@ -77,6 +101,7 @@ export function generateReadmeMarkdown(
 | 実行回数 | ${executionNumber}回目 |
 | 入力トークン数 | ${(reviewMeta.inputTokens || 0).toLocaleString()} |
 | 出力トークン数 | ${(reviewMeta.outputTokens || 0).toLocaleString()} |
+${reviewMeta.reviewMode !== undefined ? `| レビューモード | ${reviewMeta.reviewMode === 'batch' ? '一括' : '分割'} |` : ''}
 
 ### 設計書
 
@@ -85,6 +110,8 @@ ${designsList}
 ### プログラム
 
 ${programsList}
+
+${groupsSection}
 
 ## 同梱ファイル
 

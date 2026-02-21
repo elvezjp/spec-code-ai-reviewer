@@ -30,7 +30,7 @@ from app.models.schemas import (
     IntegratedReport,
 )
 from app.services.llm_service import get_llm_provider
-from app.services.prompt_builder import build_system_prompt, build_review_meta
+from app.services.prompt_builder import build_system_prompt, build_review_meta, build_review_info_markdown
 
 # pyproject.tomlからバージョンを取得
 APP_VERSION = version("spec-code-ai-reviewer-backend")
@@ -553,16 +553,20 @@ async def integrate_reviews(request: IntegrateRequest):
             version=f"v{APP_VERSION}",
             model_id=provider.model_id,
             provider=provider.provider_name,
-            designs=[],  # 分割レビューでは構造マッチング結果に含まれる
-            codes=[],    # 分割レビューでは構造マッチング結果に含まれる
+            designs=request.designs,
+            codes=request.codes,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            review_mode="split",
         )
         review_meta = ReviewMeta(**review_meta_dict)
 
+        groups = request.structureMatching.get("groups", []) if request.structureMatching else []
+        review_info_markdown = build_review_info_markdown(review_meta_dict, groups=groups)
+
         return IntegrateResponse(
             success=True,
-            report=response_text,
+            report=review_info_markdown + response_text,
             integratedReport=integrated_report,
             reviewMeta=review_meta,
             tokensUsed={"input": input_tokens, "output": output_tokens},

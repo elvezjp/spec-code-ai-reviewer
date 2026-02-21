@@ -11,7 +11,7 @@
 
 設計書（Excel形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
 
-https://github.com/user-attachments/assets/de4afe27-bed4-4c4f-b037-c625418d6de6
+https://github.com/user-attachments/assets/bd026461-2b8e-4f57-bc36-7590a338d413
 
 ## 機能
 
@@ -138,7 +138,7 @@ v0.6.0以降はフロントエンドとバックエンドを別々に起動し�
 **ターミナル1: バックエンド起動**
 
 ```bash
-cd versions/v0.8.1/backend
+cd versions/v0.8.2/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -146,7 +146,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **ターミナル2: フロントエンド起動**
 
 ```bash
-cd versions/v0.8.1/frontend
+cd versions/v0.8.2/frontend
 npm install
 npm run dev
 ```
@@ -200,12 +200,12 @@ docker-compose down
 各バージョンのディレクトリでテストを実行します。
 
 ```bash
-# v0.8.1 バックエンドのテスト
-cd versions/v0.8.1/backend
+# v0.8.2 バックエンドのテスト
+cd versions/v0.8.2/backend
 uv run pytest tests/ -v
 
-# v0.8.1 フロントエンドのテスト
-cd versions/v0.8.1/frontend
+# v0.8.2 フロントエンドのテスト
+cd versions/v0.8.2/frontend
 npm test
 
 # v0.5.2以前のテスト（バックエンドのみ）
@@ -337,7 +337,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # 開発用Nginx設定
 │   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.8.1    # シンボリックリンク（最新版を指す）
+├── latest -> versions/v0.8.2    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
@@ -347,7 +347,8 @@ spec-code-ai-reviewer/
 │   ├── v0.6.0/                  # 旧バージョン（Vite + React）
 │   ├── v0.7.0/                  # 旧バージョン（Vite + React）
 │   ├── v0.8.0/                  # 旧バージョン（Vite + React）
-│   └── v0.8.1/                  # 最新版（Vite + React）
+│   ├── v0.8.1/                  # 旧バージョン（Vite + React）
+│   └── v0.8.2/                  # 最新版（Vite + React）
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -415,7 +416,8 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 
 | バージョン | ポート |
 |-----------|-------|
-| v0.8.1 (latest) | 8081 |
+| v0.8.2 (latest) | 8082 |
+| v0.8.1 | 8081 |
 | v0.8.0 | 8080 |
 | v0.7.0 | 8070 |
 | v0.6.0 | 8060 |
@@ -451,6 +453,8 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 | `versions/README.md` | ディレクトリ構成、バージョン比較表、更新履歴を追加 |
 | `README.md` | ディレクトリ構成、ポート割り当て表を更新 |
 | `CHANGELOG.md` | 更新履歴を追記 |
+| `SECURITY.md` | サポートバージョンを更新 |
+| `CONTRIBUTING.md` | バージョン番号を更新 |
 
 #### ecosystem.config.js への追加例
 

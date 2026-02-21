@@ -35,6 +35,8 @@ export interface ReviewMeta {
   outputTokens: number
   designs: DesignFileMeta[]
   programs: ProgramFileMeta[]
+  reviewMode?: 'batch' | 'split'
+  groups?: MatchedGroup[]
 }
 
 export interface DesignFileMeta {
@@ -324,6 +326,8 @@ export interface IntegrateRequest {
   integrationOptions?: Record<string, unknown>
   systemPrompt?: SystemPromptValues // ユーザー指定のシステムプロンプト
   llmConfig?: LlmConfig
+  designs?: { filename: string; isMain: boolean; type: string; tool: string }[]
+  codes?: { filename: string }[]
 }
 
 export interface KeyIssue {
