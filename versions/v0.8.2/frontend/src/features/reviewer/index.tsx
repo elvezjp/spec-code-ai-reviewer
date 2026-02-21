@@ -497,7 +497,7 @@ export function Reviewer() {
       return
     }
 
-    // 通常モード
+    // 一括モード
     try {
       await executeReview({
         specFiles,

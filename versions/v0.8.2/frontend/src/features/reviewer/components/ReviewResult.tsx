@@ -256,7 +256,7 @@ export function ReviewResult({
     )
   }
 
-  // 通常モード
+  // 一括モード
   return (
     <div className="max-w-4xl mx-auto p-6">
       {/* Header with tabs */}

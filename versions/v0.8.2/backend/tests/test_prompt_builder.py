@@ -279,7 +279,7 @@ class TestBuildReviewMeta:
     def test_build_review_meta_review_mode_batch(self):
         """reviewMode="batch" が reviewMode フィールドに格納される"""
         result = build_review_meta(
-            version="v0.8.2",
+            version="v0.4.0",
             model_id="claude-haiku-4-5-20251001",
             provider="anthropic",
             designs=[{"filename": "spec.xlsx"}],
@@ -294,7 +294,7 @@ class TestBuildReviewMeta:
     def test_build_review_meta_review_mode_split(self):
         """reviewMode="split" が reviewMode フィールドに格納される"""
         result = build_review_meta(
-            version="v0.8.2",
+            version="v0.4.0",
             model_id="claude-haiku-4-5-20251001",
             provider="bedrock",
             designs=[{"filename": "spec.xlsx"}],
@@ -309,7 +309,7 @@ class TestBuildReviewMeta:
     def test_build_review_meta_review_mode_none(self):
         """review_mode 未指定時は reviewMode が None になる"""
         result = build_review_meta(
-            version="v0.8.2",
+            version="v0.4.0",
             model_id="claude-haiku-4-5-20251001",
             provider="openai",
             designs=[{"filename": "spec.xlsx"}],
@@ -386,7 +386,7 @@ class TestBuildReviewInfoMarkdown:
     def test_build_review_info_markdown_review_mode_batch(self):
         """reviewMode="batch" の場合、レビューモード行に「一括」が表示される"""
         review_meta = {
-            "version": "v0.8.2",
+            "version": "v0.4.0",
             "modelId": "claude-haiku-4-5-20251001",
             "provider": "bedrock",
             "executedAt": "2025/01/01 10:00",
@@ -415,7 +415,7 @@ class TestBuildReviewInfoMarkdown:
     def test_build_review_info_markdown_review_mode_split_with_groups(self):
         """reviewMode="split" かつ groups がある場合、グループ分け結果テーブルが表示される"""
         review_meta = {
-            "version": "v0.8.2",
+            "version": "v0.4.0",
             "modelId": "claude-haiku-4-5-20251001",
             "provider": "bedrock",
             "executedAt": "2025/01/01 10:00",
@@ -467,7 +467,7 @@ class TestBuildReviewInfoMarkdown:
     def test_build_review_info_markdown_review_mode_split_no_groups(self):
         """reviewMode="split" だが groups が None の場合、グループ分け結果テーブルは表示されない"""
         review_meta = {
-            "version": "v0.8.2",
+            "version": "v0.4.0",
             "modelId": "claude-haiku-4-5-20251001",
             "provider": "bedrock",
             "executedAt": "2025/01/01 10:00",
@@ -487,7 +487,7 @@ class TestBuildReviewInfoMarkdown:
     def test_build_review_info_markdown_no_review_mode(self):
         """reviewMode が None の場合、レビューモード行が表示されない"""
         review_meta = {
-            "version": "v0.8.2",
+            "version": "v0.4.0",
             "modelId": "claude-haiku-4-5-20251001",
             "provider": "bedrock",
             "executedAt": "2025/01/01 10:00",
