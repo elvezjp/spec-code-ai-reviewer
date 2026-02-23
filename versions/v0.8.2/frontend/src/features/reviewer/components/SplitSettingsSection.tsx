@@ -165,23 +165,23 @@ export function SplitSettingsSection({
                         <input
                           type="radio"
                           name="splitMode"
-                          checked={settings.documentSplitMode === 'ai'}
-                          onChange={() => handleSplitModeChange('ai')}
+                          checked={settings.documentSplitMode === 'heading'}
+                          onChange={() => handleSplitModeChange('heading')}
                           className="w-4 h-4 text-blue-600"
                         />
-                        <span className="text-sm text-gray-700">AI（推奨）</span>
-                        <span className="text-xs text-gray-400">AIが文脈を考慮して最適な分割を行います</span>
+                        <span className="text-sm text-gray-700 w-20">見出し</span>
+                        <span className="text-xs text-gray-400">見出し（H2/H3等）の区切りで機械的に分割します</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="radio"
                           name="splitMode"
-                          checked={settings.documentSplitMode === 'heading'}
-                          onChange={() => handleSplitModeChange('heading')}
+                          checked={settings.documentSplitMode === 'ai'}
+                          onChange={() => handleSplitModeChange('ai')}
                           className="w-4 h-4 text-blue-600"
                         />
-                        <span className="text-sm text-gray-700">見出し</span>
-                        <span className="text-xs text-gray-400">見出し（H2/H3等）の区切りで機械的に分割します</span>
+                        <span className="text-sm text-gray-700 w-20">AI（推奨）</span>
+                        <span className="text-xs text-gray-400">見出しに加えてAIが文脈を考慮して適切に分割を行います</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -191,13 +191,10 @@ export function SplitSettingsSection({
                           onChange={() => handleSplitModeChange('nlp')}
                           className="w-4 h-4 text-blue-600"
                         />
-                        <span className="text-sm text-gray-700">NLP</span>
-                        <span className="text-xs text-gray-400">自然言語処理で文章の意味的な区切りを検出します</span>
+                        <span className="text-sm text-gray-700 w-20">NLP</span>
+                        <span className="text-xs text-gray-400">見出しに加えて自然言語処理で意味的な区切りを検出して分割します</span>
                       </label>
                     </div>
-                    <p className="text-xs text-amber-600 mt-1 ml-2">
-                      ※AIモードでは、設計書が大きい場合は、処理に時間が掛かったり、タイムアウトや制限等でエラーになる可能性があります。
-                    </p>
                   </div>
                   {/* 見出しレベル選択 */}
                   <div className="flex items-center gap-4">
@@ -262,7 +259,7 @@ export function SplitSettingsSection({
 
       {/* 分割プレビュー実行ボタン */}
       {isSplitEnabled && (
-        <div className="mb-4">
+        <div className="mb-4 flex items-center gap-3">
           <button
             onClick={onExecutePreview}
             disabled={!canExecutePreview || isExecuting || !!previewResult}
@@ -279,6 +276,11 @@ export function SplitSettingsSection({
             '分割プレビュー'
           )}
         </button>
+        {settings.documentSplitMode === 'ai' && (
+          <span className="text-xs text-muted text-gray-400">
+            ※ 設計書が大きい場合は、処理に時間が掛かったり、タイムアウトや制限等でエラーになる可能性があります。
+          </span>
+        )}
       </div>
       )}
 
