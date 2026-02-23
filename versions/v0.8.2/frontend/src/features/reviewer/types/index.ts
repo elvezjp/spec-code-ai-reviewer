@@ -218,6 +218,7 @@ export interface SplitCodeResponse {
   success: boolean
   parts: CodePart[]
   indexContent?: string
+  mapJson?: Record<string, unknown>[]
   language?: string
   error?: string
 }
@@ -228,6 +229,7 @@ export interface SplitPreviewResult {
   documentIndex: string | null
   documentMapJson: Record<string, unknown>[] | null
   codeIndex: string | null
+  codeMapJson: Record<string, unknown>[] | null
   codeLanguage: string | null
 }
 

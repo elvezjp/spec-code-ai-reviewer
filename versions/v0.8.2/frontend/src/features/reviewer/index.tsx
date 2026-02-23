@@ -104,7 +104,7 @@ export function Reviewer() {
   } = useReviewExecution()
 
   // Zip export
-  const { downloadZip, downloadReport, copyReport, downloadSpecMarkdown, downloadCodeWithLineNumbers } =
+  const { downloadZip: rawDownloadZip, downloadReport, copyReport, downloadSpecMarkdown, downloadCodeWithLineNumbers } =
     useZipExport()
 
   // Split settings
@@ -119,6 +119,22 @@ export function Reviewer() {
     clearError: clearSplitPreviewError,
     isSplitEnabled,
   } = useSplitSettings()
+
+  // Wrap downloadZip to inject splitData when in split mode
+  const downloadZip = useCallback(
+    async (data: ReviewExecutionData, executionNumber: number) => {
+      const splitData = splitPreviewResult
+        ? {
+            documentIndex: splitPreviewResult.documentIndex || undefined,
+            documentMapJson: splitPreviewResult.documentMapJson || undefined,
+            codeIndex: splitPreviewResult.codeIndex || undefined,
+            codeMapJson: splitPreviewResult.codeMapJson || undefined,
+          }
+        : undefined
+      await rawDownloadZip(data, executionNumber, splitData)
+    },
+    [rawDownloadZip, splitPreviewResult]
+  )
 
   // Split review execution state
   const [splitReviewState, setSplitReviewState] = useState<SplitReviewState>({

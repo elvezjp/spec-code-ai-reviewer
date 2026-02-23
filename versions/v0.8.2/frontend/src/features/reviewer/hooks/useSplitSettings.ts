@@ -68,6 +68,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
       let documentMapJson: Record<string, unknown>[] | null = null
       let codeParts: CodePart[] | null = null
       let codeIndex: string | null = null
+      let codeMapJson: Record<string, unknown>[] | null = null
       let codeLanguage: string | null = null
 
       // 設計書分割
@@ -93,6 +94,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
       if (settings.reviewMode === 'split' && codeFiles.length > 0) {
         const allCodeParts: CodePart[] = []
         const allIndexContents: string[] = []
+        const allMapJsonEntries: Record<string, unknown>[] = []
         const unsupportedFiles: string[] = []
 
         for (const codeFile of codeFiles) {
@@ -112,6 +114,9 @@ export function useSplitSettings(): UseSplitSettingsReturn {
             if (response.indexContent) {
               allIndexContents.push(response.indexContent)
             }
+            if (response.mapJson) {
+              allMapJsonEntries.push(...response.mapJson)
+            }
             if (response.language && !codeLanguage) {
               codeLanguage = response.language
             }
@@ -129,6 +134,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         if (allCodeParts.length > 0) {
           codeParts = allCodeParts
           codeIndex = allIndexContents.join('\n\n---\n\n')
+          codeMapJson = allMapJsonEntries.length > 0 ? allMapJsonEntries : null
         }
       }
 
@@ -138,6 +144,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         documentIndex,
         documentMapJson,
         codeIndex,
+        codeMapJson,
         codeLanguage,
       })
     } catch (err) {

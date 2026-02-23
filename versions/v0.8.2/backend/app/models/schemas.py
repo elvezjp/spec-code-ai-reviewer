@@ -336,6 +336,7 @@ class SplitCodeResponse(BaseModel):
     success: bool
     parts: list[CodePart] = []
     indexContent: str | None = None  # INDEX.md相当の内容
+    mapJson: list[dict] | None = None  # code2map生成のMAP.json
     language: str | None = None  # 検出された言語
     error: str | None = None
 

@@ -4,6 +4,7 @@
 md2map / code2map ライブラリを使用してファイルを分割する。
 """
 
+import json
 import os
 import tempfile
 
@@ -134,8 +135,6 @@ async def split_markdown(request: SplitMarkdownRequest):
                 index_content = f.read()
 
             # MAP.json生成・読み取り
-            import json
-
             map_path = os.path.join(out_dir, "MAP.json")
             md2map_generate_map(sections, out_dir, map_path)
             with open(map_path, "r", encoding="utf-8") as f:
@@ -201,6 +200,9 @@ async def split_code(request: SplitCodeRequest):
         from code2map.generators.index_generator import (
             generate_index as code2map_generate_index,
         )
+        from code2map.generators.map_generator import (
+            generate_map as code2map_generate_map,
+        )
         from code2map.generators.parts_generator import (
             generate_parts as code2map_generate_parts,
         )
@@ -244,7 +246,7 @@ async def split_code(request: SplitCodeRequest):
 
             # パーツ生成（symbol.part_fileを設定するために必要）
             out_dir = os.path.join(tmpdir, "output")
-            code2map_generate_parts(symbols, c2m_lines, out_dir)
+            fragments = code2map_generate_parts(symbols, c2m_lines, out_dir)
 
             # INDEX.md生成
             index_path = os.path.join(out_dir, "INDEX.md")
@@ -255,6 +257,12 @@ async def split_code(request: SplitCodeRequest):
             # INDEX.md読み取り
             with open(index_path, "r", encoding="utf-8") as f:
                 index_content = f.read()
+
+            # MAP.json生成・読み取り
+            map_path = os.path.join(out_dir, "MAP.json")
+            code2map_generate_map(fragments, map_path)
+            with open(map_path, "r", encoding="utf-8") as f:
+                map_json = json.load(f)
 
             # CodePartリスト構築
             parts = []
@@ -279,6 +287,7 @@ async def split_code(request: SplitCodeRequest):
             success=True,
             parts=parts,
             indexContent=index_content,
+            mapJson=map_json,
             language=language,
         )
 

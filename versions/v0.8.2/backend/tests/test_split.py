@@ -292,15 +292,17 @@ class TestSplitMarkdownAPI:
 class TestSplitCodeAPI:
     """split_code() のテスト"""
 
+    @patch("code2map.generators.map_generator.generate_map")
     @patch("code2map.generators.parts_generator.generate_parts")
     @patch("code2map.generators.index_generator.generate_index")
     @patch("code2map.utils.file_utils.read_lines")
     @patch("code2map.utils.file_utils.slice_lines")
     @patch("code2map.parsers.python_parser.PythonParser")
     def test_ut_spl_005_success_python(
-        self, mock_parser_cls, mock_slice, mock_read_lines, mock_gen_index, mock_gen_parts
+        self, mock_parser_cls, mock_slice, mock_read_lines, mock_gen_index, mock_gen_parts, mock_gen_map
     ):
         """UT-SPL-005: 正常系（Python）"""
+        import json
         import os
 
         # モックシンボル
@@ -319,17 +321,26 @@ class TestSplitCodeAPI:
         mock_read_lines.return_value = ["def hello():", "    print('hello')", ""]
         mock_slice.return_value = "def hello():\n    print('hello')\n"
 
-        # generate_partsがoutputディレクトリを作成する動作をシミュレート
-        def create_output_dir(symbols, lines, out_dir):
+        # generate_partsがoutputディレクトリを作成しfragmentsを返す動作をシミュレート
+        def create_output_dir_and_return_fragments(symbols, lines, out_dir):
             os.makedirs(out_dir, exist_ok=True)
+            return [(mock_symbol, "def hello():\n    print('hello')\n")]
 
-        mock_gen_parts.side_effect = create_output_dir
+        mock_gen_parts.side_effect = create_output_dir_and_return_fragments
 
         def write_index(symbols, warnings, lines, index_path, filename):
             with open(index_path, "w") as f:
                 f.write("# CODE INDEX\n\n- CD1: hello (function)\n")
 
         mock_gen_index.side_effect = write_index
+
+        # generate_mapがMAP.jsonを書き込む動作をシミュレート
+        def write_map(fragments, map_path):
+            map_data = [{"id": "CD1", "symbol": "hello", "type": "function"}]
+            with open(map_path, "w") as f:
+                json.dump(map_data, f)
+
+        mock_gen_map.side_effect = write_map
 
         request = SplitCodeRequest(
             content="def hello():\n    print('hello')\n",
@@ -347,16 +358,21 @@ class TestSplitCodeAPI:
         assert data["parts"][0]["symbolType"] == "function"
         assert data["parts"][0]["id"] == "CD1"
         assert data["indexContent"] is not None
+        assert data["mapJson"] is not None
+        assert len(data["mapJson"]) == 1
+        assert data["mapJson"][0]["id"] == "CD1"
 
+    @patch("code2map.generators.map_generator.generate_map")
     @patch("code2map.generators.parts_generator.generate_parts")
     @patch("code2map.generators.index_generator.generate_index")
     @patch("code2map.utils.file_utils.read_lines")
     @patch("code2map.utils.file_utils.slice_lines")
     @patch("code2map.parsers.java_parser.JavaParser")
     def test_ut_spl_006_success_java(
-        self, mock_parser_cls, mock_slice, mock_read_lines, mock_gen_index, mock_gen_parts
+        self, mock_parser_cls, mock_slice, mock_read_lines, mock_gen_index, mock_gen_parts, mock_gen_map
     ):
         """UT-SPL-006: 正常系（Java）"""
+        import json
         import os
 
         # モッククラスシンボル
@@ -389,17 +405,29 @@ class TestSplitCodeAPI:
         mock_read_lines.return_value = java_code.split("\n")
         mock_slice.side_effect = [java_code, "public static void main(String[] args) {\n        System.out.println(\"Hello\");\n    }"]
 
-        # generate_partsがoutputディレクトリを作成する動作をシミュレート
-        def create_output_dir(symbols, lines, out_dir):
+        # generate_partsがoutputディレクトリを作成しfragmentsを返す動作をシミュレート
+        def create_output_dir_and_return_fragments(symbols, lines, out_dir):
             os.makedirs(out_dir, exist_ok=True)
+            return [(mock_class, java_code), (mock_method, "public static void main(String[] args) {\n        System.out.println(\"Hello\");\n    }")]
 
-        mock_gen_parts.side_effect = create_output_dir
+        mock_gen_parts.side_effect = create_output_dir_and_return_fragments
 
         def write_index(symbols, warnings, lines, index_path, filename):
             with open(index_path, "w") as f:
                 f.write("# CODE INDEX\n\n- CD1: HelloWorld (class)\n  - CD2: main (method)\n")
 
         mock_gen_index.side_effect = write_index
+
+        # generate_mapがMAP.jsonを書き込む動作をシミュレート
+        def write_map(fragments, map_path):
+            map_data = [
+                {"id": "CD1", "symbol": "HelloWorld", "type": "class"},
+                {"id": "CD2", "symbol": "main", "type": "method"},
+            ]
+            with open(map_path, "w") as f:
+                json.dump(map_data, f)
+
+        mock_gen_map.side_effect = write_map
 
         request = SplitCodeRequest(
             content=java_code,
@@ -417,6 +445,8 @@ class TestSplitCodeAPI:
         assert data["parts"][0]["symbolType"] == "class"
         assert data["parts"][1]["symbol"] == "main"
         assert data["parts"][1]["symbolType"] == "method"
+        assert data["mapJson"] is not None
+        assert len(data["mapJson"]) == 2
         assert data["parts"][1]["parentSymbol"] == "HelloWorld"
 
     @patch("code2map.utils.file_utils.read_lines")

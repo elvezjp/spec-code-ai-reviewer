@@ -62,7 +62,8 @@ export function generateReadmeMarkdown(
       estimatedTokens: number
     }[]
   },
-  executionNumber: number
+  executionNumber: number,
+  hasSplitData: boolean = false,
 ): string {
   const designsList =
     reviewMeta.designs
@@ -122,5 +123,9 @@ ${groupsSection}
 | spec-markdown.md | 変換後の設計書（マークダウン形式） |
 | code-numbered.txt | 行番号付きプログラム |
 | review-result.md | AIレビュー結果 |
-`
+${hasSplitData ? `| split/spec-INDEX.md | 設計書の構造情報（md2map生成） |
+| split/spec-MAP.json | 設計書のセクションマップ（md2map生成） |
+| split/code-INDEX.md | プログラムの構造情報（code2map生成） |
+| split/code-MAP.json | プログラムのシンボルマップ（code2map生成） |
+` : ''}`
 }

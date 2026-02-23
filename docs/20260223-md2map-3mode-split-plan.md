@@ -287,16 +287,141 @@ export interface DocumentPart {
    - `index.tsx` のグループレビュー時の見出し構築
    - 結果画面・DLマークダウンでのセクション名表示
 
+### Step 10: コード分割側の MAP.json 対応 + ZIPダウンロードに INDEX.md / MAP.json を同梱
+
+#### Step 10a: バックエンド - コード分割側の MAP.json 生成
+
+**目的**: code2map が生成した MAP.json もフロントエンドに返す
+
+**現状**:
+- `split_code()` は code2map の `generate_parts` の戻り値（`List[Tuple[Symbol, str]]`）を使い捨てている
+- code2map の `generate_map(entries, output_path)` は呼ばれていない
+
+**対象**: `versions/v0.8.2/backend/app/models/schemas.py`, `versions/v0.8.2/backend/app/routers/split.py`
+
+1. `SplitCodeResponse` に `mapJson` フィールドを追加:
+
+```python
+class SplitCodeResponse(BaseModel):
+    success: bool
+    parts: list[CodePart] = []
+    indexContent: str | None = None
+    mapJson: list[dict] | None = None  # 追加: code2map生成のMAP.json
+    language: str | None = None
+    error: str | None = None
+```
+
+2. `split_code()` で `generate_map` を呼び出し:
+
+```python
+from code2map.generators.map_generator import generate_map as code2map_generate_map
+
+# generate_parts の戻り値を保持
+fragments = code2map_generate_parts(symbols, c2m_lines, out_dir)
+
+# MAP.json生成・読み取り
+map_path = os.path.join(out_dir, "MAP.json")
+code2map_generate_map(fragments, map_path)
+with open(map_path, "r", encoding="utf-8") as f:
+    map_json = json.load(f)
+```
+
+#### Step 10b: フロントエンド - コード側 MAP.json の保持
+
+**対象**: `versions/v0.8.2/frontend/src/features/reviewer/types/index.ts`, `versions/v0.8.2/frontend/src/features/reviewer/hooks/useSplitSettings.ts`
+
+1. `SplitCodeResponse` に `mapJson` を追加
+2. `SplitPreviewResult` に `codeMapJson` を追加
+3. `useSplitSettings.ts` で code split レスポンスから `mapJson` を収集・保持
+
+#### Step 10c: ZIPダウンロードに INDEX.md / MAP.json を同梱
+
+**目的**: 分割レビュー時のZIP一括ダウンロードに、md2map/code2map が生成した INDEX.md と MAP.json を含める
+
+**現状の問題**:
+- ZIPには `system-prompt.md`, `spec-markdown.md`, `code-numbered.txt`, `review-result.md`, `README.md` の5ファイルのみ
+- 分割レビューで使用した INDEX.md と MAP.json が保存されない
+
+**方針**: `downloadZip` の引数を拡張し、分割レビュー時に追加ファイルをZIPに同梱する
+
+**対象ファイル**:
+1. `versions/v0.8.2/frontend/src/features/reviewer/hooks/useZipExport.ts`
+2. `versions/v0.8.2/frontend/src/features/reviewer/services/markdown.ts`
+3. `versions/v0.8.2/frontend/src/features/reviewer/index.tsx`
+
+**実装内容**:
+
+1. `useZipExport.ts` の `downloadZip` に分割データ用のオプション引数を追加:
+
+```typescript
+interface SplitExportData {
+  documentIndex?: string    // 設計書 INDEX.md
+  documentMapJson?: Record<string, unknown>[]  // 設計書 MAP.json
+  codeIndex?: string        // コード INDEX.md
+  codeMapJson?: Record<string, unknown>[]  // コード MAP.json
+}
+
+const downloadZip = useCallback(
+  async (data: ReviewExecutionData, executionNumber: number, splitData?: SplitExportData) => {
+    // ... 既存の5ファイル追加 ...
+
+    // 分割レビュー時の追加ファイル
+    if (splitData) {
+      if (splitData.documentIndex) {
+        zip.file('split/spec-INDEX.md', splitData.documentIndex)
+      }
+      if (splitData.documentMapJson) {
+        zip.file('split/spec-MAP.json', JSON.stringify(splitData.documentMapJson, null, 2))
+      }
+      if (splitData.codeIndex) {
+        zip.file('split/code-INDEX.md', splitData.codeIndex)
+      }
+      if (splitData.codeMapJson) {
+        zip.file('split/code-MAP.json', JSON.stringify(splitData.codeMapJson, null, 2))
+      }
+    }
+  }
+)
+```
+
+2. `markdown.ts` の `generateReadmeMarkdown` で同梱ファイルテーブルに分割データファイルを追加:
+
+```
+## 同梱ファイル
+
+| ファイル名 | 説明 |
+|-----------|------|
+| ... （既存5ファイル） |
+| split/spec-INDEX.md | 設計書の構造情報（md2map生成） |
+| split/spec-MAP.json | 設計書のセクションマップ（md2map生成） |
+| split/code-INDEX.md | プログラムの構造情報（code2map生成） |
+| split/code-MAP.json | プログラムのシンボルマップ（code2map生成） |
+```
+
+3. `index.tsx` の分割レビュー結果画面で `downloadZip` 呼び出しに `splitData` を渡す:
+
+```typescript
+// splitPreviewResult から分割データを取得
+const splitExportData = splitPreviewResult ? {
+  documentIndex: splitPreviewResult.documentIndex || undefined,
+  documentMapJson: splitPreviewResult.documentMapJson || undefined,
+  codeIndex: splitPreviewResult.codeIndex || undefined,
+  codeMapJson: splitPreviewResult.codeMapJson || undefined,
+} : undefined
+```
+
 ## 影響ファイル一覧
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `versions/v0.8.2/backend/app/models/schemas.py` | `SplitMarkdownRequest` に `splitMode`, `llmConfig` 追加。`SplitMarkdownResponse` に `mapJson` 追加。`DocumentPart` に `displayName` 追加 |
-| `versions/v0.8.2/backend/app/routers/split.py` | LLMConfig変換関数追加、MarkdownParser呼び出し修正、MAP.json生成・返却、displayName設定 |
-| `versions/v0.8.2/frontend/src/features/reviewer/types/index.ts` | `DocumentSplitMode` 型追加、`SplitSettings`・`SplitMarkdownRequest` 拡張、`SplitMarkdownResponse` に `mapJson` 追加、`DocumentPart` に `displayName` 追加、`SplitPreviewResult` に `documentMapJson` 追加 |
-| `versions/v0.8.2/frontend/src/features/reviewer/hooks/useSplitSettings.ts` | デフォルト設定追加、executePreview引数拡張、`documentMapJson` の保持 |
+| `versions/v0.8.2/backend/app/models/schemas.py` | `SplitMarkdownRequest` に `splitMode`, `llmConfig` 追加。`SplitMarkdownResponse` に `mapJson` 追加。`DocumentPart` に `displayName` 追加。`SplitCodeResponse` に `mapJson` 追加 |
+| `versions/v0.8.2/backend/app/routers/split.py` | LLMConfig変換関数追加、MarkdownParser呼び出し修正、MAP.json生成・返却、displayName設定、code2map MAP.json生成・返却 |
+| `versions/v0.8.2/frontend/src/features/reviewer/types/index.ts` | `DocumentSplitMode` 型追加、`SplitSettings`・`SplitMarkdownRequest` 拡張、`SplitMarkdownResponse` に `mapJson` 追加、`DocumentPart` に `displayName` 追加、`SplitPreviewResult` に `documentMapJson`・`codeMapJson` 追加、`SplitCodeResponse` に `mapJson` 追加 |
+| `versions/v0.8.2/frontend/src/features/reviewer/hooks/useSplitSettings.ts` | デフォルト設定追加、executePreview引数拡張、`documentMapJson`・`codeMapJson` の保持 |
 | `versions/v0.8.2/frontend/src/features/reviewer/components/SplitSettingsSection.tsx` | 分割モード選択UI追加、注意文追加、プレビューテーブルで `displayName` 使用 |
-| `versions/v0.8.2/frontend/src/features/reviewer/index.tsx` | llmConfig の引き回し、構造マッチングでバックエンド生成 `mapJson` を使用、表示名に `displayName` を使用 |
+| `versions/v0.8.2/frontend/src/features/reviewer/index.tsx` | llmConfig の引き回し、構造マッチングでバックエンド生成 `mapJson` を使用、表示名に `displayName` を使用、ZIPダウンロードに分割データ渡し |
+| `versions/v0.8.2/frontend/src/features/reviewer/hooks/useZipExport.ts` | `downloadZip` に `SplitExportData` 引数追加、ZIP内に `split/` ディレクトリ追加 |
+| `versions/v0.8.2/frontend/src/features/reviewer/services/markdown.ts` | `generateReadmeMarkdown` に分割ファイルの同梱ファイルテーブル追加 |
 
 ## 既存パターンの再利用
 
@@ -318,3 +443,4 @@ export interface DocumentPart {
    - NLPモード選択時、sudachipy で分割される
    - AIモードで subsplit が発生した場合、プレビューテーブルで subsplit_title（例: "概要: part-1"）が表示される
    - 構造マッチングに渡される MAP.json に is_subsplit, subsplit_title が含まれる
+   - 分割レビュー完了後、ZIP一括ダウンロードに `split/spec-INDEX.md`, `split/spec-MAP.json`, `split/code-INDEX.md`, `split/code-MAP.json` が含まれる
