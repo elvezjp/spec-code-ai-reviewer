@@ -270,16 +270,19 @@ export function Reviewer() {
     try {
       // Phase 1: Structure Matching
       const documentIndexMd = splitPreviewResult.documentIndex || ''
-      const documentMapJson = {
-        sections: splitPreviewResult.documentParts?.map((p) => ({
-          id: p.id,  // IDを含める（LLMがマッチングに使用）
-          title: p.section,
-          level: p.level,
-          path: p.path,
-          startLine: p.startLine,
-          endLine: p.endLine,
-        })) || [],
-      }
+      // md2map生成のMAP.jsonをそのまま使用（is_subsplit, subsplit_title等を含む）
+      const documentMapJson = splitPreviewResult.documentMapJson
+        ? { sections: splitPreviewResult.documentMapJson }
+        : {
+            sections: splitPreviewResult.documentParts?.map((p) => ({
+              id: p.id,
+              title: p.section,
+              level: p.level,
+              path: p.path,
+              startLine: p.startLine,
+              endLine: p.endLine,
+            })) || [],
+          }
 
       const codeFileStructures = codeFiles.map((cf) => {
         const codeParts = splitPreviewResult.codeParts || []
@@ -336,10 +339,11 @@ export function Reviewer() {
         // 設計書が一括モードの場合は全体のMarkdownを使用、分割モードの場合はIDベースでマッチング
         const documentContent = group.docSections.map((section) => {
           const part = splitPreviewResult.documentParts?.find((p) => p.id === section.id)
+          const displayName = part?.displayName || section.title
           const startLine = part?.startLine || 0
           const endLine = part?.endLine || 0
           const content = part?.content || ''
-          return `### ${section.title} (L${startLine}-L${endLine})\n\n${content}`
+          return `### ${displayName} (L${startLine}-L${endLine})\n\n${content}`
         }).join('\n\n')
 
         // Build code content for this group

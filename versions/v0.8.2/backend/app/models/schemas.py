@@ -291,6 +291,7 @@ class DocumentPart(BaseModel):
 
     id: str  # セクションID (MD1, MD2, ...)
     section: str  # セクション名
+    displayName: str  # 表示用名称（subsplit時はsubsplit_title）
     level: int  # 見出しレベル (1-6)
     path: str  # パス (親セクション > 子セクション)
     startLine: int
@@ -305,6 +306,7 @@ class SplitMarkdownResponse(BaseModel):
     success: bool
     parts: list[DocumentPart] = []
     indexContent: str | None = None  # INDEX.md相当の内容
+    mapJson: list[dict] | None = None  # md2map生成のMAP.json
     error: str | None = None
 
 

@@ -65,6 +65,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
 
       let documentParts: DocumentPart[] | null = null
       let documentIndex: string | null = null
+      let documentMapJson: Record<string, unknown>[] | null = null
       let codeParts: CodePart[] | null = null
       let codeIndex: string | null = null
       let codeLanguage: string | null = null
@@ -82,6 +83,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         if (response.success) {
           documentParts = response.parts
           documentIndex = response.indexContent || null
+          documentMapJson = response.mapJson || null
         } else {
           throw new Error(response.error || '設計書の分割に失敗しました')
         }
@@ -134,6 +136,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         documentParts,
         codeParts,
         documentIndex,
+        documentMapJson,
         codeIndex,
         codeLanguage,
       })

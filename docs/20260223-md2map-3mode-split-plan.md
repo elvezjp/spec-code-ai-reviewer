@@ -180,16 +180,123 @@ const response = await api.splitMarkdown({
 
 - `handleSplitPreviewExecute` で `llmConfig` を `executeSplitPreview` に渡す
 
+### Step 7: バックエンド - MAP.json生成とレスポンス拡張
+
+**目的**: 構造マッチングに渡す MAP.json を、md2map が生成した内容をそのまま渡す
+
+**現状の問題**:
+- バックエンドの split.py は MAP.json を生成していない
+- フロントエンドの index.tsx が `documentParts` から手動で `documentMapJson` を構築している
+- そのため `is_subsplit`, `subsplit_title`, `note` 等の情報が構造マッチングに渡されない
+
+**対象**: `versions/v0.8.2/backend/app/routers/split.py`, `versions/v0.8.2/backend/app/models/schemas.py`
+
+1. split.py で md2map の `generate_map()` を呼び出し MAP.json を生成・読み取る
+2. `SplitMarkdownResponse` に `mapJson` フィールドを追加（md2map生成のMAP.jsonをそのまま返す）
+
+```python
+# split.py に追加
+from md2map.generators.map_generator import generate_map as md2map_generate_map
+
+# MAP.json生成
+map_path = os.path.join(out_dir, "MAP.json")
+md2map_generate_map(sections, out_dir, map_path)
+
+# MAP.json読み取り
+with open(map_path, "r", encoding="utf-8") as f:
+    import json
+    map_json = json.load(f)
+```
+
+```python
+# schemas.py
+class SplitMarkdownResponse(BaseModel):
+    success: bool
+    parts: list[DocumentPart] = []
+    indexContent: str | None = None
+    mapJson: list[dict] | None = None  # 追加: md2map生成のMAP.json
+    error: str | None = None
+```
+
+### Step 8: フロントエンド - MAP.json をそのまま構造マッチングに渡す
+
+**対象**: `versions/v0.8.2/frontend/src/features/reviewer/types/index.ts`, `versions/v0.8.2/frontend/src/features/reviewer/index.tsx`
+
+1. `SplitMarkdownResponse` に `mapJson` を追加
+2. `SplitPreviewResult` に `documentMapJson` を追加
+3. index.tsx の `executeSplitReviewFlow` で、手動構築の `documentMapJson` の代わりにバックエンドから返された `mapJson` を使用
+
+```typescript
+// 現在（手動構築）
+const documentMapJson = {
+  sections: splitPreviewResult.documentParts?.map((p) => ({
+    id: p.id, title: p.section, level: p.level, ...
+  })) || [],
+}
+
+// 修正後（md2map生成のMAP.jsonをそのまま使用）
+const documentMapJson = {
+  sections: splitPreviewResult.documentMapJson || [],
+}
+```
+
+### Step 9: 表示名の改善（displayName の追加）
+
+**目的**: subsplit されたセクションの表示名を正しく表示する
+
+**方針**: バックエンド側で `DocumentPart` に `displayName` フィールドを追加し、
+md2map の `section.display_name()` を使用する。
+フロントエンドでは `section` の代わりに `displayName` を表示に使う。
+
+**対象**: バックエンド `schemas.py`, `split.py` / フロントエンド `types/index.ts`, 表示箇所
+
+1. バックエンド: `DocumentPart` に `displayName` を追加
+
+```python
+class DocumentPart(BaseModel):
+    id: str
+    section: str          # 元のセクション名（title）
+    displayName: str      # 表示用名称（subsplit時はsubsplit_title）
+    level: int
+    ...
+```
+
+```python
+# split.py での設定
+DocumentPart(
+    ...
+    section=section.title,
+    displayName=section.display_name(),  # md2mapの既存メソッドを使用
+    ...
+)
+```
+
+2. フロントエンド: `DocumentPart` 型に `displayName` を追加
+
+```typescript
+export interface DocumentPart {
+  id: string
+  section: string
+  displayName: string   // 追加
+  ...
+}
+```
+
+3. 表示箇所で `section` の代わりに `displayName` を使用:
+   - `SplitSettingsSection.tsx` のプレビューテーブル
+   - `index.tsx` のグループレビュー時の見出し構築
+   - 結果画面・DLマークダウンでのセクション名表示
+
 ## 影響ファイル一覧
 
 | ファイル | 変更内容 |
 |---------|---------|
-| `versions/v0.8.2/backend/app/models/schemas.py` | `SplitMarkdownRequest` に `splitMode`, `llmConfig` 追加 |
-| `versions/v0.8.2/backend/app/routers/split.py` | LLMConfig変換関数追加、MarkdownParser呼び出し修正 |
-| `versions/v0.8.2/frontend/src/features/reviewer/types/index.ts` | `DocumentSplitMode` 型追加、`SplitSettings`・`SplitMarkdownRequest` 拡張 |
-| `versions/v0.8.2/frontend/src/features/reviewer/hooks/useSplitSettings.ts` | デフォルト設定追加、executePreview引数拡張 |
-| `versions/v0.8.2/frontend/src/features/reviewer/components/SplitSettingsSection.tsx` | 分割モード選択UI追加、注意文追加 |
-| `versions/v0.8.2/frontend/src/features/reviewer/index.tsx` | llmConfig の引き回し |
+| `versions/v0.8.2/backend/app/models/schemas.py` | `SplitMarkdownRequest` に `splitMode`, `llmConfig` 追加。`SplitMarkdownResponse` に `mapJson` 追加。`DocumentPart` に `displayName` 追加 |
+| `versions/v0.8.2/backend/app/routers/split.py` | LLMConfig変換関数追加、MarkdownParser呼び出し修正、MAP.json生成・返却、displayName設定 |
+| `versions/v0.8.2/frontend/src/features/reviewer/types/index.ts` | `DocumentSplitMode` 型追加、`SplitSettings`・`SplitMarkdownRequest` 拡張、`SplitMarkdownResponse` に `mapJson` 追加、`DocumentPart` に `displayName` 追加、`SplitPreviewResult` に `documentMapJson` 追加 |
+| `versions/v0.8.2/frontend/src/features/reviewer/hooks/useSplitSettings.ts` | デフォルト設定追加、executePreview引数拡張、`documentMapJson` の保持 |
+| `versions/v0.8.2/frontend/src/features/reviewer/components/SplitSettingsSection.tsx` | 分割モード選択UI追加、注意文追加、プレビューテーブルで `displayName` 使用 |
+| `versions/v0.8.2/frontend/src/features/reviewer/index.tsx` | llmConfig の引き回し、構造マッチングでバックエンド生成 `mapJson` を使用、表示名に `displayName` を使用 |
 
 ## 既存パターンの再利用
 
@@ -209,3 +316,5 @@ const response = await api.splitMarkdown({
    - 見出しモードで分割プレビュー実行 → 従来通り動作
    - AIモード選択時、LLM設定が分割APIに渡される
    - NLPモード選択時、sudachipy で分割される
+   - AIモードで subsplit が発生した場合、プレビューテーブルで subsplit_title（例: "概要: part-1"）が表示される
+   - 構造マッチングに渡される MAP.json に is_subsplit, subsplit_title が含まれる

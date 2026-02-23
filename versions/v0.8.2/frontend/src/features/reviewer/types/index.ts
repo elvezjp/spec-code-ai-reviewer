@@ -173,6 +173,7 @@ export interface SplitSettings {
 export interface DocumentPart {
   id: string
   section: string
+  displayName: string
   level: number
   path: string
   startLine: number
@@ -204,6 +205,7 @@ export interface SplitMarkdownResponse {
   success: boolean
   parts: DocumentPart[]
   indexContent?: string
+  mapJson?: Record<string, unknown>[]
   error?: string
 }
 
@@ -224,6 +226,7 @@ export interface SplitPreviewResult {
   documentParts: DocumentPart[] | null
   codeParts: CodePart[] | null
   documentIndex: string | null
+  documentMapJson: Record<string, unknown>[] | null
   codeIndex: string | null
   codeLanguage: string | null
 }

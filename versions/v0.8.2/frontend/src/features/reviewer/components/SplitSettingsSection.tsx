@@ -331,9 +331,9 @@ function DocumentPartsTable({ parts }: { parts: DocumentPart[] }) {
         </TableHead>
         <TableBody>
           {parts.map((part, index) => (
-            <TableRow key={`${part.section}-${part.startLine}`}>
+            <TableRow key={`${part.id}-${part.startLine}`}>
               <TableCell>{index + 1}</TableCell>
-              <TableCell>{part.section}</TableCell>
+              <TableCell>{part.displayName}</TableCell>
               <TableCell className="text-gray-600">L{part.startLine}-L{part.endLine}</TableCell>
               <TableCell className="text-gray-600">~{part.estimatedTokens.toLocaleString()}</TableCell>
             </TableRow>

@@ -72,6 +72,9 @@ async def split_markdown(request: SplitMarkdownRequest):
         from md2map.generators.index_generator import (
             generate_index as md2map_generate_index,
         )
+        from md2map.generators.map_generator import (
+            generate_map as md2map_generate_map,
+        )
         from md2map.generators.parts_generator import (
             generate_parts as md2map_generate_parts,
         )
@@ -130,6 +133,14 @@ async def split_markdown(request: SplitMarkdownRequest):
             with open(index_path, "r", encoding="utf-8") as f:
                 index_content = f.read()
 
+            # MAP.json生成・読み取り
+            import json
+
+            map_path = os.path.join(out_dir, "MAP.json")
+            md2map_generate_map(sections, out_dir, map_path)
+            with open(map_path, "r", encoding="utf-8") as f:
+                map_json = json.load(f)
+
             # DocumentPartリスト構築
             parts = []
             for section in sections:
@@ -140,6 +151,7 @@ async def split_markdown(request: SplitMarkdownRequest):
                     DocumentPart(
                         id=section.id,
                         section=section.title,
+                        displayName=section.display_name(),
                         level=section.level,
                         path=section.path,
                         startLine=section.start_line,
@@ -153,6 +165,7 @@ async def split_markdown(request: SplitMarkdownRequest):
             success=True,
             parts=parts,
             indexContent=index_content,
+            mapJson=map_json,
         )
 
     except Exception as e:
