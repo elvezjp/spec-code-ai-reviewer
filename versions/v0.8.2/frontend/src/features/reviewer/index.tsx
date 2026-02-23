@@ -104,7 +104,7 @@ export function Reviewer() {
   } = useReviewExecution()
 
   // Zip export
-  const { downloadZip, downloadReport, copyReport, downloadSpecMarkdown, downloadCodeWithLineNumbers } =
+  const { downloadZip: rawDownloadZip, downloadReport, copyReport, downloadSpecMarkdown, downloadCodeWithLineNumbers } =
     useZipExport()
 
   // Split settings
@@ -119,6 +119,22 @@ export function Reviewer() {
     clearError: clearSplitPreviewError,
     isSplitEnabled,
   } = useSplitSettings()
+
+  // Wrap downloadZip to inject splitData when in split mode
+  const downloadZip = useCallback(
+    async (data: ReviewExecutionData, executionNumber: number) => {
+      const splitData = splitPreviewResult
+        ? {
+            documentIndex: splitPreviewResult.documentIndex || undefined,
+            documentMapJson: splitPreviewResult.documentMapJson || undefined,
+            codeIndex: splitPreviewResult.codeIndex || undefined,
+            codeMapJson: splitPreviewResult.codeMapJson || undefined,
+          }
+        : undefined
+      await rawDownloadZip(data, executionNumber, splitData)
+    },
+    [rawDownloadZip, splitPreviewResult]
+  )
 
   // Split review execution state
   const [splitReviewState, setSplitReviewState] = useState<SplitReviewState>({
@@ -192,9 +208,10 @@ export function Reviewer() {
     await executeSplitPreview(
       specMarkdown,
       specFiles.find(f => f.isMain)?.filename || 'design.md',
-      codeFilesForSplit
+      codeFilesForSplit,
+      llmConfig,
     )
-  }, [codeFiles, specMarkdown, specFiles, executeSplitPreview])
+  }, [codeFiles, specMarkdown, specFiles, executeSplitPreview, llmConfig])
 
   const handleRetryGroup = useCallback((groupId: string) => {
     errorActionRef.current = { action: 'retry', groupId }
@@ -269,16 +286,19 @@ export function Reviewer() {
     try {
       // Phase 1: Structure Matching
       const documentIndexMd = splitPreviewResult.documentIndex || ''
-      const documentMapJson = {
-        sections: splitPreviewResult.documentParts?.map((p) => ({
-          id: p.id,  // IDを含める（LLMがマッチングに使用）
-          title: p.section,
-          level: p.level,
-          path: p.path,
-          startLine: p.startLine,
-          endLine: p.endLine,
-        })) || [],
-      }
+      // md2map生成のMAP.jsonをそのまま使用（is_subsplit, subsplit_title等を含む）
+      const documentMapJson = splitPreviewResult.documentMapJson
+        ? { sections: splitPreviewResult.documentMapJson }
+        : {
+            sections: splitPreviewResult.documentParts?.map((p) => ({
+              id: p.id,
+              title: p.section,
+              level: p.level,
+              path: p.path,
+              startLine: p.startLine,
+              endLine: p.endLine,
+            })) || [],
+          }
 
       const codeFileStructures = codeFiles.map((cf) => {
         const codeParts = splitPreviewResult.codeParts || []
@@ -335,10 +355,11 @@ export function Reviewer() {
         // 設計書が一括モードの場合は全体のMarkdownを使用、分割モードの場合はIDベースでマッチング
         const documentContent = group.docSections.map((section) => {
           const part = splitPreviewResult.documentParts?.find((p) => p.id === section.id)
+          const displayName = part?.displayName || section.title
           const startLine = part?.startLine || 0
           const endLine = part?.endLine || 0
           const content = part?.content || ''
-          return `### ${section.title} (L${startLine}-L${endLine})\n\n${content}`
+          return `### ${displayName} (L${startLine}-L${endLine})\n\n${content}`
         }).join('\n\n')
 
         // Build code content for this group

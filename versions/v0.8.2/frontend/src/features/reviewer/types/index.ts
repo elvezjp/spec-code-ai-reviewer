@@ -162,14 +162,18 @@ export interface CodeFileForApi {
 
 export type SplitMode = 'batch' | 'split'
 
+export type DocumentSplitMode = 'ai' | 'heading' | 'nlp'
+
 export interface SplitSettings {
   reviewMode: SplitMode
   documentMaxDepth: number // 1-6
+  documentSplitMode: DocumentSplitMode
 }
 
 export interface DocumentPart {
   id: string
   section: string
+  displayName: string
   level: number
   path: string
   startLine: number
@@ -193,12 +197,15 @@ export interface SplitMarkdownRequest {
   content: string
   filename: string
   maxDepth: number
+  splitMode?: DocumentSplitMode
+  llmConfig?: LlmConfig
 }
 
 export interface SplitMarkdownResponse {
   success: boolean
   parts: DocumentPart[]
   indexContent?: string
+  mapJson?: Record<string, unknown>[]
   error?: string
 }
 
@@ -211,6 +218,7 @@ export interface SplitCodeResponse {
   success: boolean
   parts: CodePart[]
   indexContent?: string
+  mapJson?: Record<string, unknown>[]
   language?: string
   error?: string
 }
@@ -219,7 +227,9 @@ export interface SplitPreviewResult {
   documentParts: DocumentPart[] | null
   codeParts: CodePart[] | null
   documentIndex: string | null
+  documentMapJson: Record<string, unknown>[] | null
   codeIndex: string | null
+  codeMapJson: Record<string, unknown>[] | null
   codeLanguage: string | null
 }
 

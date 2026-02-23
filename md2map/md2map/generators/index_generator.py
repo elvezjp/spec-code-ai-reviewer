@@ -42,18 +42,22 @@ def generate_index(
     for section in sections:
         indent = "  " * (section.level - 1)
         id_label = f"[{section.id}] " if section.id else ""
+        subsplit_label = "[SubSplit] " if section.is_subsplit else ""
         if section.part_file:
             link = f"[{section.part_file}]({section.part_file})"
         else:
             link = ""
-        lines.append(f"{indent}- {id_label}{section.title} ({section.line_range()}) → {link}\n")
+        lines.append(
+            f"{indent}- {id_label}{subsplit_label}{section.display_name()} ({section.line_range()}) → {link}\n"
+        )
     lines.append("\n")
 
     # セクション詳細
     lines.append("## セクション詳細\n\n")
     for section in sections:
         id_label = f"[{section.id}] " if section.id else ""
-        lines.append(f"### {id_label}{section.title} (H{section.level})\n")
+        subsplit_label = "[SubSplit] " if section.is_subsplit else ""
+        lines.append(f"### {id_label}{subsplit_label}{section.display_name()} (H{section.level})\n")
         lines.append(f"- lines: {section.line_range()}\n")
 
         if section.summary:
@@ -65,6 +69,9 @@ def generate_index(
         if section.links:
             links_str = ", ".join([f"[{text}]({url})" for text, url in section.links])
             lines.append(f"- references: {links_str}\n")
+
+        if section.is_subsplit:
+            lines.append(f"- note: {section.note or 'n/a'}\n")
 
         lines.append("\n")
 

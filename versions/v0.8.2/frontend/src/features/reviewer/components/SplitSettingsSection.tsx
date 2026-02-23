@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
 import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@core/index'
-import type { SplitSettings, SplitMode, DocumentPart, CodePart, SplitPreviewResult } from '../types'
+import type { SplitSettings, SplitMode, DocumentSplitMode, DocumentPart, CodePart, SplitPreviewResult } from '../types'
 
 interface SplitSettingsSectionProps {
   settings: SplitSettings
@@ -73,6 +73,10 @@ export function SplitSettingsSection({
 
   const handleDepthChange = useCallback((depth: number) => {
     onSettingsChange({ ...settings, documentMaxDepth: depth })
+  }, [settings, onSettingsChange])
+
+  const handleSplitModeChange = useCallback((mode: DocumentSplitMode) => {
+    onSettingsChange({ ...settings, documentSplitMode: mode })
   }, [settings, onSettingsChange])
 
   const isSplitEnabled = settings.reviewMode === 'split'
@@ -153,6 +157,46 @@ export function SplitSettingsSection({
               {settings.reviewMode === 'split' && (
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-2">設計書</p>
+                  {/* 分割モード選択 */}
+                  <div className="mb-3">
+                    <span className="text-sm text-gray-600">分割モード:</span>
+                    <div className="mt-1 ml-2 space-y-1">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="splitMode"
+                          checked={settings.documentSplitMode === 'heading'}
+                          onChange={() => handleSplitModeChange('heading')}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="text-sm text-gray-700 w-20">見出し</span>
+                        <span className="text-xs text-gray-400">見出し（H2/H3等）の区切りで機械的に分割します</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="splitMode"
+                          checked={settings.documentSplitMode === 'nlp'}
+                          onChange={() => handleSplitModeChange('nlp')}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="text-sm text-gray-700 w-20">NLP</span>
+                        <span className="text-xs text-gray-400">見出しに加えて自然言語処理で意味的な区切りを検出して分割します</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="splitMode"
+                          checked={settings.documentSplitMode === 'ai'}
+                          onChange={() => handleSplitModeChange('ai')}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="text-sm text-gray-700 w-20">AI（推奨）</span>
+                        <span className="text-xs text-gray-400">見出しに加えてAIが文脈を考慮して適切に分割を行います</span>
+                      </label>
+                    </div>
+                  </div>
+                  {/* 見出しレベル選択 */}
                   <div className="flex items-center gap-4">
                     <span className="text-sm text-gray-600">見出しレベル:</span>
                     <label className="flex items-center gap-1 cursor-pointer">
@@ -215,7 +259,7 @@ export function SplitSettingsSection({
 
       {/* 分割プレビュー実行ボタン */}
       {isSplitEnabled && (
-        <div className="mb-4">
+        <div className="mb-4 flex items-center gap-3">
           <button
             onClick={onExecutePreview}
             disabled={!canExecutePreview || isExecuting || !!previewResult}
@@ -232,6 +276,11 @@ export function SplitSettingsSection({
             '分割プレビュー'
           )}
         </button>
+        {settings.documentSplitMode === 'ai' && (
+          <span className="text-xs text-muted text-gray-400">
+            ※ 設計書が大きい場合は、処理に時間が掛かったり、タイムアウトや制限等でエラーになる可能性があります。
+          </span>
+        )}
       </div>
       )}
 
@@ -284,9 +333,9 @@ function DocumentPartsTable({ parts }: { parts: DocumentPart[] }) {
         </TableHead>
         <TableBody>
           {parts.map((part, index) => (
-            <TableRow key={`${part.section}-${part.startLine}`}>
+            <TableRow key={`${part.id}-${part.startLine}`}>
               <TableCell>{index + 1}</TableCell>
-              <TableCell>{part.section}</TableCell>
+              <TableCell>{part.displayName}</TableCell>
               <TableCell className="text-gray-600">L{part.startLine}-L{part.endLine}</TableCell>
               <TableCell className="text-gray-600">~{part.estimatedTokens.toLocaleString()}</TableCell>
             </TableRow>

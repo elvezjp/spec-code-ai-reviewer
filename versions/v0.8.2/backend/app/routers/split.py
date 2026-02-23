@@ -4,6 +4,7 @@
 md2map / code2map ライブラリを使用してファイルを分割する。
 """
 
+import json
 import os
 import tempfile
 
@@ -16,6 +17,7 @@ from app.models.schemas import (
     SplitCodeResponse,
     DocumentPart,
     CodePart,
+    LLMConfig,
 )
 
 router = APIRouter()
@@ -32,6 +34,26 @@ def _estimate_tokens(text: str) -> int:
     japanese_chars = sum(1 for c in text if ord(c) > 0x3000)
     other_chars = len(text) - japanese_chars
     return int(japanese_chars * 1.5 + other_chars * 0.25)
+
+
+def _convert_to_md2map_llm_config(llm_config: LLMConfig | None):
+    """バックエンドの LLMConfig を md2map の LLMConfig に変換する"""
+    from md2map.llm.config import LLMConfig as Md2mapLLMConfig
+
+    if llm_config is None:
+        # システムLLM（環境変数）を使用
+        from md2map.llm.factory import build_llm_config_from_env
+        return build_llm_config_from_env()
+
+    return Md2mapLLMConfig(
+        provider=llm_config.provider,
+        model=llm_config.model,
+        api_key=llm_config.apiKey,
+        access_key_id=llm_config.accessKeyId,
+        secret_access_key=llm_config.secretAccessKey,
+        region=llm_config.region,
+        max_tokens=800,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -51,6 +73,9 @@ async def split_markdown(request: SplitMarkdownRequest):
         from md2map.generators.index_generator import (
             generate_index as md2map_generate_index,
         )
+        from md2map.generators.map_generator import (
+            generate_map as md2map_generate_map,
+        )
         from md2map.generators.parts_generator import (
             generate_parts as md2map_generate_parts,
         )
@@ -63,8 +88,17 @@ async def split_markdown(request: SplitMarkdownRequest):
             with open(input_path, "w", encoding="utf-8") as f:
                 f.write(request.content)
 
-            # パース
-            parser = MarkdownParser()
+            # AIモードの場合のみ LLMConfig を変換
+            md2map_llm_config = None
+            if request.splitMode == "ai":
+                md2map_llm_config = _convert_to_md2map_llm_config(
+                    request.llmConfig
+                )
+
+            parser = MarkdownParser(
+                split_mode=request.splitMode,
+                llm_config=md2map_llm_config,
+            )
             sections, warnings = parser.parse(input_path, request.maxDepth)
 
             if not sections:
@@ -100,6 +134,12 @@ async def split_markdown(request: SplitMarkdownRequest):
             with open(index_path, "r", encoding="utf-8") as f:
                 index_content = f.read()
 
+            # MAP.json生成・読み取り
+            map_path = os.path.join(out_dir, "MAP.json")
+            md2map_generate_map(sections, out_dir, map_path)
+            with open(map_path, "r", encoding="utf-8") as f:
+                map_json = json.load(f)
+
             # DocumentPartリスト構築
             parts = []
             for section in sections:
@@ -110,6 +150,7 @@ async def split_markdown(request: SplitMarkdownRequest):
                     DocumentPart(
                         id=section.id,
                         section=section.title,
+                        displayName=section.display_name(),
                         level=section.level,
                         path=section.path,
                         startLine=section.start_line,
@@ -123,6 +164,7 @@ async def split_markdown(request: SplitMarkdownRequest):
             success=True,
             parts=parts,
             indexContent=index_content,
+            mapJson=map_json,
         )
 
     except Exception as e:
@@ -157,6 +199,9 @@ async def split_code(request: SplitCodeRequest):
     try:
         from code2map.generators.index_generator import (
             generate_index as code2map_generate_index,
+        )
+        from code2map.generators.map_generator import (
+            generate_map as code2map_generate_map,
         )
         from code2map.generators.parts_generator import (
             generate_parts as code2map_generate_parts,
@@ -201,7 +246,7 @@ async def split_code(request: SplitCodeRequest):
 
             # パーツ生成（symbol.part_fileを設定するために必要）
             out_dir = os.path.join(tmpdir, "output")
-            code2map_generate_parts(symbols, c2m_lines, out_dir)
+            fragments = code2map_generate_parts(symbols, c2m_lines, out_dir)
 
             # INDEX.md生成
             index_path = os.path.join(out_dir, "INDEX.md")
@@ -212,6 +257,12 @@ async def split_code(request: SplitCodeRequest):
             # INDEX.md読み取り
             with open(index_path, "r", encoding="utf-8") as f:
                 index_content = f.read()
+
+            # MAP.json生成・読み取り
+            map_path = os.path.join(out_dir, "MAP.json")
+            code2map_generate_map(fragments, map_path)
+            with open(map_path, "r", encoding="utf-8") as f:
+                map_json = json.load(f)
 
             # CodePartリスト構築
             parts = []
@@ -236,6 +287,7 @@ async def split_code(request: SplitCodeRequest):
             success=True,
             parts=parts,
             indexContent=index_content,
+            mapJson=map_json,
             language=language,
         )
 

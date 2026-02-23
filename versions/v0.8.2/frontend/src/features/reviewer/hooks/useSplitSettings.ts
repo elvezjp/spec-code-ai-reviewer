@@ -4,6 +4,7 @@ import type {
   SplitPreviewResult,
   DocumentPart,
   CodePart,
+  LlmConfig,
 } from '../types'
 import * as api from '../services/api'
 
@@ -19,7 +20,8 @@ interface UseSplitSettingsReturn {
   executePreview: (
     designMarkdown: string | null,
     designFilename: string,
-    codeFiles: Array<{ filename: string; content: string }>
+    codeFiles: Array<{ filename: string; content: string }>,
+    llmConfig?: LlmConfig | null,
   ) => Promise<void>
   clearPreview: () => void
   clearError: () => void
@@ -33,6 +35,7 @@ interface UseSplitSettingsReturn {
 const DEFAULT_SETTINGS: SplitSettings = {
   reviewMode: 'batch',
   documentMaxDepth: 2,
+  documentSplitMode: 'ai',
 }
 
 export function useSplitSettings(): UseSplitSettingsReturn {
@@ -44,7 +47,8 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   const executePreview = useCallback(async (
     designMarkdown: string | null,
     designFilename: string,
-    codeFiles: Array<{ filename: string; content: string }>
+    codeFiles: Array<{ filename: string; content: string }>,
+    llmConfig?: LlmConfig | null,
   ) => {
     setIsExecutingPreview(true)
     setError(null)
@@ -61,8 +65,10 @@ export function useSplitSettings(): UseSplitSettingsReturn {
 
       let documentParts: DocumentPart[] | null = null
       let documentIndex: string | null = null
+      let documentMapJson: Record<string, unknown>[] | null = null
       let codeParts: CodePart[] | null = null
       let codeIndex: string | null = null
+      let codeMapJson: Record<string, unknown>[] | null = null
       let codeLanguage: string | null = null
 
       // 設計書分割
@@ -71,11 +77,14 @@ export function useSplitSettings(): UseSplitSettingsReturn {
           content: designMarkdown,
           filename: designFilename,
           maxDepth: settings.documentMaxDepth,
+          splitMode: settings.documentSplitMode,
+          llmConfig: settings.documentSplitMode === 'ai' ? (llmConfig ?? undefined) : undefined,
         })
 
         if (response.success) {
           documentParts = response.parts
           documentIndex = response.indexContent || null
+          documentMapJson = response.mapJson || null
         } else {
           throw new Error(response.error || '設計書の分割に失敗しました')
         }
@@ -85,6 +94,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
       if (settings.reviewMode === 'split' && codeFiles.length > 0) {
         const allCodeParts: CodePart[] = []
         const allIndexContents: string[] = []
+        const allMapJsonEntries: Record<string, unknown>[] = []
         const unsupportedFiles: string[] = []
 
         for (const codeFile of codeFiles) {
@@ -104,6 +114,9 @@ export function useSplitSettings(): UseSplitSettingsReturn {
             if (response.indexContent) {
               allIndexContents.push(response.indexContent)
             }
+            if (response.mapJson) {
+              allMapJsonEntries.push(...response.mapJson)
+            }
             if (response.language && !codeLanguage) {
               codeLanguage = response.language
             }
@@ -121,6 +134,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         if (allCodeParts.length > 0) {
           codeParts = allCodeParts
           codeIndex = allIndexContents.join('\n\n---\n\n')
+          codeMapJson = allMapJsonEntries.length > 0 ? allMapJsonEntries : null
         }
       }
 
@@ -128,7 +142,9 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         documentParts,
         codeParts,
         documentIndex,
+        documentMapJson,
         codeIndex,
+        codeMapJson,
         codeLanguage,
       })
     } catch (err) {
@@ -138,7 +154,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     } finally {
       setIsExecutingPreview(false)
     }
-  }, [settings.reviewMode, settings.documentMaxDepth])
+  }, [settings.reviewMode, settings.documentMaxDepth, settings.documentSplitMode])
 
   const clearPreview = useCallback(() => {
     setPreviewResult(null)

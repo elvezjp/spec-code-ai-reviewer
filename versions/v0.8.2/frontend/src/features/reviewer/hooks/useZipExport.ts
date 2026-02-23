@@ -3,8 +3,15 @@ import JSZip from 'jszip'
 import type { ReviewExecutionData } from '../types'
 import { generateSystemPromptMarkdown, generateReadmeMarkdown } from '../services/markdown'
 
+export interface SplitExportData {
+  documentIndex?: string
+  documentMapJson?: Record<string, unknown>[]
+  codeIndex?: string
+  codeMapJson?: Record<string, unknown>[]
+}
+
 interface UseZipExportReturn {
-  downloadZip: (data: ReviewExecutionData, executionNumber: number) => Promise<void>
+  downloadZip: (data: ReviewExecutionData, executionNumber: number, splitData?: SplitExportData) => Promise<void>
   downloadReport: (report: string, executionNumber: number) => void
   copyReport: (report: string) => Promise<void>
   downloadSpecMarkdown: (markdown: string) => void
@@ -13,7 +20,7 @@ interface UseZipExportReturn {
 
 export function useZipExport(): UseZipExportReturn {
   const downloadZip = useCallback(
-    async (data: ReviewExecutionData, executionNumber: number) => {
+    async (data: ReviewExecutionData, executionNumber: number, splitData?: SplitExportData) => {
       const zip = new JSZip()
 
       // Generate timestamp from executedAt (YYYY/MM/DD HH:MM:SS → YYYYMMDD-HHMMSS)
@@ -36,8 +43,24 @@ export function useZipExport(): UseZipExportReturn {
       zip.file('review-result.md', data.report)
 
       // Add README
-      const readme = generateReadmeMarkdown(data.reviewMeta, executionNumber)
+      const readme = generateReadmeMarkdown(data.reviewMeta, executionNumber, !!splitData)
       zip.file('README.md', readme)
+
+      // 分割レビュー時の追加ファイル
+      if (splitData) {
+        if (splitData.documentIndex) {
+          zip.file('split/spec-INDEX.md', splitData.documentIndex)
+        }
+        if (splitData.documentMapJson) {
+          zip.file('split/spec-MAP.json', JSON.stringify(splitData.documentMapJson, null, 2) + '\n')
+        }
+        if (splitData.codeIndex) {
+          zip.file('split/code-INDEX.md', splitData.codeIndex)
+        }
+        if (splitData.codeMapJson) {
+          zip.file('split/code-MAP.json', JSON.stringify(splitData.codeMapJson, null, 2) + '\n')
+        }
+      }
 
       // Generate and download
       const content = await zip.generateAsync({ type: 'blob' })

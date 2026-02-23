@@ -28,8 +28,10 @@ IXV tackles the challenges of understanding, structuring, and utilizing Japanese
 ## Features
 
 - **Heading-Based Splitting**: Split documents by H1, H2, H3 (and deeper) heading levels
+- **Multi-stage Section Splitting**: Support semantic re-splitting via NLP (morphological analysis) or AI (LLM)
 - **Markdown Index Generation**: Auto-generate INDEX.md with structure tree and section details
 - **Line Number Mapping**: Provide correspondence between parts and original file in MAP.json (machine-readable)
+- **Multi LLM Provider**: Support for OpenAI, Anthropic, and Amazon Bedrock
 - **Japanese Support**: Full support for Japanese document processing and character counting
 - **Code Block Awareness**: Correctly handle headings inside code blocks (skip them)
 - **Dry Run**: Preview generation plan before actual output
@@ -67,11 +69,37 @@ uv run md2map --help
 ### Basic Execution
 
 ```bash
-# Analyze a markdown file
+# Analyze a markdown file (heading-based splitting)
 uv run md2map build document.md --out ./output
 
 # Analyze with custom depth (H1-H2 only)
 uv run md2map build document.md --out ./output --max-depth 2
+```
+
+### NLP Mode Splitting
+
+```bash
+# Semantic re-splitting via morphological analysis (requires sudachipy)
+uv run md2map build document.md --split-mode nlp
+
+# Change the re-splitting threshold (default: 500 characters)
+uv run md2map build document.md --split-mode nlp --split-threshold 300
+```
+
+### AI Mode Splitting
+
+```bash
+# Semantic re-splitting via LLM (Amazon Bedrock, default)
+uv run md2map build document.md --split-mode ai
+
+# Use OpenAI
+uv run md2map build document.md --split-mode ai --ai-provider openai
+
+# Use Anthropic API
+uv run md2map build document.md --split-mode ai --ai-provider anthropic
+
+# Specify a model
+uv run md2map build document.md --split-mode ai --ai-provider bedrock --ai-model global.anthropic.claude-haiku-4-5-20251001-v1:0
 ```
 
 ### Check Output
@@ -101,6 +129,12 @@ uv run md2map build document.md --dry-run
 | `--out <DIR>` | `./md2map-out` | Output directory |
 | `--max-depth <N>` | `3` | Maximum heading depth to process (1-6) |
 | `--id-prefix <PREFIX>` | `MD` | Section ID prefix (MD1, MD2, ...) |
+| `--split-mode <MODE>` / `-m` | `heading` | Split mode (`heading`/`nlp`/`ai`) |
+| `--split-threshold <N>` | `500` | Minimum character count (Japanese) / word count (English) for re-splitting |
+| `--max-subsections <N>` | `5` | Maximum number of virtual headings per section |
+| `--ai-provider <PROVIDER>` | `bedrock` | AI provider (`openai`/`anthropic`/`bedrock`) |
+| `--ai-model <MODEL>` | Provider default | AI model ID |
+| `--ai-region <REGION>` | `ap-northeast-1` | AWS region for Bedrock |
 | `--verbose` | false | Output detailed logs |
 | `--dry-run` | false | Preview only, no file generation |
 
@@ -175,6 +209,13 @@ md2map/
 │   │   ├── index_generator.py   # INDEX.md generation
 │   │   ├── map_generator.py     # MAP.json generation
 │   │   └── parts_generator.py   # parts/ generation
+│   ├── llm/               # LLM providers (for AI mode)
+│   │   ├── base_provider.py     # Base class
+│   │   ├── factory.py           # Provider factory
+│   │   ├── config.py            # LLM configuration
+│   │   ├── anthropic_provider.py # Anthropic API
+│   │   ├── bedrock_provider.py  # Amazon Bedrock
+│   │   └── openai_provider.py   # OpenAI API
 │   ├── models/            # Data models
 │   │   └── section.py     # Section information class
 │   ├── parsers/           # Document parsers
@@ -183,9 +224,13 @@ md2map/
 │   └── utils/             # Utilities
 │       ├── file_utils.py  # File operations
 │       └── logger.py      # Log configuration
+├── add-line-numbers/      # Line number tool (git subtree)
 ├── tests/                 # Test code
 │   └── fixtures/          # Test fixtures
 ├── docs/                  # Documentation
+├── versions/              # Old version snapshots
+│   ├── v0.1.0/            # v0.1.0 snapshot
+│   └── README.md          # versions directory description
 ├── CHANGELOG.md           # Version history
 ├── CONTRIBUTING.md        # Contribution guidelines
 ├── README.md              # This file (English)
@@ -205,6 +250,7 @@ For details, see [spec.md](spec.md).
 
 ## Related Projects
 
+- [add-line-numbers](https://github.com/elvezjp/add-line-numbers) - Line number tool used in AI mode
 - [code2map](https://github.com/elvezjp/code2map) - Similar tool for source code analysis
 
 ## Security
