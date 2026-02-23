@@ -11,7 +11,7 @@
 
 A web application that uses AI to cross-check design documents (Excel format) against program code and verify consistency.
 
-https://github.com/user-attachments/assets/bd026461-2b8e-4f57-bc36-7590a338d413
+https://github.com/user-attachments/assets/1799bdb9-f197-4c55-85c5-1b9279313c71
 
 ## Features
 
