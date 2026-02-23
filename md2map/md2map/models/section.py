@@ -22,6 +22,9 @@ class Section:
         part_file: 生成されたパートファイルの相対パス
         word_count: 単語数/文字数
         id: セクションの一意識別子（{prefix}{連番} 形式）
+        is_subsplit: サブスプリット（再分割）由来かどうか
+        note: 備考（分割の由来等）
+        subsplit_title: サブスプリットタイトル（表示名として使用）
     """
 
     # 基本情報
@@ -44,6 +47,9 @@ class Section:
     part_file: Optional[str] = None
     word_count: int = 0
     id: Optional[str] = None
+    is_subsplit: bool = False
+    note: str = ""
+    subsplit_title: str = ""
 
     def display_name(self) -> str:
         """表示用名前を返す
@@ -51,6 +57,8 @@ class Section:
         Returns:
             見出しテキスト
         """
+        if self.is_subsplit and self.subsplit_title:
+            return self.subsplit_title
         return self.title
 
     def line_range(self) -> str:

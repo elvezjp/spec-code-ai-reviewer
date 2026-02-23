@@ -1,6 +1,6 @@
 [project]
 name = "md2map"
-version = "0.1.0"
+version = "0.2.0"
 description = "マークダウンファイルを意味的単位に分割し、AI解析用の索引を生成するCLIツール"
 readme = "README.md"
 license = { text = "MIT" }
@@ -19,7 +19,12 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-dependencies = []
+dependencies = [
+    "add-line-numbers",
+]
+
+[tool.uv.sources]
+add-line-numbers = { path = "add-line-numbers", editable = true }
 
 [project.optional-dependencies]
 dev = [
@@ -27,6 +32,11 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
+    "sudachipy>=0.6",
+    "sudachidict-core>=20230927",
+    "openai>=1.0",
+    "anthropic>=0.18",
+    "boto3>=1.28",
 ]
 
 [project.scripts]
