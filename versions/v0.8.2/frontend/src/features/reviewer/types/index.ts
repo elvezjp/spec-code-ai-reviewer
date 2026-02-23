@@ -162,9 +162,12 @@ export interface CodeFileForApi {
 
 export type SplitMode = 'batch' | 'split'
 
+export type DocumentSplitMode = 'ai' | 'heading' | 'nlp'
+
 export interface SplitSettings {
   reviewMode: SplitMode
   documentMaxDepth: number // 1-6
+  documentSplitMode: DocumentSplitMode
 }
 
 export interface DocumentPart {
@@ -193,6 +196,8 @@ export interface SplitMarkdownRequest {
   content: string
   filename: string
   maxDepth: number
+  splitMode?: DocumentSplitMode
+  llmConfig?: LlmConfig
 }
 
 export interface SplitMarkdownResponse {

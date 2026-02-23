@@ -282,6 +282,8 @@ class SplitMarkdownRequest(BaseModel):
     content: str  # Markdownテキスト
     filename: str  # 元ファイル名
     maxDepth: int = Field(default=2, ge=1, le=6)  # 分割の見出しレベル (H1-H6)
+    splitMode: Literal["ai", "heading", "nlp"] = "ai"  # 分割モード
+    llmConfig: LLMConfig | None = None  # AIモード用LLM設定
 
 
 class DocumentPart(BaseModel):

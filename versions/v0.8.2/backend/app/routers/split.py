@@ -16,6 +16,7 @@ from app.models.schemas import (
     SplitCodeResponse,
     DocumentPart,
     CodePart,
+    LLMConfig,
 )
 
 router = APIRouter()
@@ -32,6 +33,26 @@ def _estimate_tokens(text: str) -> int:
     japanese_chars = sum(1 for c in text if ord(c) > 0x3000)
     other_chars = len(text) - japanese_chars
     return int(japanese_chars * 1.5 + other_chars * 0.25)
+
+
+def _convert_to_md2map_llm_config(llm_config: LLMConfig | None):
+    """バックエンドの LLMConfig を md2map の LLMConfig に変換する"""
+    from md2map.llm.config import LLMConfig as Md2mapLLMConfig
+
+    if llm_config is None:
+        # システムLLM（環境変数）を使用
+        from md2map.llm.factory import build_llm_config_from_env
+        return build_llm_config_from_env()
+
+    return Md2mapLLMConfig(
+        provider=llm_config.provider,
+        model=llm_config.model,
+        api_key=llm_config.apiKey,
+        access_key_id=llm_config.accessKeyId,
+        secret_access_key=llm_config.secretAccessKey,
+        region=llm_config.region,
+        max_tokens=800,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -63,8 +84,17 @@ async def split_markdown(request: SplitMarkdownRequest):
             with open(input_path, "w", encoding="utf-8") as f:
                 f.write(request.content)
 
-            # パース
-            parser = MarkdownParser()
+            # AIモードの場合のみ LLMConfig を変換
+            md2map_llm_config = None
+            if request.splitMode == "ai":
+                md2map_llm_config = _convert_to_md2map_llm_config(
+                    request.llmConfig
+                )
+
+            parser = MarkdownParser(
+                split_mode=request.splitMode,
+                llm_config=md2map_llm_config,
+            )
             sections, warnings = parser.parse(input_path, request.maxDepth)
 
             if not sections:

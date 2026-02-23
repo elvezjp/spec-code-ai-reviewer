@@ -192,9 +192,10 @@ export function Reviewer() {
     await executeSplitPreview(
       specMarkdown,
       specFiles.find(f => f.isMain)?.filename || 'design.md',
-      codeFilesForSplit
+      codeFilesForSplit,
+      llmConfig,
     )
-  }, [codeFiles, specMarkdown, specFiles, executeSplitPreview])
+  }, [codeFiles, specMarkdown, specFiles, executeSplitPreview, llmConfig])
 
   const handleRetryGroup = useCallback((groupId: string) => {
     errorActionRef.current = { action: 'retry', groupId }

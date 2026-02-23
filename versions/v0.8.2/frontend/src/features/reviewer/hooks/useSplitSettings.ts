@@ -4,6 +4,7 @@ import type {
   SplitPreviewResult,
   DocumentPart,
   CodePart,
+  LlmConfig,
 } from '../types'
 import * as api from '../services/api'
 
@@ -19,7 +20,8 @@ interface UseSplitSettingsReturn {
   executePreview: (
     designMarkdown: string | null,
     designFilename: string,
-    codeFiles: Array<{ filename: string; content: string }>
+    codeFiles: Array<{ filename: string; content: string }>,
+    llmConfig?: LlmConfig | null,
   ) => Promise<void>
   clearPreview: () => void
   clearError: () => void
@@ -33,6 +35,7 @@ interface UseSplitSettingsReturn {
 const DEFAULT_SETTINGS: SplitSettings = {
   reviewMode: 'batch',
   documentMaxDepth: 2,
+  documentSplitMode: 'ai',
 }
 
 export function useSplitSettings(): UseSplitSettingsReturn {
@@ -44,7 +47,8 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   const executePreview = useCallback(async (
     designMarkdown: string | null,
     designFilename: string,
-    codeFiles: Array<{ filename: string; content: string }>
+    codeFiles: Array<{ filename: string; content: string }>,
+    llmConfig?: LlmConfig | null,
   ) => {
     setIsExecutingPreview(true)
     setError(null)
@@ -71,6 +75,8 @@ export function useSplitSettings(): UseSplitSettingsReturn {
           content: designMarkdown,
           filename: designFilename,
           maxDepth: settings.documentMaxDepth,
+          splitMode: settings.documentSplitMode,
+          llmConfig: settings.documentSplitMode === 'ai' ? (llmConfig ?? undefined) : undefined,
         })
 
         if (response.success) {
@@ -138,7 +144,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     } finally {
       setIsExecutingPreview(false)
     }
-  }, [settings.reviewMode, settings.documentMaxDepth])
+  }, [settings.reviewMode, settings.documentMaxDepth, settings.documentSplitMode])
 
   const clearPreview = useCallback(() => {
     setPreviewResult(null)
