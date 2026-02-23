@@ -176,23 +176,23 @@ export function SplitSettingsSection({
                         <input
                           type="radio"
                           name="splitMode"
-                          checked={settings.documentSplitMode === 'ai'}
-                          onChange={() => handleSplitModeChange('ai')}
-                          className="w-4 h-4 text-blue-600"
-                        />
-                        <span className="text-sm text-gray-700 w-20">AI（推奨）</span>
-                        <span className="text-xs text-gray-400">見出しに加えてAIが文脈を考慮して適切に分割を行います</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="splitMode"
                           checked={settings.documentSplitMode === 'nlp'}
                           onChange={() => handleSplitModeChange('nlp')}
                           className="w-4 h-4 text-blue-600"
                         />
                         <span className="text-sm text-gray-700 w-20">NLP</span>
                         <span className="text-xs text-gray-400">見出しに加えて自然言語処理で意味的な区切りを検出して分割します</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="splitMode"
+                          checked={settings.documentSplitMode === 'ai'}
+                          onChange={() => handleSplitModeChange('ai')}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="text-sm text-gray-700 w-20">AI（推奨）</span>
+                        <span className="text-xs text-gray-400">見出しに加えてAIが文脈を考慮して適切に分割を行います</span>
                       </label>
                     </div>
                   </div>
