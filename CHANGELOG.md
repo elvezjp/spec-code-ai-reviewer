@@ -5,6 +5,54 @@
 このファイルの形式は [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/lang/ja/) に準拠しています。
 
+## [0.2.0] - 2026-02-19
+
+マルチステージ分割とマルチLLMプロバイダーに対応。見出しベースの分割に加え、NLP（形態素解析）やAI（LLM）によるセマンティック再分割が可能になりました。
+
+### 追加
+
+- **マルチステージ分割**: 見出しベースの分割に加え、長大セクションの再分割に対応
+  - `--split-mode heading`: 従来の見出しベース分割（デフォルト）
+  - `--split-mode nlp`: 形態素解析（SudachiPy）によるセマンティック分割
+  - `--split-mode ai`: LLMによるセマンティック分割
+  - `--split-threshold`: 再分割対象の最小文字数/単語数を指定できるようになりました（デフォルト: 500）
+  - `--max-subsections`: 1セクションから生成するサブセクションの最大数を指定できるようになりました（デフォルト: 5）
+
+- **マルチLLMプロバイダー**: AIモードで複数のLLMプロバイダーを選択可能
+  - `--ai-provider openai`: OpenAI API（デフォルトモデル: `gpt-4o-mini`）
+  - `--ai-provider anthropic`: Anthropic API（デフォルトモデル: `claude-haiku-4-5-20251001`）
+  - `--ai-provider bedrock`: Amazon Bedrock（デフォルト、デフォルトモデル: `global.anthropic.claude-haiku-4-5-20251001-v1:0`）
+  - `--ai-model`: モデルIDを明示的に指定可能
+  - `--ai-region`: Bedrock用リージョンを指定可能
+
+- **LLMプロバイダー抽象化レイヤー**: `md2map/llm/` モジュールを新規追加
+  - `BaseLLMProvider`: プロバイダー共通インターフェース
+  - `OpenAIProvider` / `AnthropicProvider` / `BedrockProvider`: 各プロバイダー実装
+  - `LLMConfig`: プロバイダー設定のデータクラス
+  - ファクトリパターンによるプロバイダー生成
+
+- **add-line-numbers**: 行番号付与ユーティリティをサブツリーとして統合
+
+- **テスト**: LLMプロバイダーのユニットテストを追加（`tests/test_llm.py`）
+
+- **ドキュメント**: サンプル出力を `docs/examples/v0.1/` と `docs/examples/v0.2/` に再編成し、heading / nlp / ai 各モードの出力例を追加
+
+### 変更
+
+- **INDEX.md生成**: サブセクション（再分割されたセクション）の表示に対応
+- **MAP.json生成**: サブセクション情報の出力に対応
+- **parts/生成**: サブセクションのファイル生成に対応
+- **仕様書**: NLPモード・AIモードの仕様を追記
+
+### 既知の制限事項
+
+このバージョンには以下の制限があります：
+
+- NLPモードは SudachiPy のインストールが必要
+- AIモードは各プロバイダーのAPIキーまたはAWS認証情報が必要
+- 単一ファイルのみ対応（ディレクトリ単位の解析は未対応）
+- ATX形式の見出しのみ対応（Setext形式の下線見出しは未対応）
+
 ## [0.1.0] - 2026-02-06
 
 初回リリース。Markdownドキュメントをセマンティックマップに変換するMVP版。
