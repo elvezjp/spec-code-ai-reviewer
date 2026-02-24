@@ -45,7 +45,7 @@ describe('executeStructureMatching', () => {
           codeSymbols: [
             { id: 'CD1', filename: 'user_service.py', symbol: 'UserService' },
           ],
-          reason: 'ユーザー管理に関連する設計とコード',
+          reason: '',
           estimatedTokens: 500,
         },
       ],
@@ -97,7 +97,7 @@ describe('executeStructureMatching', () => {
           groupName: 'ユーザー管理',
           docSections: [{ id: 'MD1', title: 'ユーザー管理', path: 'ユーザー管理' }],
           codeSymbols: [{ id: 'CD1', filename: 'user.py', symbol: 'User' }],
-          reason: 'ユーザー管理',
+          reason: '',
           estimatedTokens: 300,
         },
         {
@@ -105,7 +105,7 @@ describe('executeStructureMatching', () => {
           groupName: '認証機能',
           docSections: [{ id: 'MD2', title: '認証', path: '認証' }],
           codeSymbols: [{ id: 'CD2', filename: 'auth.py', symbol: 'Auth' }],
-          reason: '認証機能',
+          reason: '',
           estimatedTokens: 400,
         },
       ],

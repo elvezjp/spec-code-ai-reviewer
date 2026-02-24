@@ -2265,7 +2265,7 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
       "codeSymbols": [
         {"id": "CD1", "filename": "UserService.java", "symbol": "UserService"}
       ],
-      "reason": "ユーザー管理に関連する設計とコード",
+      "reason": "",
       "estimatedTokens": 2000
     }
   ],
@@ -2273,6 +2273,11 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
   "tokensUsed": {"input": 1500, "output": 500}
 }
 ```
+
+**備考:**
+- LLMへの出力指示はIDのみの文字列配列（例: `"doc_sections": ["MD1", "MD2"]`）で行い、バックエンドがMAP.jsonからtitle/path/filename/symbol等のメタ情報を復元してレスポンスを構築する。
+- `reason` フィールドは常に空文字（LLM出力から削除済み）。型互換性のため残している。
+- LLMプロンプトにはユーザーメッセージ冒頭に入力サマリー（設計書セクション数、コードシンボル数、ID一覧）を付与し、網羅性を自己検証できるようにしている。
 
 #### POST /api/review/group
 

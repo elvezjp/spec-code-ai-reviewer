@@ -222,22 +222,24 @@ async def structure_matching(request: StructureMatchingRequest):
     {
       "id": "group1",
       "name": "グループの表示名",
-      "doc_sections": [
-        {
-          "id": "MAP.jsonのid値をそのまま使用（例: MD1）",
-          "title": "MAP.jsonのtitle値",
-          "path": "MAP.jsonのpath値"
-        }
-      ],
-      "code_symbols": [
-        {
-          "id": "MAP.jsonのid値をそのまま使用（例: CD1）",
-          "filename": "MAP.jsonのoriginal_file値",
-          "symbol": "MAP.jsonのsymbol値"
-        }
-      ],
-      "reason": "グループ化の理由"
+      "doc_sections": ["MD1", "MD2"],
+      "code_symbols": ["CD1", "CD3"]
     }
+  ]
+}
+```
+
+制約:
+- doc_sections / code_symbols にはMAP.jsonのid値のみを文字列配列で指定してください（title, path, filename, symbol等は不要）
+- 各グループには doc_sections と code_symbols を1件以上含めてください。設計書だけ、またはコードだけのグループは作成しないでください
+- すべてのIDがいずれかのグループに含まれるようにしてください
+
+出力例（設計書: MD1, MD2, MD3 / コード: CD1, CD2 の場合）:
+```json
+{
+  "groups": [
+    {"id": "group1", "name": "ユーザー管理", "doc_sections": ["MD1", "MD2"], "code_symbols": ["CD1"]},
+    {"id": "group2", "name": "認証処理", "doc_sections": ["MD3"], "code_symbols": ["CD1", "CD2"]}
   ]
 }
 ```"""
@@ -245,21 +247,27 @@ async def structure_matching(request: StructureMatchingRequest):
         # 注意事項の構築
         notes_parts = [
             "- 必ず指定されたJSON形式のみで応答してください",
-            "- 【重要】各グループには、doc_sections（設計書セクション）とcode_symbols（コードシンボル）の両方を必ず1件以上含めてください。設計書だけ、またはコードだけのグループは作成しないでください。",
-            "- 【重要】すべての設計書セクションとコードシンボルが、いずれかのグループに含まれるようにしてください。どのグループにも含まれない設計書セクションやコードシンボルがないようにしてください。",
             "- 設計書の複数セクションと、複数のコード部分が、1つのグループに対応する場合もあります。",
             "- 同じ設計書セクション、コード部分が、複数のグループに対応する場合もあります。",
             "- 文字数の少ないセクション、コードシンボルは、情報が含まれていない可能性があります。他の部分と合わせてグループ化を検討してください。",
-            "- 【重要】出力するdoc_sectionsのidは、設計書MAP.jsonに記載されたid値を正確にそのまま使用してください（例: MD1, MD2, ...）",
-            "- 【重要】出力するcode_symbolsのidは、コードMAP.jsonに記載されたid値を正確にそのまま使用してください（例: CD1, CD2, ...）",
         ]
 
         notes = "\n".join(notes_parts)
 
         system_prompt = build_system_prompt(role, purpose, output_format, notes)
 
+        # 項目数サマリー
+        doc_ids = [s.get("id", "") for s in request.document.mapJson.get("sections", [])]
+        code_ids = []
+        for cf in request.codeFiles:
+            code_ids.extend([s.get("id", "") for s in cf.mapJson.get("symbols", [])])
+
         # ユーザーメッセージ構築（データのみ）
         user_parts = [
+            "## 入力サマリー\n",
+            f"- 設計書セクション: {len(doc_ids)}件 ({', '.join(doc_ids)})",
+            f"- コードシンボル: {len(code_ids)}件 ({', '.join(code_ids)})",
+            f"- すべてのIDがいずれかのグループに含まれるようにしてください\n",
             "## 設計書構造\n",
             "### INDEX.md",
             request.document.indexMd,
@@ -285,6 +293,23 @@ async def structure_matching(request: StructureMatchingRequest):
             system_prompt, user_message
         )
 
+        # デバッグ: LLMレスポンスを標準出力に表示
+        print("=" * 80)
+        print("[DEBUG] 構造マッチング LLMレスポンス:")
+        print("=" * 80)
+        print(response_text)
+        print("=" * 80)
+
+        # MAP.jsonからID→メタ情報のルックアップテーブルを構築
+        doc_map = {}
+        for s in request.document.mapJson.get("sections", []):
+            doc_map[s.get("id", "")] = s
+
+        code_map = {}
+        for cf in request.codeFiles:
+            for s in cf.mapJson.get("symbols", []):
+                code_map[s.get("id", "")] = {**s, "filename": cf.filename}
+
         # JSON応答パース
         result = _extract_json(response_text)
         groups = []
@@ -292,23 +317,27 @@ async def structure_matching(request: StructureMatchingRequest):
             group_id = g.get("id", f"group_{i + 1}")
             group_name = g.get("name", group_id)
 
-            doc_sections = [
-                MatchedDocSection(
-                    id=ds.get("id", ""),
-                    title=ds.get("title", ""),
-                    path=ds.get("path", ds.get("title", "")),
-                )
-                for ds in g.get("doc_sections", [])
-            ]
+            # IDのみの配列からMatchedDocSectionを復元
+            doc_sections = []
+            for doc_id in g.get("doc_sections", []):
+                if isinstance(doc_id, str):
+                    info = doc_map.get(doc_id, {})
+                    doc_sections.append(MatchedDocSection(
+                        id=doc_id,
+                        title=info.get("title", ""),
+                        path=info.get("path", info.get("title", "")),
+                    ))
 
-            code_symbols = [
-                MatchedCodeSymbol(
-                    id=cs.get("id", ""),
-                    filename=cs.get("filename", ""),
-                    symbol=cs.get("symbol", ""),
-                )
-                for cs in g.get("code_symbols", [])
-            ]
+            # IDのみの配列からMatchedCodeSymbolを復元
+            code_symbols = []
+            for code_id in g.get("code_symbols", []):
+                if isinstance(code_id, str):
+                    info = code_map.get(code_id, {})
+                    code_symbols.append(MatchedCodeSymbol(
+                        id=code_id,
+                        filename=info.get("filename", info.get("original_file", "")),
+                        symbol=info.get("symbol", ""),
+                    ))
 
             # 推定トークン数の計算
             estimated = _estimate_tokens(
@@ -321,7 +350,7 @@ async def structure_matching(request: StructureMatchingRequest):
                     groupName=group_name,
                     docSections=doc_sections,
                     codeSymbols=code_symbols,
-                    reason=g.get("reason", ""),
+                    reason="",
                     estimatedTokens=estimated,
                 )
             )
