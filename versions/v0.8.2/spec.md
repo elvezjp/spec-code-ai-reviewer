@@ -2135,6 +2135,7 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 | `ai` | LLMによる意味的分割。`llmConfig` が必要 |
 
 - `nlp` / `ai` モードでは、見出しによる基本分割に加えて、見出しのないセクションをサブスプリットとして細分化する
+- `nlp` / `ai` モードのサブスプリット最大数は環境変数 `MD2MAP_MAX_SUBSECTIONS`（デフォルト: 5）で制御される
 - `ai` モード時に `llmConfig` が未指定の場合はエラーを返す
 
 **レスポンス:**
@@ -2801,6 +2802,12 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 | AWS_REGION | AWSリージョン（システムLLM用） | ap-northeast-1 |
 | BEDROCK_MODEL_ID | システムLLMのモデルID | global.anthropic.claude-haiku-4-5-20251001-v1:0 |
 | BEDROCK_MAX_TOKENS | システムLLMの最大トークン数 | 16384 |
+
+**md2map分割設定（任意）:**
+
+| 環境変数名 | 説明 | デフォルト値 |
+|-----------|------|-------------|
+| MD2MAP_MAX_SUBSECTIONS | NLP/AIモード分割時の1セクションあたり最大サブスプリット数 | 5 |
 
 ※ ユーザーLLM設定用の環境変数は不要（リクエストごとに受け取る）
 
