@@ -415,10 +415,17 @@ async def review_group(request: GroupReviewRequest):
             f"- グループID: {request.groupId}\n",
         ]
 
-        # 全体構造コンテキスト（他グループの存在を把握するため）
+        user_parts.extend([
+            "## 設計書内容\n",
+            request.documentContent,
+            "\n## コード内容\n",
+            request.codeContent,
+        ])
+
+        # 全体構造コンテキスト（他グループの存在を把握するため、参考情報として末尾に配置）
         if request.documentIndexMd or request.codeIndexMd or request.allGroups:
-            user_parts.append("## 全体構造情報（参考）\n")
-            user_parts.append("以下は設計書・コード全体の構造です。このグループではこの一部をレビューします。\n")
+            user_parts.append("\n## 全体構造情報（参考）\n")
+            user_parts.append("以下は設計書・コード全体の構造です。このグループではこの一部をレビューしています。\n")
             if request.documentIndexMd:
                 user_parts.extend([
                     "### 設計書全体の構造 (INDEX.md)\n",
@@ -458,13 +465,6 @@ async def review_group(request: GroupReviewRequest):
                     code_syms = ", ".join(cs.get("symbol", "") for cs in g.get("codeSymbols", []))
                     user_parts.append(f"| {g.get('groupName', '')} | {doc_ids} | {code_syms} |")
                 user_parts.append("")
-
-        user_parts.extend([
-            "## 設計書内容\n",
-            request.documentContent,
-            "\n## コード内容\n",
-            request.codeContent,
-        ])
 
         user_message = "\n".join(user_parts)
 
