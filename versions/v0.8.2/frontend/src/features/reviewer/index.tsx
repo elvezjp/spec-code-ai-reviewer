@@ -113,10 +113,12 @@ export function Reviewer() {
     previewResult: splitPreviewResult,
     isExecutingPreview: isSplitPreviewExecuting,
     error: splitPreviewError,
+    pinnedDocPartIds,
     setSettings: setSplitSettings,
     executePreview: executeSplitPreview,
     clearPreview: clearSplitPreview,
     clearError: clearSplitPreviewError,
+    togglePinnedDocPart,
     isSplitEnabled,
   } = useSplitSettings()
 
@@ -331,6 +333,26 @@ export function Reviewer() {
 
       const groups = structureMatchingResponse.groups
 
+      // 重要パートを全グループに注入（重複除外）
+      if (pinnedDocPartIds.length > 0) {
+        const pinnedDocSections = pinnedDocPartIds
+          .map(id => {
+            const part = splitPreviewResult.documentParts?.find(p => p.id === id)
+            if (!part) return null
+            return { id: part.id, title: part.section, path: part.path }
+          })
+          .filter((s): s is { id: string; title: string; path: string } => s !== null)
+
+        for (const group of groups) {
+          const existingIds = new Set(group.docSections.map(s => s.id))
+          for (const pinned of pinnedDocSections) {
+            if (!existingIds.has(pinned.id)) {
+              group.docSections.push(pinned)
+            }
+          }
+        }
+      }
+
       // Initialize group review states
       const initialGroupStates: GroupReviewState[] = groups.map((g) => ({
         groupId: g.groupId,
@@ -396,6 +418,13 @@ export function Reviewer() {
               codeContent,
               systemPrompt: currentPromptValues,
               llmConfig: llmConfig || undefined,
+              documentIndexMd: splitPreviewResult.documentIndex || undefined,
+              documentMapJson: splitPreviewResult.documentMapJson
+                ? { sections: splitPreviewResult.documentMapJson }
+                : undefined,
+              codeIndexMd: splitPreviewResult.codeIndex || undefined,
+              codeMapJson: splitPreviewResult.codeMapJson || undefined,
+              allGroups: structureMatchingResponse.groups,
             })
 
             if (groupResponse.success && groupResponse.reviewResult) {
@@ -504,7 +533,7 @@ export function Reviewer() {
         error: error instanceof Error ? error.message : 'レビュー実行に失敗しました',
       }))
     }
-  }, [splitPreviewResult, codeFiles, llmConfig, screenManager, currentPromptValues])
+  }, [splitPreviewResult, codeFiles, llmConfig, screenManager, currentPromptValues, pinnedDocPartIds])
 
   // Structure matching retry handler - re-execute from the beginning
   const handleRetryStructureMatching = useCallback(() => {
@@ -729,6 +758,8 @@ export function Reviewer() {
           hasDesignDoc={!!specMarkdown}
           hasCodeFiles={!!codeWithLineNumbers}
           codeFilenames={codeFiles.map(f => f.filename)}
+          pinnedDocPartIds={pinnedDocPartIds}
+          onTogglePinnedDocPart={togglePinnedDocPart}
         />
       </div>
 
