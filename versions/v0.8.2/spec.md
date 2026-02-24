@@ -2260,10 +2260,10 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
       "groupId": "group1",
       "groupName": "ユーザー管理",
       "docSections": [
-        {"id": "MD1", "title": "ユーザー管理", "path": "ユーザー管理"}
+        {"id": "MD1", "title": "", "path": ""}
       ],
       "codeSymbols": [
-        {"id": "CD1", "filename": "UserService.java", "symbol": "UserService"}
+        {"id": "CD1", "filename": "", "symbol": ""}
       ],
       "reason": "",
       "estimatedTokens": 2000
