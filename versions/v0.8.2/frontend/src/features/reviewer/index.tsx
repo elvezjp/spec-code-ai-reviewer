@@ -333,6 +333,34 @@ export function Reviewer() {
 
       const groups = structureMatchingResponse.groups
 
+      // IDのみのグループデータをフロントエンドのパーツ情報で復元
+      // codeMapJson（code2mapの生MAP.json）からID→filenameのマッピングを構築
+      const codeIdToFilename: Record<string, string> = {}
+      if (splitPreviewResult.codeMapJson) {
+        for (const entry of splitPreviewResult.codeMapJson) {
+          const id = entry.id as string
+          const filename = entry.original_file as string
+          if (id && filename) {
+            codeIdToFilename[id] = filename
+          }
+        }
+      }
+
+      for (const group of groups) {
+        group.docSections = group.docSections.map((ds) => {
+          const part = splitPreviewResult.documentParts?.find((p) => p.id === ds.id)
+          return part
+            ? { id: ds.id, title: part.section, path: part.path }
+            : ds
+        })
+        group.codeSymbols = group.codeSymbols.map((cs) => {
+          const part = splitPreviewResult.codeParts?.find((p) => p.id === cs.id)
+          return part
+            ? { id: cs.id, filename: codeIdToFilename[cs.id] || '', symbol: part.symbol }
+            : cs
+        })
+      }
+
       // 重要パートを全グループに注入（重複除外）
       if (pinnedDocPartIds.length > 0) {
         const pinnedDocSections = pinnedDocPartIds
@@ -372,6 +400,23 @@ export function Reviewer() {
 
       for (let i = 0; i < groups.length; i++) {
         const group = groups[i]
+
+        // 設計書またはコードが空のグループは自動スキップ
+        if (group.docSections.length === 0 || group.codeSymbols.length === 0) {
+          const reason = group.docSections.length === 0
+            ? '対応する設計書セクションがありません'
+            : '対応するコードシンボルがありません'
+          groupReviewResults[i] = {
+            ...groupReviewResults[i],
+            status: 'skipped',
+            error: reason,
+          }
+          setSplitReviewState((prev) => ({
+            ...prev,
+            groupReviews: [...groupReviewResults],
+          }))
+          continue
+        }
 
         // Build document content for this group
         // 設計書が一括モードの場合は全体のMarkdownを使用、分割モードの場合はIDベースでマッチング

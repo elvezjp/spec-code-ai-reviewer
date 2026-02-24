@@ -300,44 +300,26 @@ async def structure_matching(request: StructureMatchingRequest):
         print(response_text)
         print("=" * 80)
 
-        # MAP.jsonからID→メタ情報のルックアップテーブルを構築
-        doc_map = {}
-        for s in request.document.mapJson.get("sections", []):
-            doc_map[s.get("id", "")] = s
-
-        code_map = {}
-        for cf in request.codeFiles:
-            for s in cf.mapJson.get("symbols", []):
-                code_map[s.get("id", "")] = {**s, "filename": cf.filename}
-
-        # JSON応答パース
+        # JSON応答パース（IDのみ返却、フロントエンドで復元）
         result = _extract_json(response_text)
         groups = []
         for i, g in enumerate(result.get("groups", [])):
             group_id = g.get("id", f"group_{i + 1}")
             group_name = g.get("name", group_id)
 
-            # IDのみの配列からMatchedDocSectionを復元
-            doc_sections = []
-            for doc_id in g.get("doc_sections", []):
-                if isinstance(doc_id, str):
-                    info = doc_map.get(doc_id, {})
-                    doc_sections.append(MatchedDocSection(
-                        id=doc_id,
-                        title=info.get("title", ""),
-                        path=info.get("path", info.get("title", "")),
-                    ))
+            # IDのみでMatchedDocSectionを構築（title/pathはフロントエンドで復元）
+            doc_sections = [
+                MatchedDocSection(id=doc_id, title="", path="")
+                for doc_id in g.get("doc_sections", [])
+                if isinstance(doc_id, str)
+            ]
 
-            # IDのみの配列からMatchedCodeSymbolを復元
-            code_symbols = []
-            for code_id in g.get("code_symbols", []):
-                if isinstance(code_id, str):
-                    info = code_map.get(code_id, {})
-                    code_symbols.append(MatchedCodeSymbol(
-                        id=code_id,
-                        filename=info.get("filename", info.get("original_file", "")),
-                        symbol=info.get("symbol", ""),
-                    ))
+            # IDのみでMatchedCodeSymbolを構築（filename/symbolはフロントエンドで復元）
+            code_symbols = [
+                MatchedCodeSymbol(id=code_id, filename="", symbol="")
+                for code_id in g.get("code_symbols", [])
+                if isinstance(code_id, str)
+            ]
 
             # 推定トークン数の計算
             estimated = _estimate_tokens(
@@ -491,8 +473,8 @@ async def review_group(request: GroupReviewRequest):
                 ])
                 for g in request.allGroups:
                     doc_ids = ", ".join(ds.get("id", "") for ds in g.get("docSections", []))
-                    code_syms = ", ".join(cs.get("symbol", "") for cs in g.get("codeSymbols", []))
-                    user_parts.append(f"| {g.get('groupName', '')} | {doc_ids} | {code_syms} |")
+                    code_ids = ", ".join(cs.get("id", "") for cs in g.get("codeSymbols", []))
+                    user_parts.append(f"| {g.get('groupName', '')} | {doc_ids} | {code_ids} |")
                 user_parts.append("")
 
         user_message = "\n".join(user_parts)
