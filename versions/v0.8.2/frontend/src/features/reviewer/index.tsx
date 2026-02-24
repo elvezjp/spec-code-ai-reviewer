@@ -512,6 +512,12 @@ export function Reviewer() {
         llmConfig: llmConfig || undefined,
         designs: specFiles.map((f) => ({ filename: f.filename, isMain: f.isMain, type: f.type, tool: f.tool })),
         codes: codeFiles.map((f) => ({ filename: f.filename })),
+        documentIndexMd: splitPreviewResult.documentIndex || undefined,
+        documentMapJson: splitPreviewResult.documentMapJson
+          ? { sections: splitPreviewResult.documentMapJson }
+          : undefined,
+        codeIndexMd: splitPreviewResult.codeIndex || undefined,
+        codeMapJson: splitPreviewResult.codeMapJson || undefined,
       })
 
       if (!integrateResponse.success) {

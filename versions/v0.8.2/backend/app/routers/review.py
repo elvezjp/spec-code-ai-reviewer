@@ -579,6 +579,39 @@ async def integrate_reviews(request: IntegrateRequest):
                 "",
             ])
 
+        # 全体構造コンテキスト（参考情報として末尾に配置）
+        if request.documentIndexMd or request.codeIndexMd:
+            user_parts.append("\n## 全体構造情報（参考）\n")
+            user_parts.append("以下は設計書・コード全体の構造です。統合時の参考にしてください。\n")
+            if request.documentIndexMd:
+                user_parts.extend([
+                    "### 設計書全体の構造 (INDEX.md)\n",
+                    request.documentIndexMd,
+                    "",
+                ])
+            if request.documentMapJson:
+                user_parts.extend([
+                    "### 設計書全体の構造 (MAP.json)\n",
+                    "```json",
+                    json.dumps(request.documentMapJson, ensure_ascii=False, indent=2),
+                    "```",
+                    "",
+                ])
+            if request.codeIndexMd:
+                user_parts.extend([
+                    "### コード全体の構造 (INDEX.md)\n",
+                    request.codeIndexMd,
+                    "",
+                ])
+            if request.codeMapJson:
+                user_parts.extend([
+                    "### コード全体の構造 (MAP.json)\n",
+                    "```json",
+                    json.dumps(request.codeMapJson, ensure_ascii=False, indent=2),
+                    "```",
+                    "",
+                ])
+
         user_message = "\n".join(user_parts)
 
         # LLM呼び出し

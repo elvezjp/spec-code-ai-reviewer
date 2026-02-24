@@ -505,6 +505,11 @@ class IntegrateRequest(BaseModel):
     llmConfig: LLMConfig | None = None
     designs: list[dict] = []  # 設計書ファイル情報（review_info_markdown生成用）
     codes: list[dict] = []  # プログラムファイル情報（review_info_markdown生成用）
+    # 全体構造コンテキスト（統合時の参考情報）
+    documentIndexMd: str | None = None    # 設計書全体のINDEX.md
+    documentMapJson: dict | None = None   # 設計書全体のMAP.json
+    codeIndexMd: str | None = None        # コード全体のINDEX.md
+    codeMapJson: list[dict] | None = None  # コード全体のMAP.json
 
 
 class KeyIssue(BaseModel):

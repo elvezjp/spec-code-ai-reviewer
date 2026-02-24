@@ -345,6 +345,11 @@ export interface IntegrateRequest {
   llmConfig?: LlmConfig
   designs?: { filename: string; isMain: boolean; type: string; tool: string }[]
   codes?: { filename: string }[]
+  // 全体構造コンテキスト
+  documentIndexMd?: string
+  documentMapJson?: Record<string, unknown>
+  codeIndexMd?: string
+  codeMapJson?: Record<string, unknown>[]
 }
 
 export interface KeyIssue {

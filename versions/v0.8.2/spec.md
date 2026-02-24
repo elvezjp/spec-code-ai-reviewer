@@ -994,6 +994,7 @@ md2mapは以下の3つの分割モードを提供する。ユーザーが分割�
 
 - 重複する指摘の排除
 - システムプロンプト設定の出力フォーマットに準拠した最終レポート生成
+- 全体構造情報（INDEX.md / MAP.json）を参考情報としてユーザーメッセージ末尾に付与し、統合時の整合性把握を支援
 
 #### 2.7.5 分割プレビュー
 
@@ -2338,9 +2339,20 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
     "checkCrossGroupIssues": true
   },
   "systemPrompt": {...},
-  "llmConfig": {...}
+  "llmConfig": {...},
+  "documentIndexMd": "# 設計書構造\n...",
+  "documentMapJson": {"sections": [...]},
+  "codeIndexMd": "# コード構造\n...",
+  "codeMapJson": [{"id": "CD1", ...}]
 }
 ```
+
+| フィールド | 型 | 必須 | 備考 |
+|-----------|-----|------|------|
+| `documentIndexMd` | `string \| null` | × | 設計書全体のINDEX.md。統合時に全体構造を参照するため |
+| `documentMapJson` | `object \| null` | × | 設計書全体のMAP.json |
+| `codeIndexMd` | `string \| null` | × | コード全体のINDEX.md |
+| `codeMapJson` | `array \| null` | × | コード全体のMAP.json |
 
 **レスポンス:**
 
