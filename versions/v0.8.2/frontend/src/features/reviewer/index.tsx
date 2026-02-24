@@ -350,7 +350,7 @@ export function Reviewer() {
         group.docSections = group.docSections.map((ds) => {
           const part = splitPreviewResult.documentParts?.find((p) => p.id === ds.id)
           return part
-            ? { id: ds.id, title: part.section, path: part.path }
+            ? { id: ds.id, title: part.displayName, path: part.path }
             : ds
         })
         group.codeSymbols = group.codeSymbols.map((cs) => {
