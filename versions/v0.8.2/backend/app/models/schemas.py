@@ -480,6 +480,7 @@ class GroupReviewResponse(BaseModel):
     reviewResult: GroupReviewResult | None = None
     tokensUsed: dict = {}  # { input: int, output: int }
     error: str | None = None
+    errorCode: str | None = None  # "token_limit" | "api_error" | None
 
 
 # =============================================================================
@@ -549,4 +550,29 @@ class IntegrateResponse(BaseModel):
     integratedReport: IntegratedReport | None = None
     reviewMeta: ReviewMeta | None = None  # 一括レビューと同様のメタ情報
     tokensUsed: dict = {}
+    error: str | None = None
+    errorCode: str | None = None  # "token_limit" | "api_error" | None
+
+
+# =============================================================================
+# Summarize API スキーマ
+# =============================================================================
+
+
+class SummarizeRequest(BaseModel):
+    """要約APIのリクエスト"""
+
+    text: str                          # 要約対象テキスト
+    targetType: str                    # "design" | "code" | "review_result"
+    llmConfig: LLMConfig | None = None  # LLM設定
+
+
+class SummarizeResponse(BaseModel):
+    """要約APIのレスポンス"""
+
+    success: bool
+    summarizedText: str | None = None
+    originalTokens: int | None = None    # 元テキストの推定トークン数
+    summarizedTokens: int | None = None  # 要約後の推定トークン数
+    tokensUsed: dict | None = None       # LLM消費トークン
     error: str | None = None

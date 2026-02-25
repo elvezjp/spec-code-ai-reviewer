@@ -16,6 +16,8 @@ import type {
   GroupReviewResponse,
   IntegrateRequest,
   IntegrateResponse,
+  SummarizeRequest,
+  SummarizeResponse,
 } from '../types'
 
 const getBackendUrl = (): string => {
@@ -178,6 +180,18 @@ export async function executeIntegrate(
   request: IntegrateRequest
 ): Promise<IntegrateResponse> {
   const response = await fetch(`${getBackendUrl()}/api/review/integrate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  })
+
+  return await response.json()
+}
+
+export async function executeSummarize(
+  request: SummarizeRequest
+): Promise<SummarizeResponse> {
+  const response = await fetch(`${getBackendUrl()}/api/review/summarize`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
