@@ -191,7 +191,7 @@ export async function executeIntegrate(
 export async function executeSummarize(
   request: SummarizeRequest
 ): Promise<SummarizeResponse> {
-  const response = await fetch(`${getBackendUrl()}/api/review/summarize`, {
+  const response = await fetch(`${getBackendUrl()}/api/summarize`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
