@@ -53,6 +53,6 @@
 - [CD20] User#setEmail (L232–L232) -> parts/User_setEmail.java
 - [CD21] User#getAge (L233–L233) -> parts/User_getAge.java
 - [CD22] User#setAge (L234–L234) -> parts/User_setAge.java
-- [CD23] User#<init> (L221–L226) -> parts/User_<init>.java
-- [CD25] UserAlreadyExistsException#<init> (L238–L238) -> parts/UserAlreadyExistsException_<init>.java
-- [CD27] UserNotFoundException#<init> (L242–L242) -> parts/UserNotFoundException_<init>.java
+- [CD23] User#<init> (L221–L226) -> parts/User_init.java
+- [CD25] UserAlreadyExistsException#<init> (L238–L238) -> parts/UserAlreadyExistsException_init.java
+- [CD27] UserNotFoundException#<init> (L242–L242) -> parts/UserNotFoundException_init.java
