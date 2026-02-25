@@ -15,7 +15,7 @@
 
 ## ゴール
 
-1. **全体構造情報を常時スリム化**し、不要なトークン消費を削減する
+1. **全体構造情報をINDEX.mdに統一**し、不要なトークン消費を削減する
 2. **トークン超過エラー時に、設計書/コードを要約してリトライ**できるUIを提供する
 3. ユーザーが要約結果をプレビュー・確認してからリトライを実行できる
 
@@ -27,50 +27,33 @@
 
 ---
 
-## 施策1: 全体構造情報のスリム化（常時適用）
+## 施策1: 全体構造情報をINDEX.mdに統一（常時適用）
 
 ### 概要
 
-Phase 2（グループレビュー）とPhase 3（結果統合）で全体構造情報として送信しているMAP.jsonの冗長フィールドを削除する。INDEX.mdと情報が重複しているフィールドが多く、削除してもAIのレビュー品質に影響しない。
+Phase 2（グループレビュー）とPhase 3（結果統合）の全体構造コンテキストで、現在INDEX.mdとMAP.jsonの両方を送信しているが、INDEX.mdのみに統一する。
 
-### 分析: INDEX.mdとMAP.jsonの情報重複
+### INDEX.mdを採用する理由
 
-#### 設計書MAP.json（md2map生成）
+INDEX.mdはMAP.jsonの構造情報（ID、セクション名、行範囲、パートファイルパス）を全て含んでおり、さらにMAP.jsonに含まれない追加情報も保持している:
 
-| フィールド | INDEX.mdに存在 | 判定 |
-|-----------|---------------|------|
-| id | `[MD1]` として存在 | 保持 |
-| section | セクション名として存在 | **削除** |
-| level | ツリーのインデントで表現 | **削除** |
-| path | ツリー構造で表現 | **削除** |
-| original_file | ファイル名として存在 | **削除** |
-| original_start_line / original_end_line | `(L1–L5)` として存在 | **削除** |
-| word_count | INDEX.mdにはないが、レビュー判断には不要 | **削除** |
-| part_file | `→ [parts/...]` として存在 | **削除** |
-| checksum | レビューに不要 | **削除** |
-| is_subsplit / note / subsplit_title | `[SubSplit]` 表記で存在 | **削除** |
+| 情報 | INDEX.md | MAP.json |
+|------|----------|----------|
+| ID・セクション名・行範囲・partファイルパス | あり | あり |
+| 設計書の `summary`（内容概要） | あり | **なし** |
+| コードの `role`（メソッドの役割） | あり | **なし** |
+| コードの `calls`（呼び出し先） | あり | **なし** |
+| コードの `side effects`（副作用） | あり | **なし** |
+| `word_count` | **なし** | あり（レビューに不要） |
+| `checksum` | **なし** | あり（レビューに不要） |
 
-#### コードMAP.json（code2map生成）
-
-| フィールド | INDEX.mdに存在 | 判定 |
-|-----------|---------------|------|
-| id | `[CD1]` として存在 | 保持 |
-| symbol | シンボル名として存在 | **削除** |
-| type | `class` / `method` として存在 | **削除** |
-| original_file | ファイル名として存在 | **削除** |
-| original_start_line / original_end_line | `(L14–L210)` として存在 | **削除** |
-| part_file | `-> parts/...` として存在 | **削除** |
-| checksum | レビューに不要 | **削除** |
-
-### 結論
-
-INDEX.mdがツリー構造・ID・セクション名・行範囲・パートファイルパスを全て含んでいるため、Phase 2/3の全体構造コンテキストでは**MAP.jsonを送信しない**（INDEX.mdのみで十分）。
+INDEX.mdはMAP.jsonの上位互換であり、MAP.jsonを併送する必要がない。
 
 Phase 1（構造マッチング）ではMAP.jsonが主要入力のため変更なし。
 
 ### 削減効果の見積り
 
-サンプルデータでの比較:
+サンプルデータ（`md2map/docs/examples/v0.2/output-ai`, `code2map/docs/examples/java/output`）での比較:
 
 | 項目 | 現在（INDEX.md + MAP.json） | 変更後（INDEX.mdのみ） | 削減率 |
 |------|--------------------------|---------------------|-------|
@@ -489,6 +472,10 @@ SplitExecutingScreenは以下の3つのCardで構成される:
 エラー内容（APIから返されたエラーメッセージ）をそのまま表示する。
 エラー内容の解析は行わない（token_limit判定はerrorCodeで行い、エラー文の解析は不要）。
 
+ラジオボタンには各選択肢のトークン数を表示する:
+- 「そのまま」: 元テキストの推定トークン数
+- 「要約」: 要約済みなら要約後トークン数、未実行なら「未実行」
+
 ```
 ┌─ Card 2 ───────────────────────────────────────────────────────────────┐
 │                                                                        │
@@ -517,11 +504,11 @@ SplitExecutingScreenは以下の3つのCardで構成される:
 │  │  ため、品質検証が必要です。本番投入前に出力の比較テストを行うこと │   │
 │  │  を強くお勧めします。                                             │   │
 │  │                                                                  │   │
-│  │  設計書  ~15,000 トークン                                        │   │
-│  │  ◉ そのまま  ○ 要約                                             │   │
+│  │  設計書                                                           │   │
+│  │  ◉ そのまま（~15,000 トークン）  ○ 要約（未実行）                │   │
 │  │                                                                  │   │
-│  │  プログラム  ~25,000 トークン                                     │   │
-│  │  ◉ そのまま  ○ 要約                                             │   │
+│  │  プログラム                                                       │   │
+│  │  ◉ そのまま（~25,000 トークン）  ○ 要約（未実行）                │   │
 │  │                                                                  │   │
 │  └──────────────────────────────────────────────────────────────────┘   │
 │                                                                        │
@@ -530,45 +517,51 @@ SplitExecutingScreenは以下の3つのCardで構成される:
 
 #### 「要約」を選択した場合（要約未実行）
 
-ラジオボタンで「要約」を選択すると、要約実行ボタンが表示される。
-リトライボタンは要約完了まで押せない状態になる（disabled or 非表示）。
+「要約」を選択した項目がある場合、リトライ設定パネル内に「選択した要約を実行」ボタンが表示される。
+リトライボタンの下に注意メッセージを表示する。
 
 ```
 │  ┌─ リトライ設定 ──────────────────────────────────────────────────┐   │
 │  │                                                                  │   │
-│  │  設計書  ~15,000 トークン                                        │   │
-│  │  ○ そのまま  ◉ 要約                                             │   │
-│  │  ⚠ 要約を実行してください                                        │   │
-│  │  [要約を実行]                                                    │   │
+│  │  ⚠ 注意: ...                                                    │   │
+│  │                                                                  │   │
+│  │  設計書                                                           │   │
+│  │  ○ そのまま（~15,000 トークン）  ◉ 要約（未実行）                │   │
+│  │                                                                  │   │
+│  │  プログラム                                                       │   │
+│  │  ◉ そのまま（~25,000 トークン）  ○ 要約（未実行）                │   │
+│  │                                                                  │   │
+│  │  [選択した要約を実行]  ← 未要約の「要約」選択項目をまとめて実行   │   │
 │  │   (blue/small)                                                   │   │
-│  │                                                                  │   │
-│  │  プログラム  ~25,000 トークン                                     │   │
-│  │  ◉ そのまま  ○ 要約                                             │   │
-│  │                                                                  │   │
 │  └──────────────────────────────────────────────────────────────────┘   │
 │                                                                        │
-│  [🔄 リトライ] ← 設計書の要約が未完了のため disabled                    │
+│  [🔄 リトライ] ← disabled  [⏭ スキップ]                               │
+│  ⚠ 要約が選択されていますが未実行です。要約を実行してください。         │
 ```
 
 #### 要約実行中
 
 ```
-│  │  設計書  ~15,000 トークン                                        │   │
-│  │  ○ そのまま  ◉ 要約                                             │   │
-│  │  ⟳ 要約中...                                                    │   │
+│  │  設計書                                                           │   │
+│  │  ○ そのまま（~15,000 トークン）  ◉ 要約（⟳ 要約中...）          │   │
 │  │                                                                  │   │
+│  │  プログラム                                                       │   │
+│  │  ◉ そのまま（~25,000 トークン）  ○ 要約（未実行）                │   │
+│  │                                                                  │   │
+│  │  [選択した要約を実行] ← disabled（実行中）                        │   │
 ```
 
 #### 要約完了（プレビュー表示）
 
-要約結果はアコーディオンで展開表示する。
+要約結果はアコーディオンで展開表示する。トークン数が要約後の値に更新される。
 
 ```
 │  ┌─ リトライ設定 ──────────────────────────────────────────────────┐   │
 │  │                                                                  │   │
-│  │  設計書  15,000 → 5,200 トークン（65%削減）                      │   │
-│  │  ○ そのまま  ◉ 要約                                             │   │
-│  │  ✓ 要約済み                                                      │   │
+│  │  ⚠ 注意: ...                                                    │   │
+│  │                                                                  │   │
+│  │  設計書                                                           │   │
+│  │  ○ そのまま（~15,000 トークン）  ◉ 要約（~5,200 トークン 65%削減）│   │
 │  │  ▼ 要約結果を表示                                                │   │
 │  │  ┌────────────────────────────────────────────────────────────┐ │   │
 │  │  │ # チェック条件表                                            │ │   │
@@ -581,8 +574,8 @@ SplitExecutingScreenは以下の3つのCardで構成される:
 │  │  └────────────────────────────────────────────────────────────┘ │   │
 │  │   (max-height: 200px, overflow-y: auto, bg-gray-50, border)      │   │
 │  │                                                                  │   │
-│  │  プログラム  ~25,000 トークン                                     │   │
-│  │  ◉ そのまま  ○ 要約                                             │   │
+│  │  プログラム                                                       │   │
+│  │  ◉ そのまま（~25,000 トークン）  ○ 要約（未実行）                │   │
 │  │                                                                  │   │
 │  └──────────────────────────────────────────────────────────────────┘   │
 │                                                                        │
@@ -595,14 +588,14 @@ SplitExecutingScreenは以下の3つのCardで構成される:
 ```
 │  ┌─ リトライ設定 ──────────────────────────────────────────────────┐   │
 │  │                                                                  │   │
-│  │  設計書  15,000 → 5,200 トークン（65%削減）                      │   │
-│  │  ○ そのまま  ◉ 要約                                             │   │
-│  │  ✓ 要約済み                                                      │   │
+│  │  ⚠ 注意: ...                                                    │   │
+│  │                                                                  │   │
+│  │  設計書                                                           │   │
+│  │  ○ そのまま（~15,000 トークン）  ◉ 要約（~5,200 トークン 65%削減）│   │
 │  │  ▶ 要約結果を表示                                                │   │
 │  │                                                                  │   │
-│  │  プログラム  25,000 → 9,800 トークン（61%削減）                   │   │
-│  │  ○ そのまま  ◉ 要約                                             │   │
-│  │  ✓ 要約済み                                                      │   │
+│  │  プログラム                                                       │   │
+│  │  ○ そのまま（~25,000 トークン）  ◉ 要約（~9,800 トークン 61%削減）│   │
 │  │  ▶ 要約結果を表示                                                │   │
 │  │                                                                  │   │
 │  └──────────────────────────────────────────────────────────────────┘   │
@@ -616,9 +609,8 @@ SplitExecutingScreenは以下の3つのCardで構成される:
 要約済みでも「そのまま」に切り替えられる。要約結果は保持される（再度「要約」に切り替えると再表示）。
 
 ```
-│  │  設計書  ~15,000 トークン                                        │   │
-│  │  ◉ そのまま  ○ 要約                                             │   │
-│  │  （要約済み — 「要約」を選択すると要約版を使用します）              │   │
+│  │  設計書                                                           │   │
+│  │  ◉ そのまま（~15,000 トークン）  ○ 要約（~5,200 トークン 65%削減）│   │
 ```
 
 ### 画面イメージ: StepCard内のエラーと要約結果の保持
@@ -738,6 +730,13 @@ export interface GroupReviewState {
         </button>
       </div>
 
+      {/* 要約未実行の注意メッセージ（リトライボタンの下に表示） */}
+      {retryDisabled && hasPendingSummarize && (
+        <p className="text-sm text-amber-600 mt-2 text-center">
+          ⚠ 要約が選択されていますが未実行です。要約を実行してください。
+        </p>
+      )}
+
       {/* 要約案内 + リトライ設定 */}
       <div className="mt-4 pt-4 border-t">
         <p className="text-sm text-gray-600">
@@ -762,7 +761,7 @@ export interface GroupReviewState {
 
 対象: `versions/v0.8.2/frontend/src/features/reviewer/components/RetrySettingsPanel.tsx`（新規）
 
-設計書・コードそれぞれの「そのまま/要約」選択、要約実行ボタン、要約結果プレビューを管理するコンポーネント。パネル先頭に注意文を表示する。
+設計書・コードそれぞれの「そのまま/要約」選択、一括要約実行ボタン、要約結果プレビューを管理するコンポーネント。パネル先頭に注意文を表示する。
 
 ```tsx
 {/* 注意文 */}
@@ -792,7 +791,7 @@ interface RetrySettingsPanelProps {
 const [docMode, setDocMode] = useState<'original' | 'summarize'>('original')
 // コード: 'original' | 'summarize'
 const [codeMode, setCodeMode] = useState<'original' | 'summarize'>('original')
-// 要約実行中フラグ
+// 要約実行中フラグ（設計書・コードそれぞれ）
 const [docSummarizing, setDocSummarizing] = useState(false)
 const [codeSummarizing, setCodeSummarizing] = useState(false)
 // 要約結果プレビューの開閉
@@ -800,9 +799,45 @@ const [docPreviewOpen, setDocPreviewOpen] = useState(false)
 const [codePreviewOpen, setCodePreviewOpen] = useState(false)
 ```
 
+「選択した要約を実行」ボタンの処理:
+```typescript
+const handleExecuteSummarize = async () => {
+  // 「要約」選択かつ未要約の項目のみ対象
+  const targets: Array<{ type: 'design' | 'code'; text: string }> = []
+  if (docMode === 'summarize' && !summarizeState?.documentSummarized) {
+    targets.push({ type: 'design', text: documentContent })
+  }
+  if (codeMode === 'summarize' && !summarizeState?.codeSummarized) {
+    targets.push({ type: 'code', text: codeContent })
+  }
+
+  // 並列でAPI呼び出し
+  await Promise.all(targets.map(async (t) => {
+    if (t.type === 'design') setDocSummarizing(true)
+    else setCodeSummarizing(true)
+
+    const response = await executeSummarize({
+      text: t.text,
+      targetType: t.type,
+      llmConfig: llmConfig || undefined,
+    })
+    // summarizeState を更新...
+
+    if (t.type === 'design') setDocSummarizing(false)
+    else setCodeSummarizing(false)
+  }))
+}
+```
+
+「選択した要約を実行」ボタンの表示条件:
+- `docMode === 'summarize'` かつ未要約、または `codeMode === 'summarize'` かつ未要約の場合に表示
+
 リトライボタンのdisabled判定:
 - `docMode === 'summarize'` かつ要約未完了 → disabled
 - `codeMode === 'summarize'` かつ要約未完了 → disabled
+
+リトライボタン下の注意メッセージ表示条件:
+- 上記 disabled 条件に該当する場合のみ「⚠ 要約が選択されていますが未実行です。要約を実行してください。」を表示
 
 ### Step 4-e. index.tsx のリトライハンドラーを拡張
 
@@ -910,7 +945,7 @@ Phase 3（結果統合）でトークン超過エラーが発生した場合、�
 
 ### 画面イメージ
 
-Phase 3 の入力は「各グループのレビュー結果（Markdown）」であるため、Phase 2 とは要約対象が異なる。
+Phase 3 の入力は「各グループのレビュー結果（Markdown）」であるため、Phase 2 とは要約対象が異なる。各グループごとに「そのまま/要約」を選択し、「選択した要約を実行」で一括要約する。
 
 #### 統合エラー発生時
 
@@ -942,89 +977,236 @@ Phase 3 の入力は「各グループのレビュー結果（Markdown）」で�
 │  │  ため、品質検証が必要です。本番投入前に出力の比較テストを行うこと │   │
 │  │  を強くお勧めします。                                             │   │
 │  │                                                                  │   │
-│  │  ┌───────────────────┬──────────┬──────────┐                   │   │
-│  │  │ グループ           │ トークン  │ 状態      │                   │   │
-│  │  ├───────────────────┼──────────┼──────────┤                   │   │
-│  │  │ ユーザー管理       │ ~8,000   │ そのまま  │                   │   │
-│  │  │ 認証処理           │ ~12,000  │ そのまま  │                   │   │
-│  │  │ データアクセス     │ ~6,000   │ そのまま  │                   │   │
-│  │  │ バリデーション     │ ~4,000   │ そのまま  │                   │   │
-│  │  │ エラーハンドリング │ ~7,000   │ そのまま  │                   │   │
-│  │  ├───────────────────┼──────────┼──────────┤                   │   │
-│  │  │ 合計               │ ~37,000  │          │                   │   │
-│  │  └───────────────────┴──────────┴──────────┘                   │   │
+│  │  ユーザー管理                                                     │   │
+│  │  ◉ そのまま（~8,000 トークン）  ○ 要約（未実行）                 │   │
 │  │                                                                  │   │
-│  │  [全て要約]                                                      │   │
-│  │   (blue/small)                                                   │   │
+│  │  認証処理                                                         │   │
+│  │  ◉ そのまま（~12,000 トークン）  ○ 要約（未実行）                │   │
+│  │                                                                  │   │
+│  │  データアクセス                                                    │   │
+│  │  ◉ そのまま（~6,000 トークン）  ○ 要約（未実行）                 │   │
+│  │                                                                  │   │
+│  │  バリデーション                                                    │   │
+│  │  ◉ そのまま（~4,000 トークン）  ○ 要約（未実行）                 │   │
+│  │                                                                  │   │
+│  │  エラーハンドリング                                                │   │
+│  │  ◉ そのまま（~7,000 トークン）  ○ 要約（未実行）                 │   │
+│  │                                                                  │   │
 │  └──────────────────────────────────────────────────────────────────┘   │
 │                                                                        │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### 全て要約完了後
+#### 「要約」を選択した場合（要約未実行）
+
+「要約」を選択したグループがある場合、「選択した要約を実行」ボタンが表示される。
+リトライボタンは要約完了まで disabled。注意メッセージはリトライボタンの下に表示。
+
+```
+│  │  ユーザー管理                                                     │   │
+│  │  ○ そのまま（~8,000 トークン）  ◉ 要約（未実行）                 │   │
+│  │                                                                  │   │
+│  │  認証処理                                                         │   │
+│  │  ○ そのまま（~12,000 トークン）  ◉ 要約（未実行）                │   │
+│  │                                                                  │   │
+│  │  データアクセス                                                    │   │
+│  │  ◉ そのまま（~6,000 トークン）  ○ 要約（未実行）                 │   │
+│  │                                                                  │   │
+│  │  バリデーション                                                    │   │
+│  │  ◉ そのまま（~4,000 トークン）  ○ 要約（未実行）                 │   │
+│  │                                                                  │   │
+│  │  エラーハンドリング                                                │   │
+│  │  ○ そのまま（~7,000 トークン）  ◉ 要約（未実行）                 │   │
+│  │                                                                  │   │
+│  │  [選択した要約を実行]  ← 未要約の「要約」選択グループをまとめて実行 │   │
+│  │   (blue/small)                                                   │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+│                                                                        │
+│  [🔄 リトライ] ← disabled                                              │
+│  ⚠ 要約が選択されていますが未実行です。要約を実行してください。         │
+```
+
+#### 要約実行中
+
+APIは1グループごとに呼び出す（並列実行可）。
+
+```
+│  │  ユーザー管理                                                     │   │
+│  │  ○ そのまま（~8,000 トークン）  ◉ 要約（⟳ 要約中...）           │   │
+│  │                                                                  │   │
+│  │  認証処理                                                         │   │
+│  │  ○ そのまま（~12,000 トークン）  ◉ 要約（⟳ 要約中...）          │   │
+│  │                                                                  │   │
+│  │  データアクセス                                                    │   │
+│  │  ◉ そのまま（~6,000 トークン）  ○ 要約（未実行）                 │   │
+│  │                                                                  │   │
+│  │  ...                                                              │   │
+│  │                                                                  │   │
+│  │  エラーハンドリング                                                │   │
+│  │  ○ そのまま（~7,000 トークン）  ◉ 要約（⟳ 要約中...）           │   │
+│  │                                                                  │   │
+│  │  [選択した要約を実行] ← disabled（実行中）                        │   │
+```
+
+#### 要約完了（プレビュー表示）
+
+要約結果はアコーディオンで展開表示する。トークン数が要約後の値に更新される。
 
 ```
 │  ┌─ リトライ設定 ──────────────────────────────────────────────────┐   │
 │  │                                                                  │   │
-│  │  ┌───────────────────┬──────────┬──────────┬──────────┐        │   │
-│  │  │ グループ           │ 元       │ 要約後    │ 削減率   │        │   │
-│  │  ├───────────────────┼──────────┼──────────┼──────────┤        │   │
-│  │  │ ユーザー管理       │ 8,000   │ 3,200    │ 60%      │        │   │
-│  │  │ 認証処理           │ 12,000  │ 4,500    │ 63%      │        │   │
-│  │  │ データアクセス     │ 6,000   │ 2,400    │ 60%      │        │   │
-│  │  │ バリデーション     │ 4,000   │ 1,800    │ 55%      │        │   │
-│  │  │ エラーハンドリング │ 7,000   │ 2,800    │ 60%      │        │   │
-│  │  ├───────────────────┼──────────┼──────────┼──────────┤        │   │
-│  │  │ 合計               │ 37,000  │ 14,700   │ 60%      │        │   │
-│  │  └───────────────────┴──────────┴──────────┴──────────┘        │   │
+│  │  ⚠ 注意: ...                                                    │   │
 │  │                                                                  │   │
-│  │  ▶ ユーザー管理の要約結果を表示                                    │   │
-│  │  ▶ 認証処理の要約結果を表示                                        │   │
-│  │  ▶ データアクセスの要約結果を表示                                   │   │
-│  │  ▶ バリデーションの要約結果を表示                                   │   │
-│  │  ▶ エラーハンドリングの要約結果を表示                               │   │
+│  │  ユーザー管理                                                     │   │
+│  │  ○ そのまま（~8,000 トークン）  ◉ 要約（~3,200 トークン 60%削減）│   │
+│  │  ▶ 要約結果を表示                                                │   │
+│  │                                                                  │   │
+│  │  認証処理                                                         │   │
+│  │  ○ そのまま（~12,000 トークン）  ◉ 要約（~4,500 トークン 63%削減）│   │
+│  │  ▶ 要約結果を表示                                                │   │
+│  │                                                                  │   │
+│  │  データアクセス                                                    │   │
+│  │  ◉ そのまま（~6,000 トークン）  ○ 要約（未実行）                 │   │
+│  │                                                                  │   │
+│  │  バリデーション                                                    │   │
+│  │  ◉ そのまま（~4,000 トークン）  ○ 要約（未実行）                 │   │
+│  │                                                                  │   │
+│  │  エラーハンドリング                                                │   │
+│  │  ○ そのまま（~7,000 トークン）  ◉ 要約（~2,800 トークン 60%削減）│   │
+│  │  ▶ 要約結果を表示                                                │   │
 │  │                                                                  │   │
 │  └──────────────────────────────────────────────────────────────────┘   │
 │                                                                        │
-│  [🔄 リトライ]  ← 要約完了なので active                                 │
-
+│  [🔄 リトライ]  ← 「要約」選択グループが全て要約済みなので active       │
 ```
 
-### Step 5-a. SplitExecutingScreen の統合エラー表示を拡張
+#### 追加で別のグループも要約する場合
 
-対象: `versions/v0.8.2/frontend/src/features/reviewer/components/SplitExecutingScreen.tsx:214-229`（統合エラー表示部分）
+要約済みグループの選択を変更しても、要約結果は保持される。
+新たに「要約」を選択したグループがある場合のみ「選択した要約を実行」ボタンが再表示される。
+既に要約済みのグループは再実行しない。
 
-グループレビュー（施策4）と同様のパターンで、トークン超過時にレビュー結果の要約オプションを表示する。
+```
+│  │  バリデーション                                                    │   │
+│  │  ○ そのまま（~4,000 トークン）  ◉ 要約（未実行）  ← 新たに変更   │   │
+│  │                                                                  │   │
+│  │  [選択した要約を実行]  ← バリデーションのみ実行（他は要約済み）     │   │
+│  │   (blue/small)                                                   │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+│                                                                        │
+│  [🔄 リトライ] ← disabled                                              │
+│  ⚠ 要約が選択されていますが未実行です。要約を実行してください。         │
+```
 
-### Step 5-b. index.tsx の統合リトライハンドラーを拡張
+### Step 5-a. IntegrateSummarizeState の型定義
 
-対象: `versions/v0.8.2/frontend/src/features/reviewer/index.tsx`（`handleRetryIntegrate`）
-
-「各結果を要約してリトライ」選択時:
-1. 各グループのレビュー結果（`groupReviews[].report`）を要約APIで要約
-2. 要約済みレポートで `groupReviewSummaries` を構築
-3. 統合APIを再呼び出し
+対象: `versions/v0.8.2/frontend/src/features/reviewer/types/index.ts`
 
 ```typescript
-const handleRetryIntegrateWithSummary = useCallback(async () => {
-  // 1. 各グループ結果を要約
-  const summarizedReviews = await Promise.all(
-    completedGroupReviews.map(async (g) => {
+export interface IntegrateGroupSummarizeEntry {
+  groupId: string
+  mode: 'original' | 'summarize'
+  summarizedReport?: string       // 要約結果テキスト
+  originalTokens?: number
+  summarizedTokens?: number
+}
+
+export interface IntegrateSummarizeState {
+  groups: IntegrateGroupSummarizeEntry[]
+}
+```
+
+### Step 5-b. IntegrateRetrySettingsPanel コンポーネントの新規作成
+
+対象: `versions/v0.8.2/frontend/src/features/reviewer/components/IntegrateRetrySettingsPanel.tsx`（新規）
+
+Phase 2 の RetrySettingsPanel と同様の構成だが、要約対象が複数グループの `report` になる。
+
+```typescript
+interface IntegrateRetrySettingsPanelProps {
+  groupReviews: GroupReviewState[]       // 完了済みグループ一覧
+  summarizeState: IntegrateSummarizeState
+  llmConfig?: LlmConfig
+  onSummarizeComplete: (state: IntegrateSummarizeState) => void
+}
+```
+
+内部状態:
+```typescript
+// 各グループのモード（初期値: 全て 'original'）
+const [groupModes, setGroupModes] = useState<Record<string, 'original' | 'summarize'>>({})
+// 要約実行中のグループID
+const [summarizingGroupIds, setSummarizingGroupIds] = useState<Set<string>>(new Set())
+// 要約結果プレビューの開閉
+const [previewOpen, setPreviewOpen] = useState<Record<string, boolean>>({})
+```
+
+「選択した要約を実行」ボタンの処理:
+```typescript
+const handleExecuteSummarize = async () => {
+  // 「要約」選択かつ未要約のグループのみ対象
+  const targets = groupReviews.filter((g) =>
+    groupModes[g.groupId] === 'summarize' &&
+    !summarizeState.groups.find((s) => s.groupId === g.groupId)?.summarizedReport
+  )
+
+  setSummarizingGroupIds(new Set(targets.map((g) => g.groupId)))
+
+  // 並列でAPI呼び出し（1グループ1リクエスト）
+  const results = await Promise.all(
+    targets.map(async (g) => {
       const response = await executeSummarize({
         text: g.result!.report,
         targetType: 'review_result',
         llmConfig: llmConfig || undefined,
       })
       return {
-        ...g,
-        result: { report: response.summarizedText || g.result!.report },
+        groupId: g.groupId,
+        summarizedReport: response.summarizedText,
+        originalTokens: response.originalTokens,
+        summarizedTokens: response.summarizedTokens,
       }
     })
   )
 
-  // 2. 要約済みレポートで統合リトライ
-  // ... executeIntegrate呼び出し
-}, [splitReviewState, llmConfig])
+  // summarizeState を更新（既存の要約結果は保持）
+  // ...
+  setSummarizingGroupIds(new Set())
+}
+```
+
+リトライボタンの disabled 判定:
+- `mode === 'summarize'` かつ `summarizedReport` が未設定のグループが1つでもあれば disabled
+
+### Step 5-c. SplitExecutingScreen の統合エラー表示を拡張
+
+対象: `versions/v0.8.2/frontend/src/features/reviewer/components/SplitExecutingScreen.tsx:214-229`（統合エラー表示部分）
+
+グループレビュー（施策4）と同様のパターンで、エラー内容 + リトライボタン + 案内文 + IntegrateRetrySettingsPanel を表示する。
+
+### Step 5-d. index.tsx の統合リトライハンドラーを拡張
+
+対象: `versions/v0.8.2/frontend/src/features/reviewer/index.tsx`（`handleRetryIntegrate`）
+
+リトライ時に、各グループの `mode` に応じて `report` を差し替える:
+
+```typescript
+const groupReviewSummaries = completedGroupReviews.map((g) => {
+  const entry = integrateSummarizeState.groups.find((s) => s.groupId === g.groupId)
+  const useSummarized = entry?.mode === 'summarize' && entry?.summarizedReport
+  return {
+    groupId: g.groupId,
+    groupName: g.groupName,
+    report: useSummarized ? entry.summarizedReport! : g.result!.report,
+  }
+})
+
+// 統合APIを再呼び出し
+await executeIntegrate({
+  structureMatching: structureMatchingResult,
+  groupReviews: groupReviewSummaries,
+  // ...
+})
 ```
 
 ---
@@ -1035,11 +1217,12 @@ const handleRetryIntegrateWithSummary = useCallback(async () => {
 |---------|------|---------|
 | `versions/v0.8.2/backend/app/routers/review.py` | 1, 2, 3 | MAP.json送信除外、トークン超過判定、要約APIエンドポイント追加 |
 | `versions/v0.8.2/backend/app/models/schemas.py` | 2, 3 | errorCode追加、SummarizeRequest/Response追加 |
-| `versions/v0.8.2/frontend/src/features/reviewer/types/index.ts` | 2, 3, 4 | errorCode追加、Summarize型追加、ErrorAction拡張 |
+| `versions/v0.8.2/frontend/src/features/reviewer/types/index.ts` | 2, 3, 4, 5 | errorCode追加、Summarize型追加、ErrorAction拡張、IntegrateSummarizeState追加 |
 | `versions/v0.8.2/frontend/src/features/reviewer/services/api.ts` | 3 | executeSummarize関数追加 |
 | `versions/v0.8.2/frontend/src/features/reviewer/utils/tokenEstimate.ts` | 4 | トークン推定関数（新規） |
-| `versions/v0.8.2/frontend/src/features/reviewer/components/SummarizePanel.tsx` | 4 | 要約パネルコンポーネント（新規） |
-| `versions/v0.8.2/frontend/src/features/reviewer/components/SplitExecutingScreen.tsx` | 4, 5 | エラー表示拡張、要約パネル組み込み |
+| `versions/v0.8.2/frontend/src/features/reviewer/components/RetrySettingsPanel.tsx` | 4 | Phase 2 リトライ設定パネル（新規） |
+| `versions/v0.8.2/frontend/src/features/reviewer/components/IntegrateRetrySettingsPanel.tsx` | 5 | Phase 3 リトライ設定パネル（新規） |
+| `versions/v0.8.2/frontend/src/features/reviewer/components/SplitExecutingScreen.tsx` | 4, 5 | エラー表示拡張、リトライ設定パネル組み込み |
 | `versions/v0.8.2/frontend/src/features/reviewer/index.tsx` | 4, 5 | リトライハンドラー拡張 |
 | `versions/v0.8.2/spec.md` | 1, 2, 3 | 仕様更新 |
 
