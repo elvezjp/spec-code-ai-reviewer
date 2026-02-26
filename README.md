@@ -166,7 +166,8 @@ code2map/
 │   └── fixtures/          # Test fixtures
 ├── docs/                  # Documentation
 │   ├── assets/            # Images and assets
-│   └── examples/          # Usage examples and sample I/O
+│   ├── examples/          # Usage examples and sample I/O
+│   └── tests/             # Test plans and results
 ├── versions/              # Past version snapshots
 ├── CHANGELOG.md           # Change history
 ├── CONTRIBUTING.md        # Contribution guide
