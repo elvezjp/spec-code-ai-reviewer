@@ -323,9 +323,10 @@ export function SplitSettingsSection({
               <h4 className="text-sm font-medium text-gray-600 mb-2">
                 ■ 設計書: {previewResult.documentParts.length} パート
               </h4>
-              <p className="text-xs text-gray-500 mb-2">
-                <strong>重要</strong>にチェックしたセクションは、分割レビュー時に全てのグループで参照されます。
-              </p>
+              <ul className="text-xs text-gray-500 mb-2 list-disc list-inside space-y-0.5">
+                <li><strong>重要</strong>: 分割レビュー時に全てのグループで参照されます。</li>
+                <li><strong>要約</strong>: レビュー時に要約テキストで代替されます。分割後もトークン数が多い場合に使用してください。</li>
+              </ul>
               <DocumentPartsTable
                 parts={previewResult.documentParts}
                 pinnedDocPartIds={pinnedDocPartIds}
@@ -375,7 +376,7 @@ function DocumentPartsTable({
         <TableHead>
           <TableRow>
             <TableHeaderCell className="w-14">重要</TableHeaderCell>
-            <TableHeaderCell className="w-40">要約</TableHeaderCell>
+            <TableHeaderCell className="w-14">要約</TableHeaderCell>
             <TableHeaderCell className="w-12">#</TableHeaderCell>
             <TableHeaderCell>セクション名</TableHeaderCell>
             <TableHeaderCell className="w-24">行範囲</TableHeaderCell>
@@ -396,34 +397,14 @@ function DocumentPartsTable({
                     className="w-4 h-4 text-blue-600 rounded"
                   />
                 </TableCell>
-                {/* 要約選択（ラジオボタン） */}
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <label className="flex items-center gap-1 text-xs cursor-pointer">
-                      <input
-                        type="radio"
-                        name={`summarize-${part.id}`}
-                        checked={part.summarizeMode === 'original'}
-                        onChange={() => {
-                          if (part.summarizeMode !== 'original') onToggleSummarizeMode(part.id)
-                        }}
-                        className="w-3 h-3"
-                      />
-                      そのまま
-                    </label>
-                    <label className="flex items-center gap-1 text-xs cursor-pointer">
-                      <input
-                        type="radio"
-                        name={`summarize-${part.id}`}
-                        checked={part.summarizeMode === 'summarize'}
-                        onChange={() => {
-                          if (part.summarizeMode !== 'summarize') onToggleSummarizeMode(part.id)
-                        }}
-                        className="w-3 h-3"
-                      />
-                      要約
-                    </label>
-                  </div>
+                {/* 要約チェックボックス */}
+                <TableCell className="text-center">
+                  <input
+                    type="checkbox"
+                    checked={part.summarizeMode === 'summarize'}
+                    onChange={() => onToggleSummarizeMode(part.id)}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
                 </TableCell>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>
@@ -478,31 +459,36 @@ function SummarizeExecuteRow({
   if (totalSelected === 0) return null
 
   return (
-    <div className="flex items-center gap-3">
-      <button
-        onClick={onExecuteSummarize}
-        disabled={!hasPendingSummarize || isSummarizing}
-        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
-      >
-        {isSummarizing ? (
-          <>
-            <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
-            要約実行中...
-          </>
-        ) : (
-          '選択した要約を実行'
-        )}
-      </button>
-      <span className="text-xs text-gray-600">
-        {completedCount}/{totalSelected}件
-      </span>
-      {summarizeError ? (
-        <span className="text-xs text-red-600">{summarizeError}</span>
-      ) : (
-        <span className="text-xs text-gray-400">
-          「要約」を選択したセクションを事前に要約します。
+    <div className="space-y-1">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onExecuteSummarize}
+          disabled={!hasPendingSummarize || isSummarizing}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+        >
+          {isSummarizing ? (
+            <>
+              <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
+              要約実行中...
+            </>
+          ) : (
+            '選択した要約を実行'
+          )}
+        </button>
+        <span className="text-xs text-gray-600">
+          {completedCount}/{totalSelected}件
         </span>
-      )}
+        {summarizeError ? (
+          <span className="text-xs text-red-600">{summarizeError}</span>
+        ) : (
+          <span className="text-xs text-gray-400">
+            「要約」を選択したセクションを事前に要約します。
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-amber-600">
+        ※ 要約によって微妙なニュアンスや制約が失われることがあります。
+      </p>
     </div>
   )
 }

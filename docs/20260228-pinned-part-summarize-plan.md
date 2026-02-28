@@ -2,7 +2,7 @@
 
 - 作成日: 2026/02/28
 - 対象バージョン: v0.8.2
-- ステータス: 計画
+- ステータス: 実装済み
 - 関連: `20260224-v0.8.2-split-review-improvement-plan.md`（重要パート機能）、`20260225-split-review-token-optimization-plan.md`（要約API）
 
 ## 背景
@@ -11,8 +11,8 @@
 
 ## ゴール
 
-1. 分割プレビュー画面で、各設計書パートごとに「そのまま」「要約」を選択できる
-2. 「要約」が選択されたパートは、レビュー実行前に要約APIで事前要約される
+1. 分割プレビュー画面で、各設計書パートごとにチェックボックスで「要約」を選択できる
+2. 「要約」が選択されたパートは、レビュー実行前に要約APIで事前要約される（1パートずつ逐次実行）
 3. グループレビュー時に、「要約」が選択されたパートは要約テキストで代替される
 
 ## 非ゴール
@@ -36,9 +36,10 @@ SplitSettingsSection（重要チェックボックス）
 ## 変更後のデータフロー
 
 ```
-SplitSettingsSection（重要チェック + そのまま/要約 選択）
+SplitSettingsSection（重要チェック + 要約チェックボックス）
   → DocumentPart に summarizeMode / summarizedContent を保持
-  → 「要約を実行」ボタンで未要約パートを一括要約
+  → 「選択した要約を実行」ボタンで未要約パートを1パートずつ逐次要約
+  → エラー時はそこで中断し、成功済みパートの結果は保持
   → レビュー実行（未要約パートがあれば disabled）
   → Phase 1 完了後、全グループの docSections に注入
   → 各グループの documentContent 構築時に、
@@ -52,35 +53,43 @@ SplitSettingsSection（重要チェック + そのまま/要約 選択）
 
 ### プレビュー結果: 設計書パーツテーブル
 
-「要約」列を重要列の右に追加し、各パートごとに「そのまま/要約」を選択できる。
+「要約」列を重要列の右にチェックボックスとして追加し、各パートごとに要約するかを選択できる。
 重要チェックの有無に関わらず、全パートで選択可能。
 
 推定トークン列は、選択中のモードに応じた値を表示する:
-- 「そのまま」選択時: 元テキストの推定トークン数
-- 「要約」選択時（未実行）: `未実行`
-- 「要約」選択時（実行済み）: 要約後の推定トークン数
+- 要約未選択時: 元テキストの推定トークン数
+- 要約選択時（未実行）: `未実行`
+- 要約選択時（実行済み）: 要約後の推定トークン数
 
-一度要約したパートは、「そのまま」に切り替えても要約済みテキストがリセットされない。
-再度「要約」に切り替えると、保持されている要約結果がそのまま表示される。
+一度要約したパートは、チェックを外しても要約済みテキストがリセットされない。
+再度チェックすると、保持されている要約結果がそのまま表示される。
 
-#### 初期状態（全て「そのまま」）
+「選択した要約を実行」ボタンは分割プレビューボタンの下行に配置し、
+要約チェックが1件以上ある場合に表示される。未要約パートがある場合のみ enabled。
+ボタン右に完了/選択件数と説明テキスト（エラー時はエラーメッセージ）を表示する。
+
+要約実行は1パートずつ逐次実行される。完了するたびに即座にテーブルに結果が反映される。
+エラー発生時はそのパートで中断し、それまでに成功したパートの結果は保持される。
+
+#### 初期状態（全て未選択）
 
 ```
 ┌─ プレビュー結果 ─────────────────────────────────────────────────────┐
 │                                                                      │
 │  ■ 設計書: 5 パート                                                   │
-│  **重要**にチェックしたセクションは、分割レビュー時に全てのグループで   │
-│  参照されます。                                                       │
+│  ・**重要**: 分割レビュー時に全てのグループで参照されます。              │
+│  ・**要約**: レビュー時に要約テキストで代替されます。分割後もトークン数  │
+│    が多い場合に使用してください。                                      │
 │                                                                      │
-│  ┌──────┬──────────────┬────┬──────────────────┬──────────┬──────────┐│
-│  │ 重要  │ 要約          │ #  │ セクション名      │ 行範囲    │推定トークン││
-│  ├──────┼──────────────┼────┼──────────────────┼──────────┼──────────┤│
-│  │ [✓]  │◉そのまま ○要約│ 1  │ チェック条件表     │ L1-L120  │ ~4,500   ││
-│  │ [ ]  │◉そのまま ○要約│ 2  │ 別紙1: 入力仕様   │ L121-200 │ ~2,800   ││
-│  │ [ ]  │◉そのまま ○要約│ 3  │ 別紙2: 出力仕様   │ L201-280 │ ~2,200   ││
-│  │ [✓]  │◉そのまま ○要約│ 4  │ 別紙3: エラー処理 │ L281-350 │ ~1,900   ││
-│  │ [ ]  │◉そのまま ○要約│ 5  │ 別紙4: テーブル定義│ L351-400 │ ~1,500   ││
-│  └──────┴──────────────┴────┴──────────────────┴──────────┴──────────┘│
+│  ┌──────┬──────┬────┬──────────────────┬──────────┬──────────┐       │
+│  │ 重要  │ 要約  │ #  │ セクション名      │ 行範囲    │推定トークン│       │
+│  ├──────┼──────┼────┼──────────────────┼──────────┼──────────┤       │
+│  │ [✓]  │ [ ]  │ 1  │ チェック条件表     │ L1-L120  │ ~4,500   │       │
+│  │ [ ]  │ [ ]  │ 2  │ 別紙1: 入力仕様   │ L121-200 │ ~2,800   │       │
+│  │ [ ]  │ [ ]  │ 3  │ 別紙2: 出力仕様   │ L201-280 │ ~2,200   │       │
+│  │ [✓]  │ [ ]  │ 4  │ 別紙3: エラー処理 │ L281-350 │ ~1,900   │       │
+│  │ [ ]  │ [ ]  │ 5  │ 別紙4: テーブル定義│ L351-400 │ ~1,500   │       │
+│  └──────┴──────┴────┴──────────────────┴──────────┴──────────┘       │
 │                                                                      │
 │  [分割プレビュー（実行済み）]                                          │
 │                                                                      │
@@ -89,48 +98,71 @@ SplitSettingsSection（重要チェック + そのまま/要約 選択）
 
 #### 「要約」を選択（未実行）
 
-推定トークンが「未実行」になり、「選択した要約を実行」ボタンが表示される。
+推定トークンが「未実行」になり、「選択した要約を実行」ボタン行が表示される。
 
 ```
-│  │ [✓]  │○そのまま ◉要約│ 1  │ チェック条件表     │ L1-L120  │ 未実行   ││
-│  │ [ ]  │◉そのまま ○要約│ 2  │ 別紙1: 入力仕様   │ L121-200 │ ~2,800   ││
+│  │ [✓]  │ [✓] │ 1  │ チェック条件表     │ L1-L120  │ 未実行   │       │
+│  │ [ ]  │ [ ] │ 2  │ 別紙1: 入力仕様   │ L121-200 │ ~2,800   │       │
+│  │ [ ]  │ [ ] │ 3  │ 別紙2: 出力仕様   │ L201-280 │ ~2,200   │       │
+│  │ [✓]  │ [✓] │ 4  │ 別紙3: エラー処理 │ L281-350 │ 未実行   │       │
 │  │ ...                                                               │
 │                                                                      │
-│  [分割プレビュー（実行済み）]  [選択した要約を実行]                      │
-│                               (blue/small)                           │
+│  [分割プレビュー（実行済み）]                                          │
+│  [選択した要約を実行]  0/2件  「要約」を選択したセクションを事前に...   │
+│  ※ 要約によって微妙なニュアンスや制約が失われることがあります。         │
 ```
 
-#### 要約実行中
+#### 要約実行中（1パートずつ逐次実行）
 
 ```
-│  │ [✓]  │○そのまま ◉要約│ 1  │ チェック条件表     │ L1-L120  │ ⟳ 要約中 ││
-│  │ [ ]  │◉そのまま ○要約│ 2  │ 別紙1: 入力仕様   │ L121-200 │ ~2,800   ││
+│  │ [✓]  │ [✓] │ 1  │ チェック条件表     │ L1-L120  │ ⟳ 要約中 │       │
+│  │ [✓]  │ [✓] │ 4  │ 別紙3: エラー処理 │ L281-350 │ 未実行   │       │
 │  │ ...                                                               │
 │                                                                      │
-│  [分割プレビュー（実行済み）]  [選択した要約を実行] ← disabled          │
+│  [分割プレビュー（実行済み）]                                          │
+│  [要約実行中...] ← disabled  0/2件  「要約」を選択したセクション...    │
+│  ※ 要約によって微妙なニュアンスや制約が失われることがあります。         │
 ```
 
 #### 要約完了
 
-推定トークンに要約後の値と削減率が表示される。アコーディオンで要約結果をプレビュー可能。
+推定トークンに要約後の値が表示される。アコーディオンで要約結果をプレビュー可能。
 
 ```
-│  │ [✓]  │○そのまま ◉要約│ 1  │ チェック条件表     │ L1-L120  │ ~1,500   ││
-│  │      │              │    │ ▶ 要約結果を表示                        ││
-│  │ [ ]  │◉そのまま ○要約│ 2  │ 別紙1: 入力仕様   │ L121-200 │ ~2,800   ││
+│  │ [✓]  │ [✓] │ 1  │ チェック条件表     │ L1-L120  │ ~1,500   │       │
+│  │      │     │    │ ▶ 要約結果を表示                                │
+│  │ [✓]  │ [✓] │ 4  │ 別紙3: エラー処理 │ L281-350 │ ~800     │       │
+│  │      │     │    │ ▶ 要約結果を表示                                │
 │  │ ...                                                               │
 │                                                                      │
 │  [分割プレビュー（実行済み）]                                          │
+│  [選択した要約を実行] ← disabled  2/2件  「要約」を選択した...         │
+│  ※ 要約によって微妙なニュアンスや制約が失われることがあります。         │
 ```
 
-#### 要約済みパートを「そのまま」に戻した場合
+#### 要約エラー時
+
+エラーが発生したパートで中断。成功済みパートの結果は保持。
+
+```
+│  │ [✓]  │ [✓] │ 1  │ チェック条件表     │ L1-L120  │ ~1,500   │       │
+│  │ [✓]  │ [✓] │ 4  │ 別紙3: エラー処理 │ L281-350 │ 未実行   │       │
+│  │ ...                                                               │
+│                                                                      │
+│  [分割プレビュー（実行済み）]                                          │
+│  [選択した要約を実行]  1/2件  「別紙3: エラー処理」の要約に失敗...     │
+│                              (赤色エラーメッセージ)                   │
+│  ※ 要約によって微妙なニュアンスや制約が失われることがあります。         │
+```
+
+#### 要約済みパートのチェックを外した場合
 
 推定トークンは元の値に戻る。要約済みテキストは内部に保持されたまま。
-再度「要約」に切り替えると、再要約なしで要約後トークン数が表示される。
+再度チェックすると、再要約なしで要約後トークン数が表示される。
 
 ```
-│  │ [✓]  │◉そのまま ○要約│ 1  │ チェック条件表     │ L1-L120  │ ~4,500   ││
-│  │ [ ]  │◉そのまま ○要約│ 2  │ 別紙1: 入力仕様   │ L121-200 │ ~2,800   ││
+│  │ [✓]  │ [ ] │ 1  │ チェック条件表     │ L1-L120  │ ~4,500   │       │
+│  │ [ ]  │ [ ] │ 2  │ 別紙1: 入力仕様   │ L121-200 │ ~2,800   │       │
 ```
 
 ### 「要約」選択かつ未実行時のレビュー実行ボタン
@@ -214,51 +246,63 @@ const toggleSummarizeMode = useCallback((partId: string) => {
 
 #### 2-b. 要約実行関数を追加
 
+1パートずつ逐次実行し、完了するたびに即座にテーブルに結果を反映する。
+エラー発生時はそのパートで中断し、成功済みパートの結果は保持される。
 要約実行中のパートIDを `summarizingPartIds` で管理し、テーブルのトークン列に「⟳ 要約中」を表示する。
 
 ```typescript
 const [summarizingPartIds, setSummarizingPartIds] = useState<Set<string>>(new Set())
+const [summarizeError, setSummarizeError] = useState<string | null>(null)
 
 const executeSummarize = useCallback(async (llmConfig?: LlmConfig | null) => {
   if (!previewResult?.documentParts) return
 
-  // 「要約」が選択されていて、かつ未要約のパートを対象
   const targets = previewResult.documentParts.filter(
     (p) => p.summarizeMode === 'summarize' && !p.summarizedContent
   )
   if (targets.length === 0) return
 
   setIsSummarizing(true)
-  setSummarizingPartIds(new Set(targets.map((p) => p.id)))
+  setSummarizeError(null)
 
-  // 並列で要約API呼び出し
-  const results = await Promise.all(
-    targets.map(async (part) => {
-      const response = await executeSummarizeApi({
+  // 1パートずつ逐次実行
+  for (const part of targets) {
+    setSummarizingPartIds(new Set([part.id]))
+
+    try {
+      const response = await api.executeSummarize({
         text: part.content,
         targetType: 'design',
         llmConfig: llmConfig || undefined,
       })
-      return { partId: part.id, response }
-    })
-  )
 
-  // 要約結果を DocumentPart に反映
-  setPreviewResult((prev) => {
-    if (!prev || !prev.documentParts) return prev
-    return {
-      ...prev,
-      documentParts: prev.documentParts.map((p) => {
-        const result = results.find((r) => r.partId === p.id)
-        if (!result || !result.response.success) return p
-        return {
-          ...p,
-          summarizedContent: result.response.summarizedText || undefined,
-          summarizedTokens: result.response.summarizedTokens || undefined,
-        }
-      }),
+      if (response.success) {
+        // 完了したパートの結果を即座に反映
+        setPreviewResult((prev) => {
+          if (!prev || !prev.documentParts) return prev
+          return {
+            ...prev,
+            documentParts: prev.documentParts.map((p) =>
+              p.id === part.id
+                ? {
+                    ...p,
+                    summarizedContent: response.summarizedText || undefined,
+                    summarizedTokens: response.summarizedTokens || undefined,
+                  }
+                : p
+            ),
+          }
+        })
+      } else {
+        setSummarizeError(`「${part.displayName}」の要約に失敗しました: ${response.error || '不明なエラー'}`)
+        break  // エラー時は中断、成功済みパートの結果は保持
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '不明なエラー'
+      setSummarizeError(`「${part.displayName}」の要約に失敗しました: ${message}`)
+      break
     }
-  })
+  }
 
   setSummarizingPartIds(new Set())
   setIsSummarizing(false)
@@ -284,6 +328,7 @@ interface UseSplitSettingsReturn {
   // ... 既存フィールド
   isSummarizing: boolean                                    // 追加
   summarizingPartIds: Set<string>                           // 追加
+  summarizeError: string | null                             // 追加
   hasPendingSummarize: boolean                              // 追加
   toggleSummarizeMode: (partId: string) => void             // 追加
   executeSummarize: (llmConfig?: LlmConfig | null) => Promise<void>  // 追加
@@ -315,6 +360,7 @@ interface SplitSettingsSectionProps {
   isSummarizing: boolean                                    // 追加
   summarizingPartIds: Set<string>                           // 追加
   hasPendingSummarize: boolean                              // 追加
+  summarizeError: string | null                             // 追加
   onToggleSummarizeMode: (partId: string) => void           // 追加
   onExecuteSummarize: () => void                            // 追加
 }
@@ -324,6 +370,8 @@ interface SplitSettingsSectionProps {
 
 列順序: 重要 → 要約 → # → セクション名 → 行範囲 → 推定トークン
 
+要約列はチェックボックス（重要列と同じスタイル）。
+
 推定トークン列の表示ロジック:
 - `summarizeMode === 'original'`: 元テキストの `estimatedTokens` を表示
 - `summarizeMode === 'summarize'` かつ `summarizedContent` なし: 「未実行」を表示
@@ -332,157 +380,64 @@ interface SplitSettingsSectionProps {
 
 要約済みテキストの保持:
 - `toggleSummarizeMode` は `summarizeMode` のみを切り替え、`summarizedContent` / `summarizedTokens` はリセットしない
-- これにより「そのまま」に戻しても要約済みテキストが保持され、再度「要約」にすると再要約なしで結果が表示される
+- これによりチェックを外しても要約済みテキストが保持され、再度チェックすると再要約なしで結果が表示される
+
+案内テキスト（箇条書き形式）:
+- 「**重要**: 分割レビュー時に全てのグループで参照されます。」
+- 「**要約**: レビュー時に要約テキストで代替されます。分割後もトークン数が多い場合に使用してください。」
 
 ```typescript
-function DocumentPartsTable({
-  parts,
-  pinnedDocPartIds,
-  onTogglePinnedDocPart,
-  onToggleSummarizeMode,
-  summarizingPartIds,  // 要約実行中のパートID一覧
-}: {
-  parts: DocumentPart[]
-  pinnedDocPartIds: string[]
-  onTogglePinnedDocPart: (partId: string) => void
-  onToggleSummarizeMode: (partId: string) => void
-  summarizingPartIds: Set<string>
-}) {
+// 要約列: チェックボックス
+<TableHeaderCell className="w-14">要約</TableHeaderCell>
+
+// 各行
+<TableCell className="text-center">
+  <input
+    type="checkbox"
+    checked={part.summarizeMode === 'summarize'}
+    onChange={() => onToggleSummarizeMode(part.id)}
+    className="w-4 h-4 text-blue-600 rounded"
+  />
+</TableCell>
+```
+
+#### 3-c. 「選択した要約を実行」ボタンの追加（SummarizeExecuteRow コンポーネント）
+
+分割プレビューボタンの下行に配置。要約チェックが1件以上ある場合に表示される。
+
+- ボタンは常に表示、未要約パートがある場合のみ enabled
+- ボタン右に完了/選択件数（例: `1/2件`）を表示
+- さらに右に説明テキスト、エラー時はエラーメッセージ（赤色）を表示
+- ボタン行の下に注意書き「※ 要約によって微妙なニュアンスや制約が失われることがあります。」を表示
+
+```tsx
+{/* ボタンレイアウト */}
+<div className="mb-4 space-y-2">
+  {/* 1行目: 分割プレビューボタン */}
+  <div className="flex items-center gap-3">
+    <button>...</button>
+  </div>
+  {/* 2行目: 要約実行ボタン（要約チェックが1件以上ある場合に表示） */}
+  {previewResult && previewResult.documentParts && (
+    <SummarizeExecuteRow ... />
+  )}
+</div>
+
+{/* SummarizeExecuteRow コンポーネント */}
+function SummarizeExecuteRow({ parts, isSummarizing, hasPendingSummarize, summarizeError, onExecuteSummarize }) {
+  const totalSelected = parts.filter((p) => p.summarizeMode === 'summarize').length
+  const completedCount = parts.filter((p) => p.summarizeMode === 'summarize' && p.summarizedContent).length
+  if (totalSelected === 0) return null
   return (
-    <div className="overflow-x-auto">
-      <Table className="min-w-full text-sm">
-        <TableHead>
-          <TableRow>
-            <TableHeaderCell className="w-14">重要</TableHeaderCell>
-            <TableHeaderCell className="w-40">要約</TableHeaderCell>
-            <TableHeaderCell className="w-12">#</TableHeaderCell>
-            <TableHeaderCell>セクション名</TableHeaderCell>
-            <TableHeaderCell className="w-24">行範囲</TableHeaderCell>
-            <TableHeaderCell className="w-28">推定トークン</TableHeaderCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {parts.map((part, index) => {
-            const isSummarizingThis = summarizingPartIds.has(part.id)
-            return (
-              <TableRow key={`${part.id}-${part.startLine}`}>
-                {/* 重要チェックボックス */}
-                <TableCell className="text-center">
-                  <input
-                    type="checkbox"
-                    checked={pinnedDocPartIds.includes(part.id)}
-                    onChange={() => onTogglePinnedDocPart(part.id)}
-                    className="w-4 h-4 text-blue-600 rounded"
-                  />
-                </TableCell>
-                {/* 要約選択（ラジオボタン） */}
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <label className="flex items-center gap-1 text-xs cursor-pointer">
-                      <input
-                        type="radio"
-                        name={`summarize-${part.id}`}
-                        checked={part.summarizeMode === 'original'}
-                        onChange={() => {
-                          if (part.summarizeMode !== 'original') onToggleSummarizeMode(part.id)
-                        }}
-                        className="w-3 h-3"
-                      />
-                      そのまま
-                    </label>
-                    <label className="flex items-center gap-1 text-xs cursor-pointer">
-                      <input
-                        type="radio"
-                        name={`summarize-${part.id}`}
-                        checked={part.summarizeMode === 'summarize'}
-                        onChange={() => {
-                          if (part.summarizeMode !== 'summarize') onToggleSummarizeMode(part.id)
-                        }}
-                        className="w-3 h-3"
-                      />
-                      要約
-                    </label>
-                  </div>
-                </TableCell>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>
-                  {part.displayName}
-                  {/* 要約完了時のプレビューアコーディオン */}
-                  {part.summarizedContent && part.summarizeMode === 'summarize' && (
-                    <SummarizedTextPreview
-                      label="要約結果を表示"
-                      text={part.summarizedContent}
-                    />
-                  )}
-                </TableCell>
-                <TableCell className="text-gray-600">
-                  L{part.startLine}-L{part.endLine}
-                </TableCell>
-                {/* 推定トークン: 選択モードに応じた表示 */}
-                <TableCell className="text-gray-600">
-                  {isSummarizingThis ? (
-                    <span className="text-blue-600">⟳ 要約中</span>
-                  ) : part.summarizeMode === 'summarize' ? (
-                    part.summarizedContent && part.summarizedTokens ? (
-                      <span>~{part.summarizedTokens.toLocaleString()}</span>
-                    ) : (
-                      <span className="text-amber-600">未実行</span>
-                    )
-                  ) : (
-                    <span>~{part.estimatedTokens.toLocaleString()}</span>
-                  )}
-                </TableCell>
-              </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
+    <div className="flex items-center gap-3">
+      <button disabled={!hasPendingSummarize || isSummarizing}>選択した要約を実行</button>
+      <span>{completedCount}/{totalSelected}件</span>
+      {summarizeError
+        ? <span className="text-red-600">{summarizeError}</span>
+        : <span>「要約」を選択したセクションを事前に要約します。</span>}
     </div>
   )
 }
-```
-
-#### 3-c. 「選択した要約を実行」ボタンの追加
-
-プレビュー結果セクション内、テーブルの下（分割プレビューボタンの横）に配置。
-
-対象: `SplitSettingsSection.tsx:264-289`（ボタン配置エリア）
-
-```tsx
-{/* 分割プレビュー実行ボタン + 要約実行ボタン */}
-{isSplitEnabled && (
-  <div className="mb-4 flex items-center gap-3">
-    <button
-      onClick={onExecutePreview}
-      disabled={!canExecutePreview || isExecuting || !!previewResult}
-      className="..."
-    >
-      {/* 既存のプレビューボタン */}
-    </button>
-
-    {/* 要約実行ボタン: 「要約」選択かつ未実行のパートがある場合に表示 */}
-    {previewResult && hasPendingSummarize && (
-      <button
-        onClick={onExecuteSummarize}
-        disabled={isSummarizing}
-        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
-      >
-        {isSummarizing ? (
-          <>
-            <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
-            要約実行中...
-          </>
-        ) : (
-          '選択した要約を実行'
-        )}
-      </button>
-    )}
-
-    {settings.documentSplitMode === 'ai' && (
-      <span className="text-xs text-muted text-gray-400">...</span>
-    )}
-  </div>
-)}
 ```
 
 ### Step 4. レビュー実行ボタンのdisabled判定を更新
@@ -553,6 +508,7 @@ const documentContent = group.docSections.map((section) => {
   isSummarizing={isSummarizing}
   summarizingPartIds={summarizingPartIds}
   hasPendingSummarize={hasPendingSummarize}
+  summarizeError={summarizeError}
   onToggleSummarizeMode={toggleSummarizeMode}
   onExecuteSummarize={() => executeSummarize(llmConfig)}
 />
@@ -583,24 +539,30 @@ const documentContent = group.docSections.map((section) => {
 
 ### ブラウザ操作確認（UIで確認）
 
-- [ ] 分割プレビュー結果の設計書パーツテーブルに「要約」列が重要列の右に表示されること
-- [ ] 各パートに「そのまま」「要約」のラジオボタンが表示され、デフォルトは「そのまま」であること
-- [ ] 「そのまま」選択時、推定トークン列に元テキストのトークン数が表示されること
-- [ ] 「要約」を選択すると推定トークン列に「未実行」が表示されること
-- [ ] 「要約」が選択されたパートがある場合、「選択した要約を実行」ボタンが表示されること
-- [ ] 「選択した要約を実行」ボタンを押すと要約が実行され、推定トークン列に「⟳ 要約中」が表示されること
-- [ ] 要約完了後、推定トークン列に要約後トークン数（例: `~1,500`）が表示されること
+- [ ] 分割プレビュー結果の設計書パーツテーブルに「要約」列がチェックボックスとして重要列の右に表示されること
+- [ ] 各パートの要約チェックボックスのデフォルトが未選択であること
+- [ ] 要約チェック未選択時、推定トークン列に元テキストのトークン数が表示されること
+- [ ] 要約をチェックすると推定トークン列に「未実行」が表示されること
+- [ ] 要約がチェックされたパートがある場合、「選択した要約を実行」ボタン行が表示されること
+- [ ] ボタン右に完了/選択件数（例: `0/2件`）と説明テキストが表示されること
+- [ ] 「選択した要約を実行」ボタンを押すと1パートずつ逐次実行され、実行中パートの推定トークン列に「⟳ 要約中」が表示されること
+- [ ] 各パートの要約完了後、即座に推定トークン列が要約後トークン数（例: `~1,500`）に更新されること
 - [ ] 要約完了後、セクション名の下に「要約結果を表示」アコーディオンで要約テキストをプレビューできること
-- [ ] 要約済みパートを「そのまま」に戻すと推定トークン列が元のトークン数に戻ること
-- [ ] 要約済みパートを「そのまま」に戻しても要約結果が保持されること（再度「要約」にすると要約後トークン数が再表示される）
+- [ ] 要約済みパートのチェックを外すと推定トークン列が元のトークン数に戻ること
+- [ ] 要約済みパートのチェックを外しても要約結果が保持されること（再度チェックすると要約後トークン数が再表示される）
+- [ ] 全パート要約完了時、ボタンが disabled になり件数が `2/2件` と表示されること
+- [ ] 要約エラー時、エラーメッセージが赤色でボタン右に表示されること
+- [ ] 要約エラー時、成功済みパートの結果が保持されていること
+- [ ] 要約エラー後に再度ボタンを押すと未要約パートから再実行されること
 - [ ] 「要約」選択かつ未実行のパートがある状態でレビュー実行ボタンが disabled になること
 - [ ] disabled 時に案内メッセージが表示されること
 - [ ] 全ての「要約」選択パートが要約済みの状態でレビュー実行ボタンが active になること
-- [ ] 「そのまま」のみの状態（要約未選択）ではレビュー実行ボタンが従来通り active であること
+- [ ] 要約未選択の状態ではレビュー実行ボタンが従来通り active であること
 - [ ] 要約版の設計書でグループレビューが正常に完了すること
 - [ ] グループレビューの documentContent に要約版テキストが含まれていること（API リクエストで確認）
 - [ ] 要約版テキストのヘッダーに「[要約版]」が付与されていること
 - [ ] 分割プレビューをクリアすると要約状態もリセットされること
+- [ ] テーブル上部に重要・要約それぞれの案内テキストが表示されること
 
 ### 回帰テスト
 
