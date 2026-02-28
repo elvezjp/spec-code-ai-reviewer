@@ -89,8 +89,8 @@ uv automatically uses an appropriate Python version. The installed Python 3.10+ 
 
 #### Node.js Version (v0.6.0 and later)
 
-- **Required**: Node.js 18 or later
-- **Recommended**: Node.js 20 LTS or 22 LTS
+- **Required**: Node.js 20 or later
+- **Recommended**: Node.js 22 LTS
 - **How to check**: Run `node --version`
 
 Required for developing/building the v0.6.0+ frontend (Vite + React + TypeScript). Not needed if you only use v0.5.2 or earlier.
@@ -98,6 +98,10 @@ Required for developing/building the v0.6.0+ frontend (Vite + React + TypeScript
 #### Other
 
 - [uv](https://docs.astral.sh/uv/) (Python package manager)
+  ```bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ```
+- Docker / Docker Compose (required for Docker-based launch)
 
 ### Installation
 
@@ -357,13 +361,12 @@ spec-code-ai-reviewer/
 │
 ├── docs/                        # Docs
 │   ├── ec2-deployment-spec.md   # EC2 deployment spec
-│   └── split-review.md          # Split review feature details
+│   ├── split-review.md          # Split review feature details
+│   └── tests/                   # Test cases
+│       └── README.md
 │
 ├── scripts/                     # Utility scripts
 │   └── sync_version.py          # Version sync script
-│
-├── tests/                       # Test cases
-│   └── README.md
 │
 ├── add-line-numbers/            # Subtree (elvezjp)
 ├── code2map/                    # Subtree (elvezjp)

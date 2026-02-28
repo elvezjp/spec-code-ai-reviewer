@@ -89,8 +89,8 @@ uvが自動的に適切なPythonバージョンを使用します。システム
 
 #### Node.js バージョン（v0.6.0以降）
 
-- **必須バージョン**: Node.js 18以上
-- **推奨バージョン**: Node.js 20 LTS または 22 LTS
+- **必須バージョン**: Node.js 20以上
+- **推奨バージョン**: Node.js 22 LTS
 - **確認方法**: `node --version` で確認してください
 
 v0.6.0以降のフロントエンド（Vite + React + TypeScript）の開発・ビルドに必要です。v0.5.2以前のみ使用する場合は不要です。
@@ -98,6 +98,10 @@ v0.6.0以降のフロントエンド（Vite + React + TypeScript）の開発・�
 #### その他
 
 - [uv](https://docs.astral.sh/uv/) (Python パッケージマネージャー)
+  ```bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ```
+- Docker / Docker Compose（Docker起動方式を使用する場合）
 
 ### インストール
 
@@ -358,13 +362,12 @@ spec-code-ai-reviewer/
 │
 ├── docs/                        # ドキュメント
 │   ├── ec2-deployment-spec.md   # EC2デプロイ仕様書
-│   └── split-review.md          # 分割レビュー機能の詳細
+│   ├── split-review.md          # 分割レビュー機能の詳細
+│   └── tests/                   # 試験項目表
+│       └── README.md
 │
 ├── scripts/                     # ユーティリティスクリプト
 │   └── sync_version.py          # バージョン同期スクリプト
-│
-├── tests/                       # 試験項目表
-│   └── README.md
 │
 ├── add-line-numbers/            # サブツリー（elvezjp）
 ├── code2map/                    # サブツリー（elvezjp）

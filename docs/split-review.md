@@ -129,9 +129,16 @@ cp .env.example .env
 | AWS_SECRET_ACCESS_KEY | AWS認証情報（システムLLM用） | - |
 | AWS_REGION | AWSリージョン（システムLLM用） | ap-northeast-1 |
 | MD2MAP_MAX_SUBSECTIONS | NLP/AIモードの1セクションあたり最大サブスプリット数 | 5 |
+| BEDROCK_MODEL_ID | システムLLMのBedrockモデルID | global.anthropic.claude-haiku-4-5-20251001-v1:0 |
+| BEDROCK_MAX_TOKENS | システムLLMの最大出力トークン数 | 16384 |
+| EXCEL2MD_PATH | excel2mdツールのパス | 内蔵デフォルトパス |
+| ORGANIZE_TIMEOUT_SECONDS | 構造マッチングのタイムアウト（秒） | 180 |
+| ORGANIZE_MAX_RETRIES | 構造マッチングの最大リトライ回数 | 2 |
 
 - AWS認証情報はシステムLLM（Bedrock）使用時のみ必要。Web画面からLLM設定をアップロードする場合は不要
 - `MD2MAP_MAX_SUBSECTIONS` は大きなセクションの分割精度に影響する。値を大きくするとより細かく分割されるが、AIモードではLLM呼び出しのトークン消費が増加する
+- `BEDROCK_MODEL_ID` / `BEDROCK_MAX_TOKENS` はシステムLLMのモデルとトークン上限を制御する。デフォルトで動作するため、通常は変更不要
+- `ORGANIZE_TIMEOUT_SECONDS` / `ORGANIZE_MAX_RETRIES` は構造マッチング（Phase 1）の実行制御パラメータ
 
 ---
 
