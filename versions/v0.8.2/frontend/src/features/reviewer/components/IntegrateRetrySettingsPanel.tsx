@@ -117,7 +117,6 @@ export function IntegrateRetrySettingsPanel({
         <p className="text-xs text-amber-800">
           <span className="font-medium">⚠ 注意:</span>{' '}
           要約によって微妙なニュアンスや制約が失われることがあるため、品質検証が必要です。
-          本番投入前に出力の比較テストを行うことを強くお勧めします。
         </p>
       </div>
 

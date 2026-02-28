@@ -487,7 +487,7 @@ function SummarizeExecuteRow({
         )}
       </div>
       <p className="text-xs text-amber-600">
-        ※ 要約によって微妙なニュアンスや制約が失われることがあります。
+        ※ 要約によって微妙なニュアンスや制約が失われることがあるため、品質検証が必要です。
       </p>
     </div>
   )
