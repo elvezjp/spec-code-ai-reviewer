@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Loader2, ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { estimateTokens } from '../utils/tokenEstimate'
 import { executeSummarize } from '../services/api'
 import type { GroupSummarizeState, LlmConfig } from '../types'
@@ -11,6 +11,7 @@ interface RetrySettingsPanelProps {
   summarizeState?: GroupSummarizeState
   llmConfig?: LlmConfig
   onSummarizeComplete: (groupId: string, state: GroupSummarizeState) => void
+  onModeChange?: (docMode: 'original' | 'summarize', codeMode: 'original' | 'summarize') => void
 }
 
 function SummarizedTextPreview({ label, text }: { label: string; text: string }) {
@@ -40,13 +41,13 @@ export function RetrySettingsPanel({
   summarizeState,
   llmConfig,
   onSummarizeComplete,
+  onModeChange,
 }: RetrySettingsPanelProps) {
   const [docMode, setDocMode] = useState<'original' | 'summarize'>('original')
   const [codeMode, setCodeMode] = useState<'original' | 'summarize'>('original')
   const [docSummarizing, setDocSummarizing] = useState(false)
   const [codeSummarizing, setCodeSummarizing] = useState(false)
-  const [docPreviewOpen, setDocPreviewOpen] = useState(false)
-  const [codePreviewOpen, setCodePreviewOpen] = useState(false)
+  const [summarizeError, setSummarizeError] = useState<string | null>(null)
 
   const docOriginalTokens = summarizeState?.documentOriginalTokens ?? estimateTokens(documentContent)
   const codeOriginalTokens = summarizeState?.codeOriginalTokens ?? estimateTokens(codeContent)
@@ -64,6 +65,7 @@ export function RetrySettingsPanel({
 
   const handleExecuteSummarize = async () => {
     const newState: GroupSummarizeState = { ...summarizeState }
+    setSummarizeError(null)
 
     const targets: Array<{ type: 'design' | 'code'; text: string }> = []
     if (docMode === 'summarize' && !docSummarized) {
@@ -75,37 +77,43 @@ export function RetrySettingsPanel({
 
     if (targets.length === 0) return
 
-    await Promise.all(
-      targets.map(async (t) => {
-        if (t.type === 'design') setDocSummarizing(true)
-        else setCodeSummarizing(true)
+    for (const t of targets) {
+      if (t.type === 'design') setDocSummarizing(true)
+      else setCodeSummarizing(true)
 
-        try {
-          const response = await executeSummarize({
-            text: t.text,
-            targetType: t.type,
-            llmConfig: llmConfig || undefined,
-          })
+      try {
+        const response = await executeSummarize({
+          text: t.text,
+          targetType: t.type,
+          llmConfig: llmConfig || undefined,
+        })
 
-          if (response.success && response.summarizedText) {
-            if (t.type === 'design') {
-              newState.documentSummarized = response.summarizedText
-              newState.documentOriginalTokens = response.originalTokens
-              newState.documentSummarizedTokens = response.summarizedTokens
-            } else {
-              newState.codeSummarized = response.summarizedText
-              newState.codeOriginalTokens = response.originalTokens
-              newState.codeSummarizedTokens = response.summarizedTokens
-            }
+        if (response.success && response.summarizedText) {
+          if (t.type === 'design') {
+            newState.documentSummarized = response.summarizedText
+            newState.documentOriginalTokens = response.originalTokens
+            newState.documentSummarizedTokens = response.summarizedTokens
+          } else {
+            newState.codeSummarized = response.summarizedText
+            newState.codeOriginalTokens = response.originalTokens
+            newState.codeSummarizedTokens = response.summarizedTokens
           }
-        } finally {
-          if (t.type === 'design') setDocSummarizing(false)
-          else setCodeSummarizing(false)
+          onSummarizeComplete(groupId, { ...newState })
+        } else {
+          const label = t.type === 'design' ? '設計書' : 'プログラム'
+          setSummarizeError(`${label}の要約に失敗しました: ${response.error || '不明なエラー'}`)
+          break
         }
-      })
-    )
-
-    onSummarizeComplete(groupId, newState)
+      } catch (err) {
+        const label = t.type === 'design' ? '設計書' : 'プログラム'
+        const message = err instanceof Error ? err.message : '不明なエラー'
+        setSummarizeError(`${label}の要約に失敗しました: ${message}`)
+        break
+      } finally {
+        if (t.type === 'design') setDocSummarizing(false)
+        else setCodeSummarizing(false)
+      }
+    }
   }
 
   const formatTokens = (tokens: number) => `~${tokens.toLocaleString()} トークン`
@@ -117,7 +125,7 @@ export function RetrySettingsPanel({
 
   return (
     <div className="mt-3 p-3 bg-gray-50 border rounded-md">
-      <p className="text-sm font-medium text-gray-700 mb-2">リトライ設定</p>
+      <p className="text-sm font-medium text-gray-700 mb-2 text-center">リトライ設定</p>
 
       {/* 注意文 */}
       <div className="p-2 bg-amber-50 border border-amber-200 rounded-md mb-3">
@@ -130,14 +138,14 @@ export function RetrySettingsPanel({
 
       {/* 設計書 */}
       <div className="mb-3">
-        <p className="text-xs font-medium text-gray-600 mb-1">設計書</p>
-        <div className="flex items-center gap-4 text-xs">
+        <p className="text-xs font-medium text-gray-600 mb-1 text-center">設計書</p>
+        <div className="flex items-center justify-center gap-4 text-xs">
           <label className="flex items-center gap-1 cursor-pointer">
             <input
               type="radio"
               name={`doc-mode-${groupId}`}
               checked={docMode === 'original'}
-              onChange={() => setDocMode('original')}
+              onChange={() => { setDocMode('original'); onModeChange?.('original', codeMode) }}
               className="text-blue-600"
             />
             そのまま（{formatTokens(docOriginalTokens)}）
@@ -147,7 +155,7 @@ export function RetrySettingsPanel({
               type="radio"
               name={`doc-mode-${groupId}`}
               checked={docMode === 'summarize'}
-              onChange={() => setDocMode('summarize')}
+              onChange={() => { setDocMode('summarize'); onModeChange?.('summarize', codeMode) }}
               className="text-blue-600"
             />
             要約（{docSummarizing
@@ -164,14 +172,14 @@ export function RetrySettingsPanel({
 
       {/* プログラム */}
       <div className="mb-3">
-        <p className="text-xs font-medium text-gray-600 mb-1">プログラム</p>
-        <div className="flex items-center gap-4 text-xs">
+        <p className="text-xs font-medium text-gray-600 mb-1 text-center">プログラム</p>
+        <div className="flex items-center justify-center gap-4 text-xs">
           <label className="flex items-center gap-1 cursor-pointer">
             <input
               type="radio"
               name={`code-mode-${groupId}`}
               checked={codeMode === 'original'}
-              onChange={() => setCodeMode('original')}
+              onChange={() => { setCodeMode('original'); onModeChange?.(docMode, 'original') }}
               className="text-blue-600"
             />
             そのまま（{formatTokens(codeOriginalTokens)}）
@@ -181,7 +189,7 @@ export function RetrySettingsPanel({
               type="radio"
               name={`code-mode-${groupId}`}
               checked={codeMode === 'summarize'}
-              onChange={() => setCodeMode('summarize')}
+              onChange={() => { setCodeMode('summarize'); onModeChange?.(docMode, 'summarize') }}
               className="text-blue-600"
             />
             要約（{codeSummarizing
@@ -198,13 +206,20 @@ export function RetrySettingsPanel({
 
       {/* 選択した要約を実行ボタン */}
       {hasPendingSummarize && (
-        <button
-          onClick={handleExecuteSummarize}
-          disabled={isSummarizing}
-          className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white text-xs rounded-md transition"
-        >
-          {isSummarizing ? '要約実行中...' : '選択した要約を実行'}
-        </button>
+        <div className="text-center">
+          <button
+            onClick={handleExecuteSummarize}
+            disabled={isSummarizing}
+            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white text-xs rounded-md transition"
+          >
+            {isSummarizing ? '要約実行中...' : '選択した要約を実行'}
+          </button>
+        </div>
+      )}
+
+      {/* 要約実行エラー */}
+      {summarizeError && (
+        <p className="text-xs text-red-600 mt-2 text-center">{summarizeError}</p>
       )}
     </div>
   )

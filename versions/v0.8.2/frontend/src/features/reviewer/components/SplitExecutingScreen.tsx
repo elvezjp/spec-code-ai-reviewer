@@ -16,8 +16,6 @@ interface SplitExecutingScreenProps {
   currentCodeContent?: string
   llmConfig?: LlmConfig
   onSummarizeComplete?: (groupId: string, state: GroupSummarizeState) => void
-  retryDocMode?: 'original' | 'summarize'
-  retryCodeMode?: 'original' | 'summarize'
   integrateSummarizeState?: IntegrateSummarizeState
   onIntegrateSummarizeComplete?: (state: IntegrateSummarizeState) => void
 }
@@ -126,11 +124,13 @@ export function SplitExecutingScreen({
   currentCodeContent,
   llmConfig,
   onSummarizeComplete,
-  retryDocMode,
-  retryCodeMode,
   integrateSummarizeState,
   onIntegrateSummarizeComplete,
 }: SplitExecutingScreenProps) {
+  const [retryDocMode, setRetryDocMode] = useState<'original' | 'summarize'>('original')
+  const [retryCodeMode, setRetryCodeMode] = useState<'original' | 'summarize'>('original')
+  const [integrateHasPendingSummarize, setIntegrateHasPendingSummarize] = useState(false)
+
   const isPaused = state.phase === 'paused'
   const isError = state.phase === 'error'
   const hasErrorGroup = state.groupReviews.some((g) => g.status === 'error')
@@ -240,7 +240,7 @@ export function SplitExecutingScreen({
                 {/* 要約未実行の注意メッセージ */}
                 {retryDisabled && (
                   <p className="text-sm text-amber-600 mt-2 text-center">
-                    ⚠ 要約が選択されていますが未実行です。要約を実行してください。
+                    先に要約を実行してください
                   </p>
                 )}
 
@@ -248,8 +248,7 @@ export function SplitExecutingScreen({
                 {currentDocumentContent && currentCodeContent && onSummarizeComplete && (
                   <div className="mt-4 pt-4 border-t">
                     <p className="text-sm text-gray-600">
-                      リトライしても同じエラーになる場合、入力量を減らすことで成功する
-                      可能性があります。先に要約してからリトライしてください。
+                      トークン上限の場合や、同じエラーが繰り返される場合、入力トークンを減らすことで成功する可能性があります
                     </p>
                     <RetrySettingsPanel
                       groupId={errorGroup.groupId}
@@ -258,6 +257,10 @@ export function SplitExecutingScreen({
                       summarizeState={errorGroup.summarizeState}
                       llmConfig={llmConfig}
                       onSummarizeComplete={onSummarizeComplete}
+                      onModeChange={(docMode, codeMode) => {
+                        setRetryDocMode(docMode)
+                        setRetryCodeMode(codeMode)
+                      }}
                     />
                   </div>
                 )}
@@ -267,10 +270,7 @@ export function SplitExecutingScreen({
 
           {isIntegrateError && (() => {
             const integrateError = state.error || ''
-            const hasPendingSummarize = integrateSummarizeState?.groups.some(
-              (g) => g.mode === 'summarize' && !g.summarizedReport
-            ) || false
-            const retryDisabled = hasPendingSummarize
+            const retryDisabled = integrateHasPendingSummarize
 
             return (
               <>
@@ -299,7 +299,7 @@ export function SplitExecutingScreen({
                 {/* 要約未実行の注意メッセージ */}
                 {retryDisabled && (
                   <p className="text-sm text-amber-600 mt-2 text-center">
-                    ⚠ 要約が選択されていますが未実行です。要約を実行してください。
+                    先に要約を実行してください
                   </p>
                 )}
 
@@ -307,15 +307,14 @@ export function SplitExecutingScreen({
                 {integrateSummarizeState && onIntegrateSummarizeComplete && (
                   <div className="mt-4 pt-4 border-t">
                     <p className="text-sm text-gray-600">
-                      リトライしても同じエラーになる場合、入力量を減らすことで成功する
-                      可能性があります。先に各グループのレビュー結果を要約してから
-                      リトライしてください。
+                      トークン上限の場合や、同じエラーが繰り返される場合、入力トークンを減らすことで成功する可能性があります
                     </p>
                     <IntegrateRetrySettingsPanel
                       groupReviews={state.groupReviews}
                       summarizeState={integrateSummarizeState}
                       llmConfig={llmConfig}
                       onSummarizeComplete={onIntegrateSummarizeComplete}
+                      onModeChange={setIntegrateHasPendingSummarize}
                     />
                   </div>
                 )}
