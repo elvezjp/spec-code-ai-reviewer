@@ -22,7 +22,6 @@ interface MarkdownOrganizerProps {
 
 const DEFAULT_POLICY = `以下のルールでMarkdownを構造化してください。
 - 要約や推測は禁止。原文の意味を変えない。
-- 原文に含まれる項目を網羅する。
 - 内容を「要件」「条件」「例外」「境界値」「前提」に再分類する。
 - 見出しは原文の章立てを維持し、各項目に原文参照IDを付与する。
 - 表は「入力/条件/出力/備考」の構造に変換する。`
@@ -179,10 +178,7 @@ export function MarkdownOrganizer({
         })
 
         if (!result.success) {
-          const message = `[${file.filename}] ${result.error || '整理に失敗しました'}`
-          setError({ code: result.errorCode, message })
-          setStatus(`❌ ${message}`)
-          return
+          throw new Error(`[${file.filename}] ${result.error || '整理に失敗しました'}`)
         }
 
         results.push({
@@ -287,8 +283,6 @@ export function MarkdownOrganizer({
           </div>
           <p className="text-xs text-gray-400">
             ※ 設計書が大きい場合は、処理に時間が掛かったり、タイムアウトや制限等でエラーになる可能性があります。
-            <br />
-            トークン上限となる場合や、元文書の情報が失われてしまう場合は、分割設定でのレビューをお試しください。
           </p>
 
           <OrganizerAlerts error={error} warnings={warnings} />

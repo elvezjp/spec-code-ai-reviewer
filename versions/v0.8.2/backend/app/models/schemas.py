@@ -446,12 +446,6 @@ class GroupReviewRequest(BaseModel):
     reviewOptions: dict = {}
     systemPrompt: SystemPrompt | None = None  # ユーザー指定のシステムプロンプト
     llmConfig: LLMConfig | None = None
-    # 全体構造コンテキスト（他グループの存在を把握するため）
-    documentIndexMd: str | None = None    # 設計書全体のINDEX.md
-    documentMapJson: dict | None = None   # 設計書全体のMAP.json
-    codeIndexMd: str | None = None        # コード全体のINDEX.md
-    codeMapJson: list[dict] | None = None  # コード全体のMAP.json
-    allGroups: list[dict] | None = None   # 構造マッチング結果の全グループ情報
 
 
 class ReviewFinding(BaseModel):
@@ -480,7 +474,6 @@ class GroupReviewResponse(BaseModel):
     reviewResult: GroupReviewResult | None = None
     tokensUsed: dict = {}  # { input: int, output: int }
     error: str | None = None
-    errorCode: str | None = None  # "token_limit" | "api_error" | None
 
 
 # =============================================================================
@@ -506,11 +499,6 @@ class IntegrateRequest(BaseModel):
     llmConfig: LLMConfig | None = None
     designs: list[dict] = []  # 設計書ファイル情報（review_info_markdown生成用）
     codes: list[dict] = []  # プログラムファイル情報（review_info_markdown生成用）
-    # 全体構造コンテキスト（統合時の参考情報）
-    documentIndexMd: str | None = None    # 設計書全体のINDEX.md
-    documentMapJson: dict | None = None   # 設計書全体のMAP.json
-    codeIndexMd: str | None = None        # コード全体のINDEX.md
-    codeMapJson: list[dict] | None = None  # コード全体のMAP.json
 
 
 class KeyIssue(BaseModel):
@@ -550,29 +538,4 @@ class IntegrateResponse(BaseModel):
     integratedReport: IntegratedReport | None = None
     reviewMeta: ReviewMeta | None = None  # 一括レビューと同様のメタ情報
     tokensUsed: dict = {}
-    error: str | None = None
-    errorCode: str | None = None  # "token_limit" | "api_error" | None
-
-
-# =============================================================================
-# Summarize API スキーマ
-# =============================================================================
-
-
-class SummarizeRequest(BaseModel):
-    """要約APIのリクエスト"""
-
-    text: str                          # 要約対象テキスト
-    targetType: str                    # "design" | "code" | "review_result"
-    llmConfig: LLMConfig | None = None  # LLM設定
-
-
-class SummarizeResponse(BaseModel):
-    """要約APIのレスポンス"""
-
-    success: bool
-    summarizedText: str | None = None
-    originalTokens: int | None = None    # 元テキストの推定トークン数
-    summarizedTokens: int | None = None  # 要約後の推定トークン数
-    tokensUsed: dict | None = None       # LLM消費トークン
     error: str | None = None

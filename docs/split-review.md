@@ -56,13 +56,45 @@ NLP/AIモードの1セクションあたりの最大サブスプリット数は�
 
 ---
 
-## 3. 3フェーズAIレビュー
+## 3. 分割設定
 
-バックエンドのAPIは [versions/v0.8.2/backend/app/routers/](../versions/v0.8.2/backend/app/routers/) に実装されています。
+分割プレビュー実行後、レビュー開始前にユーザーが設定できる項目があります。
+
+### 3.1 重要パートの選択
+
+分割された設計書セクションの一覧テーブルで、各セクションに「重要」チェックボックスを設定できます。
+
+- **重要パートに指定したセクション**は、フェーズ2のグループレビュー時に**すべてのグループに共通で注入**される
+- 仕様の前提条件や用語定義など、全体に関わるセクションを指定することで、グループ間でのレビュー品質のばらつきを抑制できる
+- 既にグループに含まれるセクションと重複する場合は自動的に除外される
+
+### 3.2 事前要約
+
+分割された設計書セクションのうち、トークン数が大きいものを事前に要約してレビュー時のトークン消費を削減できます。
+
+- 一覧テーブルで各セクションの「要約」チェックボックスを選択し、「要約実行」ボタンで一括実行
+- 要約は `POST /api/summarize` を使用し、LLMが設計書の内容を圧縮する
+- 要約済みセクションはレビュー時に原文の代わりに要約テキストが使用され、ヘッダに `[要約版]` と表示される
+- 要約によって微妙なニュアンスや制約が失われる可能性があるため、品質検証が必要
+
+**要約時に保持される情報:**
+
+- 具体的な仕様値（数値、文字数制限、範囲、閾値）
+- 条件分岐と判断条件
+- エラーケースと例外条件
+- 制約・前提条件
+- 入出力項目名と型
+- 元の行番号参照（Lxx-Lyy）
+
+---
+
+## 4. 3フェーズAIレビュー
+
+バックエンドのAPIは [versions/v0.9.0/backend/app/routers/](../versions/v0.9.0/backend/app/routers/) に実装されています。
 
 ### フェーズ1: 構造マッチング (`POST /api/review/structure-matching`)
 
-**ファイル**: [review.py](../versions/v0.8.2/backend/app/routers/review.py)
+**ファイル**: [review.py](../versions/v0.9.0/backend/app/routers/review.py)
 
 - **入力**: 設計書とコードそれぞれの `INDEX.md` + `MAP.json`
 - **処理**: LLMが両方の構造を分析し、関連性の高いセクションとコードシンボルを **多対多** のグループにまとめる
@@ -78,10 +110,11 @@ NLP/AIモードの1セクションあたりの最大サブスプリット数は�
 
 ### フェーズ2: グループレビュー (`POST /api/review/group`)
 
-- **入力**: グループに含まれる設計書の実コンテンツ + コードの実コンテンツ
+- **入力**: グループに含まれる設計書の実コンテンツ（または要約テキスト） + コードの実コンテンツ
 - **処理**: 各グループごとにLLMが設計書とコードの突合レビューを実施
 - **出力**: Markdownフォーマットのレビューレポート
-- フロントエンドが各グループを並列管理し、一時停止・再開も可能
+- フロントエンドが各グループを順次実行し、一時停止・再開も可能
+- 重要パートに指定されたセクションは各グループに自動注入される
 
 ### フェーズ3: 結果統合 (`POST /api/review/integrate`)
 
@@ -89,22 +122,43 @@ NLP/AIモードの1セクションあたりの最大サブスプリット数は�
 - **処理**: LLMが全結果を統合し、重複を除去、グループ横断の問題を検出
 - **出力**: 最終的な統一レビューレポート（Markdown）
 
+### エラー時の要約・リトライ
+
+フェーズ2（グループレビュー）およびフェーズ3（結果統合）でエラーが発生した場合、以下の対応が可能です。
+
+#### グループレビューのエラー
+
+トークン上限超過やAPI エラーでグループレビューが失敗した場合、レビューは一時停止し、ユーザーに以下の選択肢が提示されます。
+
+1. **要約してリトライ**: 設計書・コードそれぞれについて「そのまま」または「要約」を選択できる。要約を選択した場合は `POST /api/summarize` で要約を実行してからリトライする
+2. **スキップ**: 該当グループをスキップして次のグループに進む
+
+要約実行後はトークン削減率（例: `~12,000 → ~5,200 tokens, -57%`）が表示され、効果を確認してからリトライできます。要約が未実行の場合はリトライボタンが無効化され、先に要約を実行するよう案内されます。
+
+要約版でレビューを実施した場合、結果に「要約版の設計書でレビューを実施しました」等の注記が表示されます。
+
+#### 結果統合のエラー
+
+結果統合でエラーが発生した場合も同様に、各グループのレビュー結果を個別に「そのまま」または「要約」に切り替えてリトライできます。
+
 ---
 
-## 4. フロントエンド実装
+## 5. フロントエンド実装
 
-**ディレクトリ**: [versions/v0.8.2/frontend/src/features/reviewer/](../versions/v0.8.2/frontend/src/features/reviewer/)
+**ディレクトリ**: [versions/v0.9.0/frontend/src/features/reviewer/](../versions/v0.9.0/frontend/src/features/reviewer/)
 
 | コンポーネント | ファイル | 役割 |
 |---|---|---|
-| 分割設定UI | [SplitSettingsSection.tsx](../versions/v0.8.2/frontend/src/features/reviewer/components/SplitSettingsSection.tsx) | batch/splitモード選択、分割モード選択（見出し/NLP/AI）、分割深度設定、プレビュー |
-| 実行画面 | [SplitExecutingScreen.tsx](../versions/v0.8.2/frontend/src/features/reviewer/components/SplitExecutingScreen.tsx) | 3フェーズの進捗表示（✓/⏳/○）、一時停止・再開 |
-| 分割ロジック | [useSplitSettings.ts](../versions/v0.8.2/frontend/src/features/reviewer/hooks/useSplitSettings.ts) | 状態管理、API呼び出し、分割モード管理 |
-| APIサービス | [api.ts](../versions/v0.8.2/frontend/src/features/reviewer/services/api.ts) | 各エンドポイントへのリクエスト |
+| 分割設定UI | [SplitSettingsSection.tsx](../versions/v0.9.0/frontend/src/features/reviewer/components/SplitSettingsSection.tsx) | batch/splitモード選択、分割モード選択（見出し/NLP/AI）、分割深度設定、重要パート・要約設定、プレビュー |
+| 実行画面 | [SplitExecutingScreen.tsx](../versions/v0.9.0/frontend/src/features/reviewer/components/SplitExecutingScreen.tsx) | 3フェーズの進捗表示（✓/⏳/○）、一時停止・再開、エラー時のリトライ・スキップ |
+| リトライ設定 | [RetrySettingsPanel.tsx](../versions/v0.9.0/frontend/src/features/reviewer/components/RetrySettingsPanel.tsx) | グループレビューエラー時の要約・リトライ設定 |
+| 統合リトライ設定 | [IntegrateRetrySettingsPanel.tsx](../versions/v0.9.0/frontend/src/features/reviewer/components/IntegrateRetrySettingsPanel.tsx) | 結果統合エラー時の要約・リトライ設定 |
+| 分割ロジック | [useSplitSettings.ts](../versions/v0.9.0/frontend/src/features/reviewer/hooks/useSplitSettings.ts) | 状態管理、API呼び出し、分割モード管理、要約実行 |
+| APIサービス | [api.ts](../versions/v0.9.0/frontend/src/features/reviewer/services/api.ts) | 各エンドポイントへのリクエスト |
 
 ---
 
-## 5. 設計上のポイント
+## 6. 設計上のポイント
 
 - **ステートレスなバックエンド**: サーバー側にセッション状態を持たず、各APIコールが必要なデータを全て含む。失敗時のリトライが容易
 - **トークン推定**: 日本語 ≈ 1.5トークン/文字、英語 ≈ 0.25トークン/文字 で概算し、分割の必要性判断に利用
@@ -112,10 +166,12 @@ NLP/AIモードの1セクションあたりの最大サブスプリット数は�
 - **フェーズ2で初めて実コンテンツ**: グループ化された関連部分のみを渡すため、1回あたりのトークン量を抑制
 - **設計書・コード両方分割が必須**: 片側だけの分割は構造マッチングの精度が低下するため、分割モード選択時は両方を分割する
 - **分割モードの柔軟性**: 見出し/NLP/AIの3モードにより、文書の特性やLLM利用可否に応じた最適な分割が可能
+- **重要パートの共有**: 全体に関わるセクションを全グループに注入することで、文脈の欠落によるレビュー精度の低下を防止
+- **段階的なトークン削減**: 事前要約とエラー時要約の2段階で、トークン上限超過に柔軟に対応
 
 ---
 
-## 6. 環境変数
+## 7. 環境変数
 
 バックエンドの `.env` ファイルで以下の環境変数を設定できます。`.env.example` をコピーして使用してください。
 
@@ -129,13 +185,20 @@ cp .env.example .env
 | AWS_SECRET_ACCESS_KEY | AWS認証情報（システムLLM用） | - |
 | AWS_REGION | AWSリージョン（システムLLM用） | ap-northeast-1 |
 | MD2MAP_MAX_SUBSECTIONS | NLP/AIモードの1セクションあたり最大サブスプリット数 | 5 |
+| BEDROCK_MODEL_ID | システムLLMのBedrockモデルID | global.anthropic.claude-haiku-4-5-20251001-v1:0 |
+| BEDROCK_MAX_TOKENS | システムLLMの最大出力トークン数 | 16384 |
+| EXCEL2MD_PATH | excel2mdツールのパス | 内蔵デフォルトパス |
+| ORGANIZE_TIMEOUT_SECONDS | 構造マッチングのタイムアウト（秒） | 180 |
+| ORGANIZE_MAX_RETRIES | 構造マッチングの最大リトライ回数 | 2 |
 
 - AWS認証情報はシステムLLM（Bedrock）使用時のみ必要。Web画面からLLM設定をアップロードする場合は不要
 - `MD2MAP_MAX_SUBSECTIONS` は大きなセクションの分割精度に影響する。値を大きくするとより細かく分割されるが、AIモードではLLM呼び出しのトークン消費が増加する
+- `BEDROCK_MODEL_ID` / `BEDROCK_MAX_TOKENS` はシステムLLMのモデルとトークン上限を制御する。デフォルトで動作するため、通常は変更不要
+- `ORGANIZE_TIMEOUT_SECONDS` / `ORGANIZE_MAX_RETRIES` は構造マッチング（Phase 1）の実行制御パラメータ
 
 ---
 
-## 7. エンドツーエンドの流れ
+## 8. エンドツーエンドの流れ
 
 ```
 ユーザー: 大規模な設計書.xlsx + UserService.java をアップロード
@@ -147,11 +210,13 @@ cp .env.example .env
 [md2map] 設計書 → セクション分割（選択モードで実行） → INDEX.md + MAP.json
 [code2map] コード → シンボル分割 → INDEX.md + MAP.json
     ↓
+[分割設定] 重要パートの選択、事前要約の実行（任意）
+    ↓
 [Phase 1] INDEX + MAP をLLMに送信 → グループ化結果
-    ↓
-[Phase 2] 各グループの実コンテンツをLLMに送信 → 個別レビュー結果
-    ↓
+    ↓ 重要パートを各グループに注入
+[Phase 2] 各グループの実コンテンツ（または要約）をLLMに送信 → 個別レビュー結果
+    ↓ エラー時: 要約してリトライ or スキップ
 [Phase 3] 全レビュー結果をLLMに送信 → 最終統合レポート
-    ↓
+    ↓ エラー時: レビュー結果を要約してリトライ
 ユーザーに表示（通常レビューと同じフォーマット）
 ```

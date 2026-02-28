@@ -282,12 +282,8 @@ def build_review_info_markdown(review_meta: dict, groups: list | None = None) ->
             doc_sections = g.get("docSections", [])
             code_symbols = g.get("codeSymbols", [])
             estimated_tokens = g.get("estimatedTokens", 0)
-            doc_sections_str = ", ".join(
-                ds.get("title", "") or ds.get("id", "") for ds in doc_sections
-            )
-            code_symbols_str = ", ".join(
-                cs.get("symbol", "") or cs.get("id", "") for cs in code_symbols
-            )
+            doc_sections_str = ", ".join(ds.get("id", "") for ds in doc_sections)
+            code_symbols_str = ", ".join(cs.get("symbol", "") for cs in code_symbols)
             group_rows.append(
                 f"| {group_id} | {group_name} | {doc_sections_str} | {code_symbols_str} | {estimated_tokens:,} |"
             )

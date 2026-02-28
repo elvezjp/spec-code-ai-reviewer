@@ -133,8 +133,8 @@ export function ReviewResult({
               {splitReviewState.structureMatchingResult.groups.map((group) => (
                 <TableRow key={group.groupId}>
                   <TableCell>{group.groupName}</TableCell>
-                  <TableCell>{group.docSections.map((s) => s.title || s.id).join(', ')}</TableCell>
-                  <TableCell>{group.codeSymbols.map((s) => s.symbol || s.id).join(', ')}</TableCell>
+                  <TableCell>{group.docSections.map((s) => s.title).join(', ')}</TableCell>
+                  <TableCell>{group.codeSymbols.map((s) => s.symbol).join(', ')}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

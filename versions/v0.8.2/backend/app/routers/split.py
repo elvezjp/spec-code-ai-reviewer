@@ -95,11 +95,9 @@ async def split_markdown(request: SplitMarkdownRequest):
                     request.llmConfig
                 )
 
-            max_subsections = int(os.environ.get("MD2MAP_MAX_SUBSECTIONS", "5"))
             parser = MarkdownParser(
                 split_mode=request.splitMode,
                 llm_config=md2map_llm_config,
-                max_subsections=max_subsections,
             )
             sections, warnings = parser.parse(input_path, request.maxDepth)
 

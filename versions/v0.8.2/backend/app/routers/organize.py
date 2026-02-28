@@ -14,10 +14,13 @@ from app.services.llm_service import get_llm_provider
 from app.services.markdown_organizer import (
     assign_reference_ids,
     detect_warnings,
+    estimate_tokens,
+    split_markdown_by_section,
 )
 
 router = APIRouter()
 
+_MAX_INPUT_TOKENS = int(os.environ.get("ORGANIZE_MAX_INPUT_TOKENS", "20000"))
 _TIMEOUT_SECONDS = int(os.environ.get("ORGANIZE_TIMEOUT_SECONDS", "180"))
 _MAX_RETRIES = int(os.environ.get("ORGANIZE_MAX_RETRIES", "2"))
 
@@ -84,13 +87,44 @@ async def organize_markdown_api(request: OrganizeMarkdownRequest):
                     return False, None, "api_error", last_error
         return False, None, "api_error", last_error
 
-    ok, organized, error_code, error_message = await run_with_retry(preprocessed_markdown)
-    if not ok or organized is None:
-        return OrganizeMarkdownResponse(
-            success=False,
-            error=error_message or "Markdown整理に失敗しました。",
-            errorCode=error_code or "api_error",
-        )
+    estimated_tokens = estimate_tokens(preprocessed_markdown + "\n" + request.policy)
+    if estimated_tokens > _MAX_INPUT_TOKENS:
+        sections = split_markdown_by_section(preprocessed_markdown)
+        if len(sections) <= 1:
+            return OrganizeMarkdownResponse(
+                success=False,
+                error="入力が長すぎます。章単位で分割してください。",
+                errorCode="token_limit",
+            )
+
+        organized_sections: list[str] = []
+        for section in sections:
+            section_tokens = estimate_tokens(section + "\n" + request.policy)
+            if section_tokens > _MAX_INPUT_TOKENS:
+                return OrganizeMarkdownResponse(
+                    success=False,
+                    error="入力が長すぎます。章単位で分割してください。",
+                    errorCode="token_limit",
+                )
+
+            ok, organized, error_code, error_message = await run_with_retry(section)
+            if not ok or organized is None:
+                return OrganizeMarkdownResponse(
+                    success=False,
+                    error=error_message or "Markdown整理に失敗しました。",
+                    errorCode=error_code or "api_error",
+                )
+            organized_sections.append(organized.strip())
+
+        organized = "\n\n".join([section for section in organized_sections if section])
+    else:
+        ok, organized, error_code, error_message = await run_with_retry(preprocessed_markdown)
+        if not ok or organized is None:
+            return OrganizeMarkdownResponse(
+                success=False,
+                error=error_message or "Markdown整理に失敗しました。",
+                errorCode=error_code or "api_error",
+            )
 
     if not organized.strip():
         return OrganizeMarkdownResponse(
