@@ -114,12 +114,17 @@ export function Reviewer() {
     isExecutingPreview: isSplitPreviewExecuting,
     error: splitPreviewError,
     pinnedDocPartIds,
+    isSummarizing,
+    summarizingPartIds,
     setSettings: setSplitSettings,
     executePreview: executeSplitPreview,
     clearPreview: clearSplitPreview,
     clearError: clearSplitPreviewError,
     togglePinnedDocPart,
+    toggleSummarizeMode,
+    executeSummarize,
     isSplitEnabled,
+    hasPendingSummarize,
   } = useSplitSettings()
 
   // Wrap downloadZip to inject splitData when in split mode
@@ -443,8 +448,15 @@ export function Reviewer() {
           const displayName = part?.displayName || section.title
           const startLine = part?.startLine || 0
           const endLine = part?.endLine || 0
-          const content = part?.content || ''
-          return `### ${displayName} (L${startLine}-L${endLine})\n\n${content}`
+          // 「要約」が選択されていて要約済みなら要約テキストを使用
+          const content = (part?.summarizeMode === 'summarize' && part?.summarizedContent)
+            ? part.summarizedContent
+            : part?.content || ''
+          const isSummarized = part?.summarizeMode === 'summarize' && !!part?.summarizedContent
+          const header = isSummarized
+            ? `### ${displayName} (L${startLine}-L${endLine}) [要約版]`
+            : `### ${displayName} (L${startLine}-L${endLine})`
+          return `${header}\n\n${content}`
         }).join('\n\n')
 
         // Build code content for this group
@@ -848,6 +860,11 @@ export function Reviewer() {
           codeFilenames={codeFiles.map(f => f.filename)}
           pinnedDocPartIds={pinnedDocPartIds}
           onTogglePinnedDocPart={togglePinnedDocPart}
+          isSummarizing={isSummarizing}
+          summarizingPartIds={summarizingPartIds}
+          hasPendingSummarize={hasPendingSummarize}
+          onToggleSummarizeMode={toggleSummarizeMode}
+          onExecuteSummarize={() => executeSummarize(llmConfig)}
         />
       </div>
 
@@ -856,7 +873,7 @@ export function Reviewer() {
         <Button
           variant="success"
           size="lg"
-          disabled={!isReviewEnabled || (isSplitEnabled && !splitPreviewResult)}
+          disabled={!isReviewEnabled || (isSplitEnabled && !splitPreviewResult) || (isSplitEnabled && hasPendingSummarize)}
           onClick={handleReviewExecute}
         >
           レビュー実行
@@ -869,6 +886,11 @@ export function Reviewer() {
         {isSplitEnabled && !splitPreviewResult && (
           <p className="text-xs text-orange-500 mt-1 text-center">
             ※ 分割レビューを実行するには、分割設定で「分割プレビュー」を行ってください。
+          </p>
+        )}
+        {isSplitEnabled && hasPendingSummarize && (
+          <p className="text-xs text-orange-500 mt-1 text-center">
+            ⚠ 要約が選択されていますが未実行です。「選択した要約を実行」をクリックしてから、レビューを実行してください。
           </p>
         )}
         <p className="text-xs text-gray-400 mt-1 text-center">

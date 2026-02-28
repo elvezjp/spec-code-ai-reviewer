@@ -180,6 +180,10 @@ export interface DocumentPart {
   endLine: number
   content: string
   estimatedTokens: number
+  // 要約関連
+  summarizeMode: 'original' | 'summarize'
+  summarizedContent?: string
+  summarizedTokens?: number
 }
 
 export interface CodePart {

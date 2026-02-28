@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import type {
   SplitSettings,
   SplitPreviewResult,
@@ -15,6 +15,8 @@ interface UseSplitSettingsReturn {
   isExecutingPreview: boolean
   error: string | null
   pinnedDocPartIds: string[]
+  isSummarizing: boolean
+  summarizingPartIds: Set<string>
 
   // Actions
   setSettings: (settings: SplitSettings) => void
@@ -27,11 +29,14 @@ interface UseSplitSettingsReturn {
   clearPreview: () => void
   clearError: () => void
   togglePinnedDocPart: (partId: string) => void
+  toggleSummarizeMode: (partId: string) => void
+  executeSummarize: (llmConfig?: LlmConfig | null) => Promise<void>
 
   // Computed
   isSplitEnabled: boolean
   reviewMode: 'batch' | 'split'
   estimatedReviewCount: number
+  hasPendingSummarize: boolean
 }
 
 const DEFAULT_SETTINGS: SplitSettings = {
@@ -46,6 +51,8 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   const [isExecutingPreview, setIsExecutingPreview] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pinnedDocPartIds, setPinnedDocPartIds] = useState<string[]>([])
+  const [isSummarizing, setIsSummarizing] = useState(false)
+  const [summarizingPartIds, setSummarizingPartIds] = useState<Set<string>>(new Set())
 
   const togglePinnedDocPart = useCallback((partId: string) => {
     setPinnedDocPartIds(prev =>
@@ -54,6 +61,66 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         : [...prev, partId]
     )
   }, [])
+
+  const toggleSummarizeMode = useCallback((partId: string) => {
+    setPreviewResult((prev) => {
+      if (!prev || !prev.documentParts) return prev
+      return {
+        ...prev,
+        documentParts: prev.documentParts.map((p) =>
+          p.id === partId
+            ? {
+                ...p,
+                // summarizeMode のみ切替。summarizedContent / summarizedTokens は保持
+                summarizeMode: p.summarizeMode === 'summarize' ? 'original' as const : 'summarize' as const,
+              }
+            : p
+        ),
+      }
+    })
+  }, [])
+
+  const executeSummarize = useCallback(async (llmConfig?: LlmConfig | null) => {
+    if (!previewResult?.documentParts) return
+
+    const targets = previewResult.documentParts.filter(
+      (p) => p.summarizeMode === 'summarize' && !p.summarizedContent
+    )
+    if (targets.length === 0) return
+
+    setIsSummarizing(true)
+    setSummarizingPartIds(new Set(targets.map((p) => p.id)))
+
+    const results = await Promise.all(
+      targets.map(async (part) => {
+        const response = await api.executeSummarize({
+          text: part.content,
+          targetType: 'design',
+          llmConfig: llmConfig || undefined,
+        })
+        return { partId: part.id, response }
+      })
+    )
+
+    setPreviewResult((prev) => {
+      if (!prev || !prev.documentParts) return prev
+      return {
+        ...prev,
+        documentParts: prev.documentParts.map((p) => {
+          const result = results.find((r) => r.partId === p.id)
+          if (!result || !result.response.success) return p
+          return {
+            ...p,
+            summarizedContent: result.response.summarizedText || undefined,
+            summarizedTokens: result.response.summarizedTokens || undefined,
+          }
+        }),
+      }
+    })
+
+    setSummarizingPartIds(new Set())
+    setIsSummarizing(false)
+  }, [previewResult])
 
   const executePreview = useCallback(async (
     designMarkdown: string | null,
@@ -150,7 +217,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
       }
 
       setPreviewResult({
-        documentParts,
+        documentParts: documentParts?.map((p) => ({ ...p, summarizeMode: 'original' as const })) || null,
         codeParts,
         documentIndex,
         documentMapJson,
@@ -189,6 +256,13 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   // Computed values
   const isSplitEnabled = settings.reviewMode === 'split'
 
+  const hasPendingSummarize = useMemo(() => {
+    if (!previewResult?.documentParts) return false
+    return previewResult.documentParts.some(
+      (p) => p.summarizeMode === 'summarize' && !p.summarizedContent
+    )
+  }, [previewResult])
+
   const reviewMode = settings.reviewMode
 
   // レビュー回数の推定
@@ -214,13 +288,18 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     isExecutingPreview,
     error,
     pinnedDocPartIds,
+    isSummarizing,
+    summarizingPartIds,
     setSettings: handleSetSettings,
     executePreview,
     clearPreview,
     clearError,
     togglePinnedDocPart,
+    toggleSummarizeMode,
+    executeSummarize,
     isSplitEnabled,
     reviewMode,
     estimatedReviewCount,
+    hasPendingSummarize,
   }
 }
