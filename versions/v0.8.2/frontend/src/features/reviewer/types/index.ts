@@ -180,6 +180,10 @@ export interface DocumentPart {
   endLine: number
   content: string
   estimatedTokens: number
+  // 要約関連
+  summarizeMode: 'original' | 'summarize'
+  summarizedContent?: string
+  summarizedTokens?: number
 }
 
 export interface CodePart {
@@ -325,6 +329,7 @@ export interface GroupReviewResponse {
   reviewResult?: GroupReviewResult
   tokensUsed?: { input: number; output: number }
   error?: string
+  errorCode?: 'token_limit' | 'api_error'
 }
 
 // =============================================================================
@@ -382,6 +387,7 @@ export interface IntegrateResponse {
   reviewMeta?: ReviewMeta // 一括レビューと同様のメタ情報
   tokensUsed?: { input: number; output: number }
   error?: string
+  errorCode?: 'token_limit' | 'api_error'
 }
 
 // =============================================================================
@@ -392,6 +398,15 @@ export type SplitReviewPhase = 'idle' | 'structure-matching' | 'group-review' | 
 
 export type GroupReviewStatus = 'pending' | 'in_progress' | 'completed' | 'error' | 'skipped'
 
+export interface GroupSummarizeState {
+  documentSummarized?: string   // 設計書の要約結果テキスト
+  codeSummarized?: string       // コードの要約結果テキスト
+  documentOriginalTokens?: number
+  documentSummarizedTokens?: number
+  codeOriginalTokens?: number
+  codeSummarizedTokens?: number
+}
+
 export interface GroupReviewState {
   groupId: string
   groupName: string
@@ -399,6 +414,10 @@ export interface GroupReviewState {
   result?: GroupReviewResult
   tokensUsed?: { input: number; output: number }
   error?: string
+  errorCode?: 'token_limit' | 'api_error'
+  summarizeState?: GroupSummarizeState
+  usedSummarizedDoc?: boolean
+  usedSummarizedCode?: boolean
 }
 
 export interface SplitReviewState {
@@ -408,4 +427,39 @@ export interface SplitReviewState {
   integrateResult?: IntegrateResponse
   currentGroupIndex: number
   error?: string
+}
+
+// =============================================================================
+// Summarize Types
+// =============================================================================
+
+export interface SummarizeRequest {
+  text: string
+  targetType: 'design' | 'code' | 'review_result'
+  llmConfig?: LlmConfig
+}
+
+export interface SummarizeResponse {
+  success: boolean
+  summarizedText?: string
+  originalTokens?: number
+  summarizedTokens?: number
+  tokensUsed?: { input: number; output: number }
+  error?: string
+}
+
+// =============================================================================
+// Integrate Summarize State (Phase 3 retry)
+// =============================================================================
+
+export interface IntegrateGroupSummarizeEntry {
+  groupId: string
+  mode: 'original' | 'summarize'
+  summarizedReport?: string
+  originalTokens?: number
+  summarizedTokens?: number
+}
+
+export interface IntegrateSummarizeState {
+  groups: IntegrateGroupSummarizeEntry[]
 }

@@ -161,6 +161,19 @@ def _estimate_tokens(text: str) -> int:
     return int(japanese_chars * 1.5 + other_chars * 0.25)
 
 
+def _is_token_limit_error(error_message: str) -> bool:
+    """LLM APIエラーがトークン上限超過かどうかを判定する"""
+    keywords = [
+        "too long",          # Anthropic: "prompt is too long"
+        "context length",    # OpenAI: "maximum context length"
+        "input is too long", # Bedrock
+        "token",             # 共通キーワード
+        "maximum",           # 共通キーワード
+    ]
+    msg_lower = error_message.lower()
+    return any(kw in msg_lower for kw in keywords)
+
+
 def _extract_json(text: str) -> dict:
     """LLMの応答からJSONを抽出する"""
     # ```json ... ``` ブロックからの抽出を試行
@@ -445,28 +458,14 @@ async def review_group(request: GroupReviewRequest):
                     request.documentIndexMd,
                     "",
                 ])
-            if request.documentMapJson:
-                user_parts.extend([
-                    "### 設計書全体の構造 (MAP.json)\n",
-                    "```json",
-                    json.dumps(request.documentMapJson, ensure_ascii=False, indent=2),
-                    "```",
-                    "",
-                ])
+            # MAP.jsonはINDEX.mdと情報が重複するため送信しない
             if request.codeIndexMd:
                 user_parts.extend([
                     "### コード全体の構造 (INDEX.md)\n",
                     request.codeIndexMd,
                     "",
                 ])
-            if request.codeMapJson:
-                user_parts.extend([
-                    "### コード全体の構造 (MAP.json)\n",
-                    "```json",
-                    json.dumps(request.codeMapJson, ensure_ascii=False, indent=2),
-                    "```",
-                    "",
-                ])
+            # MAP.jsonはINDEX.mdと情報が重複するため送信しない
             if request.allGroups:
                 user_parts.extend([
                     "### 全グループ一覧\n",
@@ -498,16 +497,20 @@ async def review_group(request: GroupReviewRequest):
             tokensUsed={"input": input_tokens, "output": output_tokens},
         )
     except RuntimeError as e:
+        error_msg = str(e)
         return GroupReviewResponse(
             success=False,
             groupId=request.groupId,
-            error=str(e),
+            error=error_msg,
+            errorCode="token_limit" if _is_token_limit_error(error_msg) else "api_error",
         )
     except Exception as e:
+        error_msg = str(e)
         return GroupReviewResponse(
             success=False,
             groupId=request.groupId,
-            error=f"グループレビュー中にエラーが発生しました: {str(e)}",
+            error=f"グループレビュー中にエラーが発生しました: {error_msg}",
+            errorCode="token_limit" if _is_token_limit_error(error_msg) else None,
         )
 
 
@@ -602,28 +605,14 @@ async def integrate_reviews(request: IntegrateRequest):
                     request.documentIndexMd,
                     "",
                 ])
-            if request.documentMapJson:
-                user_parts.extend([
-                    "### 設計書全体の構造 (MAP.json)\n",
-                    "```json",
-                    json.dumps(request.documentMapJson, ensure_ascii=False, indent=2),
-                    "```",
-                    "",
-                ])
+            # MAP.jsonはINDEX.mdと情報が重複するため送信しない
             if request.codeIndexMd:
                 user_parts.extend([
                     "### コード全体の構造 (INDEX.md)\n",
                     request.codeIndexMd,
                     "",
                 ])
-            if request.codeMapJson:
-                user_parts.extend([
-                    "### コード全体の構造 (MAP.json)\n",
-                    "```json",
-                    json.dumps(request.codeMapJson, ensure_ascii=False, indent=2),
-                    "```",
-                    "",
-                ])
+            # MAP.jsonはINDEX.mdと情報が重複するため送信しない
 
         user_message = "\n".join(user_parts)
 
@@ -669,12 +658,16 @@ async def integrate_reviews(request: IntegrateRequest):
         )
 
     except RuntimeError as e:
+        error_msg = str(e)
         return IntegrateResponse(
             success=False,
-            error=str(e),
+            error=error_msg,
+            errorCode="token_limit" if _is_token_limit_error(error_msg) else "api_error",
         )
     except Exception as e:
+        error_msg = str(e)
         return IntegrateResponse(
             success=False,
-            error=f"結果統合中にエラーが発生しました: {str(e)}",
+            error=f"結果統合中にエラーが発生しました: {error_msg}",
+            errorCode="token_limit" if _is_token_limit_error(error_msg) else None,
         )

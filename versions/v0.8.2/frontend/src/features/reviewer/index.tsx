@@ -29,8 +29,8 @@ import {
   SplitSettingsSection,
 } from './components'
 import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport, useSplitSettings } from './hooks'
-import { testLlmConnection, executeStructureMatching, executeGroupReview, executeIntegrate } from './services/api'
-import type { SplitReviewState, GroupReviewState, ReviewExecutionData } from './types'
+import { testLlmConnection, executeStructureMatching, executeGroupReview, executeIntegrate, executeSummarize } from './services/api'
+import type { SplitReviewState, GroupReviewState, GroupSummarizeState, IntegrateSummarizeState, ReviewExecutionData } from './types'
 
 const APP_INFO = {
   name: 'spec-code-ai-reviewer',
@@ -114,12 +114,18 @@ export function Reviewer() {
     isExecutingPreview: isSplitPreviewExecuting,
     error: splitPreviewError,
     pinnedDocPartIds,
+    isSummarizing,
+    summarizingPartIds,
+    summarizeError,
     setSettings: setSplitSettings,
     executePreview: executeSplitPreview,
     clearPreview: clearSplitPreview,
     clearError: clearSplitPreviewError,
     togglePinnedDocPart,
+    toggleSummarizeMode,
+    executeSummarize,
     isSplitEnabled,
+    hasPendingSummarize,
   } = useSplitSettings()
 
   // Wrap downloadZip to inject splitData when in split mode
@@ -144,6 +150,8 @@ export function Reviewer() {
     groupReviews: [],
     currentGroupIndex: 0,
   })
+  const [integrateSummarizeState, setIntegrateSummarizeState] = useState<IntegrateSummarizeState>({ groups: [] })
+  const [batchReviewError, setBatchReviewError] = useState<string | null>(null)
   const errorActionRef = useRef<{ action: 'retry' | 'skip'; groupId: string } | null>(null)
 
   // System prompt text for token estimation
@@ -215,12 +223,25 @@ export function Reviewer() {
     )
   }, [codeFiles, specMarkdown, specFiles, executeSplitPreview, llmConfig])
 
-  const handleRetryGroup = useCallback((groupId: string) => {
-    errorActionRef.current = { action: 'retry', groupId }
+  const handleRetryGroup = useCallback((groupId: string, docMode?: 'original' | 'summarize', codeMode?: 'original' | 'summarize') => {
+    errorActionRef.current = { action: 'retry', groupId, docMode, codeMode }
   }, [])
 
   const handleSkipGroup = useCallback((groupId: string) => {
     errorActionRef.current = { action: 'skip', groupId }
+  }, [])
+
+  const handleSummarizeComplete = useCallback((groupId: string, summarizeState: GroupSummarizeState) => {
+    setSplitReviewState((prev) => ({
+      ...prev,
+      groupReviews: prev.groupReviews.map((g) =>
+        g.groupId === groupId ? { ...g, summarizeState } : g
+      ),
+    }))
+  }, [])
+
+  const handleIntegrateSummarizeComplete = useCallback((state: IntegrateSummarizeState) => {
+    setIntegrateSummarizeState(state)
   }, [])
 
   // Integrate retry handler - re-execute only the integration phase
@@ -238,11 +259,15 @@ export function Reviewer() {
     try {
       const groupReviewSummaries = groupReviews
         .filter((g) => g.status === 'completed' && g.result)
-        .map((g) => ({
-          groupId: g.groupId,
-          groupName: g.groupName,
-          report: g.result!.report,
-        }))
+        .map((g) => {
+          const entry = integrateSummarizeState.groups.find((s) => s.groupId === g.groupId)
+          const useSummarized = entry?.mode === 'summarize' && entry?.summarizedReport
+          return {
+            groupId: g.groupId,
+            groupName: g.groupName,
+            report: useSummarized ? entry.summarizedReport! : g.result!.report,
+          }
+        })
 
       const integrateResponse = await executeIntegrate({
         structureMatching: structureMatchingResult,
@@ -271,7 +296,7 @@ export function Reviewer() {
         error: error instanceof Error ? error.message : '結果統合に失敗しました',
       }))
     }
-  }, [splitReviewState, llmConfig, currentPromptValues, screenManager])
+  }, [splitReviewState, llmConfig, currentPromptValues, screenManager, integrateSummarizeState])
 
   // Split review execution
   const executeSplitReviewFlow = useCallback(async () => {
@@ -425,8 +450,15 @@ export function Reviewer() {
           const displayName = part?.displayName || section.title
           const startLine = part?.startLine || 0
           const endLine = part?.endLine || 0
-          const content = part?.content || ''
-          return `### ${displayName} (L${startLine}-L${endLine})\n\n${content}`
+          // 「要約」が選択されていて要約済みなら要約テキストを使用
+          const content = (part?.summarizeMode === 'summarize' && part?.summarizedContent)
+            ? part.summarizedContent
+            : part?.content || ''
+          const isSummarized = part?.summarizeMode === 'summarize' && !!part?.summarizedContent
+          const header = isSummarized
+            ? `### ${displayName} (L${startLine}-L${endLine}) [要約版]`
+            : `### ${displayName} (L${startLine}-L${endLine})`
+          return `${header}\n\n${content}`
         }).join('\n\n')
 
         // Build code content for this group
@@ -456,19 +488,26 @@ export function Reviewer() {
           let errorMessage = ''
 
           try {
+            // リトライ時は要約版コンテンツを使用する可能性がある
+            const currentGroupState = groupReviewResults[i]
+            const effectiveDocContent = currentGroupState.summarizeState?.documentSummarized
+              && currentGroupState.usedSummarizedDoc
+              ? currentGroupState.summarizeState.documentSummarized
+              : documentContent
+            const effectiveCodeContent = currentGroupState.summarizeState?.codeSummarized
+              && currentGroupState.usedSummarizedCode
+              ? currentGroupState.summarizeState.codeSummarized
+              : codeContent
+
             const groupResponse = await executeGroupReview({
               groupId: group.groupId,
               groupName: group.groupName,
-              documentContent,
-              codeContent,
+              documentContent: effectiveDocContent,
+              codeContent: effectiveCodeContent,
               systemPrompt: currentPromptValues,
               llmConfig: llmConfig || undefined,
               documentIndexMd: splitPreviewResult.documentIndex || undefined,
-              documentMapJson: splitPreviewResult.documentMapJson
-                ? { sections: splitPreviewResult.documentMapJson }
-                : undefined,
               codeIndexMd: splitPreviewResult.codeIndex || undefined,
-              codeMapJson: splitPreviewResult.codeMapJson || undefined,
               allGroups: structureMatchingResponse.groups,
             })
 
@@ -483,6 +522,10 @@ export function Reviewer() {
             } else {
               failed = true
               errorMessage = groupResponse.error || 'グループレビューに失敗しました'
+              groupReviewResults[i] = {
+                ...groupReviewResults[i],
+                errorCode: groupResponse.errorCode,
+              }
             }
           } catch (error) {
             failed = true
@@ -509,12 +552,24 @@ export function Reviewer() {
               await new Promise((resolve) => setTimeout(resolve, 500))
             }
 
-            const errorAction = errorActionRef.current as { action: 'retry' | 'skip'; groupId: string }
+            const errorAction = errorActionRef.current as {
+              action: 'retry' | 'skip'
+              groupId: string
+              docMode?: 'original' | 'summarize'
+              codeMode?: 'original' | 'summarize'
+            }
             errorActionRef.current = null
             const action = errorAction.action
 
             if (action === 'retry') {
-              // Loop again to retry
+              // 要約版を使用するかのフラグを設定
+              if (errorAction.docMode === 'summarize' || errorAction.codeMode === 'summarize') {
+                groupReviewResults[i] = {
+                  ...groupReviewResults[i],
+                  usedSummarizedDoc: errorAction.docMode === 'summarize',
+                  usedSummarizedCode: errorAction.codeMode === 'summarize',
+                }
+              }
               continue
             } else {
               // Skip: mark as skipped and move on
@@ -558,11 +613,7 @@ export function Reviewer() {
         designs: specFiles.map((f) => ({ filename: f.filename, isMain: f.isMain, type: f.type, tool: f.tool })),
         codes: codeFiles.map((f) => ({ filename: f.filename })),
         documentIndexMd: splitPreviewResult.documentIndex || undefined,
-        documentMapJson: splitPreviewResult.documentMapJson
-          ? { sections: splitPreviewResult.documentMapJson }
-          : undefined,
         codeIndexMd: splitPreviewResult.codeIndex || undefined,
-        codeMapJson: splitPreviewResult.codeMapJson || undefined,
       })
 
       if (!integrateResponse.success) {
@@ -603,6 +654,7 @@ export function Reviewer() {
     }
 
     // 一括モード
+    setBatchReviewError(null)
     try {
       await executeReview({
         specFiles,
@@ -614,9 +666,8 @@ export function Reviewer() {
       })
       screenManager.showResult()
     } catch (error) {
-      screenManager.showMain()
       const errorMessage = error instanceof Error ? error.message : 'レビュー実行に失敗しました'
-      alert(errorMessage)
+      setBatchReviewError(errorMessage)
     }
   }
 
@@ -811,6 +862,12 @@ export function Reviewer() {
           codeFilenames={codeFiles.map(f => f.filename)}
           pinnedDocPartIds={pinnedDocPartIds}
           onTogglePinnedDocPart={togglePinnedDocPart}
+          isSummarizing={isSummarizing}
+          summarizingPartIds={summarizingPartIds}
+          hasPendingSummarize={hasPendingSummarize}
+          summarizeError={summarizeError}
+          onToggleSummarizeMode={toggleSummarizeMode}
+          onExecuteSummarize={() => executeSummarize(llmConfig)}
         />
       </div>
 
@@ -819,7 +876,7 @@ export function Reviewer() {
         <Button
           variant="success"
           size="lg"
-          disabled={!isReviewEnabled || (isSplitEnabled && !splitPreviewResult)}
+          disabled={!isReviewEnabled || (isSplitEnabled && !splitPreviewResult) || (isSplitEnabled && hasPendingSummarize)}
           onClick={handleReviewExecute}
         >
           レビュー実行
@@ -832,6 +889,11 @@ export function Reviewer() {
         {isSplitEnabled && !splitPreviewResult && (
           <p className="text-xs text-orange-500 mt-1 text-center">
             ※ 分割レビューを実行するには、分割設定で「分割プレビュー」を行ってください。
+          </p>
+        )}
+        {isSplitEnabled && hasPendingSummarize && (
+          <p className="text-xs text-orange-500 mt-1 text-center">
+            ⚠ 要約が選択されていますが未実行です。「選択した要約を実行」をクリックしてから、レビューを実行してください。
           </p>
         )}
         <p className="text-xs text-gray-400 mt-1 text-center">
@@ -875,9 +937,39 @@ export function Reviewer() {
       onRetryGroup={handleRetryGroup}
       onSkipGroup={handleSkipGroup}
       onRetryIntegrate={handleRetryIntegrate}
+      currentDocumentContent={(() => {
+        const errorGroup = splitReviewState.groupReviews.find((g) => g.status === 'error')
+        if (!errorGroup || !splitReviewState.structureMatchingResult) return undefined
+        const group = splitReviewState.structureMatchingResult.groups.find((g) => g.groupId === errorGroup.groupId)
+        if (!group) return undefined
+        return group.docSections.map((section) => {
+          const part = splitPreviewResult?.documentParts?.find((p) => p.id === section.id)
+          return part?.content || ''
+        }).join('\n\n')
+      })()}
+      currentCodeContent={(() => {
+        const errorGroup = splitReviewState.groupReviews.find((g) => g.status === 'error')
+        if (!errorGroup || !splitReviewState.structureMatchingResult) return undefined
+        const group = splitReviewState.structureMatchingResult.groups.find((g) => g.groupId === errorGroup.groupId)
+        if (!group) return undefined
+        return group.codeSymbols.map((sym) => {
+          const part = splitPreviewResult?.codeParts?.find((p) => p.id === sym.id)
+          return part?.content || ''
+        }).join('\n\n')
+      })()}
+      llmConfig={llmConfig || undefined}
+      onSummarizeComplete={handleSummarizeComplete}
+      integrateSummarizeState={integrateSummarizeState}
+      onIntegrateSummarizeComplete={handleIntegrateSummarizeComplete}
     />
   ) : (
-    <ExecutingScreen currentExecution={currentExecutionNumber} totalExecutions={2} />
+    <ExecutingScreen
+      currentExecution={currentExecutionNumber}
+      totalExecutions={2}
+      onBack={screenManager.showMain}
+      error={batchReviewError || undefined}
+      onRetry={handleReviewExecute}
+    />
   )
 
   // 分割レビュー用のダウンロードデータを構築

@@ -16,6 +16,12 @@ interface SplitSettingsSectionProps {
   codeFilenames: string[]
   pinnedDocPartIds: string[]
   onTogglePinnedDocPart: (partId: string) => void
+  isSummarizing: boolean
+  summarizingPartIds: Set<string>
+  hasPendingSummarize: boolean
+  summarizeError: string | null
+  onToggleSummarizeMode: (partId: string) => void
+  onExecuteSummarize: () => void
 }
 
 export function SplitSettingsSection({
@@ -31,6 +37,12 @@ export function SplitSettingsSection({
   codeFilenames,
   pinnedDocPartIds,
   onTogglePinnedDocPart,
+  isSummarizing,
+  summarizingPartIds,
+  hasPendingSummarize,
+  summarizeError,
+  onToggleSummarizeMode,
+  onExecuteSummarize,
 }: SplitSettingsSectionProps) {
   const [isOptionsExpanded, setIsOptionsExpanded] = useState(true)
   const prevHasDesignDocRef = useRef(hasDesignDoc)
@@ -263,29 +275,41 @@ export function SplitSettingsSection({
 
       {/* 分割プレビュー実行ボタン */}
       {isSplitEnabled && (
-        <div className="mb-4 flex items-center gap-3">
-          <button
-            onClick={onExecutePreview}
-            disabled={!canExecutePreview || isExecuting || !!previewResult}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-          {isExecuting ? (
-            <>
-              <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
-              プレビュー実行中...
-            </>
-          ) : previewResult ? (
-            'プレビュー実行済み'
-          ) : (
-            '分割プレビュー'
+        <div className="mb-4 space-y-2">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onExecutePreview}
+              disabled={!canExecutePreview || isExecuting || !!previewResult}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              {isExecuting ? (
+                <>
+                  <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
+                  プレビュー実行中...
+                </>
+              ) : previewResult ? (
+                'プレビュー実行済み'
+              ) : (
+                '分割プレビュー'
+              )}
+            </button>
+            {settings.documentSplitMode === 'ai' && (
+              <span className="text-xs text-muted text-gray-400">
+                ※ 設計書が大きい場合は、処理に時間が掛かったり、タイムアウトや制限等でエラーになる可能性があります。
+              </span>
+            )}
+          </div>
+          {/* 要約実行ボタン */}
+          {previewResult && previewResult.documentParts && (
+            <SummarizeExecuteRow
+              parts={previewResult.documentParts}
+              isSummarizing={isSummarizing}
+              hasPendingSummarize={hasPendingSummarize}
+              summarizeError={summarizeError}
+              onExecuteSummarize={onExecuteSummarize}
+            />
           )}
-        </button>
-        {settings.documentSplitMode === 'ai' && (
-          <span className="text-xs text-muted text-gray-400">
-            ※ 設計書が大きい場合は、処理に時間が掛かったり、タイムアウトや制限等でエラーになる可能性があります。
-          </span>
-        )}
-      </div>
+        </div>
       )}
 
       {/* プレビュー結果 */}
@@ -299,13 +323,16 @@ export function SplitSettingsSection({
               <h4 className="text-sm font-medium text-gray-600 mb-2">
                 ■ 設計書: {previewResult.documentParts.length} パート
               </h4>
-              <p className="text-xs text-gray-500 mb-2">
-                <strong>重要</strong>にチェックしたセクションは、分割レビュー時に全てのグループで参照されます。
-              </p>
+              <ul className="text-xs text-gray-500 mb-2 list-disc list-inside space-y-0.5">
+                <li><strong>重要</strong>: 分割レビュー時に全てのグループで参照されます。</li>
+                <li><strong>要約</strong>: レビュー時に要約テキストで代替されます。分割後もトークン数が多い場合に使用してください。</li>
+              </ul>
               <DocumentPartsTable
                 parts={previewResult.documentParts}
                 pinnedDocPartIds={pinnedDocPartIds}
                 onTogglePinnedDocPart={onTogglePinnedDocPart}
+                onToggleSummarizeMode={onToggleSummarizeMode}
+                summarizingPartIds={summarizingPartIds}
               />
             </div>
           )}
@@ -334,10 +361,14 @@ function DocumentPartsTable({
   parts,
   pinnedDocPartIds,
   onTogglePinnedDocPart,
+  onToggleSummarizeMode,
+  summarizingPartIds,
 }: {
   parts: DocumentPart[]
   pinnedDocPartIds: string[]
   onTogglePinnedDocPart: (partId: string) => void
+  onToggleSummarizeMode: (partId: string) => void
+  summarizingPartIds: Set<string>
 }) {
   return (
     <div className="overflow-x-auto">
@@ -345,6 +376,7 @@ function DocumentPartsTable({
         <TableHead>
           <TableRow>
             <TableHeaderCell className="w-14">重要</TableHeaderCell>
+            <TableHeaderCell className="w-14">要約</TableHeaderCell>
             <TableHeaderCell className="w-12">#</TableHeaderCell>
             <TableHeaderCell>セクション名</TableHeaderCell>
             <TableHeaderCell className="w-24">行範囲</TableHeaderCell>
@@ -352,24 +384,132 @@ function DocumentPartsTable({
           </TableRow>
         </TableHead>
         <TableBody>
-          {parts.map((part, index) => (
-            <TableRow key={`${part.id}-${part.startLine}`}>
-              <TableCell className="text-center">
-                <input
-                  type="checkbox"
-                  checked={pinnedDocPartIds.includes(part.id)}
-                  onChange={() => onTogglePinnedDocPart(part.id)}
-                  className="w-4 h-4 text-blue-600 rounded"
-                />
-              </TableCell>
-              <TableCell>{index + 1}</TableCell>
-              <TableCell>{part.displayName}</TableCell>
-              <TableCell className="text-gray-600">L{part.startLine}-L{part.endLine}</TableCell>
-              <TableCell className="text-gray-600">~{part.estimatedTokens.toLocaleString()}</TableCell>
-            </TableRow>
-          ))}
+          {parts.map((part, index) => {
+            const isSummarizingThis = summarizingPartIds.has(part.id)
+            return (
+              <TableRow key={`${part.id}-${part.startLine}`}>
+                {/* 重要チェックボックス */}
+                <TableCell className="text-center">
+                  <input
+                    type="checkbox"
+                    checked={pinnedDocPartIds.includes(part.id)}
+                    onChange={() => onTogglePinnedDocPart(part.id)}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                </TableCell>
+                {/* 要約チェックボックス */}
+                <TableCell className="text-center">
+                  <input
+                    type="checkbox"
+                    checked={part.summarizeMode === 'summarize'}
+                    onChange={() => onToggleSummarizeMode(part.id)}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                </TableCell>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell>
+                  {part.displayName}
+                  {/* 要約完了時のプレビューアコーディオン */}
+                  {part.summarizedContent && part.summarizeMode === 'summarize' && (
+                    <SummarizedTextPreview text={part.summarizedContent} />
+                  )}
+                </TableCell>
+                <TableCell className="text-gray-600">
+                  L{part.startLine}-L{part.endLine}
+                </TableCell>
+                {/* 推定トークン: 選択モードに応じた表示 */}
+                <TableCell className="text-gray-600">
+                  {isSummarizingThis ? (
+                    <span className="text-blue-600">⟳ 要約中</span>
+                  ) : part.summarizeMode === 'summarize' ? (
+                    part.summarizedContent && part.summarizedTokens ? (
+                      <span>~{part.summarizedTokens.toLocaleString()}</span>
+                    ) : (
+                      <span className="text-amber-600">未実行</span>
+                    )
+                  ) : (
+                    <span>~{part.estimatedTokens.toLocaleString()}</span>
+                  )}
+                </TableCell>
+              </TableRow>
+            )
+          })}
         </TableBody>
       </Table>
+    </div>
+  )
+}
+
+function SummarizeExecuteRow({
+  parts,
+  isSummarizing,
+  hasPendingSummarize,
+  summarizeError,
+  onExecuteSummarize,
+}: {
+  parts: DocumentPart[]
+  isSummarizing: boolean
+  hasPendingSummarize: boolean
+  summarizeError: string | null
+  onExecuteSummarize: () => void
+}) {
+  const totalSelected = parts.filter((p) => p.summarizeMode === 'summarize').length
+  const completedCount = parts.filter((p) => p.summarizeMode === 'summarize' && p.summarizedContent).length
+
+  if (totalSelected === 0) return null
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onExecuteSummarize}
+          disabled={!hasPendingSummarize || isSummarizing}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+        >
+          {isSummarizing ? (
+            <>
+              <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
+              要約実行中...
+            </>
+          ) : (
+            '選択した要約を実行'
+          )}
+        </button>
+        <span className="text-xs text-gray-600">
+          {completedCount}/{totalSelected}件
+        </span>
+        {summarizeError ? (
+          <span className="text-xs text-red-600">{summarizeError}</span>
+        ) : (
+          <span className="text-xs text-gray-400">
+            「要約」を選択したセクションを事前に要約します。
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-amber-600">
+        ※ 要約によって微妙なニュアンスや制約が失われることがあるため、品質検証が必要です。
+      </p>
+    </div>
+  )
+}
+
+function SummarizedTextPreview({ text }: { text: string }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+      >
+        {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        要約結果を表示
+      </button>
+      {isExpanded && (
+        <div className="mt-1 p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-700 whitespace-pre-wrap max-h-40 overflow-y-auto">
+          {text}
+        </div>
+      )}
     </div>
   )
 }

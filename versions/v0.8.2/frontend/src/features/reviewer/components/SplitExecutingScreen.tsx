@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { CheckCircle, Loader2, Circle, AlertCircle, SkipForward, RotateCcw, ChevronDown, ChevronRight, Ban } from 'lucide-react'
 import { Card, Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@core/index'
-import type { SplitReviewState } from '../types'
+import type { SplitReviewState, GroupSummarizeState, IntegrateSummarizeState, LlmConfig } from '../types'
+import { RetrySettingsPanel, SummarizedTextPreview } from './RetrySettingsPanel'
+import { IntegrateRetrySettingsPanel } from './IntegrateRetrySettingsPanel'
 
 interface SplitExecutingScreenProps {
   state: SplitReviewState
@@ -10,6 +12,12 @@ interface SplitExecutingScreenProps {
   onRetryGroup: (groupId: string) => void
   onSkipGroup: (groupId: string) => void
   onRetryIntegrate: () => void
+  currentDocumentContent?: string
+  currentCodeContent?: string
+  llmConfig?: LlmConfig
+  onSummarizeComplete?: (groupId: string, state: GroupSummarizeState) => void
+  integrateSummarizeState?: IntegrateSummarizeState
+  onIntegrateSummarizeComplete?: (state: IntegrateSummarizeState) => void
 }
 
 type StepStatus = 'completed' | 'in_progress' | 'pending' | 'error' | 'skipped'
@@ -112,7 +120,17 @@ export function SplitExecutingScreen({
   onRetryGroup,
   onSkipGroup,
   onRetryIntegrate,
+  currentDocumentContent,
+  currentCodeContent,
+  llmConfig,
+  onSummarizeComplete,
+  integrateSummarizeState,
+  onIntegrateSummarizeComplete,
 }: SplitExecutingScreenProps) {
+  const [retryDocMode, setRetryDocMode] = useState<'original' | 'summarize'>('original')
+  const [retryCodeMode, setRetryCodeMode] = useState<'original' | 'summarize'>('original')
+  const [integrateHasPendingSummarize, setIntegrateHasPendingSummarize] = useState(false)
+
   const isPaused = state.phase === 'paused'
   const isError = state.phase === 'error'
   const hasErrorGroup = state.groupReviews.some((g) => g.status === 'error')
@@ -181,52 +199,128 @@ export function SplitExecutingScreen({
             </>
           )}
 
-          {isErrorPaused && (
-            <>
-              <p className="text-sm text-red-600 mt-2">
-                グループレビューでエラーが発生しました。リトライまたはスキップを選択してください。
-              </p>
-              <div className="flex items-center justify-center gap-3 mt-3">
-                <button
-                  onClick={() => {
-                    const errorGroup = state.groupReviews.find((g) => g.status === 'error')
-                    if (errorGroup) onRetryGroup(errorGroup.groupId)
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  リトライ
-                </button>
-                <button
-                  onClick={() => {
-                    const errorGroup = state.groupReviews.find((g) => g.status === 'error')
-                    if (errorGroup) onSkipGroup(errorGroup.groupId)
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white text-sm rounded-md transition"
-                >
-                  <SkipForward className="w-4 h-4" />
-                  スキップ
-                </button>
-              </div>
-            </>
-          )}
+          {isErrorPaused && (() => {
+            const errorGroup = state.groupReviews.find((g) => g.status === 'error')
+            if (!errorGroup) return null
 
-          {isIntegrateError && (
-            <>
-              <p className="text-sm text-red-600 mt-2">
-                結果統合でエラーが発生しました。
-              </p>
-              <div className="flex items-center justify-center gap-3 mt-3">
-                <button
-                  onClick={onRetryIntegrate}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  リトライ
-                </button>
-              </div>
-            </>
-          )}
+            const hasPendingSummarize =
+              (retryDocMode === 'summarize' && !errorGroup.summarizeState?.documentSummarized) ||
+              (retryCodeMode === 'summarize' && !errorGroup.summarizeState?.codeSummarized)
+            const retryDisabled = hasPendingSummarize
+
+            return (
+              <>
+                {/* エラー内容をそのまま表示 */}
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-left">
+                  <p className="text-sm font-medium text-red-800">
+                    グループ「{errorGroup.groupName}」のレビューでエラーが発生しました。
+                  </p>
+                  <p className="text-sm text-red-700 mt-1">{errorGroup.error}</p>
+                </div>
+
+                {/* リトライ / スキップ ボタン */}
+                <div className="flex items-center justify-center gap-3 mt-3">
+                  <button
+                    onClick={() => onRetryGroup(errorGroup.groupId)}
+                    disabled={retryDisabled}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white text-sm rounded-md transition"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    リトライ
+                  </button>
+                  <button
+                    onClick={() => onSkipGroup(errorGroup.groupId)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white text-sm rounded-md transition"
+                  >
+                    <SkipForward className="w-4 h-4" />
+                    スキップ
+                  </button>
+                </div>
+
+                {/* 要約未実行の注意メッセージ */}
+                {retryDisabled && (
+                  <p className="text-sm text-amber-600 mt-2 text-center">
+                    先に要約を実行してください
+                  </p>
+                )}
+
+                {/* 要約案内 + リトライ設定 */}
+                {currentDocumentContent && currentCodeContent && onSummarizeComplete && (
+                  <div className="mt-4 pt-4 border-t">
+                    <p className="text-sm text-gray-600">
+                      トークン上限の場合や、同じエラーが繰り返される場合、入力トークンを減らすことで成功する可能性があります
+                    </p>
+                    <RetrySettingsPanel
+                      groupId={errorGroup.groupId}
+                      documentContent={currentDocumentContent}
+                      codeContent={currentCodeContent}
+                      summarizeState={errorGroup.summarizeState}
+                      llmConfig={llmConfig}
+                      onSummarizeComplete={onSummarizeComplete}
+                      onModeChange={(docMode, codeMode) => {
+                        setRetryDocMode(docMode)
+                        setRetryCodeMode(codeMode)
+                      }}
+                    />
+                  </div>
+                )}
+              </>
+            )
+          })()}
+
+          {isIntegrateError && (() => {
+            const integrateError = state.error || ''
+            const retryDisabled = integrateHasPendingSummarize
+
+            return (
+              <>
+                {/* エラー内容をそのまま表示 */}
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-left">
+                  <p className="text-sm font-medium text-red-800">
+                    結果統合でエラーが発生しました。
+                  </p>
+                  {integrateError && (
+                    <p className="text-sm text-red-700 mt-1">{integrateError}</p>
+                  )}
+                </div>
+
+                {/* リトライボタン */}
+                <div className="flex items-center justify-center gap-3 mt-3">
+                  <button
+                    onClick={onRetryIntegrate}
+                    disabled={retryDisabled}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white text-sm rounded-md transition"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    リトライ
+                  </button>
+                </div>
+
+                {/* 要約未実行の注意メッセージ */}
+                {retryDisabled && (
+                  <p className="text-sm text-amber-600 mt-2 text-center">
+                    先に要約を実行してください
+                  </p>
+                )}
+
+                {/* 要約案内 + リトライ設定 */}
+                {integrateSummarizeState && onIntegrateSummarizeComplete && (
+                  <div className="mt-4 pt-4 border-t">
+                    <p className="text-sm text-gray-600">
+                      トークン上限の場合や、同じエラーが繰り返される場合、入力トークンを減らすことで成功する可能性があります
+                    </p>
+                    <IntegrateRetrySettingsPanel
+                      groupReviews={state.groupReviews}
+                      summarizeState={integrateSummarizeState}
+                      llmConfig={llmConfig}
+                      onSummarizeComplete={onIntegrateSummarizeComplete}
+                      onModeChange={setIntegrateHasPendingSummarize}
+                    />
+                  </div>
+                )}
+              </>
+            )
+          })()}
         </div>
       </Card>
 
@@ -322,9 +416,30 @@ export function SplitExecutingScreen({
 
                   {status === 'completed' && result && (
                     <div className="mt-2 pt-2 border-t">
+                      {(reviewState?.usedSummarizedDoc || reviewState?.usedSummarizedCode) && (
+                        <p className="text-xs text-amber-600 mb-2">
+                          {reviewState.usedSummarizedDoc && reviewState.usedSummarizedCode
+                            ? '要約版の設計書・コードでレビューを実施しました'
+                            : reviewState.usedSummarizedDoc
+                              ? '要約版の設計書でレビューを実施しました'
+                              : '要約版のコードでレビューを実施しました'}
+                        </p>
+                      )}
                       <div className="text-gray-700 text-xs whitespace-pre-wrap max-h-40 overflow-y-auto">
                         {result.report}
                       </div>
+                      {reviewState?.usedSummarizedDoc && reviewState?.summarizeState?.documentSummarized && (
+                        <SummarizedTextPreview
+                          label="使用した設計書の要約を表示"
+                          text={reviewState.summarizeState.documentSummarized}
+                        />
+                      )}
+                      {reviewState?.usedSummarizedCode && reviewState?.summarizeState?.codeSummarized && (
+                        <SummarizedTextPreview
+                          label="使用したコードの要約を表示"
+                          text={reviewState.summarizeState.codeSummarized}
+                        />
+                      )}
                     </div>
                   )}
 
