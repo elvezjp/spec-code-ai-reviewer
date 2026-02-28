@@ -226,7 +226,7 @@
     "original_file": "UserManagementService.java",
     "original_start_line": 221,
     "original_end_line": 226,
-    "part_file": "parts/User_<init>.java",
+    "part_file": "parts/User_init.java",
     "checksum": "253a1801d7ecc476861e05ff6dc655509e49f8ab74294b4380e7e7d78537d063"
   },
   {
@@ -246,7 +246,7 @@
     "original_file": "UserManagementService.java",
     "original_start_line": 238,
     "original_end_line": 238,
-    "part_file": "parts/UserAlreadyExistsException_<init>.java",
+    "part_file": "parts/UserAlreadyExistsException_init.java",
     "checksum": "14e2fd984bdc86ff87cdae392fce60c1b9c2fefd76d0261c524923e7a6cbc04d"
   },
   {
@@ -266,7 +266,7 @@
     "original_file": "UserManagementService.java",
     "original_start_line": 242,
     "original_end_line": 242,
-    "part_file": "parts/UserNotFoundException_<init>.java",
+    "part_file": "parts/UserNotFoundException_init.java",
     "checksum": "be3c6efa49831c48ebb88bd126b422f98b3f0099e115d263ce9015bc19b3d4ed"
   }
 ]

@@ -1,6 +1,6 @@
 [project]
 name = "code2map"
-version = "0.1.2"
+version = "0.1.1"
 description = "Transform large source code into semantic maps for AI-driven analysis and review"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -32,9 +32,6 @@ code2map = "code2map.cli:main"
 
 [project.urls]
 Repository = "https://github.com/example/code2map"
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
 
 [build-system]
 requires = ["hatchling"]

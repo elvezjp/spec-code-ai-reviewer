@@ -6,8 +6,7 @@ from pathlib import Path
 
 from code2map.generators.index_generator import generate_index
 from code2map.generators.map_generator import generate_map
-from code2map.generators.parts_generator import _build_filename, generate_parts
-from code2map.models.symbol import Symbol
+from code2map.generators.parts_generator import generate_parts
 from code2map.parsers.python_parser import PythonParser
 from code2map.utils.file_utils import read_lines
 
@@ -107,70 +106,3 @@ class Outer:
         names = {s.display_name() for s in symbols}
         assert "Outer_Inner" in names
         assert "Outer_Inner#inner_method" in names
-
-    def test_build_filename_sanitizes_angle_brackets(self) -> None:
-        """Test that <init> is sanitized to init in filenames."""
-        symbol = Symbol(
-            name="<init>",
-            kind="method",
-            start_line=1,
-            end_line=10,
-            original_file="User.java",
-            language="java",
-            parent="User",
-        )
-        existing: dict[str, int] = {}
-        result = _build_filename(symbol, ".java", existing)
-        assert result == "User_init.java"
-        assert "<" not in result
-        assert ">" not in result
-
-    def test_build_filename_collision_after_sanitize(self) -> None:
-        """Test that hash suffix is added when sanitized name collides."""
-        init_method = Symbol(
-            name="init",
-            kind="method",
-            start_line=1,
-            end_line=10,
-            original_file="User.java",
-            language="java",
-            parent="User",
-            signature="User()",
-        )
-        constructor = Symbol(
-            name="<init>",
-            kind="method",
-            start_line=20,
-            end_line=30,
-            original_file="User.java",
-            language="java",
-            parent="User",
-            signature="User(String)",
-        )
-        existing: dict[str, int] = {}
-        first = _build_filename(init_method, ".java", existing)
-        second = _build_filename(constructor, ".java", existing)
-        assert first == "User_init.java"
-        assert second != first
-        assert second.startswith("User_init__")
-        assert second.endswith(".java")
-
-    def test_java_constructor_parts_filename(self, tmp_path: Path) -> None:
-        """Test that Java constructor parts files have no angle brackets."""
-        symbol = Symbol(
-            name="<init>",
-            kind="method",
-            start_line=1,
-            end_line=3,
-            original_file="User.java",
-            language="java",
-            parent="User",
-        )
-        lines = ["public class User {", "    public User() {}", "}"]
-        out_dir = str(tmp_path / "out")
-        fragments = generate_parts([symbol], lines, out_dir)
-        assert len(fragments) == 1
-        assert "<" not in symbol.part_file
-        assert ">" not in symbol.part_file
-        assert symbol.part_file == "parts/User_init.java"
-        assert (tmp_path / "out" / "parts" / "User_init.java").exists()

@@ -165,7 +165,10 @@ code2map/
 ├── tests/                 # テストコード
 │   └── fixtures/          # テストフィクスチャ
 ├── docs/                  # ドキュメント
-│   └── examples/          # 使用例とサンプル入出力
+│   ├── assets/            # 画像等のアセット
+│   ├── examples/          # 使用例とサンプル入出力
+│   └── tests/             # テスト指示書・結果
+├── versions/              # 過去バージョンのスナップショット
 ├── CHANGELOG.md           # 変更履歴
 ├── CONTRIBUTING.md        # コントリビューションガイド
 ├── README.md              # 英語版README
