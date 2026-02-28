@@ -203,11 +203,10 @@ export function SplitExecutingScreen({
             const errorGroup = state.groupReviews.find((g) => g.status === 'error')
             if (!errorGroup) return null
 
-            const isTokenLimit = errorGroup.errorCode === 'token_limit'
             const hasPendingSummarize =
               (retryDocMode === 'summarize' && !errorGroup.summarizeState?.documentSummarized) ||
               (retryCodeMode === 'summarize' && !errorGroup.summarizeState?.codeSummarized)
-            const retryDisabled = isTokenLimit && hasPendingSummarize
+            const retryDisabled = hasPendingSummarize
 
             return (
               <>
@@ -245,11 +244,11 @@ export function SplitExecutingScreen({
                   </p>
                 )}
 
-                {/* 要約案内 + リトライ設定（token_limitエラーの場合のみ表示） */}
-                {isTokenLimit && currentDocumentContent && currentCodeContent && onSummarizeComplete && (
+                {/* 要約案内 + リトライ設定 */}
+                {currentDocumentContent && currentCodeContent && onSummarizeComplete && (
                   <div className="mt-4 pt-4 border-t">
                     <p className="text-sm text-gray-600">
-                      入力トークン上限で停止した場合、リトライしても同様の結果になる
+                      リトライしても同じエラーになる場合、入力量を減らすことで成功する
                       可能性があります。先に要約してからリトライしてください。
                     </p>
                     <RetrySettingsPanel
@@ -268,14 +267,10 @@ export function SplitExecutingScreen({
 
           {isIntegrateError && (() => {
             const integrateError = state.error || ''
-            const isTokenLimit = state.integrateResult?.errorCode === 'token_limit' ||
-              integrateError.toLowerCase().includes('token') ||
-              integrateError.toLowerCase().includes('too long')
-
             const hasPendingSummarize = integrateSummarizeState?.groups.some(
               (g) => g.mode === 'summarize' && !g.summarizedReport
             ) || false
-            const retryDisabled = isTokenLimit && hasPendingSummarize
+            const retryDisabled = hasPendingSummarize
 
             return (
               <>
@@ -308,11 +303,11 @@ export function SplitExecutingScreen({
                   </p>
                 )}
 
-                {/* 要約案内 + リトライ設定（token_limitエラーの場合のみ表示） */}
-                {isTokenLimit && integrateSummarizeState && onIntegrateSummarizeComplete && (
+                {/* 要約案内 + リトライ設定 */}
+                {integrateSummarizeState && onIntegrateSummarizeComplete && (
                   <div className="mt-4 pt-4 border-t">
                     <p className="text-sm text-gray-600">
-                      入力トークン上限で停止した場合、リトライしても同様の結果になる
+                      リトライしても同じエラーになる場合、入力量を減らすことで成功する
                       可能性があります。先に各グループのレビュー結果を要約してから
                       リトライしてください。
                     </p>
