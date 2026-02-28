@@ -29,12 +29,12 @@ import {
   SplitSettingsSection,
 } from './components'
 import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport, useSplitSettings } from './hooks'
-import { testLlmConnection, executeStructureMatching, executeGroupReview, executeIntegrate, executeSummarize } from './services/api'
+import { testLlmConnection, executeStructureMatching, executeGroupReview, executeIntegrate } from './services/api'
 import type { SplitReviewState, GroupReviewState, GroupSummarizeState, IntegrateSummarizeState, ReviewExecutionData } from './types'
 
 const APP_INFO = {
   name: 'spec-code-ai-reviewer',
-  version: 'v0.8.2',
+  version: 'v0.9.0',
   description: '設計書-Javaプログラム突合 AIレビュアー',
   copyright: '© 株式会社エルブズ',
   url: 'https://elvez.co.jp',
@@ -152,7 +152,7 @@ export function Reviewer() {
   })
   const [integrateSummarizeState, setIntegrateSummarizeState] = useState<IntegrateSummarizeState>({ groups: [] })
   const [batchReviewError, setBatchReviewError] = useState<string | null>(null)
-  const errorActionRef = useRef<{ action: 'retry' | 'skip'; groupId: string } | null>(null)
+  const errorActionRef = useRef<{ action: 'retry' | 'skip'; groupId: string; docMode?: 'original' | 'summarize'; codeMode?: 'original' | 'summarize' } | null>(null)
 
   // System prompt text for token estimation
   const systemPromptText = useMemo(() => {
