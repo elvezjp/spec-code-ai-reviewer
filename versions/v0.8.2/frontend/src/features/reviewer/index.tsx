@@ -116,6 +116,7 @@ export function Reviewer() {
     pinnedDocPartIds,
     isSummarizing,
     summarizingPartIds,
+    summarizeError,
     setSettings: setSplitSettings,
     executePreview: executeSplitPreview,
     clearPreview: clearSplitPreview,
@@ -863,6 +864,7 @@ export function Reviewer() {
           isSummarizing={isSummarizing}
           summarizingPartIds={summarizingPartIds}
           hasPendingSummarize={hasPendingSummarize}
+          summarizeError={summarizeError}
           onToggleSummarizeMode={toggleSummarizeMode}
           onExecuteSummarize={() => executeSummarize(llmConfig)}
         />

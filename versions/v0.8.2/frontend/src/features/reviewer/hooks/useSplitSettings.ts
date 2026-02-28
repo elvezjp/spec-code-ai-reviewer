@@ -17,6 +17,7 @@ interface UseSplitSettingsReturn {
   pinnedDocPartIds: string[]
   isSummarizing: boolean
   summarizingPartIds: Set<string>
+  summarizeError: string | null
 
   // Actions
   setSettings: (settings: SplitSettings) => void
@@ -53,6 +54,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   const [pinnedDocPartIds, setPinnedDocPartIds] = useState<string[]>([])
   const [isSummarizing, setIsSummarizing] = useState(false)
   const [summarizingPartIds, setSummarizingPartIds] = useState<Set<string>>(new Set())
+  const [summarizeError, setSummarizeError] = useState<string | null>(null)
 
   const togglePinnedDocPart = useCallback((partId: string) => {
     setPinnedDocPartIds(prev =>
@@ -89,34 +91,44 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     if (targets.length === 0) return
 
     setIsSummarizing(true)
-    setSummarizingPartIds(new Set(targets.map((p) => p.id)))
+    setSummarizeError(null)
 
-    const results = await Promise.all(
-      targets.map(async (part) => {
+    for (const part of targets) {
+      setSummarizingPartIds(new Set([part.id]))
+
+      try {
         const response = await api.executeSummarize({
           text: part.content,
           targetType: 'design',
           llmConfig: llmConfig || undefined,
         })
-        return { partId: part.id, response }
-      })
-    )
 
-    setPreviewResult((prev) => {
-      if (!prev || !prev.documentParts) return prev
-      return {
-        ...prev,
-        documentParts: prev.documentParts.map((p) => {
-          const result = results.find((r) => r.partId === p.id)
-          if (!result || !result.response.success) return p
-          return {
-            ...p,
-            summarizedContent: result.response.summarizedText || undefined,
-            summarizedTokens: result.response.summarizedTokens || undefined,
-          }
-        }),
+        if (response.success) {
+          setPreviewResult((prev) => {
+            if (!prev || !prev.documentParts) return prev
+            return {
+              ...prev,
+              documentParts: prev.documentParts.map((p) =>
+                p.id === part.id
+                  ? {
+                      ...p,
+                      summarizedContent: response.summarizedText || undefined,
+                      summarizedTokens: response.summarizedTokens || undefined,
+                    }
+                  : p
+              ),
+            }
+          })
+        } else {
+          setSummarizeError(`「${part.displayName}」の要約に失敗しました: ${response.error || '不明なエラー'}`)
+          break
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : '不明なエラー'
+        setSummarizeError(`「${part.displayName}」の要約に失敗しました: ${message}`)
+        break
       }
-    })
+    }
 
     setSummarizingPartIds(new Set())
     setIsSummarizing(false)
@@ -290,6 +302,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     pinnedDocPartIds,
     isSummarizing,
     summarizingPartIds,
+    summarizeError,
     setSettings: handleSetSettings,
     executePreview,
     clearPreview,

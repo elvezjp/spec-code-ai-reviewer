@@ -19,6 +19,7 @@ interface SplitSettingsSectionProps {
   isSummarizing: boolean
   summarizingPartIds: Set<string>
   hasPendingSummarize: boolean
+  summarizeError: string | null
   onToggleSummarizeMode: (partId: string) => void
   onExecuteSummarize: () => void
 }
@@ -39,6 +40,7 @@ export function SplitSettingsSection({
   isSummarizing,
   summarizingPartIds,
   hasPendingSummarize,
+  summarizeError,
   onToggleSummarizeMode,
   onExecuteSummarize,
 }: SplitSettingsSectionProps) {
@@ -271,48 +273,43 @@ export function SplitSettingsSection({
         </div>
       )}
 
-      {/* 分割プレビュー実行ボタン + 要約実行ボタン */}
+      {/* 分割プレビュー実行ボタン */}
       {isSplitEnabled && (
-        <div className="mb-4 flex items-center gap-3">
-          <button
-            onClick={onExecutePreview}
-            disabled={!canExecutePreview || isExecuting || !!previewResult}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-          {isExecuting ? (
-            <>
-              <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
-              プレビュー実行中...
-            </>
-          ) : previewResult ? (
-            'プレビュー実行済み'
-          ) : (
-            '分割プレビュー'
-          )}
-        </button>
-        {/* 要約実行ボタン: 「要約」選択かつ未実行のパートがある場合に表示 */}
-        {previewResult && hasPendingSummarize && (
-          <button
-            onClick={onExecuteSummarize}
-            disabled={isSummarizing}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            {isSummarizing ? (
-              <>
-                <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
-                要約実行中...
-              </>
-            ) : (
-              '選択した要約を実行'
+        <div className="mb-4 space-y-2">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onExecutePreview}
+              disabled={!canExecutePreview || isExecuting || !!previewResult}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              {isExecuting ? (
+                <>
+                  <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
+                  プレビュー実行中...
+                </>
+              ) : previewResult ? (
+                'プレビュー実行済み'
+              ) : (
+                '分割プレビュー'
+              )}
+            </button>
+            {settings.documentSplitMode === 'ai' && (
+              <span className="text-xs text-muted text-gray-400">
+                ※ 設計書が大きい場合は、処理に時間が掛かったり、タイムアウトや制限等でエラーになる可能性があります。
+              </span>
             )}
-          </button>
-        )}
-        {settings.documentSplitMode === 'ai' && (
-          <span className="text-xs text-muted text-gray-400">
-            ※ 設計書が大きい場合は、処理に時間が掛かったり、タイムアウトや制限等でエラーになる可能性があります。
-          </span>
-        )}
-      </div>
+          </div>
+          {/* 要約実行ボタン */}
+          {previewResult && previewResult.documentParts && (
+            <SummarizeExecuteRow
+              parts={previewResult.documentParts}
+              isSummarizing={isSummarizing}
+              hasPendingSummarize={hasPendingSummarize}
+              summarizeError={summarizeError}
+              onExecuteSummarize={onExecuteSummarize}
+            />
+          )}
+        </div>
       )}
 
       {/* プレビュー結果 */}
@@ -458,6 +455,54 @@ function DocumentPartsTable({
           })}
         </TableBody>
       </Table>
+    </div>
+  )
+}
+
+function SummarizeExecuteRow({
+  parts,
+  isSummarizing,
+  hasPendingSummarize,
+  summarizeError,
+  onExecuteSummarize,
+}: {
+  parts: DocumentPart[]
+  isSummarizing: boolean
+  hasPendingSummarize: boolean
+  summarizeError: string | null
+  onExecuteSummarize: () => void
+}) {
+  const totalSelected = parts.filter((p) => p.summarizeMode === 'summarize').length
+  const completedCount = parts.filter((p) => p.summarizeMode === 'summarize' && p.summarizedContent).length
+
+  if (totalSelected === 0) return null
+
+  return (
+    <div className="flex items-center gap-3">
+      <button
+        onClick={onExecuteSummarize}
+        disabled={!hasPendingSummarize || isSummarizing}
+        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+      >
+        {isSummarizing ? (
+          <>
+            <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
+            要約実行中...
+          </>
+        ) : (
+          '選択した要約を実行'
+        )}
+      </button>
+      <span className="text-xs text-gray-600">
+        {completedCount}/{totalSelected}件
+      </span>
+      {summarizeError ? (
+        <span className="text-xs text-red-600">{summarizeError}</span>
+      ) : (
+        <span className="text-xs text-gray-400">
+          「要約」を選択したセクションを事前に要約します。
+        </span>
+      )}
     </div>
   )
 }
