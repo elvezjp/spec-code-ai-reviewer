@@ -221,7 +221,7 @@ wheels = [
 
 [[package]]
 name = "code2map"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "../../../code2map" }
 dependencies = [
     { name = "javalang" },

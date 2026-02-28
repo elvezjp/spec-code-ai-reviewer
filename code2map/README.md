@@ -165,7 +165,10 @@ code2map/
 ├── tests/                 # Test code
 │   └── fixtures/          # Test fixtures
 ├── docs/                  # Documentation
-│   └── examples/          # Usage examples and sample I/O
+│   ├── assets/            # Images and assets
+│   ├── examples/          # Usage examples and sample I/O
+│   └── tests/             # Test plans and results
+├── versions/              # Past version snapshots
 ├── CHANGELOG.md           # Change history
 ├── CONTRIBUTING.md        # Contribution guide
 ├── README.md              # This file (English)

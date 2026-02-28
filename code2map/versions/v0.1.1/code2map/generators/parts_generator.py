@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 import hashlib
-import re
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 from code2map.models.symbol import Symbol
 from code2map.utils.file_utils import ensure_dir, slice_lines, write_text
-
-_UNSAFE_CHARS = re.compile(r'[<>:"/\\|?*]')
 
 
 def _short_hash(text: str) -> str:
@@ -29,8 +26,6 @@ def _build_filename(symbol: Symbol, ext: str, existing: Dict[str, int]) -> str:
         base = f"{parent}_{symbol.name}{ext}"
     else:
         base = f"{symbol.name}{ext}"
-
-    base = _UNSAFE_CHARS.sub("", base)
 
     if base in existing:
         seed = symbol.signature or f"{symbol.display_name()}_{symbol.start_line}"
