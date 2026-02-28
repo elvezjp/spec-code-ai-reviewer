@@ -92,6 +92,20 @@ ${reviewMeta.groups
 
 このZIPファイルには、AIレビュー実行時の入出力データが含まれています。
 
+## 同梱ファイル
+
+| ファイル名 | 説明 |
+|-----------|------|
+| README.md | このファイル（レビュー情報とファイル説明） |
+| system-prompt.md | システムプロンプト（役割・目的・出力形式・注意事項） |
+| spec-markdown.md | 変換後の設計書（マークダウン形式） |
+| code-numbered.txt | 行番号付きプログラム |
+| review-result.md | AIレビュー結果 |
+${hasSplitData ? `| split/spec-INDEX.md | 設計書の構造情報（md2map生成） |
+| split/spec-MAP.json | 設計書のセクションマップ（md2map生成） |
+| split/code-INDEX.md | プログラムの構造情報（code2map生成） |
+| split/code-MAP.json | プログラムのシンボルマップ（code2map生成） |
+` : ''}
 ## レビュー情報
 
 | 項目 | 内容 |
@@ -112,20 +126,5 @@ ${designsList}
 
 ${programsList}
 
-${groupsSection}
-
-## 同梱ファイル
-
-| ファイル名 | 説明 |
-|-----------|------|
-| README.md | このファイル（レビュー情報とファイル説明） |
-| system-prompt.md | システムプロンプト（役割・目的・出力形式・注意事項） |
-| spec-markdown.md | 変換後の設計書（マークダウン形式） |
-| code-numbered.txt | 行番号付きプログラム |
-| review-result.md | AIレビュー結果 |
-${hasSplitData ? `| split/spec-INDEX.md | 設計書の構造情報（md2map生成） |
-| split/spec-MAP.json | 設計書のセクションマップ（md2map生成） |
-| split/code-INDEX.md | プログラムの構造情報（code2map生成） |
-| split/code-MAP.json | プログラムのシンボルマップ（code2map生成） |
-` : ''}`
+${groupsSection}`
 }
