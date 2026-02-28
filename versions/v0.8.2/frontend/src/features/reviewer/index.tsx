@@ -151,6 +151,7 @@ export function Reviewer() {
     currentGroupIndex: 0,
   })
   const [integrateSummarizeState, setIntegrateSummarizeState] = useState<IntegrateSummarizeState>({ groups: [] })
+  const [batchReviewError, setBatchReviewError] = useState<string | null>(null)
   const errorActionRef = useRef<{ action: 'retry' | 'skip'; groupId: string } | null>(null)
 
   // System prompt text for token estimation
@@ -653,6 +654,7 @@ export function Reviewer() {
     }
 
     // 一括モード
+    setBatchReviewError(null)
     try {
       await executeReview({
         specFiles,
@@ -664,9 +666,8 @@ export function Reviewer() {
       })
       screenManager.showResult()
     } catch (error) {
-      screenManager.showMain()
       const errorMessage = error instanceof Error ? error.message : 'レビュー実行に失敗しました'
-      alert(errorMessage)
+      setBatchReviewError(errorMessage)
     }
   }
 
@@ -962,7 +963,13 @@ export function Reviewer() {
       onIntegrateSummarizeComplete={handleIntegrateSummarizeComplete}
     />
   ) : (
-    <ExecutingScreen currentExecution={currentExecutionNumber} totalExecutions={2} />
+    <ExecutingScreen
+      currentExecution={currentExecutionNumber}
+      totalExecutions={2}
+      onBack={screenManager.showMain}
+      error={batchReviewError || undefined}
+      onRetry={handleReviewExecute}
+    />
   )
 
   // 分割レビュー用のダウンロードデータを構築
