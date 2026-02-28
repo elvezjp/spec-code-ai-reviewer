@@ -354,12 +354,12 @@ export function SplitExecutingScreen({
                           <TableCell>
                             {group.docSections.length > 0
                               ? group.docSections.map((s) => s.title || s.id).join(', ')
-                              : '（対応なし）'}
+                              : '設計書はマッチせず'}
                           </TableCell>
                           <TableCell>
                             {group.codeSymbols.length > 0
                               ? group.codeSymbols.map((s) => s.symbol || s.id).join(', ')
-                              : '（対応なし）'}
+                              : 'プログラムはマッチせず'}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -395,7 +395,7 @@ export function SplitExecutingScreen({
                     <span className="text-gray-700">
                       {group.docSections.length > 0
                         ? group.docSections.map((s) => s.title || s.id).join('、')
-                        : '（対応なし）'}
+                        : '設計書はマッチせず'}
                     </span>
                   </div>
                   <div>
@@ -403,7 +403,7 @@ export function SplitExecutingScreen({
                     <span className="text-gray-700">
                       {group.codeSymbols.length > 0
                         ? group.codeSymbols.map((s) => s.symbol || s.id).join('、')
-                        : '（対応なし）'}
+                        : 'プログラムはマッチせず'}
                     </span>
                   </div>
 
