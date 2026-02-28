@@ -41,19 +41,14 @@ class TestStructureMatchingAPI:
     @patch("app.routers.review.get_llm_provider")
     def test_ut_rsp_001_success_basic(self, mock_get_provider):
         """UT-RSP-001: 正常系（基本的なマッチング）"""
-        # モックLLMレスポンス
+        # モックLLMレスポンス（IDのみの配列形式）
         mock_response = json.dumps({
             "groups": [
                 {
                     "id": "group1",
                     "name": "ユーザー管理",
-                    "doc_sections": [
-                        {"id": "MD1", "title": "ユーザー管理機能", "path": "ユーザー管理機能"}
-                    ],
-                    "code_symbols": [
-                        {"id": "CD1", "filename": "user_service.py", "symbol": "UserService"}
-                    ],
-                    "reason": "ユーザー管理に関連する設計とコード"
+                    "doc_sections": ["MD1"],
+                    "code_symbols": ["CD1"]
                 }
             ]
         })
@@ -96,7 +91,11 @@ class TestStructureMatchingAPI:
         assert data["groups"][0]["groupId"] == "group1"
         assert data["groups"][0]["groupName"] == "ユーザー管理"
         assert len(data["groups"][0]["docSections"]) == 1
+        assert data["groups"][0]["docSections"][0]["id"] == "MD1"
+        assert data["groups"][0]["docSections"][0]["title"] == ""  # フロントエンドで復元
         assert len(data["groups"][0]["codeSymbols"]) == 1
+        assert data["groups"][0]["codeSymbols"][0]["id"] == "CD1"
+        assert data["groups"][0]["codeSymbols"][0]["symbol"] == ""  # フロントエンドで復元
         assert data["tokensUsed"]["input"] == 100
         assert data["tokensUsed"]["output"] == 50
 
@@ -108,16 +107,14 @@ class TestStructureMatchingAPI:
                 {
                     "id": "group1",
                     "name": "ユーザー管理",
-                    "doc_sections": [{"id": "MD1", "title": "ユーザー管理", "path": "ユーザー管理"}],
-                    "code_symbols": [{"id": "CD1", "filename": "user.py", "symbol": "User"}],
-                    "reason": "ユーザー管理"
+                    "doc_sections": ["MD1"],
+                    "code_symbols": ["CD1"]
                 },
                 {
                     "id": "group2",
                     "name": "認証機能",
-                    "doc_sections": [{"id": "MD2", "title": "認証", "path": "認証"}],
-                    "code_symbols": [{"id": "CD2", "filename": "auth.py", "symbol": "Auth"}],
-                    "reason": "認証機能"
+                    "doc_sections": ["MD2"],
+                    "code_symbols": ["CD2"]
                 }
             ]
         })

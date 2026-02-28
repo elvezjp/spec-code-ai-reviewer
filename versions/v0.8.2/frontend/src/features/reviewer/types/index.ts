@@ -231,6 +231,7 @@ export interface SplitPreviewResult {
   codeIndex: string | null
   codeMapJson: Record<string, unknown>[] | null
   codeLanguage: string | null
+  pinnedDocPartIds: string[]  // 全グループ共通の設計書パーツID
 }
 
 // =============================================================================
@@ -296,6 +297,12 @@ export interface GroupReviewRequest {
   reviewOptions?: Record<string, unknown>
   systemPrompt?: SystemPromptValues // ユーザー指定のシステムプロンプト
   llmConfig?: LlmConfig
+  // 全体構造コンテキスト
+  documentIndexMd?: string
+  documentMapJson?: Record<string, unknown>
+  codeIndexMd?: string
+  codeMapJson?: Record<string, unknown>[]
+  allGroups?: MatchedGroup[]
 }
 
 export interface ReviewFinding {
@@ -338,6 +345,11 @@ export interface IntegrateRequest {
   llmConfig?: LlmConfig
   designs?: { filename: string; isMain: boolean; type: string; tool: string }[]
   codes?: { filename: string }[]
+  // 全体構造コンテキスト
+  documentIndexMd?: string
+  documentMapJson?: Record<string, unknown>
+  codeIndexMd?: string
+  codeMapJson?: Record<string, unknown>[]
 }
 
 export interface KeyIssue {

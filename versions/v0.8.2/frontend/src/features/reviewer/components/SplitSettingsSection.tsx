@@ -14,6 +14,8 @@ interface SplitSettingsSectionProps {
   hasDesignDoc: boolean
   hasCodeFiles: boolean
   codeFilenames: string[]
+  pinnedDocPartIds: string[]
+  onTogglePinnedDocPart: (partId: string) => void
 }
 
 export function SplitSettingsSection({
@@ -27,6 +29,8 @@ export function SplitSettingsSection({
   hasDesignDoc,
   hasCodeFiles,
   codeFilenames,
+  pinnedDocPartIds,
+  onTogglePinnedDocPart,
 }: SplitSettingsSectionProps) {
   const [isOptionsExpanded, setIsOptionsExpanded] = useState(true)
   const prevHasDesignDocRef = useRef(hasDesignDoc)
@@ -295,7 +299,14 @@ export function SplitSettingsSection({
               <h4 className="text-sm font-medium text-gray-600 mb-2">
                 ■ 設計書: {previewResult.documentParts.length} パート
               </h4>
-              <DocumentPartsTable parts={previewResult.documentParts} />
+              <p className="text-xs text-gray-500 mb-2">
+                <strong>重要</strong>にチェックしたセクションは、分割レビュー時に全てのグループで参照されます。
+              </p>
+              <DocumentPartsTable
+                parts={previewResult.documentParts}
+                pinnedDocPartIds={pinnedDocPartIds}
+                onTogglePinnedDocPart={onTogglePinnedDocPart}
+              />
             </div>
           )}
 
@@ -319,12 +330,21 @@ export function SplitSettingsSection({
   )
 }
 
-function DocumentPartsTable({ parts }: { parts: DocumentPart[] }) {
+function DocumentPartsTable({
+  parts,
+  pinnedDocPartIds,
+  onTogglePinnedDocPart,
+}: {
+  parts: DocumentPart[]
+  pinnedDocPartIds: string[]
+  onTogglePinnedDocPart: (partId: string) => void
+}) {
   return (
     <div className="overflow-x-auto">
       <Table className="min-w-full text-sm">
         <TableHead>
           <TableRow>
+            <TableHeaderCell className="w-14">重要</TableHeaderCell>
             <TableHeaderCell className="w-12">#</TableHeaderCell>
             <TableHeaderCell>セクション名</TableHeaderCell>
             <TableHeaderCell className="w-24">行範囲</TableHeaderCell>
@@ -334,6 +354,14 @@ function DocumentPartsTable({ parts }: { parts: DocumentPart[] }) {
         <TableBody>
           {parts.map((part, index) => (
             <TableRow key={`${part.id}-${part.startLine}`}>
+              <TableCell className="text-center">
+                <input
+                  type="checkbox"
+                  checked={pinnedDocPartIds.includes(part.id)}
+                  onChange={() => onTogglePinnedDocPart(part.id)}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+              </TableCell>
               <TableCell>{index + 1}</TableCell>
               <TableCell>{part.displayName}</TableCell>
               <TableCell className="text-gray-600">L{part.startLine}-L{part.endLine}</TableCell>

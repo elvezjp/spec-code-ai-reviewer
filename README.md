@@ -253,6 +253,7 @@ These environment variables are used to run the system LLM (AWS Bedrock).
 | `AWS_REGION` | AWS region | `ap-northeast-1` |
 | `BEDROCK_MODEL_ID` | Model ID to use | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `BEDROCK_MAX_TOKENS` | Max response tokens | `16384` |
+| `MD2MAP_MAX_SUBSECTIONS` | Max subsplits per section in NLP/AI split mode | `5` |
 
 ---
 

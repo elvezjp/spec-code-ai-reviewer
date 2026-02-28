@@ -969,15 +969,22 @@ md2mapは以下の3つの分割モードを提供する。ユーザーが分割�
 
 設計書とコードの構造（INDEX.md + MAP.json）をAIに渡し、関連性の高いグループを特定する。
 
+- 各グループには設計書セクション（doc_sections）とコードシンボル（code_symbols）の両方が含まれることを強く推奨
+- すべての設計書セクションとコードシンボルが、いずれかのグループに含まれること
 - 設計書の複数セクションと複数のコードシンボルが1つのグループに対応する場合がある
-- 同じセクション・シンボルが複数のグループに含まれる場合もある
+- 1つのセクション・シンボルが複数のグループに含まれる場合もある
+
+**重要パートの注入:**
+
+構造マッチング結果を受け取った後、分割プレビューで「重要」にチェックされた設計書パーツを全グループの `docSections` に注入する（重複除外）。これにより、重要パートは全グループのレビューで共通参照される。注入はフロントエンド側で行い、既存の documentContent 構築ロジック・実行画面の表示・統合フェーズのすべてが変更なしで動作する。
 
 **フェーズ2: グループレビュー**
 
-マッチングされた各グループに対してレビューを実行する。グループレビューAPIには、フロントエンドで結合済みの設計書内容（documentContent）とコード内容（codeContent）を渡す。
+マッチングされた各グループに対してレビューを実行する。グループレビューAPIには、フロントエンドで結合済みの設計書内容（documentContent）とコード内容（codeContent）に加え、全体構造情報を渡す。
 
 - documentContent: 該当グループの設計書セクションを結合したテキスト
 - codeContent: 該当グループのコードシンボルを結合したテキスト
+- 全体構造情報（INDEX.md / MAP.json）: 他グループに実装されている関数を「未実装」と誤指摘しないために、設計書・コード全体の構造をコンテキストとして渡す
 - グループごとにシステムプロンプト設定を適用
 - 各グループのレビュー結果はMarkdown形式で出力
 
@@ -987,6 +994,7 @@ md2mapは以下の3つの分割モードを提供する。ユーザーが分割�
 
 - 重複する指摘の排除
 - システムプロンプト設定の出力フォーマットに準拠した最終レポート生成
+- 全体構造情報（INDEX.md / MAP.json）を参考情報としてユーザーメッセージ末尾に付与し、統合時の整合性把握を支援
 
 #### 2.7.5 分割プレビュー
 
@@ -996,6 +1004,7 @@ md2mapは以下の3つの分割モードを提供する。ユーザーが分割�
 
 | 項目 | 説明 |
 |------|------|
+| 重要 | チェックボックス。チェックしたセクションは分割レビュー時に全てのグループで参照される |
 | セクション名 | 見出しテキスト |
 | 行範囲 | 開始行-終了行 |
 | 推定トークン | パーツの推定トークン数 |
@@ -2126,6 +2135,7 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 | `ai` | LLMによる意味的分割。`llmConfig` が必要 |
 
 - `nlp` / `ai` モードでは、見出しによる基本分割に加えて、見出しのないセクションをサブスプリットとして細分化する
+- `nlp` / `ai` モードのサブスプリット最大数は環境変数 `MD2MAP_MAX_SUBSECTIONS`（デフォルト: 5）で制御される
 - `ai` モード時に `llmConfig` が未指定の場合はエラーを返す
 
 **レスポンス:**
@@ -2250,12 +2260,12 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
       "groupId": "group1",
       "groupName": "ユーザー管理",
       "docSections": [
-        {"id": "MD1", "title": "ユーザー管理", "path": "ユーザー管理"}
+        {"id": "MD1", "title": "", "path": ""}
       ],
       "codeSymbols": [
-        {"id": "CD1", "filename": "UserService.java", "symbol": "UserService"}
+        {"id": "CD1", "filename": "", "symbol": ""}
       ],
-      "reason": "ユーザー管理に関連する設計とコード",
+      "reason": "",
       "estimatedTokens": 2000
     }
   ],
@@ -2263,6 +2273,12 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
   "tokensUsed": {"input": 1500, "output": 500}
 }
 ```
+
+**備考:**
+- LLMへの出力指示はIDのみの文字列配列（例: `"doc_sections": ["MD1", "MD2"]`）で行い、バックエンドはIDのみでレスポンスを構築する（title/path/filename/symbol等は空文字）。フロントエンドが `documentParts`/`codeParts`/`codeMapJson` からメタ情報を復元する。
+- `reason` フィールドは常に空文字（LLM出力から削除済み）。型互換性のため残している。
+- LLMプロンプトにはユーザーメッセージ冒頭に入力サマリー（設計書セクション数、コードシンボル数、ID一覧）を付与し、網羅性を自己検証できるようにしている。
+- `doc_sections` または `code_symbols` が空のグループは、フロントエンドで自動スキップされる（API呼び出しなし）。これは設計にあるがコード未実装、または設計書に記載のない追加コード等の正当なケースに対応する。画面には「対応なし」と表示され、スキップ理由が明示される。
 
 #### POST /api/review/group
 
@@ -2278,13 +2294,23 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
   "codeContent": "### UserService.java:UserService (class, L1-L100)\n\n```\npublic class UserService {...}\n```",
   "reviewOptions": {},
   "systemPrompt": {...},
-  "llmConfig": {...}
+  "llmConfig": {...},
+  "documentIndexMd": "# INDEX\n\n- MD1: ユーザー管理...",
+  "documentMapJson": {"sections": [...]},
+  "codeIndexMd": "# INDEX\n\n- CD1: UserService...",
+  "codeMapJson": [{"symbols": [...]}],
+  "allGroups": [{"groupId": "group1", "groupName": "...", "docSections": [...], "codeSymbols": [...]}]
 }
 ```
 
 **備考:**
 - `documentContent`: フロントエンドで結合済みの設計書内容。該当グループの設計書セクションを結合したテキスト。
 - `codeContent`: フロントエンドで結合済みのコード内容。該当グループのコードシンボルを結合したテキスト。
+- `documentIndexMd`: 設計書全体のINDEX.md（全体構造コンテキスト）。
+- `documentMapJson`: 設計書全体のMAP.json（全体構造コンテキスト）。
+- `codeIndexMd`: コード全体のINDEX.md（全体構造コンテキスト）。
+- `codeMapJson`: コード全体のMAP.json（全体構造コンテキスト）。
+- `allGroups`: 構造マッチング結果の全グループ情報。他グループに存在する関数・メソッドを「未実装」と誤指摘しないために使用。テーブル表示はID形式（`doc_sections` のID、`code_symbols` のID）で出力される。
 
 **レスポンス:**
 
@@ -2320,9 +2346,20 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
     "checkCrossGroupIssues": true
   },
   "systemPrompt": {...},
-  "llmConfig": {...}
+  "llmConfig": {...},
+  "documentIndexMd": "# 設計書構造\n...",
+  "documentMapJson": {"sections": [...]},
+  "codeIndexMd": "# コード構造\n...",
+  "codeMapJson": [{"id": "CD1", ...}]
 }
 ```
+
+| フィールド | 型 | 必須 | 備考 |
+|-----------|-----|------|------|
+| `documentIndexMd` | `string \| null` | × | 設計書全体のINDEX.md。統合時に全体構造を参照するため |
+| `documentMapJson` | `object \| null` | × | 設計書全体のMAP.json |
+| `codeIndexMd` | `string \| null` | × | コード全体のINDEX.md |
+| `codeMapJson` | `array \| null` | × | コード全体のMAP.json |
 
 **レスポンス:**
 
@@ -2771,6 +2808,12 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 | AWS_REGION | AWSリージョン（システムLLM用） | ap-northeast-1 |
 | BEDROCK_MODEL_ID | システムLLMのモデルID | global.anthropic.claude-haiku-4-5-20251001-v1:0 |
 | BEDROCK_MAX_TOKENS | システムLLMの最大トークン数 | 16384 |
+
+**md2map分割設定（任意）:**
+
+| 環境変数名 | 説明 | デフォルト値 |
+|-----------|------|-------------|
+| MD2MAP_MAX_SUBSECTIONS | NLP/AIモード分割時の1セクションあたり最大サブスプリット数 | 5 |
 
 ※ ユーザーLLM設定用の環境変数は不要（リクエストごとに受け取る）
 

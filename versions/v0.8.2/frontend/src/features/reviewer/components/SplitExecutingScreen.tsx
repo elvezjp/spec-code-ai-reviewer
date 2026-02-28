@@ -259,13 +259,13 @@ export function SplitExecutingScreen({
                           <TableCell>{group.groupName}</TableCell>
                           <TableCell>
                             {group.docSections.length > 0
-                              ? group.docSections.map((s) => s.title).join(', ')
-                              : '（分割なし）'}
+                              ? group.docSections.map((s) => s.title || s.id).join(', ')
+                              : '（対応なし）'}
                           </TableCell>
                           <TableCell>
                             {group.codeSymbols.length > 0
-                              ? group.codeSymbols.map((s) => s.symbol).join(', ')
-                              : '（分割なし）'}
+                              ? group.codeSymbols.map((s) => s.symbol || s.id).join(', ')
+                              : '（対応なし）'}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -300,16 +300,16 @@ export function SplitExecutingScreen({
                     <span className="text-gray-500">設計書: </span>
                     <span className="text-gray-700">
                       {group.docSections.length > 0
-                        ? group.docSections.map((s) => s.title).join('、')
-                        : '（分割なし）'}
+                        ? group.docSections.map((s) => s.title || s.id).join('、')
+                        : '（対応なし）'}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500">プログラム: </span>
                     <span className="text-gray-700">
                       {group.codeSymbols.length > 0
-                        ? group.codeSymbols.map((s) => s.symbol).join('、')
-                        : '（分割なし）'}
+                        ? group.codeSymbols.map((s) => s.symbol || s.id).join('、')
+                        : '（対応なし）'}
                     </span>
                   </div>
 
@@ -330,7 +330,9 @@ export function SplitExecutingScreen({
 
                   {status === 'skipped' && (
                     <div className="mt-2 pt-2 border-t text-gray-500">
-                      このグループはスキップされました
+                      {reviewState?.error
+                        ? `スキップ: ${reviewState.error}`
+                        : 'このグループはスキップされました'}
                     </div>
                   )}
 

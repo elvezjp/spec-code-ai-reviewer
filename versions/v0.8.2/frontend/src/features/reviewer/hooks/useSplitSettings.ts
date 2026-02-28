@@ -14,6 +14,7 @@ interface UseSplitSettingsReturn {
   previewResult: SplitPreviewResult | null
   isExecutingPreview: boolean
   error: string | null
+  pinnedDocPartIds: string[]
 
   // Actions
   setSettings: (settings: SplitSettings) => void
@@ -25,6 +26,7 @@ interface UseSplitSettingsReturn {
   ) => Promise<void>
   clearPreview: () => void
   clearError: () => void
+  togglePinnedDocPart: (partId: string) => void
 
   // Computed
   isSplitEnabled: boolean
@@ -43,6 +45,15 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   const [previewResult, setPreviewResult] = useState<SplitPreviewResult | null>(null)
   const [isExecutingPreview, setIsExecutingPreview] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pinnedDocPartIds, setPinnedDocPartIds] = useState<string[]>([])
+
+  const togglePinnedDocPart = useCallback((partId: string) => {
+    setPinnedDocPartIds(prev =>
+      prev.includes(partId)
+        ? prev.filter(id => id !== partId)
+        : [...prev, partId]
+    )
+  }, [])
 
   const executePreview = useCallback(async (
     designMarkdown: string | null,
@@ -146,6 +157,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         codeIndex,
         codeMapJson,
         codeLanguage,
+        pinnedDocPartIds: [],
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : '分割プレビューに失敗しました'
@@ -158,6 +170,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
 
   const clearPreview = useCallback(() => {
     setPreviewResult(null)
+    setPinnedDocPartIds([])
     setError(null)
   }, [])
 
@@ -169,6 +182,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     setSettings(newSettings)
     // 設定が変更されたらプレビュー結果をクリア
     setPreviewResult(null)
+    setPinnedDocPartIds([])
     setError(null)
   }, [])
 
@@ -199,10 +213,12 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     previewResult,
     isExecutingPreview,
     error,
+    pinnedDocPartIds,
     setSettings: handleSetSettings,
     executePreview,
     clearPreview,
     clearError,
+    togglePinnedDocPart,
     isSplitEnabled,
     reviewMode,
     estimatedReviewCount,

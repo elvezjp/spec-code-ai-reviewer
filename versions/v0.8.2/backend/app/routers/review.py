@@ -222,22 +222,23 @@ async def structure_matching(request: StructureMatchingRequest):
     {
       "id": "group1",
       "name": "グループの表示名",
-      "doc_sections": [
-        {
-          "id": "MAP.jsonのid値をそのまま使用（例: MD1）",
-          "title": "MAP.jsonのtitle値",
-          "path": "MAP.jsonのpath値"
-        }
-      ],
-      "code_symbols": [
-        {
-          "id": "MAP.jsonのid値をそのまま使用（例: CD1）",
-          "filename": "MAP.jsonのoriginal_file値",
-          "symbol": "MAP.jsonのsymbol値"
-        }
-      ],
-      "reason": "グループ化の理由"
+      "doc_sections": ["MD1", "MD2"],
+      "code_symbols": ["CD1", "CD3"]
     }
+  ]
+}
+```
+
+制約:
+- doc_sections / code_symbols にはMAP.jsonのid値のみを文字列配列で指定してください（title, path, filename, symbol等は不要）
+- すべてのIDがいずれかのグループに含まれるようにしてください
+
+出力例（設計書: MD1, MD2, MD3 / コード: CD1, CD2 の場合）:
+```json
+{
+  "groups": [
+    {"id": "group1", "name": "ユーザー管理", "doc_sections": ["MD1", "MD2"], "code_symbols": ["CD1"]},
+    {"id": "group2", "name": "認証処理", "doc_sections": ["MD3"], "code_symbols": ["CD1", "CD2"]}
   ]
 }
 ```"""
@@ -245,19 +246,30 @@ async def structure_matching(request: StructureMatchingRequest):
         # 注意事項の構築
         notes_parts = [
             "- 必ず指定されたJSON形式のみで応答してください",
+            "- 各グループには doc_sections と code_symbols の両方を含めることを強く推奨します。",
+            "- 対応するコードが存在しない設計書セクション、または対応する設計書がないコードシンボルがある場合のみ、片方を空配列にしてください。",
+            "- 無理に関連の薄い要素を組み合わせないでください",
             "- 設計書の複数セクションと、複数のコード部分が、1つのグループに対応する場合もあります。",
-            "- 同じ設計書セクション、コード部分が、複数のグループに対応する場合もあります。",
-            "- 文字数の少ないセクション、コードシンボルは、情報が含まれていない可能性があります。他の部分と合わせてグループ化を検討してください。",
-            "- 【重要】出力するdoc_sectionsのidは、設計書MAP.jsonに記載されたid値を正確にそのまま使用してください（例: MD1, MD2, ...）",
-            "- 【重要】出力するcode_symbolsのidは、コードMAP.jsonに記載されたid値を正確にそのまま使用してください（例: CD1, CD2, ...）",
+            "- 1つの設計書セクション、または1つのコードシンボルが、複数のグループに対応する場合もあります。",
+            "- 文字数の少ないセクション、コードシンボルは、情報が含まれていない可能性があります。他のセクション、コードシンボルと合わせてグループ化してください。",
         ]
 
         notes = "\n".join(notes_parts)
 
         system_prompt = build_system_prompt(role, purpose, output_format, notes)
 
+        # 項目数サマリー
+        doc_ids = [s.get("id", "") for s in request.document.mapJson.get("sections", [])]
+        code_ids = []
+        for cf in request.codeFiles:
+            code_ids.extend([s.get("id", "") for s in cf.mapJson.get("symbols", [])])
+
         # ユーザーメッセージ構築（データのみ）
         user_parts = [
+            "## 入力サマリー\n",
+            f"- 設計書セクション: {len(doc_ids)}件 ({', '.join(doc_ids)})",
+            f"- コードシンボル: {len(code_ids)}件 ({', '.join(code_ids)})",
+            f"- すべてのIDがいずれかのグループに含まれるようにしてください\n",
             "## 設計書構造\n",
             "### INDEX.md",
             request.document.indexMd,
@@ -283,29 +295,32 @@ async def structure_matching(request: StructureMatchingRequest):
             system_prompt, user_message
         )
 
-        # JSON応答パース
+        # デバッグ: LLMレスポンスを標準出力に表示
+        print("=" * 80)
+        print("[DEBUG] 構造マッチング LLMレスポンス:")
+        print("=" * 80)
+        print(response_text)
+        print("=" * 80)
+
+        # JSON応答パース（IDのみ返却、フロントエンドで復元）
         result = _extract_json(response_text)
         groups = []
         for i, g in enumerate(result.get("groups", [])):
             group_id = g.get("id", f"group_{i + 1}")
             group_name = g.get("name", group_id)
 
+            # IDのみでMatchedDocSectionを構築（title/pathはフロントエンドで復元）
             doc_sections = [
-                MatchedDocSection(
-                    id=ds.get("id", ""),
-                    title=ds.get("title", ""),
-                    path=ds.get("path", ds.get("title", "")),
-                )
-                for ds in g.get("doc_sections", [])
+                MatchedDocSection(id=doc_id, title="", path="")
+                for doc_id in g.get("doc_sections", [])
+                if isinstance(doc_id, str)
             ]
 
+            # IDのみでMatchedCodeSymbolを構築（filename/symbolはフロントエンドで復元）
             code_symbols = [
-                MatchedCodeSymbol(
-                    id=cs.get("id", ""),
-                    filename=cs.get("filename", ""),
-                    symbol=cs.get("symbol", ""),
-                )
-                for cs in g.get("code_symbols", [])
+                MatchedCodeSymbol(id=code_id, filename="", symbol="")
+                for code_id in g.get("code_symbols", [])
+                if isinstance(code_id, str)
             ]
 
             # 推定トークン数の計算
@@ -319,7 +334,7 @@ async def structure_matching(request: StructureMatchingRequest):
                     groupName=group_name,
                     docSections=doc_sections,
                     codeSymbols=code_symbols,
-                    reason=g.get("reason", ""),
+                    reason="",
                     estimatedTokens=estimated,
                 )
             )
@@ -389,7 +404,8 @@ async def review_group(request: GroupReviewRequest):
 
         # 注意事項の構築
         notes_parts = [
-            "- 提供されている設計書・コードは元ファイルの一部分であり、完全な情報が含まれていない可能性があります",
+            "- 【重要】提供されている設計書・コードは元ファイルの一部分です。全体構造情報（INDEX.md / MAP.json）で示される他の部分は別のグループでレビューされています。",
+            "- 【重要】別のグループでレビューされている関数・メソッド・クラスについて「未実装」「存在しない」と指摘しないでください。全体構造情報を参照し、そのシンボルが他のグループに存在する場合は、実装済みと判断してください。",
             "- 最後に複数グループのレビュー結果を統合するので、統合時への申し送り事項があれば記載してください",
             "- 元ファイルでの行番号範囲はヘッダーコメント（`// lines: X-Y`）に記載されているので、行番号を参照する際はこの範囲に基づいて記載してください",
         ]
@@ -410,11 +426,58 @@ async def review_group(request: GroupReviewRequest):
         user_parts = [
             f"## レビュー対象グループ: {request.groupName}\n",
             f"- グループID: {request.groupId}\n",
+        ]
+
+        user_parts.extend([
             "## 設計書内容\n",
             request.documentContent,
             "\n## コード内容\n",
             request.codeContent,
-        ]
+        ])
+
+        # 全体構造コンテキスト（他グループの存在を把握するため、参考情報として末尾に配置）
+        if request.documentIndexMd or request.codeIndexMd or request.allGroups:
+            user_parts.append("\n## 全体構造情報（参考）\n")
+            user_parts.append("以下は設計書・コード全体の構造です。このグループではこの一部をレビューしています。\n")
+            if request.documentIndexMd:
+                user_parts.extend([
+                    "### 設計書全体の構造 (INDEX.md)\n",
+                    request.documentIndexMd,
+                    "",
+                ])
+            if request.documentMapJson:
+                user_parts.extend([
+                    "### 設計書全体の構造 (MAP.json)\n",
+                    "```json",
+                    json.dumps(request.documentMapJson, ensure_ascii=False, indent=2),
+                    "```",
+                    "",
+                ])
+            if request.codeIndexMd:
+                user_parts.extend([
+                    "### コード全体の構造 (INDEX.md)\n",
+                    request.codeIndexMd,
+                    "",
+                ])
+            if request.codeMapJson:
+                user_parts.extend([
+                    "### コード全体の構造 (MAP.json)\n",
+                    "```json",
+                    json.dumps(request.codeMapJson, ensure_ascii=False, indent=2),
+                    "```",
+                    "",
+                ])
+            if request.allGroups:
+                user_parts.extend([
+                    "### 全グループ一覧\n",
+                    "| グループ | 設計書セクション | コードシンボル |",
+                    "|---------|----------------|--------------|",
+                ])
+                for g in request.allGroups:
+                    doc_ids = ", ".join(ds.get("id", "") for ds in g.get("docSections", []))
+                    code_ids = ", ".join(cs.get("id", "") for cs in g.get("codeSymbols", []))
+                    user_parts.append(f"| {g.get('groupName', '')} | {doc_ids} | {code_ids} |")
+                user_parts.append("")
 
         user_message = "\n".join(user_parts)
 
@@ -528,6 +591,39 @@ async def integrate_reviews(request: IntegrateRequest):
                 gr.report if gr.report else f"**サマリー**: {gr.summary}\n",
                 "",
             ])
+
+        # 全体構造コンテキスト（参考情報として末尾に配置）
+        if request.documentIndexMd or request.codeIndexMd:
+            user_parts.append("\n## 全体構造情報（参考）\n")
+            user_parts.append("以下は設計書・コード全体の構造です。統合時の参考にしてください。\n")
+            if request.documentIndexMd:
+                user_parts.extend([
+                    "### 設計書全体の構造 (INDEX.md)\n",
+                    request.documentIndexMd,
+                    "",
+                ])
+            if request.documentMapJson:
+                user_parts.extend([
+                    "### 設計書全体の構造 (MAP.json)\n",
+                    "```json",
+                    json.dumps(request.documentMapJson, ensure_ascii=False, indent=2),
+                    "```",
+                    "",
+                ])
+            if request.codeIndexMd:
+                user_parts.extend([
+                    "### コード全体の構造 (INDEX.md)\n",
+                    request.codeIndexMd,
+                    "",
+                ])
+            if request.codeMapJson:
+                user_parts.extend([
+                    "### コード全体の構造 (MAP.json)\n",
+                    "```json",
+                    json.dumps(request.codeMapJson, ensure_ascii=False, indent=2),
+                    "```",
+                    "",
+                ])
 
         user_message = "\n".join(user_parts)
 
