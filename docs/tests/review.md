@@ -2,7 +2,7 @@
 
 ## 指示
 
-以下のレビュー観点に基づきコードを確認し、結果を `tests/results/YYYYMMDD-HHMM-review.md` に報告してください。
+以下のレビュー観点に基づきコードを確認し、結果を `docs/tests/results/YYYYMMDD-HHMM-review.md` に報告してください。
 
 - 結果報告の冒頭にサマリー（OK数 / NG数 / 総数、NG項目の一覧）を出力すること
 - 全ての観点について OK / NG を判定すること
