@@ -323,3 +323,33 @@ const canStartSplitReview = !!(
 - `codeParts` が0件の状態でレビュー実行ボタンが無効化されていること
 - 構造マッチングAPIに空のコードシンボルを送った場合、400エラーが返ること
 - 構造マッチングエラー時にエラー詳細が表示されること（ヘッダーの戻るボタンで設定画面に戻れること）
+
+---
+
+## 完了チェックリスト
+
+### 実装
+
+- [x] フェーズ0-1: `index.tsx` のトースト変換 `useEffect` を削除し、`previewError` prop として `SplitSettingsSection` に渡す
+- [x] フェーズ0-2: `SplitSettingsSection.tsx` に `previewError` prop を追加し、ボタン直下に表示
+- [x] フェーズ1-1: `SplitCodeResponse` スキーマに `warnings` フィールドを追加（`schemas.py`）
+- [x] フェーズ1-2: `split_code` エンドポイントで `warnings` をレスポンスに含める（`split.py`）
+- [x] フェーズ1-3: `structure_matching` エンドポイントで `code_symbols` 空チェックを追加（`review.py`）
+- [x] フェーズ2-1: `SplitCodeResponse` 型に `warnings` フィールドを追加（`types/index.ts`）
+- [x] フェーズ2-2: `SplitPreviewResult` 型に `codeWarnings` フィールドを追加（`types/index.ts`）
+- [x] フェーズ2-3: `useSplitSettings.ts` で `warnings` を収集し `codeWarnings` として保持
+- [x] フェーズ2-4: `SplitSettingsSection.tsx` でコード分割警告・エラーを表示（警告パネル追加）
+- [x] フェーズ2-5: レビュー実行ボタンを `codeParts` / `documentParts` が空の場合に無効化
+- [x] フェーズ2-6: `SplitExecutingScreen.tsx` でマッチングエラー時にエラー詳細（`state.error`）を表示
+- [x] バージョン番号の更新（`pyproject.toml`, `package.json`, `useVersions.ts`, `configSchema.ts` 等）
+- [x] `CHANGELOG.md` に更新内容を追記
+
+### 検証
+
+- [x] 分割プレビューが失敗した場合、ボタン直下にエラーメッセージが常時表示されること（トーストで消えないこと）
+- [x] 次回プレビュー実行時または設定変更時にエラーメッセージがクリアされること
+- [x] Javaファイルで構文エラーがあるケース → 分割プレビューに警告が表示されること
+- [x] `codeParts` が0件の状態でレビュー実行ボタンが無効化されていること
+- [x] `documentParts` が0件の状態でレビュー実行ボタンが無効化されていること
+- [x] 構造マッチングAPIに空のコードシンボルを送った場合、エラーが返ること
+- [x] 構造マッチングエラー時にエラー詳細が表示されること（ヘッダーの戻るボタンで設定画面に戻れること）
