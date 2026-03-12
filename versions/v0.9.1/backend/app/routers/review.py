@@ -201,6 +201,14 @@ async def structure_matching(request: StructureMatchingRequest):
     関連する設計書セクションとコードシンボルをグループ化する。
     """
     try:
+        # doc_sections が空の場合はLLM呼び出し前にエラーを返す
+        all_doc_sections = request.document.mapJson.get("sections", [])
+        if not all_doc_sections:
+            return StructureMatchingResponse(
+                success=False,
+                error="設計書セクションが空です。設計書の分割に失敗している可能性があります。分割設定を確認してください。",
+            )
+
         # code_symbols が空の場合はLLM呼び出し前にエラーを返す
         all_code_symbols = []
         for cf in request.codeFiles:

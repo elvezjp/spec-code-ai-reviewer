@@ -355,6 +355,18 @@ export function SplitSettingsSection({
                 )}
               </h4>
               <CodePartsTable parts={previewResult.codeParts} />
+              {previewResult.codeWarnings && previewResult.codeWarnings.length > 0 && (
+                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded">
+                  <p className="text-sm font-medium text-amber-800">
+                    コード解析時に警告があります（結果が不完全な可能性があります）
+                  </p>
+                  <ul className="mt-1 text-xs text-amber-700 list-disc list-inside space-y-0.5">
+                    {previewResult.codeWarnings.map((w, i) => (
+                      <li key={i}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           ) : (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded">
