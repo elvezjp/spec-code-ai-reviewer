@@ -120,7 +120,6 @@ export function Reviewer() {
     setSettings: setSplitSettings,
     executePreview: executeSplitPreview,
     clearPreview: clearSplitPreview,
-    clearError: clearSplitPreviewError,
     togglePinnedDocPart,
     toggleSummarizeMode,
     executeSummarize,
@@ -184,11 +183,6 @@ export function Reviewer() {
     toastTimerRef.current = window.setTimeout(() => setToastMessage(''), 3000)
   }, [])
 
-  useEffect(() => {
-    if (!splitPreviewError) return
-    showToast(splitPreviewError)
-    clearSplitPreviewError()
-  }, [splitPreviewError, showToast, clearSplitPreviewError])
 
   useEffect(() => {
     const message = sessionStorage.getItem('preset-toast')
@@ -868,6 +862,7 @@ export function Reviewer() {
           summarizeError={summarizeError}
           onToggleSummarizeMode={toggleSummarizeMode}
           onExecuteSummarize={() => executeSummarize(llmConfig)}
+          previewError={splitPreviewError}
         />
       </div>
 

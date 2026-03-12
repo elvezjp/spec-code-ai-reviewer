@@ -22,6 +22,7 @@ interface SplitSettingsSectionProps {
   summarizeError: string | null
   onToggleSummarizeMode: (partId: string) => void
   onExecuteSummarize: () => void
+  previewError?: string | null
 }
 
 export function SplitSettingsSection({
@@ -43,6 +44,7 @@ export function SplitSettingsSection({
   summarizeError,
   onToggleSummarizeMode,
   onExecuteSummarize,
+  previewError,
 }: SplitSettingsSectionProps) {
   const [isOptionsExpanded, setIsOptionsExpanded] = useState(true)
   const prevHasDesignDocRef = useRef(hasDesignDoc)
@@ -299,6 +301,10 @@ export function SplitSettingsSection({
               </span>
             )}
           </div>
+          {/* プレビューエラー */}
+          {previewError && (
+            <p className="text-sm text-red-600">{previewError}</p>
+          )}
           {/* 要約実行ボタン */}
           {previewResult && previewResult.documentParts && (
             <SummarizeExecuteRow
