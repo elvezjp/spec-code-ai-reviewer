@@ -204,24 +204,78 @@ AIモード選択時、分割オプションに「分割時の注意事項（任
 ## 完了チェックリスト
 
 ### バックエンド
-- [ ] `schemas.py`: `SplitMarkdownRequest` に `aiPromptExtraNotes: str | None = None` を追加
-- [ ] `split.py`: `MarkdownParser` に `ai_prompt_extra_notes=request.aiPromptExtraNotes` を渡す
+- [x] `schemas.py`: `SplitMarkdownRequest` に `aiPromptExtraNotes: str | None = None` を追加
+- [x] `split.py`: `MarkdownParser` に `ai_prompt_extra_notes=request.aiPromptExtraNotes` を渡す
 
 ### フロントエンド
-- [ ] `types/index.ts`: `SplitSettings` に `aiPromptExtraNotes: string` を追加
-- [ ] `types/index.ts` または `useSplitSettings.ts`: `SplitSettings` 初期値に `aiPromptExtraNotes: ''` を追加
-- [ ] `SplitSettingsSection.tsx`: AIモード選択時のみ表示されるテキストエリアを追加
-- [ ] `api.ts` または呼び出し元: `/api/split/markdown` リクエストボディに `aiPromptExtraNotes` を含める
+- [x] `types/index.ts`: `SplitSettings` に `aiPromptExtraNotes: string` を追加
+- [x] `useSplitSettings.ts`: `SplitSettings` 初期値に `aiPromptExtraNotes: ''` を追加
+- [x] `SplitSettingsSection.tsx`: AIモード選択時のみ表示されるテキストエリアを追加
+- [x] `useSplitSettings.ts`: `/api/split/markdown` リクエストボディに `aiPromptExtraNotes` を含める
 
 ### 仕様書
-- [ ] `versions/v0.9.1/spec.md`: `2.7.3 分割オプション` テーブルと説明文に追記
-- [ ] `docs/split-review.md`: `3.3 AIモード分割時の注意事項指定` セクションを追加
+- [x] `versions/v0.9.1/spec.md`: `2.7.3 分割オプション` テーブルと説明文に追記
+- [x] `docs/split-review.md`: `3.2 AIモード分割時の注意事項指定` セクションを追加
 
 ### 動作確認
 - [ ] AIモードを選択するとテキストエリアが表示される
 - [ ] 見出し / NLP モードではテキストエリアが表示されない
 - [ ] テキストエリアに入力した内容がリクエストに含まれてバックエンドに渡る
 - [ ] 空欄のまま分割プレビューを実行しても正常に動作する
+
+---
+
+## 追加: 分割オプションUIの視認性改善
+
+`SplitSettingsSection.tsx` の分割オプション表示を改善する。
+
+### 8. UIの視認性改善（SplitSettingsSection.tsx）
+
+#### 8.1 設計書・プログラムエリアの背景分割
+
+現状は設計書とプログラムが同一の `bg-gray-50` 背景で区別しづらい。
+それぞれを独立したカードに分ける。
+
+- 設計書エリア: `bg-white border border-gray-200 rounded p-3`
+- プログラムエリア: `bg-white border border-gray-200 rounded p-3`
+- 両エリアを `space-y-2` で区切る
+
+#### 8.2 ラベルの太字化
+
+以下のラベルを `font-medium` → `font-semibold` または `font-medium` に統一して太字にする：
+
+| ラベル | 変更前 | 変更後 |
+|-------|--------|--------|
+| 設計書 | `text-sm font-medium` | `text-sm font-semibold` |
+| プログラム | `text-sm font-medium` | `text-sm font-semibold` |
+| 分割モード: | `text-sm text-gray-600` | `text-sm font-medium text-gray-700` |
+| 分割時の注意事項（AIへの指示・任意） | `text-sm text-gray-600` | `text-sm font-medium text-gray-700` |
+| 見出しレベル: | `text-sm text-gray-600` | `text-sm font-medium text-gray-700` |
+| 対応言語 | （`<p>` テキスト） | `text-sm font-medium text-gray-700` に変更 |
+
+#### 8.3 テキストエリアの白背景化
+
+現在のテキストエリアは `bg-gray-50` 背景内に配置されており背景が馴染みすぎる。
+`bg-white` を明示的に追加する：
+
+```tsx
+className="w-full text-sm bg-white border border-gray-300 rounded px-2 py-1 resize-vertical focus:outline-none focus:border-blue-400"
+```
+
+#### 8.4 ラベルテキストの変更
+
+```
+分割時の注意事項（任意）
+→ 分割時の注意事項（AIへの指示・任意）
+```
+
+### 追加の完了チェックリスト
+
+- [ ] `SplitSettingsSection.tsx`: 設計書・プログラムエリアを白背景カードに分割
+- [ ] `SplitSettingsSection.tsx`: 「設計書」「プログラム」見出しを `font-semibold` に変更
+- [ ] `SplitSettingsSection.tsx`: 「分割モード:」「分割時の注意事項」「見出しレベル:」「対応言語」ラベルを `font-medium text-gray-700` に変更
+- [ ] `SplitSettingsSection.tsx`: テキストエリアに `bg-white` を追加
+- [ ] `SplitSettingsSection.tsx`: ラベルを `分割時の注意事項（AIへの指示・任意）` に変更
 
 ## 関連
 

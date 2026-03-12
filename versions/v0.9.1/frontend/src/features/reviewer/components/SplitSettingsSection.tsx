@@ -170,14 +170,14 @@ export function SplitSettingsSection({
             分割オプション
           </button>
           {isOptionsExpanded && (
-            <div className="mt-2 p-3 bg-gray-50 rounded border border-gray-200 space-y-3">
+            <div className="mt-2 space-y-2">
               {/* 設計書オプション */}
               {settings.reviewMode === 'split' && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">設計書</p>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">設計書</p>
                   {/* 分割モード選択 */}
                   <div className="mb-3">
-                    <span className="text-sm text-gray-600">分割モード:</span>
+                    <span className="text-sm font-medium text-gray-700">分割モード:</span>
                     <div className="mt-1 ml-2 space-y-1">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -217,21 +217,21 @@ export function SplitSettingsSection({
                   {/* AIモード: 分割時の注意事項 */}
                   {settings.documentSplitMode === 'ai' && (
                     <div className="mb-3">
-                      <label className="block text-sm text-gray-600 mb-1">
-                        分割時の注意事項（任意）
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        分割時の注意事項（AIへの指示・任意）
                       </label>
                       <textarea
                         value={settings.aiPromptExtraNotes}
                         onChange={(e) => onSettingsChange({ ...settings, aiPromptExtraNotes: e.target.value })}
                         placeholder="例: Mermaidブロックの途中では分割しない、項番単位で分割する"
                         rows={2}
-                        className="w-full text-sm border border-gray-300 rounded px-2 py-1 resize-vertical focus:outline-none focus:border-blue-400"
+                        className="w-full text-sm bg-white border border-gray-300 rounded px-2 py-1 resize-vertical focus:outline-none focus:border-blue-400"
                       />
                     </div>
                   )}
                   {/* 見出しレベル選択 */}
                   <div className="flex items-center gap-4">
-                    <span className="text-sm text-gray-600">見出しレベル:</span>
+                    <span className="text-sm font-medium text-gray-700">見出しレベル:</span>
                     <label className="flex items-center gap-1 cursor-pointer">
                       <input
                         type="radio"
@@ -268,10 +268,10 @@ export function SplitSettingsSection({
 
               {/* プログラムオプション */}
               {settings.reviewMode === 'split' && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">プログラム</p>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">プログラム</p>
                   <div className="text-sm text-gray-600">
-                    <p>対応言語: Python (.py) / Java (.java)</p>
+                    <p><span className="font-medium text-gray-700">対応言語:</span> Python (.py) / Java (.java)</p>
                     {supportedCodeFiles.length > 0 && (
                       <p className="mt-1 text-green-600">
                         対応ファイル: {supportedCodeFiles.join(', ')}
