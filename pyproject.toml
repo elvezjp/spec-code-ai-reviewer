@@ -1,6 +1,6 @@
 [project]
 name = "md2map"
-version = "0.2.0"
+version = "0.3.0"
 description = "マークダウンファイルを意味的単位に分割し、AI解析用の索引を生成するCLIツール"
 readme = "README.md"
 license = { text = "MIT" }
@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-add-line-numbers = { path = "add-line-numbers", editable = true }
+add-line-numbers = { git = "https://github.com/elvezjp/add-line-numbers.git", branch = "main" }
 
 [project.optional-dependencies]
 dev = [
