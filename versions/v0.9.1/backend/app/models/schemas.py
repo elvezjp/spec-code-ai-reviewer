@@ -284,6 +284,7 @@ class SplitMarkdownRequest(BaseModel):
     maxDepth: int = Field(default=2, ge=1, le=6)  # 分割の見出しレベル (H1-H6)
     splitMode: Literal["ai", "heading", "nlp"] = "ai"  # 分割モード
     llmConfig: LLMConfig | None = None  # AIモード用LLM設定
+    aiPromptExtraNotes: str | None = None  # AIサブスプリットの注意事項に追記するテキスト（AIモード専用）
 
 
 class DocumentPart(BaseModel):

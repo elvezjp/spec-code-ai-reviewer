@@ -214,6 +214,21 @@ export function SplitSettingsSection({
                       </label>
                     </div>
                   </div>
+                  {/* AIモード: 分割時の注意事項 */}
+                  {settings.documentSplitMode === 'ai' && (
+                    <div className="mb-3">
+                      <label className="block text-sm text-gray-600 mb-1">
+                        分割時の注意事項（任意）
+                      </label>
+                      <textarea
+                        value={settings.aiPromptExtraNotes}
+                        onChange={(e) => onSettingsChange({ ...settings, aiPromptExtraNotes: e.target.value })}
+                        placeholder="例: Mermaidブロックの途中では分割しない、項番単位で分割する"
+                        rows={2}
+                        className="w-full text-sm border border-gray-300 rounded px-2 py-1 resize-vertical focus:outline-none focus:border-blue-400"
+                      />
+                    </div>
+                  )}
                   {/* 見出しレベル選択 */}
                   <div className="flex items-center gap-4">
                     <span className="text-sm text-gray-600">見出しレベル:</span>

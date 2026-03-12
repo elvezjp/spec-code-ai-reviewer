@@ -44,6 +44,7 @@ const DEFAULT_SETTINGS: SplitSettings = {
   reviewMode: 'batch',
   documentMaxDepth: 2,
   documentSplitMode: 'ai',
+  aiPromptExtraNotes: '',
 }
 
 export function useSplitSettings(): UseSplitSettingsReturn {
@@ -169,6 +170,9 @@ export function useSplitSettings(): UseSplitSettingsReturn {
           maxDepth: settings.documentMaxDepth,
           splitMode: settings.documentSplitMode,
           llmConfig: settings.documentSplitMode === 'ai' ? (llmConfig ?? undefined) : undefined,
+          aiPromptExtraNotes: settings.documentSplitMode === 'ai' && settings.aiPromptExtraNotes
+            ? settings.aiPromptExtraNotes
+            : undefined,
         })
 
         if (response.success) {
