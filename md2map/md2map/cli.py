@@ -89,6 +89,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="Bedrock用リージョン（未指定時は環境変数またはap-northeast-1）",
     )
+    build_parser.add_argument(
+        "--ai-prompt-extra-notes",
+        default=None,
+        help="AI サブスプリットの注意事項に追記するテキスト",
+    )
 
     return parser
 
@@ -138,6 +143,7 @@ def cmd_build(args: argparse.Namespace) -> int:
             split_threshold=args.split_threshold,
             max_subsections=args.max_subsections,
             llm_config=llm_config,
+            ai_prompt_extra_notes=args.ai_prompt_extra_notes,
         )
     except (ValueError, RuntimeError) as exc:
         logger.error(str(exc))

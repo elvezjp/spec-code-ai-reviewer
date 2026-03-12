@@ -4,10 +4,10 @@
 [![Elvez](https://img.shields.io/badge/Elvez-Product-3F61A7?style=flat-square)](https://elvez.co.jp/)
 [![IXV Ecosystem](https://img.shields.io/badge/IXV-Ecosystem-3F61A7?style=flat-square)](https://elvez.co.jp/ixv/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/badge/Python-3.8+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.9+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Stars](https://img.shields.io/github/stars/elvezjp/add-line-numbers?style=social)](https://github.com/elvezjp/add-line-numbers/stargazers)
 
-テキストファイルに「4桁右揃えの行番号」を自動で付けるPythonスクリプトです。コードレビューやAI解析で「〇行目を見て」と指し示しやすくなります。外部ライブラリ不要で、Python 3.8+ だけあれば動きます。
+テキストファイルに「4桁右揃えの行番号」を自動で付けるPythonスクリプトです。コードレビューやAI解析で「〇行目を見て」と指し示しやすくなります。外部ライブラリ不要で、Python 3.9+ だけあれば動きます。
 
 ## まずはクイックスタート
 
@@ -36,7 +36,7 @@
   - 画像などのバイナリやUTF-8で読めないファイルは自動スキップします
 
 - 必要なもの
-  - Python 3.8以上
+  - Python 3.9以上
   - 追加のpipインストールは不要です
 
 ## 使い方

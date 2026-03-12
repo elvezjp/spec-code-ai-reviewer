@@ -15,6 +15,34 @@ if TYPE_CHECKING:
     from md2map.llm.base_provider import BaseLLMProvider
     from md2map.llm.config import LLMConfig
 
+DEFAULT_AI_PROMPT_PARTS: Dict[str, str] = {
+    "role": (
+        "あなたは文書構造の分析に特化したアシスタントです。"
+    ),
+    "purpose": (
+        "行番号付きテキストを、文書の構造や意味的なまとまりを保ちつつ"
+        "話題や内容の切れ目で区切ってください。"
+    ),
+    "format": (
+        "JSON 配列のみを返してください。説明文やマークダウン装飾は不要です。\n"
+        "各要素は以下のフィールドを持つオブジェクトです:\n"
+        "- start_line (integer): 区間の開始行番号\n"
+        "- end_line (integer): 区間の終了行番号（inclusive）\n"
+        "\n"
+        "スキーマ:\n"
+        '[{"start_line": 1, "end_line": ...}, ...]'
+    ),
+    "notes": (
+        "- 最初の区間は行 1 から開始すること\n"
+        "- 前の区間の end_line + 1 が次の区間の start_line と一致すること"
+        "（隙間・重複の禁止）\n"
+        "- ネストされた項目は親項目と同じ区間に含めること"
+        "（インデントが深い行を親から切り離さない）\n"
+        "- 構造を保ちつつ、各区間のサイズが極端に偏らないよう"
+        "バランスよく分割すること"
+    ),
+}
+
 
 class MarkdownParser(BaseParser):
     """マークダウンファイルパーサー
@@ -44,6 +72,7 @@ class MarkdownParser(BaseParser):
         max_subsections: int = 5,
         llm_config: Optional["LLMConfig"] = None,
         llm_provider: Optional["BaseLLMProvider"] = None,
+        ai_prompt_extra_notes: Optional[str] = None,
     ) -> None:
         if split_mode not in {"heading", "nlp", "ai"}:
             raise ValueError(f"Invalid split_mode: {split_mode}")
@@ -73,6 +102,7 @@ class MarkdownParser(BaseParser):
         self.split_mode = split_mode
         self.split_threshold = max(1, split_threshold)
         self.max_subsections = max(1, max_subsections)
+        self._ai_prompt_extra_notes = ai_prompt_extra_notes
 
     def parse(
         self, file_path: str, max_depth: int = 3
@@ -432,14 +462,13 @@ class MarkdownParser(BaseParser):
                     max(2, math.ceil(total_count / self.split_threshold)),
                 )
 
-                line_ranges, titles = self._select_chunks_ai(
+                line_ranges, _ = self._select_chunks_ai(
                     section, lines, own_start, own_end, target_parts
                 )
                 if not line_ranges:
                     line_ranges = self._chunk_lines_by_threshold(
                         lines, own_start, own_end, total_count, target_parts
                     )
-                    titles = None
 
                 if len(line_ranges) < 2:
                     refined.append(section)
@@ -448,14 +477,9 @@ class MarkdownParser(BaseParser):
                 refined.append(section)
                 # 最初のサブスプリットに見出し行を含める
                 line_ranges[0] = (section.start_line, line_ranges[0][1])
-                if titles:
-                    virtual_sections = self._build_virtual_sections_with_titles(
-                        section, line_ranges, titles
-                    )
-                else:
-                    virtual_sections = self._build_virtual_sections(
-                        section, line_ranges
-                    )
+                virtual_sections = self._build_virtual_sections(
+                    section, line_ranges
+                )
                 refined.extend(virtual_sections)
 
             else:
@@ -610,6 +634,24 @@ class MarkdownParser(BaseParser):
         boundaries = [idx for idx, _ in scores[:num_splits]]
         return sorted(set(boundaries))
 
+    def _build_ai_system_prompt(self) -> str:
+        """AI サブスプリット用のシステムプロンプトを組み立てる
+
+        実行時に変わる情報（total_lines 等）はユーザープロンプトに記載するため、
+        システムプロンプトには含めない。
+        """
+        parts = dict(DEFAULT_AI_PROMPT_PARTS)
+
+        if self._ai_prompt_extra_notes:
+            parts["notes"] = parts["notes"] + "\n" + self._ai_prompt_extra_notes
+
+        return (
+            f"# 役割\n{parts['role']}\n\n"
+            f"# 目的\n{parts['purpose']}\n\n"
+            f"# 出力形式\n{parts['format']}\n\n"
+            f"# 注意事項\n{parts['notes']}\n"
+        )
+
     def _add_line_numbers(self, content: str) -> str:
         """テキストに 1 始まりの行番号を付与する
 
@@ -628,8 +670,8 @@ class MarkdownParser(BaseParser):
         own_start: int,
         own_end: int,
         target_parts: int,
-    ) -> Tuple[List[Tuple[int, int]], Optional[List[str]]]:
-        """AI（LLMプロバイダー）で行番号ベースのグループ分けとタイトルを取得する
+    ) -> Tuple[List[Tuple[int, int]], None]:
+        """AI（LLMプロバイダー）で行番号ベースのグループ分けを取得する
 
         AI には 1〜N の相対行番号付きテキストを送信し、
         レスポンスの相対行番号を元ファイルの行番号に変換して返す。
@@ -641,37 +683,13 @@ class MarkdownParser(BaseParser):
         numbered_text = self._add_line_numbers(content)
         total_lines = own_end - own_start + 1
 
-        system_text = (
-            "# 役割\n"
-            "あなたは文書構造の分析に特化したアシスタントです。\n"
-            "\n"
-            "# 目的\n"
-            "行番号付きテキストを、意味的なまとまりが壊れないよう"
-            "話題や内容の切れ目で区切ってください。\n"
-            "各区間には、その内容を端的に表すタイトルを付与してください。\n"
-            "\n"
-            "# 出力形式\n"
-            "JSON 配列のみを返してください。説明文やマークダウン装飾は不要です。\n"
-            "各要素は以下のフィールドを持つオブジェクトです:\n"
-            "- title (string): 区間の内容を表す簡潔なタイトル（文書の言語に合わせる）\n"
-            "- start_line (integer): 区間の開始行番号\n"
-            "- end_line (integer): 区間の終了行番号（inclusive）\n"
-            "\n"
-            "スキーマ:\n"
-            f"[{{\"title\": \"...\", \"start_line\": 1, \"end_line\": ...}}, ...]\n"
-            "\n"
-            "# 注意事項\n"
-            "- 意味的に関連する行は同じ区間に含め、話題の変わり目で区切ること\n"
-            "- 最初の区間は行 1 から開始すること\n"
-            "- 前の区間の end_line + 1 が次の区間の start_line と一致すること"
-            "（隙間・重複の禁止）\n"
-            f"- 最後の区間は行 {total_lines} で終了すること"
-            "（すべての行を漏れなくカバー）\n"
-            "- タイトルは元の文書の言語（日本語の文書なら日本語）で付与すること\n"
-        )
+        system_text = self._build_ai_system_prompt()
         user_text = (
             f"以下のテキストを、意味的なまとまりを保ちつつ"
             f"最大 {target_parts} つに区切ってください。\n"
+            f"テキストは全 {total_lines} 行です。"
+            f"最後の区間は行 {total_lines} で終了してください"
+            f"（すべての行を漏れなくカバー）。\n"
             f"\n"
             f"{numbered_text}"
         )
@@ -698,17 +716,16 @@ class MarkdownParser(BaseParser):
             return [], None
 
         # LLM のレスポンスは 1-based 相対行番号
-        items: List[Tuple[int, int, str]] = []
+        items: List[Tuple[int, int]] = []
         for item in data:
             try:
                 sl = int(item["start_line"])
                 el = int(item["end_line"])
-                title = str(item.get("title") or "").strip()
             except (ValueError, TypeError, KeyError):
                 continue
             if sl < 1 or el > total_lines or el < sl:
                 continue
-            items.append((sl, el, title))
+            items.append((sl, el))
 
         if not items:
             return [], None
@@ -723,14 +740,12 @@ class MarkdownParser(BaseParser):
 
         # 相対行番号を元ファイルの行番号に変換
         line_ranges: List[Tuple[int, int]] = []
-        titles: List[str] = []
-        for sl, el, title in items:
+        for sl, el in items:
             actual_start = own_start + sl - 1
             actual_end = own_start + el - 1
             line_ranges.append((actual_start, actual_end))
-            titles.append(title)
 
-        return line_ranges, titles
+        return line_ranges, None
 
     def _chunk_lines_by_threshold(
         self,
@@ -759,37 +774,6 @@ class MarkdownParser(BaseParser):
             current_start = current_end + 1
 
         return line_ranges
-
-    def _build_virtual_sections_with_titles(
-        self,
-        section: Section,
-        line_ranges: List[Tuple[int, int]],
-        titles: List[str],
-    ) -> List[Section]:
-        """AI 生成タイトルを使用してサブスプリットセクションを生成する"""
-        virtual_sections: List[Section] = []
-        base_level = min(section.level + 1, 6)
-        total = len(line_ranges)
-
-        for i, (start_line, end_line) in enumerate(line_ranges, start=1):
-            raw_title = titles[i - 1] if i - 1 < len(titles) else ""
-            if raw_title:
-                display_title = f"{section.display_name()}: {raw_title}"
-            else:
-                display_title = f"{section.display_name()}: part-{i}"
-            virtual = Section(
-                title=section.title,
-                level=base_level,
-                start_line=start_line,
-                end_line=end_line,
-                original_file=section.original_file,
-                is_subsplit=True,
-                note=f"Subsplit of {section.id or section.title} (L{start_line}\u2013L{end_line}, {self.split_mode} boundary split)",
-                subsplit_title=display_title,
-            )
-            virtual_sections.append(virtual)
-
-        return virtual_sections
 
     def _build_virtual_sections(
         self,
