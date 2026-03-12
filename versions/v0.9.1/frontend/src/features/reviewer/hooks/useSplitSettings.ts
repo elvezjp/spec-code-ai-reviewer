@@ -259,7 +259,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     } finally {
       setIsExecutingPreview(false)
     }
-  }, [settings.reviewMode, settings.documentMaxDepth, settings.documentSplitMode])
+  }, [settings.reviewMode, settings.documentMaxDepth, settings.documentSplitMode, settings.aiPromptExtraNotes])
 
   const clearPreview = useCallback(() => {
     setPreviewResult(null)
