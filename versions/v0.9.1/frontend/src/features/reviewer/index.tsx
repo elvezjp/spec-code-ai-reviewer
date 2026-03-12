@@ -871,7 +871,7 @@ export function Reviewer() {
         <Button
           variant="success"
           size="lg"
-          disabled={!isReviewEnabled || (isSplitEnabled && !splitPreviewResult) || (isSplitEnabled && hasPendingSummarize) || (isSplitEnabled && !!splitPreviewResult && !splitPreviewResult.codeParts?.length)}
+          disabled={!isReviewEnabled || (isSplitEnabled && !splitPreviewResult) || (isSplitEnabled && hasPendingSummarize) || (isSplitEnabled && !!splitPreviewResult && !splitPreviewResult.codeParts?.length) || (isSplitEnabled && !!splitPreviewResult && !splitPreviewResult.documentParts?.length)}
           onClick={handleReviewExecute}
         >
           レビュー実行
@@ -886,11 +886,7 @@ export function Reviewer() {
             ※ 分割レビューを実行するには、分割設定で「分割プレビュー」を行ってください。
           </p>
         )}
-        {isSplitEnabled && !!splitPreviewResult && !splitPreviewResult.codeParts?.length && (
-          <p className="text-xs text-orange-500 mt-1 text-center">
-            ※ コードの分割に失敗しました。分割設定を確認してください。
-          </p>
-        )}
+
         {isSplitEnabled && hasPendingSummarize && (
           <p className="text-xs text-orange-500 mt-1 text-center">
             ⚠ 要約が選択されていますが未実行です。「選択した要約を実行」をクリックしてから、レビューを実行してください。

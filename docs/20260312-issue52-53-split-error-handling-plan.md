@@ -260,11 +260,12 @@ const canStartSplitReview = !!(
 )
 ```
 
-#### 2-6. `SplitExecutingScreen.tsx` でマッチングエラー時に設定画面への戻り導線を追加
+#### 2-6. `SplitExecutingScreen.tsx` でマッチングエラー時にエラー詳細を表示する
 
 **対象ファイル:** `versions/v0.9.1/frontend/src/features/reviewer/components/SplitExecutingScreen.tsx`
 
-構造マッチングエラー表示部分（現在L185〜L200付近）に「設定に戻る」ボタンを追加：
+構造マッチングエラー表示部分（現在L185〜L200付近）にエラー詳細（`state.error`）を追加する。
+なお「設定に戻る」ボタンはヘッダーに既存の戻るボタンがあるため追加しない。
 
 ```tsx
 {isStructureMatchingError && (
@@ -278,9 +279,6 @@ const canStartSplitReview = !!(
     <div className="flex items-center justify-center gap-3 mt-3">
       <button onClick={onRetryStructureMatching} ...>
         リトライ
-      </button>
-      <button onClick={onBack} ...>   {/* ← 追加 */}
-        ← 設定に戻る
       </button>
     </div>
   </>
@@ -301,7 +299,7 @@ const canStartSplitReview = !!(
 | `versions/v0.9.1/frontend/src/features/reviewer/types/index.ts` | `SplitCodeResponse`, `SplitPreviewResult` 型に `warnings`, `codeWarnings` 追加 |
 | `versions/v0.9.1/frontend/src/features/reviewer/hooks/useSplitSettings.ts` | `warnings` 収集・`codeWarnings` 保持 |
 | `versions/v0.9.1/frontend/src/features/reviewer/components/SplitSettingsSection.tsx` | コード分割警告表示、レビュー実行ボタン無効化条件追加 |
-| `versions/v0.9.1/frontend/src/features/reviewer/components/SplitExecutingScreen.tsx` | マッチングエラー時の「設定に戻る」ボタン追加 |
+| `versions/v0.9.1/frontend/src/features/reviewer/components/SplitExecutingScreen.tsx` | マッチングエラー時にエラー詳細（`state.error`）を表示 |
 
 ---
 
@@ -324,4 +322,4 @@ const canStartSplitReview = !!(
 - Shift-JIS等のエンコーディング問題があるケース → 警告が表示されること
 - `codeParts` が0件の状態でレビュー実行ボタンが無効化されていること
 - 構造マッチングAPIに空のコードシンボルを送った場合、400エラーが返ること
-- 構造マッチングエラー画面から「設定に戻る」で分割設定画面に戻れること
+- 構造マッチングエラー時にエラー詳細が表示されること（ヘッダーの戻るボタンで設定画面に戻れること）
