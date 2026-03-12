@@ -237,6 +237,7 @@ async def split_code(request: SplitCodeRequest):
                     parts=[],
                     indexContent="# No symbols found\n",
                     language=language,
+                    warnings=warnings,
                 )
 
             # 行を読み込み（code2mapはsplitlines()の行リストを返す）
@@ -291,6 +292,7 @@ async def split_code(request: SplitCodeRequest):
             indexContent=index_content,
             mapJson=map_json,
             language=language,
+            warnings=warnings,
         )
 
     except Exception as e:

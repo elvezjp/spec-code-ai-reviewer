@@ -187,6 +187,9 @@ export function SplitExecutingScreen({
               <p className="text-sm text-red-600 mt-2">
                 構造マッチングでエラーが発生しました。
               </p>
+              {state.error && (
+                <p className="text-xs text-red-500 mt-1">{state.error}</p>
+              )}
               <div className="flex items-center justify-center gap-3 mt-3">
                 <button
                   onClick={onRetryStructureMatching}
@@ -194,6 +197,12 @@ export function SplitExecutingScreen({
                 >
                   <RotateCcw className="w-4 h-4" />
                   リトライ
+                </button>
+                <button
+                  onClick={onBack}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white text-sm rounded-md transition"
+                >
+                  ← 設定に戻る
                 </button>
               </div>
             </>

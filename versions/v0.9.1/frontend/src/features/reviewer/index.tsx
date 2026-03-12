@@ -871,7 +871,7 @@ export function Reviewer() {
         <Button
           variant="success"
           size="lg"
-          disabled={!isReviewEnabled || (isSplitEnabled && !splitPreviewResult) || (isSplitEnabled && hasPendingSummarize)}
+          disabled={!isReviewEnabled || (isSplitEnabled && !splitPreviewResult) || (isSplitEnabled && hasPendingSummarize) || (isSplitEnabled && !!splitPreviewResult && !splitPreviewResult.codeParts?.length)}
           onClick={handleReviewExecute}
         >
           レビュー実行
@@ -884,6 +884,11 @@ export function Reviewer() {
         {isSplitEnabled && !splitPreviewResult && (
           <p className="text-xs text-orange-500 mt-1 text-center">
             ※ 分割レビューを実行するには、分割設定で「分割プレビュー」を行ってください。
+          </p>
+        )}
+        {isSplitEnabled && !!splitPreviewResult && !splitPreviewResult.codeParts?.length && (
+          <p className="text-xs text-orange-500 mt-1 text-center">
+            ※ コードの分割に失敗しました。分割設定を確認してください。
           </p>
         )}
         {isSplitEnabled && hasPendingSummarize && (

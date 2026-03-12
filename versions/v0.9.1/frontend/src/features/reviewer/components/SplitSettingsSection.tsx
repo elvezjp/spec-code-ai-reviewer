@@ -344,7 +344,7 @@ export function SplitSettingsSection({
           )}
 
           {/* コードパーツ */}
-          {previewResult.codeParts && previewResult.codeParts.length > 0 && (
+          {previewResult.codeParts && previewResult.codeParts.length > 0 ? (
             <div>
               <h4 className="text-sm font-medium text-gray-600 mb-2">
                 ■ プログラム: {previewResult.codeParts.length} パート
@@ -355,6 +355,23 @@ export function SplitSettingsSection({
                 )}
               </h4>
               <CodePartsTable parts={previewResult.codeParts} />
+            </div>
+          ) : (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded">
+              <p className="text-sm font-medium text-amber-800">
+                コードの分割結果が0件です
+              </p>
+              {previewResult.codeWarnings && previewResult.codeWarnings.length > 0 ? (
+                <ul className="mt-1 text-xs text-amber-700 list-disc list-inside space-y-0.5">
+                  {previewResult.codeWarnings.map((w, i) => (
+                    <li key={i}>{w}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1 text-xs text-amber-700">
+                  コードシンボルが検出されませんでした。対応言語（Python / Java）のファイルか確認してください。
+                </p>
+              )}
             </div>
           )}
         </div>

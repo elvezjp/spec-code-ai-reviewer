@@ -201,6 +201,17 @@ async def structure_matching(request: StructureMatchingRequest):
     関連する設計書セクションとコードシンボルをグループ化する。
     """
     try:
+        # code_symbols が空の場合はLLM呼び出し前にエラーを返す
+        all_code_symbols = []
+        for cf in request.codeFiles:
+            all_code_symbols.extend(cf.mapJson.get("symbols", []))
+
+        if not all_code_symbols:
+            return StructureMatchingResponse(
+                success=False,
+                error="コードシンボルが空です。コードの分割に失敗している可能性があります。分割設定を確認してください。",
+            )
+
         provider = get_llm_provider(request.llmConfig)
 
         # システムプロンプト構築（prompt_builder使用）

@@ -181,6 +181,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
       }
 
       // コード分割（対応言語のファイルのみ）
+      const allCodeWarnings: string[] = []
       if (settings.reviewMode === 'split' && codeFiles.length > 0) {
         const allCodeParts: CodePart[] = []
         const allIndexContents: string[] = []
@@ -210,8 +211,16 @@ export function useSplitSettings(): UseSplitSettingsReturn {
             if (response.language && !codeLanguage) {
               codeLanguage = response.language
             }
+            if (response.warnings && response.warnings.length > 0) {
+              allCodeWarnings.push(...response.warnings.map(w => `${codeFile.filename}: ${w}`))
+            }
           } else {
-            console.warn(`Failed to split ${codeFile.filename}: ${response.error}`)
+            if (response.warnings && response.warnings.length > 0) {
+              allCodeWarnings.push(...response.warnings.map(w => `${codeFile.filename}: ${w}`))
+            }
+            if (response.error) {
+              allCodeWarnings.push(`${codeFile.filename}: ${response.error}`)
+            }
           }
         }
 
@@ -237,6 +246,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         codeMapJson,
         codeLanguage,
         pinnedDocPartIds: [],
+        codeWarnings: allCodeWarnings,
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : '分割プレビューに失敗しました'
