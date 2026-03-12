@@ -340,7 +340,7 @@ describe('executeIntegrate', () => {
         deduplicatedFindings: [],
       },
       reviewMeta: {
-        version: 'v0.9.0',
+        version: 'v0.9.1',
         modelId: 'claude-sonnet-4-20250514',
         provider: 'anthropic',
         executedAt: '2026-02-06T12:00:00Z',

@@ -448,6 +448,8 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 | `versions/v0.7.0/backend/pyproject.toml` | versionを更新 |
 | `versions/v0.7.0/frontend/src/core/hooks/useVersions.ts` | DEFAULT_VERSIONSに新バージョンを追加し、`isLatest: true` を設定（v0.6.0以降） |
 | `versions/v0.7.0/frontend/src/features/config-file-generator/schema/configSchema.ts` | `meta.version` および `info.version` フィールドを更新（v0.6.0以降） |
+| `versions/v0.7.0/frontend/src/features/reviewer/index.tsx` | `APP_INFO.version` を更新（v0.6.0以降） |
+| `versions/v0.7.0/frontend/src/__tests__/features/reviewer/services/split_review_api.test.ts` | モックレスポンス内の `version` を更新（v0.6.0以降） |
 | `latest` シンボリックリンク | 新バージョンを指すように更新（`rm latest && ln -s versions/v0.7.0 latest`） |
 | `versions/v0.5.x/frontend/index.html` | VERSIONS配列を更新追加（`scripts/sync_version.py`実行、v0.5.x以前のみ） |
 
