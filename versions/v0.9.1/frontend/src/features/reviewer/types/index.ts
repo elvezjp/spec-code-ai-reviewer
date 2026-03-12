@@ -185,6 +185,8 @@ export interface DocumentPart {
   summarizeMode: 'original' | 'summarize'
   summarizedContent?: string
   summarizedTokens?: number
+  // 除外関連
+  excluded: boolean
 }
 
 export interface CodePart {

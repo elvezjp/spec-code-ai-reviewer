@@ -122,6 +122,7 @@ export function Reviewer() {
     clearPreview: clearSplitPreview,
     togglePinnedDocPart,
     toggleSummarizeMode,
+    toggleExcludedDocPart,
     executeSummarize,
     isSplitEnabled,
     hasPendingSummarize,
@@ -307,18 +308,28 @@ export function Reviewer() {
     try {
       // Phase 1: Structure Matching
       const documentIndexMd = splitPreviewResult.documentIndex || ''
-      // md2map生成のMAP.jsonをそのまま使用（is_subsplit, subsplit_title等を含む）
+      // 除外パーツのIDセットを構築
+      const excludedDocPartIds = new Set(
+        splitPreviewResult.documentParts?.filter(p => p.excluded).map(p => p.id) || []
+      )
+      // md2map生成のMAP.jsonをそのまま使用（is_subsplit, subsplit_title等を含む）、除外パーツを除去
       const documentMapJson = splitPreviewResult.documentMapJson
-        ? { sections: splitPreviewResult.documentMapJson }
+        ? {
+            sections: splitPreviewResult.documentMapJson.filter(
+              (s) => !excludedDocPartIds.has(s.id as string)
+            )
+          }
         : {
-            sections: splitPreviewResult.documentParts?.map((p) => ({
-              id: p.id,
-              title: p.section,
-              level: p.level,
-              path: p.path,
-              startLine: p.startLine,
-              endLine: p.endLine,
-            })) || [],
+            sections: splitPreviewResult.documentParts
+              ?.filter((p) => !p.excluded)
+              .map((p) => ({
+                id: p.id,
+                title: p.section,
+                level: p.level,
+                path: p.path,
+                startLine: p.startLine,
+                endLine: p.endLine,
+              })) || [],
           }
 
       const codeFileStructures = codeFiles.map((cf) => {
@@ -366,12 +377,14 @@ export function Reviewer() {
       }
 
       for (const group of groups) {
-        group.docSections = group.docSections.map((ds) => {
-          const part = splitPreviewResult.documentParts?.find((p) => p.id === ds.id)
-          return part
-            ? { id: ds.id, title: part.displayName, path: part.path }
-            : ds
-        })
+        group.docSections = group.docSections
+          .filter((ds) => !excludedDocPartIds.has(ds.id))  // 除外パーツを安全フィルタ
+          .map((ds) => {
+            const part = splitPreviewResult.documentParts?.find((p) => p.id === ds.id)
+            return part
+              ? { id: ds.id, title: part.displayName, path: part.path }
+              : ds
+          })
         group.codeSymbols = group.codeSymbols.map((cs) => {
           const part = splitPreviewResult.codeParts?.find((p) => p.id === cs.id)
           return part
@@ -383,6 +396,7 @@ export function Reviewer() {
       // 重要パートを全グループに注入（重複除外）
       if (pinnedDocPartIds.length > 0) {
         const pinnedDocSections = pinnedDocPartIds
+          .filter(id => !excludedDocPartIds.has(id))  // 除外パーツは注入しない
           .map(id => {
             const part = splitPreviewResult.documentParts?.find(p => p.id === id)
             if (!part) return null
@@ -861,6 +875,7 @@ export function Reviewer() {
           hasPendingSummarize={hasPendingSummarize}
           summarizeError={summarizeError}
           onToggleSummarizeMode={toggleSummarizeMode}
+          onToggleExcludedDocPart={toggleExcludedDocPart}
           onExecuteSummarize={() => executeSummarize(llmConfig)}
           previewError={splitPreviewError}
         />

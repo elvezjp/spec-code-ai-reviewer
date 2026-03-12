@@ -21,6 +21,7 @@ interface SplitSettingsSectionProps {
   hasPendingSummarize: boolean
   summarizeError: string | null
   onToggleSummarizeMode: (partId: string) => void
+  onToggleExcludedDocPart: (partId: string) => void
   onExecuteSummarize: () => void
   previewError?: string | null
 }
@@ -43,6 +44,7 @@ export function SplitSettingsSection({
   hasPendingSummarize,
   summarizeError,
   onToggleSummarizeMode,
+  onToggleExcludedDocPart,
   onExecuteSummarize,
   previewError,
 }: SplitSettingsSectionProps) {
@@ -347,12 +349,14 @@ export function SplitSettingsSection({
               <ul className="text-xs text-gray-500 mb-2 list-disc list-inside space-y-0.5">
                 <li><strong>重要</strong>: 分割レビュー時に全てのグループで参照されます。</li>
                 <li><strong>要約</strong>: レビュー時に要約テキストで代替されます。分割後もトークン数が多い場合に使用してください。</li>
+                <li><strong>除外</strong>: 構造マッチング・グループレビューの対象から外します。表紙・変更履歴など不要なセクションを除外してください。</li>
               </ul>
               <DocumentPartsTable
                 parts={previewResult.documentParts}
                 pinnedDocPartIds={pinnedDocPartIds}
                 onTogglePinnedDocPart={onTogglePinnedDocPart}
                 onToggleSummarizeMode={onToggleSummarizeMode}
+                onToggleExcludedDocPart={onToggleExcludedDocPart}
                 summarizingPartIds={summarizingPartIds}
               />
             </div>
@@ -412,12 +416,14 @@ function DocumentPartsTable({
   pinnedDocPartIds,
   onTogglePinnedDocPart,
   onToggleSummarizeMode,
+  onToggleExcludedDocPart,
   summarizingPartIds,
 }: {
   parts: DocumentPart[]
   pinnedDocPartIds: string[]
   onTogglePinnedDocPart: (partId: string) => void
   onToggleSummarizeMode: (partId: string) => void
+  onToggleExcludedDocPart: (partId: string) => void
   summarizingPartIds: Set<string>
 }) {
   return (
@@ -427,6 +433,7 @@ function DocumentPartsTable({
           <TableRow>
             <TableHeaderCell className="w-14">重要</TableHeaderCell>
             <TableHeaderCell className="w-14">要約</TableHeaderCell>
+            <TableHeaderCell className="w-14">除外</TableHeaderCell>
             <TableHeaderCell className="w-12">#</TableHeaderCell>
             <TableHeaderCell>セクション名</TableHeaderCell>
             <TableHeaderCell className="w-24">行範囲</TableHeaderCell>
@@ -437,14 +444,15 @@ function DocumentPartsTable({
           {parts.map((part, index) => {
             const isSummarizingThis = summarizingPartIds.has(part.id)
             return (
-              <TableRow key={`${part.id}-${part.startLine}`}>
+              <TableRow key={`${part.id}-${part.startLine}`} className={part.excluded ? 'opacity-40' : ''}>
                 {/* 重要チェックボックス */}
                 <TableCell className="text-center">
                   <input
                     type="checkbox"
                     checked={pinnedDocPartIds.includes(part.id)}
                     onChange={() => onTogglePinnedDocPart(part.id)}
-                    className="w-4 h-4 text-blue-600 rounded"
+                    disabled={part.excluded}
+                    className="w-4 h-4 text-blue-600 rounded disabled:cursor-not-allowed"
                   />
                 </TableCell>
                 {/* 要約チェックボックス */}
@@ -453,12 +461,24 @@ function DocumentPartsTable({
                     type="checkbox"
                     checked={part.summarizeMode === 'summarize'}
                     onChange={() => onToggleSummarizeMode(part.id)}
-                    className="w-4 h-4 text-blue-600 rounded"
+                    disabled={part.excluded}
+                    className="w-4 h-4 text-blue-600 rounded disabled:cursor-not-allowed"
+                  />
+                </TableCell>
+                {/* 除外チェックボックス */}
+                <TableCell className="text-center">
+                  <input
+                    type="checkbox"
+                    checked={part.excluded}
+                    onChange={() => onToggleExcludedDocPart(part.id)}
+                    className="w-4 h-4 text-red-500 rounded"
                   />
                 </TableCell>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>
                   {part.displayName}
+                  {/* セクション内容プレビュー */}
+                  <PartContentPreview content={part.content} />
                   {/* 要約完了時のプレビューアコーディオン */}
                   {part.summarizedContent && part.summarizeMode === 'summarize' && (
                     <SummarizedTextPreview text={part.summarizedContent} />
@@ -486,6 +506,27 @@ function DocumentPartsTable({
           })}
         </TableBody>
       </Table>
+    </div>
+  )
+}
+
+function PartContentPreview({ content }: { content: string }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600"
+      >
+        {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        内容を表示
+      </button>
+      {isExpanded && (
+        <div className="mt-1 p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-700 whitespace-pre-wrap max-h-40 overflow-y-auto">
+          {content}
+        </div>
+      )}
     </div>
   )
 }
