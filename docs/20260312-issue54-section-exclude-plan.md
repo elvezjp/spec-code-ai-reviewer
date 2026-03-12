@@ -342,40 +342,40 @@ const pinnedDocSections = pinnedDocPartIds
 ## 完了チェックリスト
 
 ### types/index.ts
-- [ ] `DocumentPart` に `excluded: boolean` フィールドを追加
+- [x] `DocumentPart` に `excluded: boolean` フィールドを追加
 
 ### hooks/useSplitSettings.ts
-- [ ] `UseSplitSettingsReturn` に `toggleExcludedDocPart` を追加
-- [ ] `toggleExcludedDocPart` を `useCallback` で実装（除外ON時に `summarizeMode` を `'original'` に戻す）
-- [ ] `toggleExcludedDocPart` 内で除外ON時に `setPinnedDocPartIds` から該当IDを除去
-- [ ] `executePreview` の `setPreviewResult` で各パーツに `excluded: false` を初期化
-- [ ] `return` の戻り値に `toggleExcludedDocPart` を追加
+- [x] `UseSplitSettingsReturn` に `toggleExcludedDocPart` を追加
+- [x] `toggleExcludedDocPart` を `useCallback` で実装（除外ON時に `summarizeMode` を `'original'` に戻す）
+- [x] `toggleExcludedDocPart` 内で除外ON時に `setPinnedDocPartIds` から該当IDを除去
+- [x] `executePreview` の `setPreviewResult` で各パーツに `excluded: false` を初期化
+- [x] `return` の戻り値に `toggleExcludedDocPart` を追加
 
 ### components/SplitSettingsSection.tsx
-- [ ] `SplitSettingsSectionProps` に `onToggleExcludedDocPart` を追加
-- [ ] `DocumentPartsTable` の props に `onToggleExcludedDocPart` を追加
-- [ ] テーブルヘッダーに「除外」列を追加（「要約」の後）
-- [ ] 各行に「除外」チェックボックスを追加
-- [ ] 除外行のグレーアウト表示を追加（`opacity-40` など）
-- [ ] `PartContentPreview` コンポーネントを追加
-- [ ] セクション名セルに `<PartContentPreview>` を追加
-- [ ] 凡例の `<ul>` に「除外」の説明を追加
-- [ ] `<DocumentPartsTable>` への `onToggleExcludedDocPart` の受け渡しを追加
-- [ ] `<SplitSettingsSection>` への `onToggleExcludedDocPart` prop の追加
+- [x] `SplitSettingsSectionProps` に `onToggleExcludedDocPart` を追加
+- [x] `DocumentPartsTable` の props に `onToggleExcludedDocPart` を追加
+- [x] テーブルヘッダーに「除外」列を追加（「要約」の後）
+- [x] 各行に「除外」チェックボックスを追加
+- [x] 除外行のグレーアウト表示を追加（`opacity-40` など）
+- [x] `PartContentPreview` コンポーネントを追加
+- [x] セクション名セルに `<PartContentPreview>` を追加
+- [x] 凡例の `<ul>` に「除外」の説明を追加
+- [x] `<DocumentPartsTable>` への `onToggleExcludedDocPart` の受け渡しを追加
+- [x] `<SplitSettingsSection>` への `onToggleExcludedDocPart` prop の追加
 
 ### index.tsx
-- [ ] `useSplitSettings` から `toggleExcludedDocPart` を取り出す
-- [ ] `excludedDocPartIds` セットの構築を追加
-- [ ] `documentMapJson` 構築時に除外IDをフィルタリング
-- [ ] グループ復元処理（L368付近）で除外IDを安全フィルタリング
-- [ ] 重要パーツ注入処理（L384付近）で除外IDをフィルタリング
-- [ ] `<SplitSettingsSection>` に `onToggleExcludedDocPart` prop を追加
+- [x] `useSplitSettings` から `toggleExcludedDocPart` を取り出す
+- [x] `excludedDocPartIds` セットの構築を追加
+- [x] `documentMapJson` 構築時に除外IDをフィルタリング
+- [x] グループ復元処理（L368付近）で除外IDを安全フィルタリング
+- [x] 重要パーツ注入処理（L384付近）で除外IDをフィルタリング
+- [x] `<SplitSettingsSection>` に `onToggleExcludedDocPart` prop を追加
 
 ### docs/split-review.md
-- [ ] セクション 3 に `3.4 セクション除外` を追加
-- [ ] セクション 8 のエンドツーエンドの流れ `[分割設定]` 行に除外を追記
+- [x] セクション 3 に `3.4 セクション除外` を追加
+- [x] セクション 8 のエンドツーエンドの流れ `[分割設定]` 行に除外を追記
 
 ### versions/v0.9.1/spec.md
-- [ ] 2.7.5 設計書パーツ表に「除外」行を追加
-- [ ] `2.7.6 セクション除外機能` セクションを新規追加
-- [ ] 既存の 2.7.6 以降の番号を繰り下げ（2.7.6 → 2.7.7、2.7.7 → 2.7.8）
+- [x] 2.7.5 設計書パーツ表に「除外」行を追加
+- [x] `2.7.6 セクション除外機能` セクションを新規追加
+- [x] 既存の 2.7.6 以降の番号を繰り下げ（2.7.6 → 2.7.7、2.7.7 → 2.7.8）
