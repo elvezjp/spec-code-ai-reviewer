@@ -13,6 +13,13 @@
 
 ## 現状の問題整理
 
+### 分割プレビューエラーがトーストで消えてしまう（issue #52 の前提問題）
+
+`useSplitSettings.ts` の `executePreview` が throw した場合、エラーは `splitPreviewError` ステートに保持される。
+`index.tsx` の `useEffect` がこれを検知して `showToast()` に渡したうえで即座に `clearSplitPreviewError()` を呼ぶため、エラーはトースト（3秒で消える）としてのみ表示される。
+
+ユーザーがエラー内容を確認する前に消えてしまうため、エラーの原因が追えない。
+
 ### issue #52: エラー原因が伝わらない
 
 `code2map` の `JavaParser.parse()` は `(symbols, warnings)` を返す（tree-sitterベース新実装）。
@@ -37,6 +44,45 @@
 ---
 
 ## 修正方針
+
+### フェーズ0: 分割プレビューエラーの表示改善（issue #52 の前提対応）
+
+#### 0-1. `index.tsx` のトースト変換を廃止し、`SplitSettingsSection` に直接渡す
+
+**対象ファイル:** `versions/v0.9.1/frontend/src/features/reviewer/index.tsx`
+
+`splitPreviewError` をトーストに流していた `useEffect` を削除し、
+`SplitSettingsSection` の prop として直接渡す。
+
+```typescript
+// 削除:
+useEffect(() => {
+  if (!splitPreviewError) return
+  showToast(splitPreviewError)
+  clearSplitPreviewError()
+}, [splitPreviewError, showToast, clearSplitPreviewError])
+
+// SplitSettingsSection に追加:
+previewError={splitPreviewError}
+```
+
+また、使用されなくなった `clearError: clearSplitPreviewError` の分割代入も削除する。
+
+#### 0-2. `SplitSettingsSection.tsx` に `previewError` prop を追加し、ボタン直下に表示
+
+**対象ファイル:** `versions/v0.9.1/frontend/src/features/reviewer/components/SplitSettingsSection.tsx`
+
+`previewError?: string | null` prop を追加し、分割プレビューボタン直下に表示する。
+エラーは次回プレビュー実行時または設定変更時（`useSplitSettings` 内で `setError(null)` が呼ばれるタイミング）に自動クリアされる。
+
+```tsx
+{/* プレビューエラー */}
+{previewError && (
+  <p className="text-sm text-red-600">{previewError}</p>
+)}
+```
+
+---
 
 ### フェーズ1: バックエンド修正
 
@@ -247,6 +293,8 @@ const canStartSplitReview = !!(
 
 | ファイル | 変更内容 |
 |---------|---------|
+| `versions/v0.9.1/frontend/src/features/reviewer/index.tsx` | `splitPreviewError` のトースト変換 `useEffect` を削除、`previewError` prop として渡す |
+| `versions/v0.9.1/frontend/src/features/reviewer/components/SplitSettingsSection.tsx` | `previewError` prop 追加、ボタン直下にエラー表示 |
 | `versions/v0.9.1/backend/app/models/schemas.py` | `SplitCodeResponse` に `warnings` フィールド追加 |
 | `versions/v0.9.1/backend/app/routers/split.py` | `split_code` で `warnings` をレスポンスに含める |
 | `versions/v0.9.1/backend/app/routers/review.py` | `structure_matching` で `code_symbols` 空チェック追加 |
@@ -259,16 +307,19 @@ const canStartSplitReview = !!(
 
 ## 実装順序
 
-1. バックエンドスキーマ変更（`schemas.py`）
-2. バックエンドAPIロジック変更（`split.py`, `review.py`）
-3. フロントエンド型定義変更（`types/index.ts`）
-4. フロントエンドフック変更（`useSplitSettings.ts`）
-5. フロントエンドUI変更（`SplitSettingsSection.tsx`, `SplitExecutingScreen.tsx`）
+1. フロントエンドエラー表示改善（`index.tsx`, `SplitSettingsSection.tsx`）
+2. バックエンドスキーマ変更（`schemas.py`）
+3. バックエンドAPIロジック変更（`split.py`, `review.py`）
+4. フロントエンド型定義変更（`types/index.ts`）
+5. フロントエンドフック変更（`useSplitSettings.ts`）
+6. フロントエンドUI変更（`SplitSettingsSection.tsx`, `SplitExecutingScreen.tsx`）
 
 ---
 
 ## 検証方針
 
+- 分割プレビューが失敗した場合、ボタン直下にエラーメッセージが常時表示されること（トーストで消えないこと）
+- 次回プレビュー実行時または設定変更時にエラーメッセージがクリアされること
 - Javaファイルで構文エラーがあるケース → 分割プレビューに警告が表示されること
 - Shift-JIS等のエンコーディング問題があるケース → 警告が表示されること
 - `codeParts` が0件の状態でレビュー実行ボタンが無効化されていること
