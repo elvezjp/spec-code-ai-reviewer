@@ -18,6 +18,8 @@ jobs:
         working-directory: latest/backend
     steps:
       - uses: actions/checkout@v4
+        with:
+          symlinks: true
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -39,6 +41,8 @@ jobs:
         working-directory: latest/frontend
     steps:
       - uses: actions/checkout@v4
+        with:
+          symlinks: true
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
