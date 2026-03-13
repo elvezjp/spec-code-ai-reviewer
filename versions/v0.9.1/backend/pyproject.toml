@@ -19,9 +19,9 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-add-line-numbers = { path = "../../../add-line-numbers", editable = true }
-md2map = { path = "../../../md2map", editable = true }
-code2map = { path = "../../../code2map", editable = true }
+add-line-numbers = { git = "https://github.com/elvezjp/add-line-numbers.git", branch = "main" }
+md2map = { git = "https://github.com/elvezjp/md2map.git", branch = "main" }
+code2map = { git = "https://github.com/elvezjp/code2map.git", branch = "main" }
 
 [build-system]
 requires = ["hatchling"]
@@ -37,4 +37,4 @@ dev-dependencies = [
 ]
 
 [tool.pytest.ini_options]
-pythonpath = ["../../../add-line-numbers", "../../../md2map", "../../../code2map"]
+pythonpath = ["."]
