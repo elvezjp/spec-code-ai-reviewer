@@ -1,113 +1,115 @@
+[English](./SECURITY.md) | [日本語](./SECURITY_ja.md)
+
 # Security Policy
 
-## サポートバージョン
+## Supported Versions
 
-セキュリティアップデートは以下のバージョンに対して提供されます。最新バージョンの使用を推奨します。
+Security updates are provided for the following versions. We recommend using the latest version.
 
-| バージョン | サポート状況       |
-| ---------- | ------------------ |
-| 0.1.2      | :white_check_mark: |
-| 0.1.1 <    | :x:                |
+| Version | Supported          |
+| ------- | ------------------ |
+| 0.2.0   | :white_check_mark: |
+| < 0.2.0 | :x:                |
 
-## 脆弱性の報告
+## Reporting a Vulnerability
 
-セキュリティ脆弱性を発見した場合、**公開のIssueを作成しないでください**。
+If you discover a security vulnerability, **please do not create a public Issue**.
 
-### 報告方法
+### How to Report
 
-以下のいずれかの方法で報告をお願いします：
+Please report via one of the following methods:
 
-1. **GitHubセキュリティアドバイザリ**（推奨）
-   - [Security Advisories](https://github.com/elvezjp/code2map/security/advisories/new) から非公開で報告できます
+1. **GitHub Security Advisory** (recommended)
+   - Report privately via [Security Advisories](https://github.com/elvezjp/code2map/security/advisories/new)
 
-2. **メール**
-   - セキュリティチームへ直接連絡: security@elvez.jp
+2. **Email**
+   - Contact the security team directly: info@elvez.co.jp
 
-### 報告に含めるべき情報
+### Information to Include
 
-- **脆弱性の説明**: 問題の概要と種類
-- **再現手順**: 問題を再現するための具体的な手順
-- **潜在的な影響**: 想定される被害範囲と重大度
-- **修正案**（可能であれば）: 緩和策や修正の提案
-- **連絡先情報**（任意）: フォローアップのための連絡先
+- **Description of the vulnerability**: Summary and type of the problem
+- **Steps to reproduce**: Specific steps to reproduce the problem
+- **Potential impact**: Estimated scope of damage and severity
+- **Suggested fix** (if possible): Proposed mitigations or fixes
+- **Contact information** (optional): For follow-up
 
-### 報告例
+### Report Example
 
 ```
-件名: [SECURITY] ファイルパス処理における脆弱性
+Subject: [SECURITY] Vulnerability in file path handling
 
-説明:
-入力ファイルパスの検証が不十分なため、ディレクトリトラバーサル攻撃が可能です。
+Description:
+Insufficient validation of the input file path allows directory traversal attacks.
 
-再現手順:
-1. code2map build "../../../etc/passwd" --out ./out を実行
-2. 意図しないファイルが処理される
+Steps to Reproduce:
+1. Run: code2map build "../../../etc/passwd" --out ./out
+2. Unintended files are processed
 
-影響:
-任意のファイルが読み取られる可能性があります。重大度: 高
+Impact:
+Arbitrary files may be read. Severity: High
 
-修正案:
-入力パスの正規化と、許可されたディレクトリ内かの検証を追加する。
+Suggested Fix:
+Add normalization of the input path and validation that it resides within an allowed directory.
 ```
 
-## 対応スケジュール
+## Response Timeline
 
-- **初回応答**: 48時間以内
-- **状況更新**: 7日以内
-- **解決**: 重大度に応じて対応
-  - 緊急（Critical）: 14日以内
-  - 高（High）: 30日以内
-  - 中（Medium）: 60日以内
-  - 低（Low）: 次回リリースサイクル
+- **Initial response**: Within 48 hours
+- **Status update**: Within 7 days
+- **Resolution**: Based on severity
+  - Critical: Within 14 days
+  - High: Within 30 days
+  - Medium: Within 60 days
+  - Low: Next release cycle
 
-## セキュリティに関する考慮事項
+## Security Considerations
 
-### ファイル処理
+### File Handling
 
-- code2mapは指定されたソースファイルを読み取り、解析結果を出力ディレクトリに書き込みます
-- 信頼できないソースからのファイルを処理する場合は注意が必要です
-- 出力ディレクトリは書き込み権限を持つ安全な場所を指定してください
+- code2map reads the specified source file and writes analysis results to the output directory
+- Exercise caution when processing files from untrusted sources
+- Specify a safe output directory with appropriate write permissions
 
-### 入力検証
+### Input Validation
 
-- 入力ファイルは拡張子（`.py`, `.java`）に基づいて言語を判定します
-- 不正な形式のファイルはパースエラーとして処理されます
-- シンボリックリンクの追跡には注意が必要です
+- Input files are identified by extension (`.py`, `.java`)
+- Malformed files are handled as parse errors
+- Be aware of symbolic link traversal risks
 
-### 出力のセキュリティ
+### Output Security
 
-- 生成されるMarkdownファイルには元のソースコードの断片が含まれます
-- 機密情報を含むソースコードを処理する場合、出力ファイルの取り扱いに注意してください
-- `MAP.json`には元ファイルのパス情報が含まれます
+- Generated Markdown files contain fragments of the original source code
+- When processing source code containing sensitive information, handle output files with care
+- `MAP.json` contains path information of the original files
 
-### 依存関係
+### Dependencies
 
-- 依存関係は定期的に脆弱性スキャンを実施しています
-- `uv sync`で最新の依存関係を取得できます
+- Dependencies are regularly scanned for vulnerabilities
+- Run `uv sync` to obtain the latest dependencies
 
-## セキュリティのベストプラクティス
+## Security Best Practices
 
-code2mapを安全に使用するために、以下の推奨事項を守ってください：
+Follow these recommendations to use code2map safely:
 
-1. **最新バージョンを使用する**: セキュリティ修正が含まれている可能性があります
-2. **入力ファイルを確認する**: 信頼できないソースからのファイルを処理する前に内容を確認してください
-3. **出力ディレクトリを制限する**: 書き込み先を適切に管理し、機密ディレクトリへの書き込みを避けてください
-4. **生成物の取り扱いに注意する**: 出力ファイルには元のソースコードが含まれるため、適切なアクセス制御を設定してください
-5. **サンドボックス環境での実行**: 信頼できないコードを処理する場合は、隔離された環境での実行を検討してください
+1. **Use the latest version**: It may contain security fixes
+2. **Verify input files**: Review file contents before processing files from untrusted sources
+3. **Restrict the output directory**: Manage write destinations appropriately and avoid writing to sensitive directories
+4. **Handle generated artifacts carefully**: Output files contain original source code — apply appropriate access controls
+5. **Run in a sandboxed environment**: Consider running in an isolated environment when processing untrusted code
 
-## 既知のセキュリティ制限
+## Known Security Limitations
 
-- 本ツールは静的解析のみを行い、コードの実行は行いません
-- 動的ディスパッチやリフレクションによる依存関係は検出できません
-- 悪意のあるコードパターンの検出機能は提供していません
+- This tool performs static analysis only and does not execute code
+- Dependencies introduced via dynamic dispatch or reflection cannot be detected
+- No functionality is provided for detecting malicious code patterns
 
-## お問い合わせ
+## Contact
 
-脆弱性ではないセキュリティ関連の質問がある場合：
+For security-related questions that are not vulnerabilities:
 
-- GitHubで `security` ラベルを付けてIssueを作成してください
-- 一般的な質問はDiscussionsをご利用ください
+- Create a GitHub Issue with the `security` label
+- GitHub Discussions is available for general questions
 
-## 謝辞
+## Acknowledgements
 
-セキュリティ脆弱性を報告してくださった研究者の方々に感謝いたします。報告者の希望に応じて、修正リリース時に謝辞を掲載いたします。
+We are grateful to security researchers who report vulnerabilities. Upon request, we will acknowledge reporters in the release notes of the fix.

@@ -30,7 +30,7 @@ IXV addresses the challenges of understanding, structuring, and utilizing Japane
 - **Semantic Splitting**: Split code by class, method, and function units (for review, not build)
 - **Markdown Index Generation**: Auto-generate INDEX.md with role descriptions, call relationships, and side effects
 - **Line Number Mapping**: Provide correspondence between parts and original file in MAP.json (machine-readable)
-- **Python & Java Support**: Accurate symbol extraction via AST analysis
+- **Python & Java Support**: Accurate symbol extraction via AST (Python) and tree-sitter CST (Java, supports Java 8+ syntax)
 - **Dry Run**: Preview generation plan before actual output
 
 ## Documentation

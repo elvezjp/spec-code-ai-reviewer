@@ -1,97 +1,146 @@
-# 変更履歴
+[English](./CHANGELOG.md) | [日本語](./CHANGELOG_ja.md)
 
-このプロジェクトに対する注目すべき変更をこのファイルに記録します。
+# Changelog
 
-このファイルの形式は [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいており、
-このプロジェクトは [セマンティックバージョニング](https://semver.org/lang/ja/) に準拠しています。
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.2.0] - 2026-03-12
+
+### Changed
+
+- **Replace Java parser with Tree-sitter**: Fully replaced `javalang` with `tree-sitter` + `tree-sitter-java` ([#9](https://github.com/elvezjp/code2map/issues/9))
+  - Java 8+ syntax (lambda expressions, method references `Type[]::new`, etc.) now parses correctly
+  - On syntax errors, returns a warning with the error line number (partial parse results are returned)
+  - Future syntax (records, sealed classes, switch expressions, etc.) can also be supported
+
+### Added
+
+- **Tests**: Added tests for correct parsing of Java 8+ syntax and warning return on parse errors
+
+### Changed (Dependencies)
+
+```diff
+- javalang>=0.13.0
++ tree-sitter>=0.21.0
++ tree-sitter-java>=0.21.0
+```
+
+- Saved v0.1.3 snapshot to `versions/v0.1.3/`
+
+## [0.1.3] - 2026-03-12
+
+### Fixed
+
+- **Java parse error message improvement**: Fixed an issue where the error message was empty when parsing failed on files containing Java 8+ syntax ([#9](https://github.com/elvezjp/code2map/issues/9))
+  - Now uses `description` and `at` attributes of `JavaSyntaxError` to output the cause and location of the error
+  - Before: `"Java parse error: "` (empty)
+  - After: `"Java parse error: Expected '.' (at Keyword "new" line N, position M)"`
+
+### Added
+
+- **Tests**: Added 3 test cases for Java parse error messages
+- **Test fixture**: Added a Java file containing Java 8+ syntax (method reference `Type[]::new`)
+
+### Changed
+
+- Saved v0.1.2 snapshot to `versions/v0.1.2/`
 
 ## [0.1.2] - 2026-02-25
 
-### 修正
+### Fixed
 
-- **ファイル名サニタイズ**: parts/ のファイル名からWindows不可文字（`< > : " / \ | ? *`）を除去するようになりました（[#5](https://github.com/elvezjp/code2map/issues/5)）
-  - Javaコンストラクタ `<init>` のファイル名が `User_<init>.java` → `User_init.java` に変更
-  - Windows環境で `git clone` が失敗する問題を解消
-  - サニタイズにより同名になった場合も既存のハッシュサフィックス機構で衝突を回避
+- **Filename sanitization**: parts/ filenames now strip Windows-reserved characters (`< > : " / \ | ? *`) ([#5](https://github.com/elvezjp/code2map/issues/5))
+  - Java constructor `<init>` filename changed from `User_<init>.java` to `User_init.java`
+  - Resolves `git clone` failures on Windows environments
+  - Collisions caused by sanitization are still resolved by the existing hash-suffix mechanism
 
-### 追加
+### Added
 
-- **テスト**: ファイル名サニタイズに関するテストケースを3件追加
+- **Tests**: Added 3 test cases for filename sanitization
 
-### 変更
+### Changed
 
-- サンプル出力ファイル（`docs/examples/java/output/`）を再生成
-- 仕様書（`spec.md`）にファイル名サニタイズの仕様を追記
-- v0.1.1 のスナップショットを `versions/v0.1.1/` に保存
+- Regenerated sample output files (`docs/examples/java/output/`)
+- Added filename sanitization specification to `spec.md`
+- Saved v0.1.1 snapshot to `versions/v0.1.1/`
 
 ## [0.1.1] - 2026-02-06
 
-### 追加
+### Added
 
-- **シンボルID機能**: 各シンボルに一意の識別子を付与
-  - `--id-prefix`: シンボルIDのプレフィックスを指定できるようになりました（デフォルト: `CD`）
-  - INDEX.md: シンボル名の前に `[CD1]` 形式でIDを表示
-  - MAP.json: `id` フィールドを先頭に追加
-  - parts/: ヘッダに `id: CD1` 行を追加
+- **Symbol ID feature**: Assigns a unique identifier to each symbol
+  - `--id-prefix`: Allows specifying the symbol ID prefix (default: `CD`)
+  - INDEX.md: Displays IDs before symbol names in `[CD1]` format
+  - MAP.json: Added `id` field at the top
+  - parts/: Added `id: CD1` line to headers
 
-- **テスト**: ID機能に関するテストを追加
+- **Tests**: Added tests for the ID feature
 
-### 変更
+### Changed
 
-- Symbol モデルに `id` フィールドを追加
+- Added `id` field to the Symbol model
 
 ## [0.1.0] - 2026-01-27
 
-初回リリース。Python・Java両言語に対応したMVP版。
+Initial release. MVP version supporting both Python and Java.
 
-### 追加
+### Added
 
-- **CLIコマンド**: `code2map build` コマンドを実装
-  - `--out`: 出力ディレクトリを指定できるようになりました
-  - `--lang`: 言語を明示的に指定できるようになりました（省略時は拡張子から自動検出）
-  - `--verbose`: 詳細なログを出力できるようになりました
-  - `--dry-run`: 実際にファイルを生成せず、計画のみ表示できるようになりました
+- **CLI command**: Implemented `code2map build` command
+  - `--out`: Specify the output directory
+  - `--lang`: Explicitly specify the language (auto-detected from extension if omitted)
+  - `--verbose`: Output detailed logs
+  - `--dry-run`: Display the plan only without generating files
 
-- **Pythonパーサー**: `ast`モジュールを使用した解析機能
-  - クラス、メソッド、関数の抽出に対応
-  - Docstringの抽出に対応
-  - 呼び出し関係の推定に対応
-  - Import情報の収集に対応
+- **Python parser**: Analysis using the `ast` module
+  - Supports extraction of classes, methods, and functions
+  - Supports docstring extraction
+  - Supports call relationship inference
+  - Supports import information collection
 
-- **Javaパーサー**: `javalang`ライブラリを使用した解析機能
-  - クラス、メソッド、フィールドの抽出に対応
-  - Javadocの抽出に対応
-  - 呼び出し関係の推定に対応
-  - ネストクラス、コンストラクタ、オーバーロードに対応
+- **Java parser**: Analysis using the `javalang` library
+  - Supports extraction of classes, methods, and fields
+  - Supports Javadoc extraction
+  - Supports call relationship inference
+  - Supports nested classes, constructors, and overloads
 
-- **INDEX.md生成**: クラス/メソッド/関数の一覧と役割を記載したMarkdown索引
-  - 呼び出し関係（Calls）の表示
-  - 副作用（Side Effects）の検出・記載
-  - 警告（`[WARNING]`）の埋め込み
+- **INDEX.md generation**: Markdown index with class/method/function list and roles
+  - Display of call relationships (Calls)
+  - Detection and description of side effects (Side Effects)
+  - Embedding of warnings (`[WARNING]`)
 
-- **parts/生成**: ソースコードをクラス/メソッド単位で分割
-  - メタデータヘッダの付与
-  - 言語別コメントプレフィックス対応
-  - 名前衝突回避のためのハッシュサフィックス
+- **parts/ generation**: Split source code by class/method units
+  - Metadata header attachment
+  - Language-specific comment prefix support
+  - Hash suffix for collision avoidance
 
-- **MAP.json生成**: 機械可読な対応表（JSON形式）
-  - シンボル情報の完全なマッピング
-  - SHA-256チェックサムの計算
+- **MAP.json generation**: Machine-readable mapping table (JSON format)
+  - Complete mapping of symbol information
+  - SHA-256 checksum calculation
 
-- **テスト**: ユニットテスト、e2eテスト、エッジケーステストを整備
+- **Tests**: Unit tests, e2e tests, and edge case tests
 
-- **CI/CD**: GitHub Actionsによる自動テスト（Python 3.9〜3.12対応）
+- **CI/CD**: Automated testing via GitHub Actions (Python 3.9–3.12)
 
-### 既知の制限事項
+### Known Limitations
 
-このバージョンには以下の制限があります：
+This version has the following limitations:
 
-- 単一ファイルのみ対応（ディレクトリ単位の解析は未対応）
-- 静的解析のみ対応（動的ディスパッチ、リフレクションは考慮しない）
-- クラス/メソッド単位の分割のみ（処理フェーズ単位の分割は未対応）
-- 対応言語はJavaとPythonのみ
+- Single file only (directory-level analysis not yet supported)
+- Static analysis only (dynamic dispatch and reflection are not considered)
+- Class/method-level splitting only (processing phase-level splitting not supported)
+- Supported languages: Java and Python only
 
-## リンク
+## Links
 
-- [リポジトリ](https://github.com/elvezjp/code2map)
-- [Issueトラッカー](https://github.com/elvezjp/code2map/issues)
+- [Repository](https://github.com/elvezjp/code2map)
+- [Issue Tracker](https://github.com/elvezjp/code2map/issues)
+
+[0.2.0]: https://github.com/elvezjp/code2map/compare/v0.1.3...v0.2.0
+[0.1.3]: https://github.com/elvezjp/code2map/compare/v0.1.2...v0.1.3
+[0.1.2]: https://github.com/elvezjp/code2map/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/elvezjp/code2map/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/elvezjp/code2map/releases/tag/v0.1.0

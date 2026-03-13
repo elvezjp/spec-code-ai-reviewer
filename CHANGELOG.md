@@ -1,249 +1,271 @@
-# 変更履歴
+# Changelog
 
-このプロジェクトに対するすべての重要な変更はこのファイルに記録されます。
+All notable changes to this project will be documented in this file.
 
-フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) に基づいており、
-このプロジェクトは [セマンティックバージョニング](https://semver.org/spec/v2.0.0.html) に準拠しています。
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.9.1] - 2026-03-13
+
+### Added
+- **Group review results in ZIP** (#60): Include individual group review results as `split/review-result-{groupId}.md` in ZIP downloads during split review. Added file list to the download contents table on the results screen
+- **AI sub-split instructions** (#55): Added a "Notes for splitting (instructions for AI, optional)" text area for AI-mode splitting. Input content is appended to the `# Notes` section of the md2map AI sub-split prompt
+- **Section exclusion** (#54): Added "Exclude" checkboxes to the design document parts list in split preview. Excluded sections are omitted from structure matching and group review. Enabling exclusion automatically unchecks "Important" and "Summary". Added "Show content" accordion to each part for easier exclusion decisions
+
+### Fixed
+- **Split preview error display** (#52): Fixed error messages disappearing as toasts. Changed to persistent display directly below the split preview button
+- **Code split warning display** (#52): Display warning reasons (parse warnings) in the UI when code split results are empty
+- **Prevent review execution on split failure** (#53): Disable the review execution button when `codeParts`/`documentParts` are empty
+- **Backend validation** (#53): Return an error from the structure matching API when code symbols are empty
+- **Structure matching error details** (#53): Display detailed error messages on structure matching errors
+- **Split review integration output structure** (#59): Improved the issue where integration results were organized by group name instead of design document chapter/item names. Added explicit column definitions to preset format, restructured integration phase prompt as "final report creation from drafts", and added instructions for using design document item names in group review prompts
+
+### Changed
+- **Configuration file updates**: Set v0.9.1 as the latest version
+  - `nginx/version-map.conf`: Added v0.9.1 routing, changed default port to 8091
+  - `docker-compose.yml`: Added v0.9.1 frontend, port 8091
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: Added v0.9.1 entry
 
 ## [0.9.0] - 2026-02-28
 
-### 追加
-- **分割レビュー品質改善**（#48）:
-  - 構造マッチングのoutput_formatをIDのみの文字列配列に簡素化し、入力サマリーを追加
-  - 分割プレビューに「重要」チェックボックスを追加し、選択セクションを全グループで共通参照
-  - グループレビュー・統合レビューに全体構造情報（INDEX.md / MAP.json）を渡し、未実装の誤指摘を防止
-  - 環境変数`MD2MAP_MAX_SUBSECTIONS`でNLP/AIモードのサブスプリット上限を制御可能に
-  - 設計書またはコードの対応がないグループのレビューを自動スキップ
-- **要約API分離**（#50）: 要約機能を独立エンドポイント `/api/summarize` として分離
-- **事前要約機能**（#50）: 分割プレビューで設計書パートを事前要約し、トークン消費を削減
-- **リトライ設定パネル**（#50）: 一括レビュー・統合レビューのエラー時リトライ設定UI
+### Added
+- **Split review quality improvements** (#48):
+  - Simplified structure matching output_format to string arrays of IDs only and added input summary
+  - Added "Important" checkbox to split preview, making selected sections shared across all groups
+  - Passed full structure information (INDEX.md / MAP.json) to group review and integration review to prevent false positives for unimplemented features
+  - Enabled control of NLP/AI mode sub-split limits via `MD2MAP_MAX_SUBSECTIONS` environment variable
+  - Auto-skip review for groups with no corresponding design document or code
+- **Summarize API separation** (#50): Separated summarization into an independent endpoint `/api/summarize`
+- **Pre-summarization** (#50): Pre-summarize design document parts in split preview to reduce token consumption
+- **Retry settings panel** (#50): Retry settings UI for batch review and integration review errors
 
-### 修正
-- **グループ表示修正**: 構造マッチング結果のセクション名・シンボル名が空表示になる問題を修正（#48）
-- **表示テキスト修正**: 対応がないグループの表示を「（分割なし）」から「（対応なし）」に修正（#48）
-- **エラー表示改善**: 一括レビュー時・Markdown整理時のエラーメッセージを改善（#50）
-- **リトライ表示条件修正**: リトライボタンの表示条件を修正（#50）
-- **要約設定修正**: エラー時の要約設定を修正（#50）
+### Fixed
+- **Group display fix**: Fixed empty section/symbol names in structure matching results (#48)
+- **Display text fix**: Changed display for groups with no correspondence from "(no split)" to "(no match)" (#48)
+- **Error display improvement**: Improved error messages during batch review and Markdown organization (#50)
+- **Retry display condition fix**: Fixed retry button display conditions (#50)
+- **Summary settings fix**: Fixed summary settings on error (#50)
 
-### 変更
-- **設定ファイル更新**: v0.9.0をlatest版として設定
-  - `nginx/version-map.conf`: v0.9.0のルーティング追加、defaultポートを8090に変更
-  - `docker-compose.yml`: v0.9.0フロントエンド・ポート8090を追加
-  - `ecosystem.config.js`, `dev.ecosystem.config.js`: v0.9.0エントリ追加
+### Changed
+- **Configuration file updates**: Set v0.9.0 as the latest version
+  - `nginx/version-map.conf`: Added v0.9.0 routing, changed default port to 8090
+  - `docker-compose.yml`: Added v0.9.0 frontend, port 8090
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: Added v0.9.0 entry
 
 
 ## [0.8.2] - 2026-02-24
 
-### 修正
-- **行番号ハルシネーション修正**: 注意事項に行番号参照方法を追記（#43）
-- **行番号ハルシネーション修正**: ユーザープロンプトにコードファイルの総行数を付記（#43）
+### Fixed
+- **Line number hallucination fix**: Added line number reference method to notes (#43)
+- **Line number hallucination fix**: Appended total line count of code files to user prompt (#43)
 
-### 追加
-- **レビューモード表示**: レビュー結果にレビューモード（一括/分割）を追加（#44）
-- **グループ分け結果出力**: 分割レビュー時のグループ分け結果をREADMEに出力（#44）
-- **md2mapモード選択対応**: 設計書分割モードを見出し（heading）/ NLP / AI の3モードから選択可能に（#47）
-  - NLP: 形態素解析による意味的分割（LLM不要）
-  - AI: LLMによる高精度な意味的分割（LLM設定が必要）
+### Added
+- **Review mode display**: Added review mode (batch/split) to review results (#44)
+- **Group assignment output**: Output group assignment results to README during split review (#44)
+- **md2map mode selection**: Enabled selection from 3 design document splitting modes: heading / NLP / AI (#47)
+  - NLP: Semantic splitting using morphological analysis (no LLM required)
+  - AI: High-accuracy semantic splitting using LLM (LLM configuration required)
 
-### 変更
-- **設定ファイル更新**: v0.8.2をlatest版として設定
-  - `nginx/version-map.conf`: v0.8.2のルーティング追加、defaultポートを8082に変更
-  - `docker-compose.yml`: v0.8.2フロントエンド・ポート8082を追加
-  - `ecosystem.config.js`, `dev.ecosystem.config.js`: v0.8.2エントリ追加
+### Changed
+- **Configuration file updates**: Set v0.8.2 as the latest version
+  - `nginx/version-map.conf`: Added v0.8.2 routing, changed default port to 8082
+  - `docker-compose.yml`: Added v0.8.2 frontend, port 8082
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: Added v0.8.2 entry
 
 
 ## [0.8.1] - 2026-02-13
 
-### 変更
-- **分割レビュー方式の統合**: 設計書・コード個別の一括/分割選択を、一括/分割の単一選択に変更し、UI操作をシンプルに
-- **設定ファイル更新**: v0.8.1をlatest版として設定
-  - `nginx/version-map.conf`: v0.8.1のルーティング追加、defaultポートを8081に変更
-  - `docker-compose.yml`: v0.8.1フロントエンド・ポート8081を追加
-  - `ecosystem.config.js`, `dev.ecosystem.config.js`: v0.8.1エントリ追加
+### Changed
+- **Split review mode consolidation**: Changed from separate batch/split selection for design documents and code to a single batch/split selection, simplifying UI operation
+- **Configuration file updates**: Set v0.8.1 as the latest version
+  - `nginx/version-map.conf`: Added v0.8.1 routing, changed default port to 8081
+  - `docker-compose.yml`: Added v0.8.1 frontend, port 8081
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: Added v0.8.1 entry
 
 
 ## [0.8.0] - 2026-02-06
 
-### 追加
-- **セマンティック分割レビュー機能**: md2map/code2mapを使用して大規模ファイルを意味のある単位で分割してレビュー
-- **分割API追加**: `/api/split/markdown`（見出しレベルで分割）、`/api/split/code`（クラス・関数単位で分割）
-- **分割レビューAPI追加**: 構造マッチング、グループレビュー、結果統合の3フェーズAPI
-- **分割設定UI**: 一括/分割モード選択、見出しレベル設定、プレビュー機能
-- **分割レビュー実行画面**: 3フェーズの進捗表示、グループ単位のエラー時リトライ/スキップ機能
-- **対応言語**: Python (.py) / Java (.java) のコード分割に対応
-- **トークン数表示**: 内訳表示機能を追加
-- **md2map/code2mapサブツリー追加**: Markdown・ソースコードをマインドマップ形式に変換するツールを統合
+### Added
+- **Semantic split review**: Split and review large files in semantically meaningful units using md2map/code2map
+- **Split APIs**: `/api/split/markdown` (split by heading level), `/api/split/code` (split by class/function)
+- **Split review APIs**: 3-phase APIs for structure matching, group review, and result integration
+- **Split settings UI**: Batch/split mode selection, heading level settings, preview functionality
+- **Split review execution screen**: 3-phase progress display, per-group retry/skip on error
+- **Supported languages**: Python (.py) / Java (.java) code splitting
+- **Token count display**: Added breakdown display
+- **md2map/code2map subtree**: Integrated tools for converting Markdown and source code to mind map format
 
-### 変更
-- **設定ファイル更新**: v0.8.0をlatest版として設定
-  - `nginx/version-map.conf`: v0.8.0のルーティング追加、defaultポートを8080に変更
-  - `docker-compose.yml`: v0.8.0フロントエンド・ポート8080を追加
-  - `ecosystem.config.js`, `dev.ecosystem.config.js`: v0.8.0エントリ追加
+### Changed
+- **Configuration file updates**: Set v0.8.0 as the latest version
+  - `nginx/version-map.conf`: Added v0.8.0 routing, changed default port to 8080
+  - `docker-compose.yml`: Added v0.8.0 frontend, port 8080
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: Added v0.8.0 entry
 
-### 注意
-- **後方互換性**: v0.7.0以前のバージョンは引き続き利用可能（マルチバージョン構成維持）
+### Note
+- **Backward compatibility**: Versions prior to v0.7.0 remain available (multi-version architecture maintained)
 
 ## [0.7.0] - 2026-01-26
 
-### 追加
-- **AIでMarkdownを整理する機能**: ExcelからAI生成したMarkdownをAIで構造化・正規化する機能を追加
-  - 「AIでMarkdownを整理する」ボタンと方針入力欄
-  - テンプレート付きの整理方針入力UI
-  - react-diff-viewerを使用した整理前後のDiff表示
-- **エラー/警告表示**: トークン超過、タイムアウト、改変検出などのアラート表示
-- **ツール別前処理**: markdown_toolsに前処理メソッドを追加し、ツール固有の説明文混同問題に対応
-- **推定トークン数表示**: 整理実行前にトークン数の目安を表示
-- **organize-markdown API**: ファイル単位でMarkdown整理を実行するエンドポイントを追加
-- **プリセットライブラリを追加**: プロンプトと設計書種別のプリセットライブラリを追加
+### Added
+- **AI Markdown organization**: Added functionality to structure and normalize AI-generated Markdown from Excel
+  - "Organize Markdown with AI" button and policy input field
+  - Organization policy input UI with templates
+  - Before/after diff display using react-diff-viewer
+- **Error/warning display**: Alert display for token overflow, timeout, tampering detection, etc.
+- **Tool-specific preprocessing**: Added preprocessing methods to markdown_tools to address tool-specific description confusion
+- **Estimated token count display**: Display estimated token count before organization execution
+- **organize-markdown API**: Added endpoint for per-file Markdown organization
+- **Preset library**: Added preset library for prompts and design document types
 
-### 変更
-- **excel2md v2.0対応**: git subtreeを更新しv2.0に対応
-- **設定ファイル更新**: v0.7.0をlatest版として設定
-  - `nginx/version-map.conf`: v0.7.0のルーティング追加、defaultポートを8070に変更
-  - `docker-compose.yml`: v0.7.0フロントエンド・ポート8070を追加
-  - `ecosystem.config.js`, `dev.ecosystem.config.js`: v0.7.0エントリ追加
+### Changed
+- **excel2md v2.0 support**: Updated git subtree to support v2.0
+- **Configuration file updates**: Set v0.7.0 as the latest version
+  - `nginx/version-map.conf`: Added v0.7.0 routing, changed default port to 8070
+  - `docker-compose.yml`: Added v0.7.0 frontend, port 8070
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: Added v0.7.0 entry
 
-### 注意
-- **後方互換性**: v0.6.0以前のバージョンは引き続き利用可能（マルチバージョン構成維持）
+### Note
+- **Backward compatibility**: Versions prior to v0.6.0 remain available (multi-version architecture maintained)
 
 ## [0.6.0] - 2026-01-18
 
-### 追加
-- **React + Vite + TypeScript移行**: フロントエンドを単一HTMLファイルからモダンなSPA構成に全面刷新
-  - React 19.2.0 + TypeScript 5.9によるコンポーネントベース開発
-  - Vite 7.2.4による高速ビルド環境
-  - React Router v7によるルーティング（`/` と `/config-file-generator`）
-- **Tailwind CSS v4対応**: `@tailwindcss/vite`統合による最適化されたCSS生成
-- **テスト環境構築**: Vitest + React Testing Libraryによる単体テスト（8ファイル、20+テストケース）
+### Added
+- **React + Vite + TypeScript migration**: Complete frontend overhaul from single HTML file to modern SPA architecture
+  - Component-based development with React 19.2.0 + TypeScript 5.9
+  - Fast build environment with Vite 7.2.4
+  - Routing with React Router v7 (`/` and `/config-file-generator`)
+- **Tailwind CSS v4 support**: Optimized CSS generation with `@tailwindcss/vite` integration
+- **Test environment**: Unit tests with Vitest + React Testing Library (8 files, 20+ test cases)
   - Core Hooks: useSettings, useModal, useScreenManager, useTokenEstimation
   - Feature Hooks: useFileConversion, useZipExport, useConfigState, useValidation
-- **コンポーネント設計**: 再利用可能なUIコンポーネントライブラリ
-  - core/components/ui: Button, Modal, Table, Card等の基本UI部品
-  - core/components/shared: SettingsModal, VersionSelector等の共通機能
-- **React Hooks による状態管理**: localStorage統合、モーダル制御、画面状態管理を含む包括的なHooks実装
-- **lucide-react導入**: 絵文字をlucide-reactアイコンに統一し、UIの一貫性を向上
+- **Component design**: Reusable UI component library
+  - core/components/ui: Basic UI components such as Button, Modal, Table, Card
+  - core/components/shared: Shared functionality such as SettingsModal, VersionSelector
+- **React Hooks state management**: Comprehensive Hooks implementation including localStorage integration, modal control, and screen state management
+- **lucide-react**: Unified emojis to lucide-react icons for UI consistency
 
-### 変更
-- **フロントエンド起動方法**: バックエンドと分離して起動（開発時: Vite devサーバー ポート5173、本番: ビルド済みファイル配信）
-- **プロジェクト構造**: features/配下に機能別モジュール（reviewer, config-file-generator）を配置
-- **型安全性の向上**: すべてのコンポーネントとHooksにTypeScript型定義を適用
-- **設定ファイル更新**: v0.6.0をlatest版として設定
-  - `nginx/version-map.conf`: v0.6.0のルーティング追加、defaultポートを8060に変更
-  - `docker-compose.yml`: v0.6.0フロントエンド・ポート8060を追加
-  - `ecosystem.config.js`, `dev.ecosystem.config.js`: v0.6.0エントリ追加
+### Changed
+- **Frontend startup method**: Separated from backend (development: Vite dev server port 5173, production: built file serving)
+- **Project structure**: Feature-based modules (reviewer, config-file-generator) under features/
+- **Type safety improvement**: Applied TypeScript type definitions to all components and Hooks
+- **Configuration file updates**: Set v0.6.0 as the latest version
+  - `nginx/version-map.conf`: Added v0.6.0 routing, changed default port to 8060
+  - `docker-compose.yml`: Added v0.6.0 frontend, port 8060
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: Added v0.6.0 entry
 
-### 注意
-- **後方互換性**: v0.5.2以前のバージョンは引き続き利用可能（マルチバージョン構成維持）
-- **起動方法変更**: v0.6.0以降はフロントエンドとバックエンドを別々に起動する必要があります（詳細はREADME参照）
+### Note
+- **Backward compatibility**: Versions prior to v0.5.2 remain available (multi-version architecture maintained)
+- **Startup method change**: From v0.6.0 onward, frontend and backend must be started separately (see README for details)
 
 ## [0.5.2] - 2026-01-13
 
-### 追加
-- **Bedrock Converse API対応**: `invoke_model`から`converse`に移行し、Anthropic Claude系とAmazon Novaモデルの両方に対応
-- **Amazon Novaモデル対応**: Nova Pro、Nova Microなどのモデルが利用可能に
-- **プロバイダー設計の統一**: `get_system_llm_config()`関数を追加し、システムLLM設定の生成を`llm_service.py`に集約
-- **設定ファイルジェネレーター改善**: Bedrock選択時にリージョンプレフィックスとトークン上限の注意事項を表示
+### Added
+- **Bedrock Converse API support**: Migrated from `invoke_model` to `converse`, supporting both Anthropic Claude and Amazon Nova models
+- **Amazon Nova model support**: Nova Pro, Nova Micro, and other models now available
+- **Unified provider design**: Added `get_system_llm_config()` function, centralizing system LLM configuration generation in `llm_service.py`
+- **Config file generator improvement**: Display region prefix and token limit notes when Bedrock is selected
 
-### 変更
-- **設定ファイル更新**: v0.5.2をlatest版として設定
-  - `nginx/version-map.conf`: v0.5.2のルーティング追加、defaultポートを8052に変更
-  - `docker-compose.yml`: v0.5.2フロントエンド・ポート8052を追加
-  - `ecosystem.config.js`, `dev.ecosystem.config.js`: v0.5.2エントリ追加
+### Changed
+- **Configuration file updates**: Set v0.5.2 as the latest version
+  - `nginx/version-map.conf`: Added v0.5.2 routing, changed default port to 8052
+  - `docker-compose.yml`: Added v0.5.2 frontend, port 8052
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: Added v0.5.2 entry
 
 ## [0.5.1] - 2026-01-09
 
-### 追加
-- **OpenAI GPT-5.2対応**: GPT-5.2系モデルで必要な`max_completion_tokens`パラメータに対応
-- **設定ファイルジェネレーター更新**: OpenAIモデル選択肢にGPT-5.2系を追加
+### Added
+- **OpenAI GPT-5.2 support**: Added support for `max_completion_tokens` parameter required by GPT-5.2 models
+- **Config file generator update**: Added GPT-5.2 models to OpenAI model selection
 
-### 変更
-- **OpenAI SDK更新**: `openai>=2.14.0` に依存バージョンを引き上げ
-- **設定ファイル更新**: v0.5.1をlatest版として設定
-  - `nginx/version-map.conf`: v0.5.1のルーティング追加、defaultポートを8051に変更
-  - `docker-compose.yml`: v0.5.1フロントエンド・ポート8051を追加
-  - `ecosystem.config.js`, `dev.ecosystem.config.js`: v0.5.1エントリ追加
-  - `docs/ec2-deployment-spec.md`: ポート表・VERSIONS配列を更新
+### Changed
+- **OpenAI SDK update**: Raised dependency version to `openai>=2.14.0`
+- **Configuration file updates**: Set v0.5.1 as the latest version
+  - `nginx/version-map.conf`: Added v0.5.1 routing, changed default port to 8051
+  - `docker-compose.yml`: Added v0.5.1 frontend, port 8051
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: Added v0.5.1 entry
+  - `docs/ec2-deployment-spec.md`: Updated port table and VERSIONS array
 
-### 修正
-- OpenAI GPT-5.2で`max_tokens`パラメータが使用できない問題を修正（Issue #5）
+### Fixed
+- Fixed issue where `max_tokens` parameter could not be used with OpenAI GPT-5.2 (Issue #5)
 
 ## [0.5.0] - 2025-12-28
 
-### 追加
-- **レビュー複数回実行**: 1回のボタン押下で2回のレビューを直列実行し、結果をタブ切り替えで表示
-- **レビュー実行データ一式ダウンロード**: ZIP形式で入出力データ（システムプロンプト、設計書MD、コード、結果）を一括保存
-- **ダウンロードファイル名の統一**: `spec-markdown.md`、`code-numbered.txt` に固定
+### Added
+- **Multiple review execution**: Execute 2 reviews sequentially with a single button press, displaying results with tab switching
+- **Review data package download**: Save all input/output data (system prompt, design document MD, code, results) as a ZIP file
+- **Unified download filenames**: Fixed filenames to `spec-markdown.md` and `code-numbered.txt`
 
-### 変更
-- v0.4.0との後方互換性を維持
+### Changed
+- Backward compatibility with v0.4.0 maintained
 
 ## [0.4.0] - 2025-12-23
 
-### 追加
-- **マルチLLMプロバイダー対応**: Bedrock / Anthropic / OpenAI を切り替えてレビュー実行が可能に（未指定時はBedrockにフォールバック）
-- **設定ファイル導入**: `reviewer-config.md` でLLM設定（プロバイダー・認証・モデル一覧）と種別をMarkdownで管理
-- **設定モーダル刷新**: 設定ファイルアップロード方式へ移行、モデル選択の記憶・保存/クリア、接続テスト（`/api/health`）機能追加
-- **バックエンド拡張**: `llm_service`（抽象化）と `anthropic_service` / `openai_service` を追加
-- **excel2md拡張**: CSV+Mermaid形式に対応（フローチャートをMermaid記法で追記）
+### Added
+- **Multi-LLM provider support**: Switch between Bedrock / Anthropic / OpenAI for review execution (falls back to Bedrock when not specified)
+- **Configuration file**: Manage LLM settings (provider, authentication, model list) and types in Markdown via `reviewer-config.md`
+- **Settings modal overhaul**: Migrated to configuration file upload, model selection persistence/save/clear, connection test (`/api/health`)
+- **Backend extensions**: Added `llm_service` (abstraction) and `anthropic_service` / `openai_service`
+- **excel2md extension**: Added CSV+Mermaid format support (append flowcharts in Mermaid notation)
 
-### 変更
-- v0.3.0との後方互換性を維持
+### Changed
+- Backward compatibility with v0.3.0 maintained
 
 ## [0.3.0] - 2025-12-21
 
-### 追加
-- **マルチ変換ツール対応**: MarkItDown（標準Markdown変換）/ excel2md（シート全体をCSVブロック変換）をファイルごとに選択可能
-- **バージョン・スイッチャー追加**: UI左上のピル型ボタンで過去バージョンへ切替可能に
-- **レポート機能強化**: 簡易判定セクション（赤/黄/緑）表示、トークン情報表示
-- **バックエンド構造改善**: `markdown_tools` パッケージ導入、変換ツールをプラグイン的に拡張可能な構造へリファクタリング
-- **一括設定機能**: ツールの全ファイル一括変更が可能に
+### Added
+- **Multi-conversion tool support**: Select MarkItDown (standard Markdown conversion) or excel2md (entire sheet to CSV block conversion) per file
+- **Version switcher**: Switch to previous versions via pill-shaped button in top-left UI
+- **Report enhancements**: Summary judgment section (red/yellow/green) display, token information display
+- **Backend structure improvement**: Introduced `markdown_tools` package, refactored conversion tools into a plugin-style extensible architecture
+- **Batch settings**: Enabled batch tool changes across all files
 
-### 変更
-- v0.2.5との後方互換性を維持
+### Changed
+- Backward compatibility with v0.2.5 maintained
 
 ## [0.2.5] - 2025-12-19
 
-### 追加
-- **優先度・種別設定**: メイン設計書/参照資料の優先度設定が可能に
-- **UI改善**: ファイルごとのドロップダウンメニュー追加
-- **トークン数表示**: 推測値でトークン数を表示
+### Added
+- **Priority and type settings**: Enabled priority settings for main design documents/reference materials
+- **UI improvements**: Added per-file dropdown menus
+- **Token count display**: Display estimated token counts
 
-### 変更
-- 変換ツールはMarkItDown固定
+### Changed
+- Conversion tool fixed to MarkItDown
 
 ## [0.1.1] - 2025-12-15
 
-### 追加
-- **初期リリース（MVP）**: 基本的なファイル変換・レビュー機能を実装
-- ファイル選択→変換のシンプルなUI
-- Excel → Markdown 変換（MarkItDown使用）
-- ソースコード → 行番号付与（add-line-numbers準拠）
-- AWS Bedrock（Claude）によるレビュー実行
-- レビューレポートのコピー・ダウンロード機能
+### Added
+- **Initial release (MVP)**: Implemented basic file conversion and review functionality
+- Simple file selection to conversion UI
+- Excel to Markdown conversion (using MarkItDown)
+- Source code line numbering (add-line-numbers compatible)
+- Review execution via AWS Bedrock (Claude)
+- Review report copy and download
 
 ---
 
-## リンク
+## Links
 
-- [リポジトリ](https://github.com/elvezjp/spec-code-ai-reviewer)
-- [Issue](https://github.com/elvezjp/spec-code-ai-reviewer/issues)
+- [Repository](https://github.com/elvezjp/spec-code-ai-reviewer)
+- [Issues](https://github.com/elvezjp/spec-code-ai-reviewer/issues)
 
 ---
 
-## バージョン比較
+## Version Comparison
 
-| バージョン | 主な機能 |
-|------------|----------|
-| 0.9.0      | 分割レビュー品質改善、事前要約機能、要約API分離、エラー表示改善 |
-| 0.8.2      | 行番号ハルシネーション対策、レビューモード表示、md2map 3モード |
-| 0.8.1      | 分割レビュー方式の統合（一括/分割の単一選択に変更） |
-| 0.8.0      | セマンティック分割レビュー、md2map/code2map統合、トークン内訳表示 |
-| 0.7.0      | AIでMarkdownを整理する機能、Diff表示、ツール別前処理、プリセットライブラリ |
-| 0.6.0      | React + Vite + TypeScript移行、Tailwind v4、テスト環境構築 |
-| 0.5.2      | Bedrock Converse API対応、Amazon Novaモデル対応 |
-| 0.5.1      | OpenAI GPT-5.2対応 |
-| 0.5.0      | 複数回レビュー実行、一式ダウンロード |
-| 0.4.0      | マルチLLMプロバイダー、設定ファイル |
-| 0.3.0      | マルチ変換ツール、バージョン切替 |
-| 0.2.5      | 優先度・種別設定、トークン数表示 |
-| 0.1.1      | 初期リリース（MVP） |
+| Version | Key Features |
+|---------|-------------|
+| 0.9.1   | Section exclusion, AI sub-split instructions, split preview error display, code split warnings, prevent review on split failure |
+| 0.9.0   | Split review quality improvements, pre-summarization, summarize API separation, error display improvements |
+| 0.8.2   | Line number hallucination fix, review mode display, md2map 3 modes |
+| 0.8.1   | Split review mode consolidation (single batch/split selection) |
+| 0.8.0   | Semantic split review, md2map/code2map integration, token breakdown display |
+| 0.7.0   | AI Markdown organization, diff display, tool-specific preprocessing, preset library |
+| 0.6.0   | React + Vite + TypeScript migration, Tailwind v4, test environment |
+| 0.5.2   | Bedrock Converse API support, Amazon Nova model support |
+| 0.5.1   | OpenAI GPT-5.2 support |
+| 0.5.0   | Multiple review execution, data package download |
+| 0.4.0   | Multi-LLM provider, configuration file |
+| 0.3.0   | Multi-conversion tool, version switching |
+| 0.2.5   | Priority/type settings, token count display |
+| 0.1.1   | Initial release (MVP) |

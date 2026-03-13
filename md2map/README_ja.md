@@ -135,6 +135,7 @@ uv run md2map build document.md --dry-run
 | `--ai-provider <PROVIDER>` | `bedrock` | AIプロバイダー（`openai`/`anthropic`/`bedrock`） |
 | `--ai-model <MODEL>` | プロバイダー既定 | AIモデルID |
 | `--ai-region <REGION>` | `ap-northeast-1` | Bedrock用リージョン |
+| `--ai-prompt-extra-notes <TEXT>` | なし | AIプロンプトの注意事項パートに追記するテキスト |
 | `--verbose` | false | 詳細ログを出力 |
 | `--dry-run` | false | ファイル生成せずプレビューのみ |
 
@@ -224,12 +225,13 @@ md2map/
 │   └── utils/             # ユーティリティ
 │       ├── file_utils.py  # ファイル操作
 │       └── logger.py      # ログ設定
-├── add-line-numbers/      # 行番号付与ツール（git subtree）
+├── add-line-numbers/      # 行番号付与ツール（※関連プロジェクト参照）
 ├── tests/                 # テストコード
 │   └── fixtures/          # テストフィクスチャ
 ├── docs/                  # ドキュメント
 ├── versions/              # 旧バージョンスナップショット
 │   ├── v0.1.0/            # v0.1.0 スナップショット
+│   ├── v0.2.0/            # v0.2.0 スナップショット
 │   └── README.md          # versionsディレクトリの説明
 ├── CHANGELOG.md           # 変更履歴
 ├── CONTRIBUTING.md        # コントリビューションガイド
@@ -250,8 +252,14 @@ md2map/
 
 ## 関連プロジェクト
 
-- [add-line-numbers](https://github.com/elvezjp/add-line-numbers) - AIモードで使用する行番号付与ツール
+- [add-line-numbers](https://github.com/elvezjp/add-line-numbers) - AIモードで使用する行番号付与ツール（gitから自動インストール）
 - [code2map](https://github.com/elvezjp/code2map) - ソースコード解析向けの類似ツール
+
+> **Note**: add-line-numbersのgitからのインストールがうまくいかない場合は、リポジトリ内の `add-line-numbers/` ディレクトリ（git subtree）をローカルパスで参照するよう `pyproject.toml` を変更してください：
+> ```toml
+> [tool.uv.sources]
+> add-line-numbers = { path = "add-line-numbers", editable = true }
+> ```
 
 ## セキュリティ
 

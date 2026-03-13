@@ -7,6 +7,7 @@ services:
       - ./nginx/dev.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/version-map.conf:/etc/nginx/version-map.conf:ro
       # v0.6.0以降: Viteビルド済みのdistディレクトリを配信
+      - ./versions/v0.9.1/frontend/dist:/var/www/spec-code-ai-reviewer/versions/v0.9.1/frontend:ro
       - ./versions/v0.9.0/frontend/dist:/var/www/spec-code-ai-reviewer/versions/v0.9.0/frontend:ro
       - ./versions/v0.8.2/frontend/dist:/var/www/spec-code-ai-reviewer/versions/v0.8.2/frontend:ro
       - ./versions/v0.8.1/frontend/dist:/var/www/spec-code-ai-reviewer/versions/v0.8.1/frontend:ro
@@ -25,6 +26,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     expose:
+      - "8091"
       - "8090"
       - "8082"
       - "8081"

@@ -1,6 +1,6 @@
 [project]
 name = "md2map"
-version = "0.2.0"
+version = "0.3.0"
 description = "マークダウンファイルを意味的単位に分割し、AI解析用の索引を生成するCLIツール"
 readme = "README.md"
 license = { text = "MIT" }
@@ -21,15 +21,10 @@ classifiers = [
 ]
 dependencies = [
     "add-line-numbers",
-    "sudachipy>=0.6",
-    "sudachidict-core>=20230927",
-    "openai>=1.0",
-    "anthropic>=0.18",
-    "boto3>=1.28",
 ]
 
 [tool.uv.sources]
-add-line-numbers = { path = "../add-line-numbers", editable = true }
+add-line-numbers = { git = "https://github.com/elvezjp/add-line-numbers.git", branch = "main" }
 
 [project.optional-dependencies]
 dev = [
@@ -37,6 +32,11 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
+    "sudachipy>=0.6",
+    "sudachidict-core>=20230927",
+    "openai>=1.0",
+    "anthropic>=0.18",
+    "boto3>=1.28",
 ]
 
 [project.scripts]
@@ -62,8 +62,3 @@ disallow_untyped_defs = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-
-[dependency-groups]
-dev = [
-    "pytest>=8.4.2",
-]

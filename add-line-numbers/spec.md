@@ -436,7 +436,7 @@ from pathlib import Path
 
 ### 7.2 Python バージョン
 
-- **推奨**: Python 3.8以上
+- **推奨**: Python 3.9以上
 - **必須機能**: `pathlib.Path`, `f-string`, 型ヒント
 
 ### 7.3 エンコーディング
