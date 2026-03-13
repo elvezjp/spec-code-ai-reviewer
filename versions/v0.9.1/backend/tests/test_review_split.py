@@ -126,18 +126,25 @@ class TestStructureMatchingAPI:
         request = StructureMatchingRequest(
             document=DocumentStructure(
                 indexMd="# INDEX\n- MD1: ユーザー管理\n- MD2: 認証",
-                mapJson={"sections": []}
+                mapJson={"sections": [
+                    {"id": "MD1", "title": "ユーザー管理", "level": 1, "path": "ユーザー管理", "startLine": 1, "endLine": 10},
+                    {"id": "MD2", "title": "認証", "level": 1, "path": "認証", "startLine": 11, "endLine": 20}
+                ]}
             ),
             codeFiles=[
                 CodeFileStructure(
                     filename="user.py",
                     indexMd="# CODE\n- CD1: User",
-                    mapJson={"symbols": []}
+                    mapJson={"symbols": [
+                        {"id": "CD1", "name": "User", "symbolType": "class", "startLine": 1, "endLine": 50}
+                    ]}
                 ),
                 CodeFileStructure(
                     filename="auth.py",
                     indexMd="# CODE\n- CD2: Auth",
-                    mapJson={"symbols": []}
+                    mapJson={"symbols": [
+                        {"id": "CD2", "name": "Auth", "symbolType": "class", "startLine": 1, "endLine": 50}
+                    ]}
                 )
             ]
         )
@@ -161,10 +168,20 @@ class TestStructureMatchingAPI:
 
         request = StructureMatchingRequest(
             document=DocumentStructure(
-                indexMd="# INDEX",
-                mapJson={"sections": []}
+                indexMd="# INDEX\n- MD1: セクション1",
+                mapJson={"sections": [
+                    {"id": "MD1", "title": "セクション1", "level": 1, "path": "セクション1", "startLine": 1, "endLine": 10}
+                ]}
             ),
-            codeFiles=[]
+            codeFiles=[
+                CodeFileStructure(
+                    filename="code.py",
+                    indexMd="# CODE\n- CD1: Code",
+                    mapJson={"symbols": [
+                        {"id": "CD1", "name": "Code", "symbolType": "class", "startLine": 1, "endLine": 50}
+                    ]}
+                )
+            ]
         )
 
         response = client.post(
@@ -185,10 +202,20 @@ class TestStructureMatchingAPI:
 
         request = StructureMatchingRequest(
             document=DocumentStructure(
-                indexMd="# INDEX",
-                mapJson={"sections": []}
+                indexMd="# INDEX\n- MD1: セクション1",
+                mapJson={"sections": [
+                    {"id": "MD1", "title": "セクション1", "level": 1, "path": "セクション1", "startLine": 1, "endLine": 10}
+                ]}
             ),
-            codeFiles=[]
+            codeFiles=[
+                CodeFileStructure(
+                    filename="code.py",
+                    indexMd="# CODE\n- CD1: Code",
+                    mapJson={"symbols": [
+                        {"id": "CD1", "name": "Code", "symbolType": "class", "startLine": 1, "endLine": 50}
+                    ]}
+                )
+            ]
         )
 
         response = client.post(
@@ -478,8 +505,21 @@ class TestStructureMatchingWithLLMConfig:
         mock_get_provider.return_value = mock_provider
 
         request = StructureMatchingRequest(
-            document=DocumentStructure(indexMd="# INDEX", mapJson={}),
-            codeFiles=[],
+            document=DocumentStructure(
+                indexMd="# INDEX\n- MD1: セクション1",
+                mapJson={"sections": [
+                    {"id": "MD1", "title": "セクション1", "level": 1, "path": "セクション1", "startLine": 1, "endLine": 10}
+                ]}
+            ),
+            codeFiles=[
+                CodeFileStructure(
+                    filename="code.py",
+                    indexMd="# CODE\n- CD1: Code",
+                    mapJson={"symbols": [
+                        {"id": "CD1", "name": "Code", "symbolType": "class", "startLine": 1, "endLine": 50}
+                    ]}
+                )
+            ],
             llmConfig=LLMConfig(
                 provider="anthropic",
                 model="claude-sonnet-4-20250514",
@@ -506,8 +546,21 @@ class TestStructureMatchingWithLLMConfig:
         mock_get_provider.return_value = mock_provider
 
         request = StructureMatchingRequest(
-            document=DocumentStructure(indexMd="# INDEX", mapJson={}),
-            codeFiles=[]
+            document=DocumentStructure(
+                indexMd="# INDEX\n- MD1: セクション1",
+                mapJson={"sections": [
+                    {"id": "MD1", "title": "セクション1", "level": 1, "path": "セクション1", "startLine": 1, "endLine": 10}
+                ]}
+            ),
+            codeFiles=[
+                CodeFileStructure(
+                    filename="code.py",
+                    indexMd="# CODE\n- CD1: Code",
+                    mapJson={"symbols": [
+                        {"id": "CD1", "name": "Code", "symbolType": "class", "startLine": 1, "endLine": 50}
+                    ]}
+                )
+            ]
             # llmConfig は指定しない
         )
 
