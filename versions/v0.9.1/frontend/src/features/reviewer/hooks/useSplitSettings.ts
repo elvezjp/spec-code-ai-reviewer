@@ -31,6 +31,7 @@ interface UseSplitSettingsReturn {
   clearError: () => void
   togglePinnedDocPart: (partId: string) => void
   toggleSummarizeMode: (partId: string) => void
+  toggleExcludedDocPart: (partId: string) => void
   executeSummarize: (llmConfig?: LlmConfig | null) => Promise<void>
 
   // Computed
@@ -63,6 +64,34 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         ? prev.filter(id => id !== partId)
         : [...prev, partId]
     )
+  }, [])
+
+  const toggleExcludedDocPart = useCallback((partId: string) => {
+    setPreviewResult((prev) => {
+      if (!prev || !prev.documentParts) return prev
+      const target = prev.documentParts.find((p) => p.id === partId)
+      if (!target) return prev
+      const newExcluded = !target.excluded
+      return {
+        ...prev,
+        documentParts: prev.documentParts.map((p) =>
+          p.id === partId
+            ? {
+                ...p,
+                excluded: newExcluded,
+                // 除外ON時は「要約」を解除
+                ...(newExcluded ? { summarizeMode: 'original' as const } : {}),
+              }
+            : p
+        ),
+      }
+    })
+    // 除外ON時は「重要」も解除（setPreviewResultと同期が取れないため現在値を直接参照できないが、
+    // setPinnedDocPartIdsのコールバック内では除外方向のみ解除する）
+    setPinnedDocPartIds((prev) => {
+      if (!prev.includes(partId)) return prev
+      return prev.filter((id) => id !== partId)
+    })
   }, [])
 
   const toggleSummarizeMode = useCallback((partId: string) => {
@@ -242,7 +271,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
       }
 
       setPreviewResult({
-        documentParts: documentParts?.map((p) => ({ ...p, summarizeMode: 'original' as const })) || null,
+        documentParts: documentParts?.map((p) => ({ ...p, summarizeMode: 'original' as const, excluded: false })) || null,
         codeParts,
         documentIndex,
         documentMapJson,
@@ -323,6 +352,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     clearError,
     togglePinnedDocPart,
     toggleSummarizeMode,
+    toggleExcludedDocPart,
     executeSummarize,
     isSplitEnabled,
     reviewMode,

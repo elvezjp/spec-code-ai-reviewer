@@ -84,7 +84,17 @@ AIモード選択時、分割オプションに「分割時の注意事項（任
 - 空欄の場合は md2map のデフォルトプロンプトのみが使用される
 - 見出し（heading）モード・NLPモードでは表示されない（AIサブスプリット専用）
 
-### 3.3 事前要約
+### 3.3 セクション除外
+
+分割された設計書セクションのうち、レビュー不要なセクションを除外できます。
+
+- 一覧テーブルの「除外」チェックボックスをチェックすると、そのセクションが構造マッチング・グループレビューの対象から外れる
+- 除外チェックON時は「重要」「要約」のチェックが自動的に解除される
+- 除外は MAP.json からの除去として実装されており、INDEX.md はオリジナルが維持される
+- ダウンロード zip に含まれる INDEX.md / MAP.json はオリジナル（除外前）のものが使用される
+- プレビューを再実行すると除外状態はリセットされる
+
+### 3.4 事前要約
 
 分割された設計書セクションのうち、トークン数が大きいものを事前に要約してレビュー時のトークン消費を削減できます。
 
@@ -106,11 +116,11 @@ AIモード選択時、分割オプションに「分割時の注意事項（任
 
 ## 4. 3フェーズAIレビュー
 
-バックエンドのAPIは [versions/v0.9.0/backend/app/routers/](../versions/v0.9.0/backend/app/routers/) に実装されています。
+バックエンドのAPIは [latest/backend/app/routers/](../latest/backend/app/routers/) に実装されています。
 
 ### フェーズ1: 構造マッチング (`POST /api/review/structure-matching`)
 
-**ファイル**: [review.py](../versions/v0.9.0/backend/app/routers/review.py)
+**ファイル**: [review.py](../latest/backend/app/routers/review.py)
 
 - **入力**: 設計書とコードそれぞれの `INDEX.md` + `MAP.json`
 - **処理**: LLMが両方の構造を分析し、関連性の高いセクションとコードシンボルを **多対多** のグループにまとめる
@@ -161,16 +171,16 @@ AIモード選択時、分割オプションに「分割時の注意事項（任
 
 ## 5. フロントエンド実装
 
-**ディレクトリ**: [versions/v0.9.0/frontend/src/features/reviewer/](../versions/v0.9.0/frontend/src/features/reviewer/)
+**ディレクトリ**: [latest/frontend/src/features/reviewer/](../latest/frontend/src/features/reviewer/)
 
 | コンポーネント | ファイル | 役割 |
 |---|---|---|
-| 分割設定UI | [SplitSettingsSection.tsx](../versions/v0.9.0/frontend/src/features/reviewer/components/SplitSettingsSection.tsx) | batch/splitモード選択、分割モード選択（見出し/NLP/AI）、分割深度設定、重要パート・要約設定、プレビュー |
-| 実行画面 | [SplitExecutingScreen.tsx](../versions/v0.9.0/frontend/src/features/reviewer/components/SplitExecutingScreen.tsx) | 3フェーズの進捗表示（✓/⏳/○）、一時停止・再開、エラー時のリトライ・スキップ |
-| リトライ設定 | [RetrySettingsPanel.tsx](../versions/v0.9.0/frontend/src/features/reviewer/components/RetrySettingsPanel.tsx) | グループレビューエラー時の要約・リトライ設定 |
-| 統合リトライ設定 | [IntegrateRetrySettingsPanel.tsx](../versions/v0.9.0/frontend/src/features/reviewer/components/IntegrateRetrySettingsPanel.tsx) | 結果統合エラー時の要約・リトライ設定 |
-| 分割ロジック | [useSplitSettings.ts](../versions/v0.9.0/frontend/src/features/reviewer/hooks/useSplitSettings.ts) | 状態管理、API呼び出し、分割モード管理、要約実行 |
-| APIサービス | [api.ts](../versions/v0.9.0/frontend/src/features/reviewer/services/api.ts) | 各エンドポイントへのリクエスト |
+| 分割設定UI | [SplitSettingsSection.tsx](../latest/frontend/src/features/reviewer/components/SplitSettingsSection.tsx) | batch/splitモード選択、分割モード選択（見出し/NLP/AI）、分割深度設定、重要パート・要約設定、プレビュー |
+| 実行画面 | [SplitExecutingScreen.tsx](../latest/frontend/src/features/reviewer/components/SplitExecutingScreen.tsx) | 3フェーズの進捗表示（✓/⏳/○）、一時停止・再開、エラー時のリトライ・スキップ |
+| リトライ設定 | [RetrySettingsPanel.tsx](../latest/frontend/src/features/reviewer/components/RetrySettingsPanel.tsx) | グループレビューエラー時の要約・リトライ設定 |
+| 統合リトライ設定 | [IntegrateRetrySettingsPanel.tsx](../latest/frontend/src/features/reviewer/components/IntegrateRetrySettingsPanel.tsx) | 結果統合エラー時の要約・リトライ設定 |
+| 分割ロジック | [useSplitSettings.ts](../latest/frontend/src/features/reviewer/hooks/useSplitSettings.ts) | 状態管理、API呼び出し、分割モード管理、要約実行 |
+| APIサービス | [api.ts](../latest/frontend/src/features/reviewer/services/api.ts) | 各エンドポイントへのリクエスト |
 
 ---
 
@@ -226,7 +236,7 @@ cp .env.example .env
 [md2map] 設計書 → セクション分割（選択モードで実行） → INDEX.md + MAP.json
 [code2map] コード → シンボル分割 → INDEX.md + MAP.json
     ↓
-[分割設定] 重要パートの選択、事前要約の実行（任意）
+[分割設定] 重要パートの選択、セクション除外の設定、事前要約の実行（任意）
     ↓
 [Phase 1] INDEX + MAP をLLMに送信 → グループ化結果
     ↓ 重要パートを各グループに注入
