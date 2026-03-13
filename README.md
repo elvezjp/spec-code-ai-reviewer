@@ -463,9 +463,9 @@ When adding a new version (e.g., v0.7.0), update the following files.
 | `docs/ec2-deployment-spec.md` | Add new version to config examples |
 | `versions/README.md` | Add directory structure, version comparison table, and update history |
 | `README.md` | Update directory structure and port table |
-| `CHANGELOG.md` | Append change history |
-| `SECURITY.md` | Update supported version |
-| `CONTRIBUTING.md` | Update version numbers |
+| `CHANGELOG.md` / `CHANGELOG_ja.md` | Append change history |
+| `SECURITY.md` / `SECURITY_ja.md` | Update supported version |
+| `CONTRIBUTING.md` / `CONTRIBUTING_ja.md` | Update version numbers |
 
 #### Example: Add to ecosystem.config.js
 

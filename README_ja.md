@@ -464,9 +464,9 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 | `docs/ec2-deployment-spec.md` | 設定例に新バージョンの記載を追加 |
 | `versions/README.md` | ディレクトリ構成、バージョン比較表、更新履歴を追加 |
 | `README.md` | ディレクトリ構成、ポート割り当て表を更新 |
-| `CHANGELOG.md` | 更新履歴を追記 |
-| `SECURITY.md` | サポートバージョンを更新 |
-| `CONTRIBUTING.md` | バージョン番号を更新 |
+| `CHANGELOG.md` / `CHANGELOG_ja.md` | 更新履歴を追記 |
+| `SECURITY.md` / `SECURITY_ja.md` | サポートバージョンを更新 |
+| `CONTRIBUTING.md` / `CONTRIBUTING_ja.md` | バージョン番号を更新 |
 
 #### ecosystem.config.js への追加例
 
@@ -542,7 +542,7 @@ sudo nginx -s reload
 
 ## 更新履歴
 
-詳細な変更履歴は [CHANGELOG.md](CHANGELOG.md) を参照してください。
+詳細な変更履歴は [CHANGELOG_ja.md](CHANGELOG_ja.md) を参照してください。
 
 ## 開発の背景
 
