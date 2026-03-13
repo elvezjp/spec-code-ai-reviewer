@@ -8,6 +8,7 @@ export interface SplitExportData {
   documentMapJson?: Record<string, unknown>[]
   codeIndex?: string
   codeMapJson?: Record<string, unknown>[]
+  groupReviews?: { groupId: string; groupName: string; report: string }[]
 }
 
 interface UseZipExportReturn {
@@ -43,7 +44,12 @@ export function useZipExport(): UseZipExportReturn {
       zip.file('review-result.md', data.report)
 
       // Add README
-      const readme = generateReadmeMarkdown(data.reviewMeta, executionNumber, !!splitData)
+      const readme = generateReadmeMarkdown(
+        data.reviewMeta,
+        executionNumber,
+        !!splitData,
+        splitData?.groupReviews?.map((gr) => ({ groupId: gr.groupId, groupName: gr.groupName })),
+      )
       zip.file('README.md', readme)
 
       // 分割レビュー時の追加ファイル
@@ -59,6 +65,12 @@ export function useZipExport(): UseZipExportReturn {
         }
         if (splitData.codeMapJson) {
           zip.file('split/code-MAP.json', JSON.stringify(splitData.codeMapJson, null, 2) + '\n')
+        }
+        // グループレビュー個別結果
+        if (splitData.groupReviews) {
+          for (const gr of splitData.groupReviews) {
+            zip.file(`split/review-result-${gr.groupId}.md`, gr.report)
+          }
         }
       }
 

@@ -21,6 +21,7 @@ interface SplitSettingsSectionProps {
   hasPendingSummarize: boolean
   summarizeError: string | null
   onToggleSummarizeMode: (partId: string) => void
+  onToggleExcludedDocPart: (partId: string) => void
   onExecuteSummarize: () => void
   previewError?: string | null
 }
@@ -43,6 +44,7 @@ export function SplitSettingsSection({
   hasPendingSummarize,
   summarizeError,
   onToggleSummarizeMode,
+  onToggleExcludedDocPart,
   onExecuteSummarize,
   previewError,
 }: SplitSettingsSectionProps) {
@@ -170,14 +172,14 @@ export function SplitSettingsSection({
             分割オプション
           </button>
           {isOptionsExpanded && (
-            <div className="mt-2 p-3 bg-gray-50 rounded border border-gray-200 space-y-3">
+            <div className="mt-2 space-y-2">
               {/* 設計書オプション */}
               {settings.reviewMode === 'split' && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">設計書</p>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">設計書</p>
                   {/* 分割モード選択 */}
                   <div className="mb-3">
-                    <span className="text-sm text-gray-600">分割モード:</span>
+                    <span className="text-sm font-medium text-gray-700">分割モード:</span>
                     <div className="mt-1 ml-2 space-y-1">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -214,9 +216,24 @@ export function SplitSettingsSection({
                       </label>
                     </div>
                   </div>
+                  {/* AIモード: 分割時の注意事項 */}
+                  {settings.documentSplitMode === 'ai' && (
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        分割時の注意事項（AIへの指示・任意）
+                      </label>
+                      <textarea
+                        value={settings.aiPromptExtraNotes}
+                        onChange={(e) => onSettingsChange({ ...settings, aiPromptExtraNotes: e.target.value })}
+                        placeholder="例: Mermaidブロックの途中では分割しない、項番単位で分割する"
+                        rows={2}
+                        className="w-full text-sm bg-white border border-gray-300 rounded px-2 py-1 resize-vertical focus:outline-none focus:border-blue-400"
+                      />
+                    </div>
+                  )}
                   {/* 見出しレベル選択 */}
                   <div className="flex items-center gap-4">
-                    <span className="text-sm text-gray-600">見出しレベル:</span>
+                    <span className="text-sm font-medium text-gray-700">見出しレベル:</span>
                     <label className="flex items-center gap-1 cursor-pointer">
                       <input
                         type="radio"
@@ -253,10 +270,10 @@ export function SplitSettingsSection({
 
               {/* プログラムオプション */}
               {settings.reviewMode === 'split' && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">プログラム</p>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">プログラム</p>
                   <div className="text-sm text-gray-600">
-                    <p>対応言語: Python (.py) / Java (.java)</p>
+                    <p><span className="font-medium text-gray-700">対応言語:</span> Python (.py) / Java (.java)</p>
                     {supportedCodeFiles.length > 0 && (
                       <p className="mt-1 text-green-600">
                         対応ファイル: {supportedCodeFiles.join(', ')}
@@ -332,12 +349,14 @@ export function SplitSettingsSection({
               <ul className="text-xs text-gray-500 mb-2 list-disc list-inside space-y-0.5">
                 <li><strong>重要</strong>: 分割レビュー時に全てのグループで参照されます。</li>
                 <li><strong>要約</strong>: レビュー時に要約テキストで代替されます。分割後もトークン数が多い場合に使用してください。</li>
+                <li><strong>除外</strong>: 構造マッチング・グループレビューの対象から外します。表紙・変更履歴など不要なセクションを除外してください。</li>
               </ul>
               <DocumentPartsTable
                 parts={previewResult.documentParts}
                 pinnedDocPartIds={pinnedDocPartIds}
                 onTogglePinnedDocPart={onTogglePinnedDocPart}
                 onToggleSummarizeMode={onToggleSummarizeMode}
+                onToggleExcludedDocPart={onToggleExcludedDocPart}
                 summarizingPartIds={summarizingPartIds}
               />
             </div>
@@ -397,12 +416,14 @@ function DocumentPartsTable({
   pinnedDocPartIds,
   onTogglePinnedDocPart,
   onToggleSummarizeMode,
+  onToggleExcludedDocPart,
   summarizingPartIds,
 }: {
   parts: DocumentPart[]
   pinnedDocPartIds: string[]
   onTogglePinnedDocPart: (partId: string) => void
   onToggleSummarizeMode: (partId: string) => void
+  onToggleExcludedDocPart: (partId: string) => void
   summarizingPartIds: Set<string>
 }) {
   return (
@@ -412,6 +433,7 @@ function DocumentPartsTable({
           <TableRow>
             <TableHeaderCell className="w-14">重要</TableHeaderCell>
             <TableHeaderCell className="w-14">要約</TableHeaderCell>
+            <TableHeaderCell className="w-14">除外</TableHeaderCell>
             <TableHeaderCell className="w-12">#</TableHeaderCell>
             <TableHeaderCell>セクション名</TableHeaderCell>
             <TableHeaderCell className="w-24">行範囲</TableHeaderCell>
@@ -422,14 +444,15 @@ function DocumentPartsTable({
           {parts.map((part, index) => {
             const isSummarizingThis = summarizingPartIds.has(part.id)
             return (
-              <TableRow key={`${part.id}-${part.startLine}`}>
+              <TableRow key={`${part.id}-${part.startLine}`} className={part.excluded ? 'opacity-40' : ''}>
                 {/* 重要チェックボックス */}
                 <TableCell className="text-center">
                   <input
                     type="checkbox"
                     checked={pinnedDocPartIds.includes(part.id)}
                     onChange={() => onTogglePinnedDocPart(part.id)}
-                    className="w-4 h-4 text-blue-600 rounded"
+                    disabled={part.excluded}
+                    className="w-4 h-4 text-blue-600 rounded disabled:cursor-not-allowed"
                   />
                 </TableCell>
                 {/* 要約チェックボックス */}
@@ -438,12 +461,24 @@ function DocumentPartsTable({
                     type="checkbox"
                     checked={part.summarizeMode === 'summarize'}
                     onChange={() => onToggleSummarizeMode(part.id)}
-                    className="w-4 h-4 text-blue-600 rounded"
+                    disabled={part.excluded}
+                    className="w-4 h-4 text-blue-600 rounded disabled:cursor-not-allowed"
+                  />
+                </TableCell>
+                {/* 除外チェックボックス */}
+                <TableCell className="text-center">
+                  <input
+                    type="checkbox"
+                    checked={part.excluded}
+                    onChange={() => onToggleExcludedDocPart(part.id)}
+                    className="w-4 h-4 text-red-500 rounded"
                   />
                 </TableCell>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>
                   {part.displayName}
+                  {/* セクション内容プレビュー */}
+                  <PartContentPreview content={part.content} />
                   {/* 要約完了時のプレビューアコーディオン */}
                   {part.summarizedContent && part.summarizeMode === 'summarize' && (
                     <SummarizedTextPreview text={part.summarizedContent} />
@@ -471,6 +506,27 @@ function DocumentPartsTable({
           })}
         </TableBody>
       </Table>
+    </div>
+  )
+}
+
+function PartContentPreview({ content }: { content: string }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600"
+      >
+        {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        内容を表示
+      </button>
+      {isExpanded && (
+        <div className="mt-1 p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-700 whitespace-pre-wrap max-h-40 overflow-y-auto">
+          {content}
+        </div>
+      )}
     </div>
   )
 }

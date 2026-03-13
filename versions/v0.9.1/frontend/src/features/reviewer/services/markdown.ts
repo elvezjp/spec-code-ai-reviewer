@@ -64,6 +64,7 @@ export function generateReadmeMarkdown(
   },
   executionNumber: number,
   hasSplitData: boolean = false,
+  groupReviews?: { groupId: string; groupName: string }[],
 ): string {
   const designsList =
     reviewMeta.designs
@@ -105,7 +106,7 @@ ${hasSplitData ? `| split/spec-INDEX.md | 設計書の構造情報（md2map生�
 | split/spec-MAP.json | 設計書のセクションマップ（md2map生成） |
 | split/code-INDEX.md | プログラムの構造情報（code2map生成） |
 | split/code-MAP.json | プログラムのシンボルマップ（code2map生成） |
-` : ''}
+${groupReviews && groupReviews.length > 0 ? groupReviews.map((gr) => `| split/review-result-${gr.groupId}.md | グループレビュー個別結果（${gr.groupName}） |`).join('\n') + '\n' : ''}` : ''}
 ## レビュー情報
 
 | 項目 | 内容 |

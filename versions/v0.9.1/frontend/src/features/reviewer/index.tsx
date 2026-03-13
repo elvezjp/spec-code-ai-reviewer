@@ -122,10 +122,18 @@ export function Reviewer() {
     clearPreview: clearSplitPreview,
     togglePinnedDocPart,
     toggleSummarizeMode,
+    toggleExcludedDocPart,
     executeSummarize,
     isSplitEnabled,
     hasPendingSummarize,
   } = useSplitSettings()
+
+  // Split review execution state
+  const [splitReviewState, setSplitReviewState] = useState<SplitReviewState>({
+    phase: 'idle',
+    groupReviews: [],
+    currentGroupIndex: 0,
+  })
 
   // Wrap downloadZip to inject splitData when in split mode
   const downloadZip = useCallback(
@@ -136,19 +144,20 @@ export function Reviewer() {
             documentMapJson: splitPreviewResult.documentMapJson || undefined,
             codeIndex: splitPreviewResult.codeIndex || undefined,
             codeMapJson: splitPreviewResult.codeMapJson || undefined,
+            // グループレビュー個別結果を追加
+            groupReviews: splitReviewState.groupReviews
+              .filter((g) => g.status === 'completed' && g.result?.report)
+              .map((g) => ({
+                groupId: g.groupId,
+                groupName: g.groupName,
+                report: g.result!.report,
+              })),
           }
         : undefined
       await rawDownloadZip(data, executionNumber, splitData)
     },
-    [rawDownloadZip, splitPreviewResult]
+    [rawDownloadZip, splitPreviewResult, splitReviewState.groupReviews]
   )
-
-  // Split review execution state
-  const [splitReviewState, setSplitReviewState] = useState<SplitReviewState>({
-    phase: 'idle',
-    groupReviews: [],
-    currentGroupIndex: 0,
-  })
   const [integrateSummarizeState, setIntegrateSummarizeState] = useState<IntegrateSummarizeState>({ groups: [] })
   const [batchReviewError, setBatchReviewError] = useState<string | null>(null)
   const errorActionRef = useRef<{ action: 'retry' | 'skip'; groupId: string; docMode?: 'original' | 'summarize'; codeMode?: 'original' | 'summarize' } | null>(null)
@@ -307,18 +316,28 @@ export function Reviewer() {
     try {
       // Phase 1: Structure Matching
       const documentIndexMd = splitPreviewResult.documentIndex || ''
-      // md2map生成のMAP.jsonをそのまま使用（is_subsplit, subsplit_title等を含む）
+      // 除外パーツのIDセットを構築
+      const excludedDocPartIds = new Set(
+        splitPreviewResult.documentParts?.filter(p => p.excluded).map(p => p.id) || []
+      )
+      // md2map生成のMAP.jsonをそのまま使用（is_subsplit, subsplit_title等を含む）、除外パーツを除去
       const documentMapJson = splitPreviewResult.documentMapJson
-        ? { sections: splitPreviewResult.documentMapJson }
+        ? {
+            sections: splitPreviewResult.documentMapJson.filter(
+              (s) => !excludedDocPartIds.has(s.id as string)
+            )
+          }
         : {
-            sections: splitPreviewResult.documentParts?.map((p) => ({
-              id: p.id,
-              title: p.section,
-              level: p.level,
-              path: p.path,
-              startLine: p.startLine,
-              endLine: p.endLine,
-            })) || [],
+            sections: splitPreviewResult.documentParts
+              ?.filter((p) => !p.excluded)
+              .map((p) => ({
+                id: p.id,
+                title: p.section,
+                level: p.level,
+                path: p.path,
+                startLine: p.startLine,
+                endLine: p.endLine,
+              })) || [],
           }
 
       const codeFileStructures = codeFiles.map((cf) => {
@@ -366,12 +385,14 @@ export function Reviewer() {
       }
 
       for (const group of groups) {
-        group.docSections = group.docSections.map((ds) => {
-          const part = splitPreviewResult.documentParts?.find((p) => p.id === ds.id)
-          return part
-            ? { id: ds.id, title: part.displayName, path: part.path }
-            : ds
-        })
+        group.docSections = group.docSections
+          .filter((ds) => !excludedDocPartIds.has(ds.id))  // 除外パーツを安全フィルタ
+          .map((ds) => {
+            const part = splitPreviewResult.documentParts?.find((p) => p.id === ds.id)
+            return part
+              ? { id: ds.id, title: part.displayName, path: part.path }
+              : ds
+          })
         group.codeSymbols = group.codeSymbols.map((cs) => {
           const part = splitPreviewResult.codeParts?.find((p) => p.id === cs.id)
           return part
@@ -383,6 +404,7 @@ export function Reviewer() {
       // 重要パートを全グループに注入（重複除外）
       if (pinnedDocPartIds.length > 0) {
         const pinnedDocSections = pinnedDocPartIds
+          .filter(id => !excludedDocPartIds.has(id))  // 除外パーツは注入しない
           .map(id => {
             const part = splitPreviewResult.documentParts?.find(p => p.id === id)
             if (!part) return null
@@ -861,6 +883,7 @@ export function Reviewer() {
           hasPendingSummarize={hasPendingSummarize}
           summarizeError={summarizeError}
           onToggleSummarizeMode={toggleSummarizeMode}
+          onToggleExcludedDocPart={toggleExcludedDocPart}
           onExecuteSummarize={() => executeSummarize(llmConfig)}
           previewError={splitPreviewError}
         />

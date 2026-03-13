@@ -168,6 +168,7 @@ export interface SplitSettings {
   reviewMode: SplitMode
   documentMaxDepth: number // 1-6
   documentSplitMode: DocumentSplitMode
+  aiPromptExtraNotes: string // AIモード専用: サブスプリットプロンプトへの追記テキスト
 }
 
 export interface DocumentPart {
@@ -184,6 +185,8 @@ export interface DocumentPart {
   summarizeMode: 'original' | 'summarize'
   summarizedContent?: string
   summarizedTokens?: number
+  // 除外関連
+  excluded: boolean
 }
 
 export interface CodePart {
@@ -203,6 +206,7 @@ export interface SplitMarkdownRequest {
   maxDepth: number
   splitMode?: DocumentSplitMode
   llmConfig?: LlmConfig
+  aiPromptExtraNotes?: string
 }
 
 export interface SplitMarkdownResponse {

@@ -11,7 +11,7 @@ import pytest
 from md2map.llm.base_provider import BaseLLMProvider
 from md2map.llm.config import LLMConfig
 from md2map.llm.factory import build_llm_config_from_env, get_llm_provider
-from md2map.parsers.markdown_parser import MarkdownParser
+from md2map.parsers.markdown_parser import DEFAULT_AI_PROMPT_PARTS, MarkdownParser
 
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -221,8 +221,8 @@ class TestMarkdownParserLLMInjection:
         # own_content 範囲は L2〜L10（9行）
         # AI には 1-based 相対番号（1〜9）で送信される
         ai_response = json.dumps([
-            {"title": "前半", "start_line": 1, "end_line": 5},
-            {"title": "後半", "start_line": 6, "end_line": 9},
+            {"start_line": 1, "end_line": 5},
+            {"start_line": 6, "end_line": 9},
         ])
         provider = MockLLMProvider(response_text=ai_response)
 
@@ -246,12 +246,12 @@ class TestMarkdownParserLLMInjection:
             # プロンプトに start_line が含まれていることを確認
             system_prompt = provider.calls[0][0]
             assert "start_line" in system_prompt
-            assert "start_paragraph" not in system_prompt
-            # 仮想セクションが生成されていることを確認
+            assert "title" not in system_prompt.lower() or "タイトル" not in system_prompt
+            # 仮想セクションが生成されていることを確認（part-N 形式）
             virtual_sections = [s for s in sections if s.is_subsplit]
             assert len(virtual_sections) == 2
-            assert virtual_sections[0].subsplit_title == "Title: 前半"
-            assert virtual_sections[1].subsplit_title == "Title: 後半"
+            assert virtual_sections[0].subsplit_title == "Title: part-1"
+            assert virtual_sections[1].subsplit_title == "Title: part-2"
         finally:
             os.unlink(temp_path)
 
@@ -312,8 +312,8 @@ class TestOwnContentRange:
         # own_content 範囲は L2〜L10（9行）
         # AI には 1-based 相対番号（1〜9）で送信される
         ai_response = json.dumps([
-            {"title": "テーブル前半", "start_line": 1, "end_line": 5},
-            {"title": "テーブル後半", "start_line": 6, "end_line": 9},
+            {"start_line": 1, "end_line": 5},
+            {"start_line": 6, "end_line": 9},
         ])
         provider = MockLLMProvider(response_text=ai_response)
 
@@ -405,3 +405,106 @@ class TestOwnContentRange:
             assert "   1:" in user_message or "1:" in user_message
         finally:
             os.unlink(temp_path)
+
+
+# ---------------------------------------------------------------------------
+# プロンプトカスタマイズテスト
+# ---------------------------------------------------------------------------
+
+
+class TestAIPromptCustomization:
+    """AI プロンプトカスタマイズのテスト"""
+
+    def test_default_prompt_unchanged(self):
+        """ai_prompt_extra_notes 未指定時、デフォルトプロンプトが使われる"""
+        provider = MockLLMProvider()
+        parser = MarkdownParser(split_mode="ai", llm_provider=provider)
+        prompt = parser._build_ai_system_prompt()
+        assert DEFAULT_AI_PROMPT_PARTS["role"] in prompt
+        assert DEFAULT_AI_PROMPT_PARTS["purpose"] in prompt
+        assert DEFAULT_AI_PROMPT_PARTS["format"] in prompt
+        assert DEFAULT_AI_PROMPT_PARTS["notes"] in prompt
+
+    def test_prompt_extra_appended(self):
+        """ai_prompt_extra_notes が notes パート末尾に追記される"""
+        extra = "- Mermaid ブロックの途中では分割しないこと"
+        provider = MockLLMProvider()
+        parser = MarkdownParser(
+            split_mode="ai", llm_provider=provider, ai_prompt_extra_notes=extra
+        )
+        prompt = parser._build_ai_system_prompt()
+        assert extra in prompt
+        # デフォルトの notes も含まれている
+        assert DEFAULT_AI_PROMPT_PARTS["notes"] in prompt
+
+    def test_prompt_extra_none(self):
+        """ai_prompt_extra_notes=None の場合、デフォルトと同一"""
+        provider = MockLLMProvider()
+        parser_default = MarkdownParser(split_mode="ai", llm_provider=provider)
+        parser_none = MarkdownParser(
+            split_mode="ai", llm_provider=provider, ai_prompt_extra_notes=None
+        )
+        assert parser_default._build_ai_system_prompt() == parser_none._build_ai_system_prompt()
+
+    def test_total_lines_in_user_prompt(self):
+        """ユーザープロンプトに total_lines が含まれる"""
+        ai_response = json.dumps([
+            {"start_line": 1, "end_line": 2},
+        ])
+        provider = MockLLMProvider(response_text=ai_response)
+
+        content = "# Title\n\n"
+        content += "Big content. " * 100 + "\n"
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            f.write(content)
+            temp_path = f.name
+
+        try:
+            parser = MarkdownParser(
+                split_mode="ai",
+                split_threshold=50,
+                llm_provider=provider,
+            )
+            parser.parse(temp_path)
+
+            assert len(provider.calls) > 0
+            user_message = provider.calls[0][1]
+            assert "全" in user_message and "行です" in user_message
+        finally:
+            os.unlink(temp_path)
+
+    def test_prompt_extra_passed_to_llm(self):
+        """ai_prompt_extra_notes が実際の LLM 呼び出しに反映される"""
+        extra = "- コードブロックの途中では分割しないこと"
+        provider = MockLLMProvider(response_text="[]")
+
+        content = "# Title\n\n"
+        content += "Big content. " * 100 + "\n"
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+            f.write(content)
+            temp_path = f.name
+
+        try:
+            parser = MarkdownParser(
+                split_mode="ai",
+                split_threshold=50,
+                llm_provider=provider,
+                ai_prompt_extra_notes=extra,
+            )
+            parser.parse(temp_path)
+
+            assert len(provider.calls) > 0
+            system_prompt = provider.calls[0][0]
+            assert extra in system_prompt
+        finally:
+            os.unlink(temp_path)
+
+    def test_prompt_no_title_field(self):
+        """システムプロンプトに title フィールドが含まれないことを確認"""
+        provider = MockLLMProvider()
+        parser = MarkdownParser(split_mode="ai", llm_provider=provider)
+        prompt = parser._build_ai_system_prompt()
+        assert "title" not in prompt
+        assert "タイトル" not in prompt

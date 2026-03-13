@@ -111,6 +111,8 @@ export function ReviewResult({
     { name: 'spec-markdown.md', desc: '変換後の設計書（マークダウン形式）' },
     { name: 'code-numbered.txt', desc: '行番号付きプログラム' },
     { name: 'review-result.md', desc: 'AIレビュー結果' },
+    // 分割レビュー時はsplitフォルダを1行で表示
+    ...(isSplitMode ? [{ name: '/split', desc: '分割レビューの中間分析結果' }] : []),
   ]
 
   // 分割レビュー用のグループ一覧テーブル（カスタム領域）

@@ -100,6 +100,7 @@ async def split_markdown(request: SplitMarkdownRequest):
                 split_mode=request.splitMode,
                 llm_config=md2map_llm_config,
                 max_subsections=max_subsections,
+                ai_prompt_extra_notes=request.aiPromptExtraNotes or None,
             )
             sections, warnings = parser.parse(input_path, request.maxDepth)
 
