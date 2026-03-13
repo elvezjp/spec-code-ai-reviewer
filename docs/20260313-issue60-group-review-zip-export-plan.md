@@ -331,36 +331,36 @@ v0.9.1のリリース日を `2026-03-13` に修正し、更新履歴セクショ
 
 ### 仕様書
 
-- [ ] `spec.md` L601-609: ZIP同梱ファイルテーブルにグループレビュー個別結果ファイルを追記
-- [ ] `spec.md` L639-648: README.mdテンプレートの同梱ファイル一覧に追記
-- [ ] `spec.md` L1383-1392: 結果画面のダウンロード内容テーブル画面イメージを更新
-- [ ] `spec.md` L3425: E2Eテストケース `E2E-RV-009` にグループレビュー個別結果の確認を追加
+- [x] `spec.md` L601-609: ZIP同梱ファイルテーブルにグループレビュー個別結果ファイルを追記
+- [x] `spec.md` L639-648: README.mdテンプレートの同梱ファイル一覧に追記
+- [x] `spec.md` L1383-1392: 結果画面のダウンロード内容テーブル画面イメージを更新
+- [x] `spec.md` L3425: E2Eテストケース `E2E-RV-009` にグループレビュー個別結果の確認を追加
 
 ### 実装
 
-- [ ] `hooks/useZipExport.ts`: `SplitExportData` に `groupReviews` フィールドを追加
-- [ ] `hooks/useZipExport.ts`: `downloadZip` 内でグループレビュー結果を `split/review-result-{groupId}.md` としてZIPに追加
-- [ ] `services/markdown.ts`: `generateReadmeMarkdown` に `groupReviews` 引数を追加
-- [ ] `services/markdown.ts`: 同梱ファイルテーブルにグループレビューファイル行を動的追加
-- [ ] `hooks/useZipExport.ts`: `generateReadmeMarkdown` 呼び出しに `groupReviews` を渡す
-- [ ] `index.tsx`: `downloadZip` ラッパーで `splitReviewState.groupReviews` からデータを構築して渡す
-- [ ] `components/ReviewResult.tsx`: ダウンロード内容テーブルにグループレビュー個別結果ファイル行を動的表示
+- [x] `hooks/useZipExport.ts`: `SplitExportData` に `groupReviews` フィールドを追加
+- [x] `hooks/useZipExport.ts`: `downloadZip` 内でグループレビュー結果を `split/review-result-{groupId}.md` としてZIPに追加
+- [x] `services/markdown.ts`: `generateReadmeMarkdown` に `groupReviews` 引数を追加
+- [x] `services/markdown.ts`: 同梱ファイルテーブルにグループレビューファイル行を動的追加
+- [x] `hooks/useZipExport.ts`: `generateReadmeMarkdown` 呼び出しに `groupReviews` を渡す
+- [x] `index.tsx`: `downloadZip` ラッパーで `splitReviewState.groupReviews` からデータを構築して渡す
+- [x] `components/ReviewResult.tsx`: ダウンロード内容テーブルにグループレビュー個別結果ファイル行を動的表示
 
 ### テスト
 
-- [ ] `useZipExport.test.ts`: グループレビュー結果がZIPに含まれることを検証
-- [ ] `markdown.test.ts`: READMEにグループレビューファイルが同梱ファイル一覧に出力されることを検証
-- [ ] `markdown.test.ts`: groupReviewsが空のときグループレビューファイル行が含まれないことを検証
+- [x] `useZipExport.test.ts`: グループレビュー結果がZIPに含まれることを検証
+- [x] `markdown.test.ts`: READMEにグループレビューファイルが同梱ファイル一覧に出力されることを検証
+- [x] `markdown.test.ts`: groupReviewsが空のときグループレビューファイル行が含まれないことを検証
 
 ### 変更履歴
 
-- [ ] `CHANGELOG.md`: v0.9.1のリリース日を `2026-03-13` に修正、「追加」にグループレビュー個別結果ZIP同梱を追記
-- [ ] `versions/README.md`: v0.9.1のリリース日を `2026-03-13` に修正、更新履歴にグループレビュー個別結果ZIP同梱を追記
+- [x] `CHANGELOG.md`: v0.9.1のリリース日を `2026-03-13` に修正、「追加」にグループレビュー個別結果ZIP同梱を追記
+- [x] `versions/README.md`: v0.9.1のリリース日を `2026-03-13` に修正、更新履歴にグループレビュー個別結果ZIP同梱を追記
 
 ### 検証
 
-- [ ] 分割レビュー完了後のZIPに `split/review-result-{groupId}.md` が含まれる
-- [ ] 各ファイルの内容がグループレビュー結果と一致する
-- [ ] スキップされたグループはZIPに含まれない
-- [ ] 一括レビュー時は従来通りの5ファイルのみ
-- [ ] 結果画面のダウンロード内容テーブルにグループレビューファイルが表示される
+- [x] 分割レビュー完了後のZIPに `split/review-result-{groupId}.md` が含まれる
+- [x] 各ファイルの内容がグループレビュー結果と一致する
+- [x] スキップされたグループはZIPに含まれない
+- [x] 一括レビュー時は従来通りの5ファイルのみ
+- [x] 結果画面のダウンロード内容テーブルにグループレビューファイルが表示される
