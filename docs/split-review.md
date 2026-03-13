@@ -116,11 +116,11 @@ AIモード選択時、分割オプションに「分割時の注意事項（任
 
 ## 4. 3フェーズAIレビュー
 
-バックエンドのAPIは [versions/v0.9.0/backend/app/routers/](../versions/v0.9.0/backend/app/routers/) に実装されています。
+バックエンドのAPIは [latest/backend/app/routers/](../latest/backend/app/routers/) に実装されています。
 
 ### フェーズ1: 構造マッチング (`POST /api/review/structure-matching`)
 
-**ファイル**: [review.py](../versions/v0.9.0/backend/app/routers/review.py)
+**ファイル**: [review.py](../latest/backend/app/routers/review.py)
 
 - **入力**: 設計書とコードそれぞれの `INDEX.md` + `MAP.json`
 - **処理**: LLMが両方の構造を分析し、関連性の高いセクションとコードシンボルを **多対多** のグループにまとめる
@@ -171,16 +171,16 @@ AIモード選択時、分割オプションに「分割時の注意事項（任
 
 ## 5. フロントエンド実装
 
-**ディレクトリ**: [versions/v0.9.0/frontend/src/features/reviewer/](../versions/v0.9.0/frontend/src/features/reviewer/)
+**ディレクトリ**: [latest/frontend/src/features/reviewer/](../latest/frontend/src/features/reviewer/)
 
 | コンポーネント | ファイル | 役割 |
 |---|---|---|
-| 分割設定UI | [SplitSettingsSection.tsx](../versions/v0.9.0/frontend/src/features/reviewer/components/SplitSettingsSection.tsx) | batch/splitモード選択、分割モード選択（見出し/NLP/AI）、分割深度設定、重要パート・要約設定、プレビュー |
-| 実行画面 | [SplitExecutingScreen.tsx](../versions/v0.9.0/frontend/src/features/reviewer/components/SplitExecutingScreen.tsx) | 3フェーズの進捗表示（✓/⏳/○）、一時停止・再開、エラー時のリトライ・スキップ |
-| リトライ設定 | [RetrySettingsPanel.tsx](../versions/v0.9.0/frontend/src/features/reviewer/components/RetrySettingsPanel.tsx) | グループレビューエラー時の要約・リトライ設定 |
-| 統合リトライ設定 | [IntegrateRetrySettingsPanel.tsx](../versions/v0.9.0/frontend/src/features/reviewer/components/IntegrateRetrySettingsPanel.tsx) | 結果統合エラー時の要約・リトライ設定 |
-| 分割ロジック | [useSplitSettings.ts](../versions/v0.9.0/frontend/src/features/reviewer/hooks/useSplitSettings.ts) | 状態管理、API呼び出し、分割モード管理、要約実行 |
-| APIサービス | [api.ts](../versions/v0.9.0/frontend/src/features/reviewer/services/api.ts) | 各エンドポイントへのリクエスト |
+| 分割設定UI | [SplitSettingsSection.tsx](../latest/frontend/src/features/reviewer/components/SplitSettingsSection.tsx) | batch/splitモード選択、分割モード選択（見出し/NLP/AI）、分割深度設定、重要パート・要約設定、プレビュー |
+| 実行画面 | [SplitExecutingScreen.tsx](../latest/frontend/src/features/reviewer/components/SplitExecutingScreen.tsx) | 3フェーズの進捗表示（✓/⏳/○）、一時停止・再開、エラー時のリトライ・スキップ |
+| リトライ設定 | [RetrySettingsPanel.tsx](../latest/frontend/src/features/reviewer/components/RetrySettingsPanel.tsx) | グループレビューエラー時の要約・リトライ設定 |
+| 統合リトライ設定 | [IntegrateRetrySettingsPanel.tsx](../latest/frontend/src/features/reviewer/components/IntegrateRetrySettingsPanel.tsx) | 結果統合エラー時の要約・リトライ設定 |
+| 分割ロジック | [useSplitSettings.ts](../latest/frontend/src/features/reviewer/hooks/useSplitSettings.ts) | 状態管理、API呼び出し、分割モード管理、要約実行 |
+| APIサービス | [api.ts](../latest/frontend/src/features/reviewer/services/api.ts) | 各エンドポイントへのリクエスト |
 
 ---
 
