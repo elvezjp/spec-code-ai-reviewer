@@ -4,10 +4,10 @@
 [![Elvez](https://img.shields.io/badge/Elvez-Product-3F61A7?style=flat-square)](https://elvez.co.jp/)
 [![IXV Ecosystem](https://img.shields.io/badge/IXV-Ecosystem-3F61A7?style=flat-square)](https://elvez.co.jp/ixv/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/badge/Python-3.8+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.9+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Stars](https://img.shields.io/github/stars/elvezjp/add-line-numbers?style=social)](https://github.com/elvezjp/add-line-numbers/stargazers)
 
-A Python script that automatically adds 4-digit right-aligned line numbers to text files. It makes code reviews and AI analysis easier by letting you point to “line X.” No external libraries required—just Python 3.8+.
+A Python script that automatically adds 4-digit right-aligned line numbers to text files. It makes code reviews and AI analysis easier by letting you point to “line X.” No external libraries required—just Python 3.9+.
 
 ## Quick Start
 
@@ -36,7 +36,7 @@ A Python script that automatically adds 4-digit right-aligned line numbers to te
   - Binary files or non-UTF-8 files are automatically skipped
 
 - Requirements
-  - Python 3.8 or later
+  - Python 3.9 or later
   - No extra pip installs needed
 
 ## Usage
@@ -109,11 +109,29 @@ pytest test.py -v
 add-line-numbers/
 ├── add_line_numbers.py   # main script
 ├── test.py               # unit tests
+├── pyproject.toml        # package configuration
 ├── spec.md               # detailed specification
+├── CONTRIBUTING.md       # contribution guidelines
+├── CHANGELOG.md          # version history
+├── SECURITY.md           # security policy
 ├── LICENSE               # MIT license
-└── README.md             # this file
+├── README.md             # this file (English)
+└── README_ja.md          # Japanese README
 ```
-### Background
+
+## Security
+
+For security issues and vulnerability reporting, see [SECURITY.md](SECURITY.md).
+
+## Contributing
+
+We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
+
+## Background
 This tool originated during the development of **IXV**, a development-support AI for Japanese technical documents and specifications.
 
 IXV focuses on understanding, structuring, and utilizing Japanese documents in system development. This repository publishes a small, practical piece of that effort.
