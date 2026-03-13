@@ -32,7 +32,7 @@ dev = [
 code2map = "code2map.cli:main"
 
 [project.urls]
-Repository = "https://github.com/example/code2map"
+Repository = "https://github.com/elvezjp/code2map"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
