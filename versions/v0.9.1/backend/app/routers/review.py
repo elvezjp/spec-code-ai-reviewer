@@ -149,6 +149,50 @@ async def test_llm_connection(request: TestConnectionRequest):
 
 
 # ---------------------------------------------------------------------------
+# 分割レビュー用フォールバックプロンプト定数
+# systemPromptが未指定の場合に使用されるデフォルト値
+# ---------------------------------------------------------------------------
+
+# Phase1: 構造マッチング
+STRUCTURE_MATCHING_DEFAULT_ROLE = "設計書とソースコードの構造を分析する専門家"
+STRUCTURE_MATCHING_DEFAULT_PURPOSE = (
+    "設計書の構造（セクション一覧）とコードの構造（シンボル一覧）を比較し、"
+    "関連性の高い設計書セクションとコードシンボルをグループにまとめる"
+)
+
+# Phase2: グループレビュー
+GROUP_REVIEW_DEFAULT_ROLE = "設計書とソースコードの整合性をレビューする専門家"
+GROUP_REVIEW_DEFAULT_PURPOSE = "設計書の記述とコード実装の整合性を確認し、指摘事項を報告する"
+GROUP_REVIEW_DEFAULT_FORMAT = """マークダウン形式で、以下の内容を出力してください：
+1. サマリー（このグループの整合性評価）
+2. 突合結果一覧（テーブル形式: 設計書箇所、コード箇所、判定、指摘内容）
+3. 詳細（問題点と推奨事項）"""
+GROUP_REVIEW_DEFAULT_NOTES = [
+    "- 【重要】提供されている設計書・コードは元ファイルの一部分です。"
+    "全体構造情報（INDEX.md / MAP.json）で示される他の部分は別のグループでレビューされています。",
+    "- 【重要】別のグループでレビューされている関数・メソッド・クラスについて"
+    "「未実装」「存在しない」と指摘しないでください。"
+    "全体構造情報を参照し、そのシンボルが他のグループに存在する場合は、実装済みと判断してください。",
+    "- 最後に複数グループのレビュー結果を統合するので、統合時への申し送り事項があれば記載してください",
+    "- 元ファイルでの行番号範囲はヘッダーコメント（`// lines: X-Y`）に記載されているので、"
+    "行番号を参照する際はこの範囲に基づいて記載してください",
+]
+
+# Phase3: 結果統合
+INTEGRATE_DEFAULT_ROLE = "レビュー結果を統合するエキスパート"
+INTEGRATE_DEFAULT_PURPOSE = (
+    "複数のグループレビュー結果を統合し、最終的なレビューレポートを"
+    "Markdown形式で生成する"
+)
+INTEGRATE_DEFAULT_FORMAT = "Markdown形式のレビューレポートを出力してください。"
+INTEGRATE_DEFAULT_NOTES = [
+    "- 各グループのレビュー結果を統合し、重複する指摘を排除してください",
+    "- グループ分けは参考に止め、元々の設計書、コードの記載、構造を尊重してください。",
+    "- 出力形式の指定に従い、全体を一括で評価した場合と同様になるよう出力してください。",
+    "- マッチング処理やグループレビューで統合実行用に付与された付加情報は、レポートに含めないでください。",
+]
+
+# ---------------------------------------------------------------------------
 # ユーティリティ（分割レビュー用）
 # ---------------------------------------------------------------------------
 
@@ -227,7 +271,7 @@ async def structure_matching(request: StructureMatchingRequest):
         if request.systemPrompt and request.systemPrompt.role:
             role = request.systemPrompt.role
         else:
-            role = "設計書とソースコードの構造を分析する専門家"
+            role = STRUCTURE_MATCHING_DEFAULT_ROLE
 
         # purposeの設定（systemPrompt.purposeを引用して構造マッチングの目的を説明）
         if request.systemPrompt and request.systemPrompt.purpose:
@@ -241,10 +285,7 @@ async def structure_matching(request: StructureMatchingRequest):
                 "関連性の高い設計書セクションとコードシンボルをグループにまとめてください。"
             )
         else:
-            purpose = (
-                "設計書の構造（セクション一覧）とコードの構造（シンボル一覧）を比較し、"
-                "関連性の高い設計書セクションとコードシンボルをグループにまとめる"
-            )
+            purpose = STRUCTURE_MATCHING_DEFAULT_PURPOSE
 
         output_format = """以下のJSON形式で出力してください:
 
@@ -410,7 +451,7 @@ async def review_group(request: GroupReviewRequest):
         if request.systemPrompt and request.systemPrompt.role:
             role = request.systemPrompt.role
         else:
-            role = "設計書とソースコードの整合性をレビューする専門家"
+            role = GROUP_REVIEW_DEFAULT_ROLE
 
         # purposeの設定（systemPrompt.purposeを引用してグループレビューの目的を説明）
         if request.systemPrompt and request.systemPrompt.purpose:
@@ -423,24 +464,16 @@ async def review_group(request: GroupReviewRequest):
                 "設計書の記述とコード実装の整合性を確認し、指摘事項を報告してください。"
             )
         else:
-            purpose = "設計書の記述とコード実装の整合性を確認し、指摘事項を報告する"
+            purpose = GROUP_REVIEW_DEFAULT_PURPOSE
 
         # output_formatの設定（systemPrompt.formatがあれば使用）
         if request.systemPrompt and request.systemPrompt.format:
             output_format = request.systemPrompt.format
         else:
-            output_format = """マークダウン形式で、以下の内容を出力してください：
-1. サマリー（このグループの整合性評価）
-2. 突合結果一覧（テーブル形式: 設計書箇所、コード箇所、判定、指摘内容）
-3. 詳細（問題点と推奨事項）"""
+            output_format = GROUP_REVIEW_DEFAULT_FORMAT
 
         # 注意事項の構築
-        notes_parts = [
-            "- 【重要】提供されている設計書・コードは元ファイルの一部分です。全体構造情報（INDEX.md / MAP.json）で示される他の部分は別のグループでレビューされています。",
-            "- 【重要】別のグループでレビューされている関数・メソッド・クラスについて「未実装」「存在しない」と指摘しないでください。全体構造情報を参照し、そのシンボルが他のグループに存在する場合は、実装済みと判断してください。",
-            "- 最後に複数グループのレビュー結果を統合するので、統合時への申し送り事項があれば記載してください",
-            "- 元ファイルでの行番号範囲はヘッダーコメント（`// lines: X-Y`）に記載されているので、行番号を参照する際はこの範囲に基づいて記載してください",
-        ]
+        notes_parts = list(GROUP_REVIEW_DEFAULT_NOTES)
 
         # request.systemPromptがある場合は注意事項に追加
         if request.systemPrompt and request.systemPrompt.notes:
@@ -549,7 +582,7 @@ async def integrate_reviews(request: IntegrateRequest):
         if request.systemPrompt and request.systemPrompt.role:
             role = request.systemPrompt.role
         else:
-            role = "レビュー結果を統合するエキスパート"
+            role = INTEGRATE_DEFAULT_ROLE
 
         # purposeの設定（systemPrompt.purposeを引用して統合の目的を説明）
         if request.systemPrompt and request.systemPrompt.purpose:
@@ -562,24 +595,16 @@ async def integrate_reviews(request: IntegrateRequest):
                 "各グループのレビュー結果を統合し、1つの最終的なレビューレポートを生成してください。"
             )
         else:
-            purpose = (
-                "複数のグループレビュー結果を統合し、最終的なレビューレポートを"
-                "Markdown形式で生成する"
-            )
+            purpose = INTEGRATE_DEFAULT_PURPOSE
 
         # output_formatの設定（systemPrompt.formatがあれば使用）
         if request.systemPrompt and request.systemPrompt.format:
             output_format = request.systemPrompt.format
         else:
-            output_format = "Markdown形式のレビューレポートを出力してください。"
+            output_format = INTEGRATE_DEFAULT_FORMAT
 
         # 注意事項の構築
-        notes_parts = [
-            "- 各グループのレビュー結果を統合し、重複する指摘を排除してください",
-            "- グループ分けは参考に止め、元々の設計書、コードの記載、構造を尊重してください。",
-            "- 出力形式の指定に従い、全体を一括で評価した場合と同様になるよう出力してください。",
-            "- マッチング処理やグループレビューで統合実行用に付与された付加情報は、レポートに含めないでください。",
-        ]
+        notes_parts = list(INTEGRATE_DEFAULT_NOTES)
 
         # request.systemPromptがある場合は注意事項に追加
         if request.systemPrompt and request.systemPrompt.notes:
