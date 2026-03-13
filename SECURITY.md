@@ -1,164 +1,166 @@
-# セキュリティポリシー
+# Security Policy
 
-## サポートバージョン
+[English](./SECURITY.md) | [日本語](./SECURITY_ja.md)
 
-最新バージョンをサポートしています：
+## Supported Versions
 
-| バージョン | サポート状況       |
-| ---------- | ------------------ |
-| 0.9.1    | :white_check_mark: |
-| < 0.9.1    | :x:                |
+The latest version is supported:
 
-## 脆弱性の報告
+| Version | Supported          |
+| ------- | ------------------ |
+| 0.9.1   | :white_check_mark: |
+| < 0.9.1 | :x:                |
 
-spec-code-ai-reviewer にセキュリティ上の脆弱性を発見した場合は、以下の手順に従って責任ある報告をお願いします：
+## Reporting a Vulnerability
 
-### 報告方法
+If you discover a security vulnerability in spec-code-ai-reviewer, please follow these steps for responsible disclosure:
 
-1. セキュリティ脆弱性に関して公開の GitHub Issue を作成**しないでください**
-2. 以下の方法でメンテナーに詳細なレポートを送信してください：
-   - GitHub のプライベートセキュリティアドバイザリを作成する（推奨）
-   - 重大度の低い問題については「security」ラベルを付けて Issue を作成する
+### How to Report
 
-### 報告に含める内容
+1. **Do not** create a public GitHub Issue for security vulnerabilities
+2. Send a detailed report to the maintainers using one of the following methods:
+   - Create a private security advisory on GitHub (recommended)
+   - For low-severity issues, create an Issue with the "security" label
 
-レポートには以下の情報を含めてください：
+### What to Include
 
-- 脆弱性の説明
-- 問題を再現する手順
-- 潜在的な影響と重大度
-- 修正案や緩和策の提案
-- 連絡先情報（任意）
+Please include the following information in your report:
 
-### 報告例
+- Description of the vulnerability
+- Steps to reproduce the issue
+- Potential impact and severity
+- Proposed fix or mitigation (if any)
+- Contact information (optional)
+
+### Example Report
 
 ```
-件名: [SECURITY] ファイルアップロード時の潜在的な脆弱性
+Subject: [SECURITY] Potential vulnerability in file upload
 
-説明:
-特別に細工された Excel ファイルをアップロードする際、
-サーバー側で予期しない動作が発生する可能性があります。
+Description:
+When uploading a specially crafted Excel file,
+unexpected behavior may occur on the server side.
 
-再現手順:
-1. 悪意のあるマクロを含む Excel ファイルを作成
-2. そのファイルをアップロード
-3. 変換処理を実行
+Steps to Reproduce:
+1. Create an Excel file with malicious macros
+2. Upload the file
+3. Execute the conversion process
 
-影響:
-サーバーリソースの過剰消費やサービス拒否を引き起こす可能性があります。
+Impact:
+Could cause excessive server resource consumption or denial of service.
 
-修正案:
-ファイルサイズとセル数の制限を強化する。
+Proposed Fix:
+Strengthen file size and cell count limits.
 ```
 
-## 対応スケジュール
+## Response Timeline
 
-- **初回応答**: 48時間以内
-- **状況更新**: 7日以内
-- **解決**: 重大度に応じて
-  - 緊急: 14日以内
-  - 高: 30日以内
-  - 中: 60日以内
-  - 低: 次回リリースサイクル
+- **Initial response**: Within 48 hours
+- **Status update**: Within 7 days
+- **Resolution**: Based on severity
+  - Critical: Within 14 days
+  - High: Within 30 days
+  - Medium: Within 60 days
+  - Low: Next release cycle
 
-## セキュリティに関する考慮事項
+## Security Considerations
 
-### ファイル処理
+### File Processing
 
-spec-code-ai-reviewer は以下を含む可能性のあるファイルを処理します：
+spec-code-ai-reviewer processes files that may contain:
 
-- Excel ファイル（マクロ、外部リンク、埋め込みオブジェクト）
-- ソースコードファイル（任意のテキストファイル）
-- 設定ファイル（API キー、認証情報）
+- Excel files (macros, external links, embedded objects)
+- Source code files (arbitrary text files)
+- Configuration files (API keys, credentials)
 
-**推奨事項:**
+**Recommendations:**
 
-1. 信頼できるソースからのファイルのみを処理する
-2. 外部ソースから受け取ったファイルは処理前に確認する
-3. 信頼できないファイルを処理する場合は、サンドボックス環境で実行する
-4. API キーや認証情報を含む設定ファイルは慎重に管理する
+1. Only process files from trusted sources
+2. Review files received from external sources before processing
+3. Use a sandbox environment when processing untrusted files
+4. Carefully manage configuration files containing API keys or credentials
 
-### API キーの管理
+### API Key Management
 
-このアプリケーションは以下の API を使用する可能性があります：
+This application may use the following APIs:
 
 - AWS Bedrock
 - Anthropic API
 - OpenAI API
 
-**推奨事項:**
+**Recommendations:**
 
-1. API キーを環境変数で管理し、コードにハードコードしない
-2. 最小権限の原則に従い、必要な権限のみを付与する
-3. API キーを定期的にローテーションする
-4. 本番環境と開発環境で異なる API キーを使用する
+1. Manage API keys via environment variables; do not hardcode them
+2. Follow the principle of least privilege, granting only necessary permissions
+3. Rotate API keys regularly
+4. Use different API keys for production and development environments
 
-### 入力検証
+### Input Validation
 
-spec-code-ai-reviewer には以下のセキュリティ対策が含まれています：
+spec-code-ai-reviewer includes the following security measures:
 
-- Excel ファイル処理時に `read_only=True` モードを使用
-- ファイルサイズの制限
-- 入力ファイルの検証
+- Uses `read_only=True` mode for Excel file processing
+- File size limits
+- Input file validation
 
-### 出力のセキュリティ
+### Output Security
 
-生成されたレビューレポートを使用する際の注意点：
+Notes when using generated review reports:
 
-- レポートには入力ファイルの内容が含まれる可能性があります
-- 機密情報を含むファイルをレビューした場合、レポートにも機密情報が含まれます
-- レポートを共有する前に内容を確認してください
+- Reports may contain content from input files
+- If files containing sensitive information are reviewed, the report will also contain sensitive information
+- Review report content before sharing
 
-### 依存関係
+### Dependencies
 
-このプロジェクトは以下の主要な依存関係を使用しています：
+This project uses the following key dependencies:
 
-- `fastapi`: Web フレームワーク
-- `markitdown`: Excel → Markdown 変換
-- `openpyxl`: Excel ファイル処理
-- `boto3`: AWS Bedrock 連携
-- `anthropic`: Anthropic API 連携
-- `openai`: OpenAI API 連携
+- `fastapi`: Web framework
+- `markitdown`: Excel to Markdown conversion
+- `openpyxl`: Excel file processing
+- `boto3`: AWS Bedrock integration
+- `anthropic`: Anthropic API integration
+- `openai`: OpenAI API integration
 
-これらの依存関係のセキュリティアドバイザリを監視し、必要に応じて更新しています。
+We monitor security advisories for these dependencies and update as needed.
 
-## セキュリティのベストプラクティス
+## Security Best Practices
 
-spec-code-ai-reviewer を使用する際の推奨事項：
+Recommendations when using spec-code-ai-reviewer:
 
-1. **最新版を維持**: 常に最新バージョンを使用する
-2. **入力を確認**: 処理前にファイルを検査する
-3. **サンドボックス処理**: 信頼できないファイルにはコンテナや VM を使用する
-4. **出力を検証**: 使用前に生成されたレポートを確認する
-5. **権限を制限**: 必要最小限の権限で実行する
-6. **依存関係を監視**: 依存ライブラリを最新に保つ
-7. **認証情報を保護**: API キーを安全に管理する
+1. **Stay up to date**: Always use the latest version
+2. **Verify input**: Inspect files before processing
+3. **Sandbox processing**: Use containers or VMs for untrusted files
+4. **Validate output**: Review generated reports before use
+5. **Limit permissions**: Run with minimum required privileges
+6. **Monitor dependencies**: Keep dependency libraries up to date
+7. **Protect credentials**: Manage API keys securely
 
-## 既知のセキュリティ制限
+## Known Security Limitations
 
-1. **マクロ検出**: Excel ファイルのマクロは実行されませんが、その存在を警告しません
-2. **外部リンク**: Excel ファイル内の外部リンクは処理されますが、検証されません
-3. **ファイルサイズ**: 非常に大きなファイルはメモリの問題を引き起こす可能性があります
-4. **LLM 出力**: AI による出力は常に正確とは限りません。重要な判断には人間の確認が必要です
+1. **Macro detection**: Excel file macros are not executed but their presence is not warned about
+2. **External links**: External links in Excel files are processed but not validated
+3. **File size**: Very large files may cause memory issues
+4. **LLM output**: AI-generated output is not always accurate. Human review is required for critical decisions
 
-## セキュリティアップデート
+## Security Updates
 
-セキュリティアップデートは以下の形式でリリースされます：
+Security updates are released as follows:
 
-- 軽微な問題にはパッチバージョン（例: 0.5.1）
-- 重大な問題にはマイナーバージョン（例: 0.6.0）
-- CHANGELOG.md に `[SECURITY]` プレフィックス付きで記載
+- Patch versions for minor issues (e.g., 0.5.1)
+- Minor versions for critical issues (e.g., 0.6.0)
+- Listed in CHANGELOG.md with a `[SECURITY]` prefix
 
-## 謝辞
+## Acknowledgments
 
-脆弱性を責任を持って報告してくださるセキュリティ研究者に感謝します。有効なセキュリティ問題を報告された方は、以下で謝辞を記載します：
+We appreciate security researchers who responsibly report vulnerabilities. Those who report valid security issues will be acknowledged in:
 
-- CHANGELOG.md（匿名を希望される場合を除く）
-- 修正のリリースノート
+- CHANGELOG.md (unless anonymity is preferred)
+- Fix release notes
 
-## ご質問
+## Questions
 
-脆弱性ではないセキュリティ関連のご質問は、以下の方法でお問い合わせください：
+For security-related questions that are not vulnerabilities, please contact us via:
 
-- 「security」ラベルを付けて Issue を作成
-- メンテナーに連絡
+- Create an Issue with the "security" label
+- Contact the maintainers

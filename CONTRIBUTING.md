@@ -1,166 +1,168 @@
-# spec-code-ai-reviewer への貢献
+# Contributing to spec-code-ai-reviewer
 
-このドキュメントでは、プロジェクトへの貢献に関するガイドラインを説明します。
+[English](./CONTRIBUTING.md) | [日本語](./CONTRIBUTING_ja.md)
 
-## 貢献の方法
+This document describes guidelines for contributing to the project.
 
-### バグの報告
+## How to Contribute
 
-バグを発見した場合は、以下の情報を含めて GitHub で Issue を作成してください：
+### Reporting Bugs
 
-- 明確で説明的なタイトル
-- 問題を再現する手順
-- 期待される動作
-- 実際の動作
-- サンプルファイル（可能であれば）
-- Python のバージョン（バックエンド関連の場合）
-- Node.js のバージョン（フロントエンド関連の場合）
-- オペレーティングシステム
+If you find a bug, please create a GitHub Issue with the following information:
 
-### 機能改善の提案
+- A clear, descriptive title
+- Steps to reproduce the issue
+- Expected behavior
+- Actual behavior
+- Sample files (if possible)
+- Python version (for backend issues)
+- Node.js version (for frontend issues)
+- Operating system
 
-機能改善の提案を歓迎します！以下の内容で Issue を作成してください：
+### Suggesting Enhancements
 
-- 明確で説明的なタイトル
-- 提案する機能の詳細な説明
-- ユースケースとメリット
-- 関連する例やモックアップ
+We welcome enhancement suggestions! Please create an Issue with:
 
-### プルリクエスト
+- A clear, descriptive title
+- Detailed description of the proposed feature
+- Use cases and benefits
+- Related examples or mockups
 
-1. **リポジトリをフォーク**し、`main` からブランチを作成（ユーザ名/日付YYYYMMDD-内容）
+### Pull Requests
+
+1. **Fork the repository** and create a branch from `main` (username/dateYYYYMMDD-description)
    ```bash
    git checkout -b user/20260105-fix-feature
    ```
 
-2. 既存のコードベースの**コーディングスタイルに従う**
-   - 意味のある変数名と関数名を使用
-   - 複雑なロジックにはコメントを追加
-   - PEP 8 スタイルガイドラインに従う
+2. **Follow the existing codebase's coding style**
+   - Use meaningful variable and function names
+   - Add comments for complex logic
+   - Follow PEP 8 style guidelines
 
-3. 変更に対する**テストを作成**
+3. **Write tests** for your changes
    ```bash
-   # バックエンドのテストを実行
+   # Run backend tests
    cd versions/v0.9.1/backend
    uv run pytest tests/ -v
 
-   # バックエンドのカバレッジ付きテスト
+   # Run backend tests with coverage
    uv run pytest tests/ --cov=app --cov-report=html
 
-   # フロントエンドのテストを実行
+   # Run frontend tests
    cd versions/v0.9.1/frontend
    npm run test:run
 
-   # フロントエンドのカバレッジ付きテスト
+   # Run frontend tests with coverage
    npm run test:coverage
    ```
 
-4. 必要に応じて**ドキュメントを更新**
-   - ユーザー向けの変更は README.md を更新
-   - 仕様の変更は spec.md を更新
-   - 新機能を導入する場合は例を追加
+4. **Update documentation** as needed
+   - Update README.md for user-facing changes
+   - Update spec.md for specification changes
+   - Add examples for new features
 
-5. 明確なコミットメッセージで**変更をコミット**
+5. **Commit your changes** with clear commit messages
    ```bash
    git commit -m "Add feature: description of your changes"
    ```
 
-6. **フォークにプッシュ**してプルリクエストを送信
+6. **Push to your fork** and submit a pull request
    ```bash
    git push origin user/20260105-fix-feature
    ```
 
-7. **レビューを待つ** - メンテナーが PR をレビューし、変更を依頼する場合があります
+7. **Wait for review** — maintainers will review your PR and may request changes
 
-## 開発環境のセットアップ
+## Development Environment Setup
 
-### 前提条件
+### Prerequisites
 
-- Python 3.10 以上
-- Node.js 20 以上
-- [uv](https://docs.astral.sh/uv/) パッケージマネージャー
-- AWS アカウント（Bedrock へのアクセス権限）または Anthropic/OpenAI API キー
+- Python 3.10 or later
+- Node.js 20 or later
+- [uv](https://docs.astral.sh/uv/) package manager
+- AWS account (with Bedrock access) or Anthropic/OpenAI API key
 
-### インストール
+### Installation
 
 ```bash
-# フォークをクローン
+# Clone your fork
 git clone https://github.com/YOUR-USERNAME/spec-code-ai-reviewer.git
 cd spec-code-ai-reviewer
 
-# バックエンドの依存関係をインストール
+# Install backend dependencies
 cd versions/v0.9.1/backend
 uv sync
 
-# フロントエンドの依存関係をインストール
+# Install frontend dependencies
 cd ../frontend
 npm install
 ```
 
-### テストの実行
+### Running Tests
 
 ```bash
-# バックエンド：すべてのテストを実行
+# Backend: Run all tests
 cd versions/v0.9.1/backend
 uv run pytest tests/ -v
 
-# バックエンド：特定のテストファイルを実行
+# Backend: Run a specific test file
 uv run pytest tests/test_convert.py -v
 
-# バックエンド：カバレッジ付きで実行
+# Backend: Run with coverage
 uv run pytest tests/ --cov=app --cov-report=html
 
-# フロントエンド：すべてのテストを実行
+# Frontend: Run all tests
 cd versions/v0.9.1/frontend
 npm run test:run
 
-# フロントエンド：ウォッチモードでテストを実行
+# Frontend: Run tests in watch mode
 npm run test
 
-# フロントエンド：カバレッジ付きで実行
+# Frontend: Run with coverage
 npm run test:coverage
 ```
 
-### 変更のテスト
+### Testing Your Changes
 
-PR を送信する前に、以下を確認してください：
+Before submitting a PR, verify the following:
 
-1. 既存のすべてのテストがパスすること
-2. 新機能には新しいテストが追加されていること
-3. コードカバレッジが維持または改善されていること
-4. アプリケーションがさまざまなファイルで正しく動作すること
+1. All existing tests pass
+2. New tests are added for new features
+3. Code coverage is maintained or improved
+4. The application works correctly with various files
 
-## コーディングガイドライン
+## Coding Guidelines
 
-### Python スタイル（バックエンド）
+### Python Style (Backend)
 
-- PEP 8 スタイルガイドラインに従う
-- 適切な場所で型ヒントを使用
-- 最大行長: 100 文字（長い文字列については柔軟に対応）
-- 意味のある変数名を使用
+- Follow PEP 8 style guidelines
+- Use type hints where appropriate
+- Maximum line length: 100 characters (flexible for long strings)
+- Use meaningful variable names
 
-### TypeScript/React スタイル（フロントエンド）
+### TypeScript/React Style (Frontend)
 
-- ESLint の設定に従う（`npm run lint` で確認）
-- TypeScript の厳格モードを使用
-- コンポーネントは関数コンポーネントで記述
-- Tailwind CSS でスタイリング
-- 意味のあるコンポーネント名と変数名を使用
+- Follow ESLint configuration (`npm run lint` to check)
+- Use TypeScript strict mode
+- Write function components
+- Style with Tailwind CSS
+- Use meaningful component and variable names
 
-### ドキュメント
+### Documentation
 
-- すべてのパブリック関数とクラスに docstring/JSDoc を追加
-- 明確で簡潔な言葉を使用
-- 役立つ場合は docstring に例を含める
+- Add docstrings/JSDoc to all public functions and classes
+- Use clear, concise language
+- Include examples in docstrings when helpful
 
-### コミットメッセージ
+### Commit Messages
 
-- 現在形を使用（「Added feature」ではなく「Add feature」）
-- 命令形を使用（「Moves cursor to...」ではなく「Move cursor to...」）
-- 最初の行は 72 文字以下に制限
-- 関連する場合は Issue とプルリクエストを参照
+- Use present tense ("Add feature" not "Added feature")
+- Use imperative mood ("Move cursor to..." not "Moves cursor to...")
+- Limit the first line to 72 characters or fewer
+- Reference issues and pull requests when relevant
 
-例：
+Example:
 ```
 Add multi-provider LLM support
 
@@ -171,29 +173,29 @@ Add multi-provider LLM support
 Closes #123
 ```
 
-## バージョン管理
+## Version Management
 
-貢献する際は：
-- 最新バージョン（`versions/v0.9.1/`）に焦点を当てる
-- 可能な限り後方互換性を維持する
-- 破壊的変更は明確にドキュメント化する
+When contributing:
+- Focus on the latest version (`versions/v0.9.1/`)
+- Maintain backward compatibility where possible
+- Clearly document breaking changes
 
-## コードレビュープロセス
+## Code Review Process
 
-1. メンテナーがプルリクエストをレビューします
-2. 変更の依頼や質問がある場合があります
-3. 承認されると、PR がマージされます
-4. 貢献はリリースノートで謝辞を記載します
+1. Maintainers will review your pull request
+2. There may be change requests or questions
+3. Once approved, the PR will be merged
+4. Contributions will be acknowledged in release notes
 
-## コミュニティガイドライン
+## Community Guidelines
 
-- 敬意を持ち、包括的であること
-- 建設的なフィードバックを提供すること
-- 可能な場合は他の人を助けること
-- 行動規範に従うこと
+- Be respectful and inclusive
+- Provide constructive feedback
+- Help others when possible
+- Follow the code of conduct
 
-## ご質問
+## Questions
 
-貢献についてご質問がある場合は、お気軽に：
-- 「question」ラベルを付けて Issue を作成
-- メンテナーに連絡
+If you have questions about contributing, feel free to:
+- Create an Issue with the "question" label
+- Contact the maintainers
