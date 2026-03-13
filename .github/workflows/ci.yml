@@ -15,11 +15,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: latest/backend
+        working-directory: versions/v0.9.1/backend
     steps:
-      - name: Enable symlinks on Windows
-        if: runner.os == 'Windows'
-        run: git config --global core.symlinks true
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
@@ -39,11 +36,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: latest/frontend
+        working-directory: versions/v0.9.1/frontend
     steps:
-      - name: Enable symlinks on Windows
-        if: runner.os == 'Windows'
-        run: git config --global core.symlinks true
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
