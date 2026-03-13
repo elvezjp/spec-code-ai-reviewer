@@ -128,6 +128,13 @@ export function Reviewer() {
     hasPendingSummarize,
   } = useSplitSettings()
 
+  // Split review execution state
+  const [splitReviewState, setSplitReviewState] = useState<SplitReviewState>({
+    phase: 'idle',
+    groupReviews: [],
+    currentGroupIndex: 0,
+  })
+
   // Wrap downloadZip to inject splitData when in split mode
   const downloadZip = useCallback(
     async (data: ReviewExecutionData, executionNumber: number) => {
@@ -137,19 +144,20 @@ export function Reviewer() {
             documentMapJson: splitPreviewResult.documentMapJson || undefined,
             codeIndex: splitPreviewResult.codeIndex || undefined,
             codeMapJson: splitPreviewResult.codeMapJson || undefined,
+            // グループレビュー個別結果を追加
+            groupReviews: splitReviewState.groupReviews
+              .filter((g) => g.status === 'completed' && g.result?.report)
+              .map((g) => ({
+                groupId: g.groupId,
+                groupName: g.groupName,
+                report: g.result!.report,
+              })),
           }
         : undefined
       await rawDownloadZip(data, executionNumber, splitData)
     },
-    [rawDownloadZip, splitPreviewResult]
+    [rawDownloadZip, splitPreviewResult, splitReviewState.groupReviews]
   )
-
-  // Split review execution state
-  const [splitReviewState, setSplitReviewState] = useState<SplitReviewState>({
-    phase: 'idle',
-    groupReviews: [],
-    currentGroupIndex: 0,
-  })
   const [integrateSummarizeState, setIntegrateSummarizeState] = useState<IntegrateSummarizeState>({ groups: [] })
   const [batchReviewError, setBatchReviewError] = useState<string | null>(null)
   const errorActionRef = useRef<{ action: 'retry' | 'skip'; groupId: string; docMode?: 'original' | 'summarize'; codeMode?: 'original' | 'summarize' } | null>(null)

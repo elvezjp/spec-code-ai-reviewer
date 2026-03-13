@@ -608,6 +608,16 @@ AIへの指示内容をユーザーがカスタマイズ可能。以下の4項�
 | code-numbered.txt | 行番号付きプログラム |
 | review-result.md | AIレビュー結果 |
 
+**分割レビュー時の追加ファイル:**
+
+| ファイル名 | 説明 |
+|-----------|------|
+| split/spec-INDEX.md | 設計書の構造情報（md2map生成） |
+| split/spec-MAP.json | 設計書のセクションマップ（md2map生成） |
+| split/code-INDEX.md | プログラムの構造情報（code2map生成） |
+| split/code-MAP.json | プログラムのシンボルマップ（code2map生成） |
+| split/review-result-{groupId}.md | グループレビュー個別結果（グループごとに1ファイル） |
+
 **README.mdの内容:**
 
 ```markdown
@@ -645,6 +655,10 @@ AIへの指示内容をユーザーがカスタマイズ可能。以下の4項�
 | spec-markdown.md | 変換後の設計書（マークダウン形式） |
 | code-numbered.txt | 行番号付きプログラム |
 | review-result.md | AIレビュー結果 |
+| split/review-result-group1.md | グループレビュー個別結果（ユーザー管理） |
+| split/review-result-group2.md | グループレビュー個別結果（注文処理） |
+
+※ 分割レビュー時のみ `split/` 配下のファイルが含まれる。グループ数に応じてファイル数は変動する。
 ```
 
 ### 2.6 設定ファイル管理
@@ -1389,6 +1403,9 @@ md2mapは以下の3つの分割モードを提供する。ユーザーが分割�
 │   │ spec-markdown.md     │ 変換後の設計書                 │   │
 │   │ code-numbered.txt    │ 行番号付きプログラム           │   │
 │   │ review-result.md     │ AIレビュー結果                 │   │
+│   │ （分割レビュー時）                                      │   │
+│   │ split/review-result-  │ グループレビュー個別結果        │   │
+│   │   {groupId}.md       │ （グループごとに1ファイル）      │   │
 │   └──────────────────────┴──────────────────────────────┘   │
 │                                                             │
 │                    [一式ダウンロード（ZIP）]                 │
@@ -3422,7 +3439,7 @@ AIエディタに指示して、以下の試験項目からファイルを作成
 | E2E-RV-006 | 簡易判定表示 | レビュー完了済み | レビュー結果を確認 | 簡易判定セクションが表示される（問題あり:赤/確認が必要:黄/問題なし:緑、NG/要確認/OKの検出数表示） | |
 | E2E-RV-007 | レビュー情報表示 | レビュー完了済み | レビュー結果を確認 | レビュー情報セクションにバージョン、モデルID、実行日時、入力/出力トークン数が表示される | |
 | E2E-RV-008 | レポートヘッダ確認 | レビュー完了済み | ダウンロードしたMDファイルを確認 | 「設計書-Javaプログラム突合 AIレビュアー レビューレポート」タイトルとレビュー情報テーブルが含まれる | |
-| E2E-RV-009 | レビュー実行データ一式ダウンロード | レビュー完了済み | 一式ダウンロードボタン押下 | YYYYMMDD-HHMM-NNN-review-data.zip がダウンロードされ、README.md, system-prompt.md, spec-markdown.md, code-numbered.txt, review-result.md が含まれる | |
+| E2E-RV-009 | レビュー実行データ一式ダウンロード | レビュー完了済み | 一式ダウンロードボタン押下 | YYYYMMDD-HHMM-NNN-review-data.zip がダウンロードされ、README.md, system-prompt.md, spec-markdown.md, code-numbered.txt, review-result.md が含まれる。分割レビュー時は split/review-result-{groupId}.md も含まれる | |
 | E2E-RV-010 | 一式ダウンロードのREADME確認 | レビュー完了済み | ZIPを展開しREADME.mdを確認 | レビュー情報（バージョン、モデルID、実行日時、トークン数）と同梱ファイル一覧が記載されている | |
 
 #### 13.3.3 エラーハンドリングテスト

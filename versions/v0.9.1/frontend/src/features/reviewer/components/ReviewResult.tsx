@@ -111,6 +111,15 @@ export function ReviewResult({
     { name: 'spec-markdown.md', desc: '変換後の設計書（マークダウン形式）' },
     { name: 'code-numbered.txt', desc: '行番号付きプログラム' },
     { name: 'review-result.md', desc: 'AIレビュー結果' },
+    // グループレビュー個別結果（分割レビュー時のみ）
+    ...(isSplitMode && splitReviewState?.groupReviews
+      ? splitReviewState.groupReviews
+          .filter((g) => g.status === 'completed' && g.result?.report)
+          .map((g) => ({
+            name: `split/review-result-${g.groupId}.md`,
+            desc: `グループレビュー個別結果（${g.groupName}）`,
+          }))
+      : []),
   ]
 
   // 分割レビュー用のグループ一覧テーブル（カスタム領域）

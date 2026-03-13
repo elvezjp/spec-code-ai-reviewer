@@ -30,7 +30,7 @@ versions/
 
 | 機能 / バージョン | v0.8.0 | v0.8.1 | v0.8.2 | v0.9.0 | v0.9.1 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| リリース日 | 2026-02-06 | 2026-02-13 | 2026-02-24 | 2026-02-28 | 2026-03-12 |
+| リリース日 | 2026-02-06 | 2026-02-13 | 2026-02-24 | 2026-02-28 | 2026-03-13 |
 | フロントエンド | Vite + React + TypeScript | Vite + React + TypeScript | Vite + React + TypeScript | Vite + React + TypeScript | Vite + React + TypeScript |
 | Excel変換ツール | MarkItDown / excel2md（CSV） / excel2md（CSV+Mermaid） | MarkItDown / excel2md（CSV） / excel2md（CSV+Mermaid） | MarkItDown / excel2md（CSV） / excel2md（CSV+Mermaid） | MarkItDown / excel2md（CSV） / excel2md（CSV+Mermaid） | MarkItDown / excel2md（CSV） / excel2md（CSV+Mermaid） |
 | 設計書設定 | 優先度・種別・ツール選択（種別は設定ファイルで管理） | 優先度・種別・ツール選択（種別は設定ファイルで管理） | 優先度・種別・ツール選択（種別は設定ファイルで管理） | 優先度・種別・ツール選択（種別は設定ファイルで管理） | 優先度・種別・ツール選択（種別は設定ファイルで管理） |
@@ -84,7 +84,8 @@ versions/
 
 ## 更新履歴
 
-### v0.9.1 (2026-03-12)
+### v0.9.1 (2026-03-13)
+- **グループレビュー個別結果のZIP同梱**: 分割レビュー時のZIPダウンロードに各グループのレビュー結果（`split/review-result-{groupId}.md`）を含める（#60）
 - **セクション除外機能**: 分割プレビューの設計書パーツ一覧に「除外」チェックボックスを追加。チェックしたセクションを構造マッチング・グループレビューの対象から除外できる（#54）
 - **AIサブスプリット注意事項指定**: AIモード分割時に「分割時の注意事項（AIへの指示・任意）」テキストエリアを追加。入力内容が AIサブスプリットプロンプトに追記される（#55）
 - **分割プレビューエラー表示改善**: エラーメッセージがトーストで消えてしまう問題を修正。ボタン直下に常時表示（#52）
