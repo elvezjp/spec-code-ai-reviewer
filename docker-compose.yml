@@ -12,12 +12,12 @@ services:
       - ./versions/v0.8.2/frontend/dist:/var/www/spec-code-ai-reviewer/versions/v0.8.2/frontend:ro
       - ./versions/v0.8.1/frontend/dist:/var/www/spec-code-ai-reviewer/versions/v0.8.1/frontend:ro
       - ./versions/v0.8.0/frontend/dist:/var/www/spec-code-ai-reviewer/versions/v0.8.0/frontend:ro
-      - ./versions/v0.7.0/frontend/dist:/var/www/spec-code-ai-reviewer/versions/v0.7.0/frontend:ro
-      - ./versions/v0.6.0/frontend/dist:/var/www/spec-code-ai-reviewer/versions/v0.6.0/frontend:ro
-      # v0.5.x以前: 静的HTMLをそのまま配信
-      - ./versions/v0.5.2/frontend:/var/www/spec-code-ai-reviewer/versions/v0.5.2/frontend:ro
-      - ./versions/v0.5.1/frontend:/var/www/spec-code-ai-reviewer/versions/v0.5.1/frontend:ro
-      - ./versions/v0.5.0/frontend:/var/www/spec-code-ai-reviewer/versions/v0.5.0/frontend:ro
+      # v0.7.0以前は起動対象外
+      # - ./versions/v0.7.0/frontend/dist:/var/www/spec-code-ai-reviewer/versions/v0.7.0/frontend:ro
+      # - ./versions/v0.6.0/frontend/dist:/var/www/spec-code-ai-reviewer/versions/v0.6.0/frontend:ro
+      # - ./versions/v0.5.2/frontend:/var/www/spec-code-ai-reviewer/versions/v0.5.2/frontend:ro
+      # - ./versions/v0.5.1/frontend:/var/www/spec-code-ai-reviewer/versions/v0.5.1/frontend:ro
+      # - ./versions/v0.5.0/frontend:/var/www/spec-code-ai-reviewer/versions/v0.5.0/frontend:ro
     depends_on:
       - backend
 
@@ -31,11 +31,12 @@ services:
       - "8082"
       - "8081"
       - "8080"
-      - "8070"
-      - "8060"
-      - "8052"
-      - "8051"
-      - "8050"
+      # v0.7.0以前は起動対象外
+      # - "8070"
+      # - "8060"
+      # - "8052"
+      # - "8051"
+      # - "8050"
     environment:
       - AWS_REGION=${AWS_REGION:-ap-northeast-1}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}

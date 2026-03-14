@@ -5,12 +5,11 @@ const COOKIE_NAME = 'app_version'
 
 // デフォルトのバージョン情報
 const DEFAULT_VERSIONS: VersionInfo[] = [
-  { value: 'v0.9.0', label: 'v0.9.0', isLatest: true },
+  { value: 'v0.9.1', label: 'v0.9.1', isLatest: true },
+  { value: 'v0.9.0', label: 'v0.9.0', isLatest: false },
   { value: 'v0.8.2', label: 'v0.8.2', isLatest: false },
   { value: 'v0.8.1', label: 'v0.8.1', isLatest: false },
   { value: 'v0.8.0', label: 'v0.8.0', isLatest: false },
-  { value: 'v0.7.0', label: 'v0.7.0', isLatest: false },
-  { value: 'v0.6.0', label: 'v0.6.0', isLatest: false },
 ]
 
 // Cookieヘルパー
