@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-add-line-numbers = { git = "https://github.com/elvezjp/add-line-numbers.git", branch = "main" }
+add-line-numbers = { path = "../add-line-numbers", editable = true }
 
 [project.optional-dependencies]
 dev = [

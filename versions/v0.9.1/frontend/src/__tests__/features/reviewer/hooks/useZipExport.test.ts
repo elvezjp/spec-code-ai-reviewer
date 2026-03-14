@@ -120,6 +120,8 @@ describe('useZipExport', () => {
         executedAt: '2026/03/13 14:30:00',
         inputTokens: 1000,
         outputTokens: 500,
+        designs: [{ filename: 'spec.xlsx', role: '設計書', type: 'xlsx', tool: 'markitdown' }],
+        programs: [{ filename: 'Main.java' }],
       },
     }
 

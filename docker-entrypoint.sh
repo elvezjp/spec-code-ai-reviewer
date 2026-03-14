@@ -14,9 +14,18 @@ if [ ! -L "$BASE_PATH/latest" ]; then
 fi
 
 # versions/配下の各バージョンの依存関係をインストール
+# v0.8.0以降のみ起動対象
+MIN_VERSION="0.8.0"
+
 for VERSION_DIR in "$BASE_PATH/versions"/v*/; do
+    VERSION_NAME=$(basename "$VERSION_DIR")
+    VERSION_NUM="${VERSION_NAME#v}"
+    # v0.8.0未満はスキップ
+    if [ "$(printf '%s\n%s' "$MIN_VERSION" "$VERSION_NUM" | sort -V | head -1)" != "$MIN_VERSION" ]; then
+        echo "Skipping $VERSION_NAME (below v$MIN_VERSION)"
+        continue
+    fi
     if [ -d "$VERSION_DIR/backend" ]; then
-        VERSION_NAME=$(basename "$VERSION_DIR")
         echo "Installing backend dependencies for $VERSION_NAME..."
         cd "$VERSION_DIR/backend"
         uv sync --frozen 2>/dev/null || uv sync

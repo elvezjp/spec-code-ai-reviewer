@@ -10,11 +10,12 @@ const VERSIONS = [
   { name: 'spec-code-ai-reviewer-v0.8.2', cwd: 'versions/v0.8.2', port: 8082, workers: 1 },
   { name: 'spec-code-ai-reviewer-v0.8.1', cwd: 'versions/v0.8.1', port: 8081, workers: 1 },
   { name: 'spec-code-ai-reviewer-v0.8.0', cwd: 'versions/v0.8.0', port: 8080, workers: 1 },
-  { name: 'spec-code-ai-reviewer-v0.7.0', cwd: 'versions/v0.7.0', port: 8070, workers: 1 },
-  { name: 'spec-code-ai-reviewer-v0.6.0', cwd: 'versions/v0.6.0', port: 8060, workers: 1 },
-  { name: 'spec-code-ai-reviewer-v0.5.2', cwd: 'versions/v0.5.2', port: 8052, workers: 1 },
-  { name: 'spec-code-ai-reviewer-v0.5.1', cwd: 'versions/v0.5.1', port: 8051, workers: 1 },
-  { name: 'spec-code-ai-reviewer-v0.5.0', cwd: 'versions/v0.5.0', port: 8050, workers: 1 },
+  // v0.7.0以前は起動対象外
+  // { name: 'spec-code-ai-reviewer-v0.7.0', cwd: 'versions/v0.7.0', port: 8070, workers: 1 },
+  // { name: 'spec-code-ai-reviewer-v0.6.0', cwd: 'versions/v0.6.0', port: 8060, workers: 1 },
+  // { name: 'spec-code-ai-reviewer-v0.5.2', cwd: 'versions/v0.5.2', port: 8052, workers: 1 },
+  // { name: 'spec-code-ai-reviewer-v0.5.1', cwd: 'versions/v0.5.1', port: 8051, workers: 1 },
+  // { name: 'spec-code-ai-reviewer-v0.5.0', cwd: 'versions/v0.5.0', port: 8050, workers: 1 },
 ];
 
 // 共通設定
