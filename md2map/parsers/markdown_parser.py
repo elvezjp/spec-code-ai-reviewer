@@ -118,7 +118,7 @@ class MarkdownParser(BaseParser):
             from sudachipy import dictionary
         except ImportError as exc:
             raise RuntimeError(
-                "NLP mode requires optional dependency. "
+                "NLP mode requires optional dependencies (sudachipy, sudachidict-core). "
                 "Install with: pip install md2map[nlp]"
             ) from exc
         self._nlp_tokenizer = dictionary.Dictionary().create()

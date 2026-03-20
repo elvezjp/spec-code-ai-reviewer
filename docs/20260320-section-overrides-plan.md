@@ -1,5 +1,7 @@
 # セクション単位の分割設定オーバーライド機能 修正計画書
 
+> **対応完了**: PR [#10](https://github.com/elvezjp/md2map/pull/10) / Issue [#9](https://github.com/elvezjp/md2map/issues/9) にて v0.3.1 として実装済み。全 99 テストパス、v0.3 との後方互換性確認済み。
+
 ## 概要
 
 セクション単位で分割設定をオーバーライドする機能を追加する。
@@ -408,24 +410,25 @@ AI モード・NLP モードの前提条件に遅延初期化の説明を追記:
 
 ### Step 1: 見出し一覧取得機能
 
-- [ ] `MarkdownParser.extract_headings()` の実装
-- [ ] CLI `headings` サブコマンドの実装
-- [ ] テスト追加・全テスト通過
-- [ ] `spec.md` に `headings` コマンドの仕様を追記
-- [ ] `README.md` / `README_ja.md` に `headings` コマンドの使用例を追記
+- [x] `MarkdownParser.extract_headings()` の実装
+- [x] CLI `headings` サブコマンドの実装
+- [x] テスト追加・全テスト通過（7 件追加）
+- [x] `spec.md` に `headings` コマンドの仕様を追記
+- [x] `README.md` / `README_ja.md` に `headings` コマンドの使用例を追記
 
 ### Step 2: セクション単位オーバーライド
 
-- [ ] `section_overrides` パラメータの追加（`MarkdownParser.__init__`）
-- [ ] `_resolve_settings()` の実装
-- [ ] `_ensure_llm_provider()` / `_ensure_nlp_tokenizer()` 遅延初期化の実装
-- [ ] `_refine_sections()` のオーバーライド対応
-- [ ] CLI `--section-overrides` オプションの実装
-- [ ] テスト追加・全テスト通過
-- [ ] `spec.md` にセクションオーバーライドの仕様を追記
-- [ ] `README.md` / `README_ja.md` に `--section-overrides` オプションの使用例を追記
+- [x] `section_overrides` パラメータの追加（`MarkdownParser.__init__`）
+- [x] `_resolve_settings()` の実装
+- [x] `_ensure_llm_provider()` / `_ensure_nlp_tokenizer()` 遅延初期化の実装
+- [x] `_refine_sections()` のオーバーライド対応
+- [x] CLI `--section-overrides` オプションの実装
+- [x] テスト追加・全テスト通過（9 件追加）
+- [x] `spec.md` にセクションオーバーライドの仕様を追記
+- [x] `README.md` / `README_ja.md` に `--section-overrides` オプションの使用例を追記
 
 ### 最終確認
 
-- [ ] 既存テストが全て通過（後方互換性）
-- [ ] `spec.md` の更新内容が実装と整合している
+- [x] 既存テストが全て通過（後方互換性、全 99 件パス）
+- [x] `spec.md` の更新内容が実装と整合している
+- [x] v0.3 との diff で heading / nlp / ai 全モード差分ゼロを確認

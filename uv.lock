@@ -636,6 +636,11 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+ai = [
+    { name = "anthropic" },
+    { name = "boto3" },
+    { name = "openai" },
+]
 dev = [
     { name = "anthropic" },
     { name = "boto3" },
@@ -648,21 +653,26 @@ dev = [
     { name = "sudachidict-core" },
     { name = "sudachipy" },
 ]
+nlp = [
+    { name = "sudachidict-core" },
+    { name = "sudachipy" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "add-line-numbers", git = "https://github.com/elvezjp/add-line-numbers.git?branch=main" },
-    { name = "anthropic", marker = "extra == 'dev'", specifier = ">=0.18" },
-    { name = "boto3", marker = "extra == 'dev'", specifier = ">=1.28" },
+    { name = "anthropic", marker = "extra == 'ai'", specifier = ">=0.18" },
+    { name = "boto3", marker = "extra == 'ai'", specifier = ">=1.28" },
+    { name = "md2map", extras = ["nlp", "ai"], marker = "extra == 'dev'" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0.0" },
-    { name = "openai", marker = "extra == 'dev'", specifier = ">=1.0" },
+    { name = "openai", marker = "extra == 'ai'", specifier = ">=1.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
-    { name = "sudachidict-core", marker = "extra == 'dev'", specifier = ">=20230927" },
-    { name = "sudachipy", marker = "extra == 'dev'", specifier = ">=0.6" },
+    { name = "sudachidict-core", marker = "extra == 'nlp'", specifier = ">=20230927" },
+    { name = "sudachipy", marker = "extra == 'nlp'", specifier = ">=0.6" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["nlp", "ai", "dev"]
 
 [[package]]
 name = "mypy"
