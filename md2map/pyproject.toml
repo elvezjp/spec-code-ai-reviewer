@@ -27,16 +27,21 @@ dependencies = [
 add-line-numbers = { path = "../add-line-numbers", editable = true }
 
 [project.optional-dependencies]
+nlp = [
+    "sudachipy>=0.6",
+    "sudachidict-core>=20230927",
+]
+ai = [
+    "openai>=1.0",
+    "anthropic>=0.18",
+    "boto3>=1.28",
+]
 dev = [
+    "md2map[nlp,ai]",
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
-    "sudachipy>=0.6",
-    "sudachidict-core>=20230927",
-    "openai>=1.0",
-    "anthropic>=0.18",
-    "boto3>=1.28",
 ]
 
 [project.scripts]

@@ -252,15 +252,20 @@ md2map/
 ├── tests/                 # Test code
 │   └── fixtures/          # Test fixtures
 ├── docs/                  # Documentation
+│   └── examples/          # Output examples per version
 ├── versions/              # Old version snapshots
 │   ├── v0.1.0/            # v0.1.0 snapshot
 │   ├── v0.2.0/            # v0.2.0 snapshot
+│   ├── v0.3.0/            # v0.3.0 snapshot
 │   └── README.md          # versions directory description
-├── CHANGELOG.md           # Version history
-├── CONTRIBUTING.md        # Contribution guidelines
+├── CHANGELOG.md           # Version history (English)
+├── CHANGELOG_ja.md        # Version history (Japanese)
+├── CONTRIBUTING.md        # Contribution guidelines (English)
+├── CONTRIBUTING_ja.md     # Contribution guidelines (Japanese)
 ├── README.md              # This file (English)
 ├── README_ja.md           # Japanese README
-├── SECURITY.md            # Security policy
+├── SECURITY.md            # Security policy (English)
+├── SECURITY_ja.md         # Security policy (Japanese)
 ├── spec.md                # Technical specification
 └── pyproject.toml         # Project configuration
 ```
