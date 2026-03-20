@@ -953,6 +953,7 @@ md2mapは以下の3つの分割モードを提供する。ユーザーが分割�
 - 分割レビュー選択時は、設計書とコードの**両方**を分割する。片側だけの分割は行わない。
 - 分割レビューには設計書とプログラムの両方が必要。どちらかが未選択の場合は分割を選択できない。
 - コードに未対応言語のファイルが含まれる場合は分割を選択できない（トースト通知で案内）。
+- 「分割」選択時に `POST /api/split/headings` で設計書の見出し一覧（H2まで）を取得し、事前重要指定パネルに表示する。取得結果はキャッシュし、一括↔分割の切り替えでは再取得しない。設計書マークダウンが変更された場合はキャッシュをリセットし、次に「分割」を選んだ時に再取得する。
 
 #### 2.7.3 分割オプション
 
@@ -976,6 +977,27 @@ md2mapは以下の3つの分割モードを提供する。ユーザーが分割�
 | 対応言語 | Python (.py) / Java (.java) |
 
 未対応の言語ファイルが含まれる場合、分割レビューは選択できない。
+
+**事前重要指定:**
+
+レビュー方式で「分割」を選択すると、設計書のH2見出し一覧が事前重要指定パネルに表示される。各見出しにはチェックボックスが配置され、事前重要指定するセクションにチェックを入れる。
+
+| 表示項目 | 説明 |
+|----------|------|
+| 事前重要指定 | チェックボックス。ONにしたセクションは事前重要指定セクションとして扱われる |
+| セクション名 | H2見出しテキスト |
+| 行範囲 | 開始行-終了行 |
+| 推定文字数 | セクションの推定文字数 |
+
+事前重要指定セクションが1つ以上選択されている場合、設計書の分割設定が「事前重要指定セクション」と「通常セクション」の2系統に分離され、それぞれに以下の分割設定を個別に指定できる。
+
+| オプション | 説明 | デフォルト |
+|-----------|------|-----------|
+| 分割モード | 分割方式の選択（見出し / NLP / AI） | 見出し（heading） |
+| 見出しレベル | 分割する見出しレベル（H2/H3/H4まで） | H2まで（推奨） |
+| 分割時の注意事項（AIモード専用） | AIサブスプリットのプロンプトに追記する注意事項（任意） | なし |
+
+事前重要指定セクションが未選択の場合は、従来通り1つの分割設定が適用される。
 
 #### 2.7.4 分割レビューフロー
 
@@ -1026,6 +1048,8 @@ md2mapは以下の3つの分割モードを提供する。ユーザーが分割�
 | セクション名 | 見出しテキスト |
 | 行範囲 | 開始行-終了行 |
 | 推定トークン | パーツの推定トークン数。要約選択時は要約後のトークン数または「未実行」を表示 |
+
+事前重要指定セクションから生成された DocumentPart には `pre_important` フラグが付与される。事前重要指定セクションのうち、サブスプリットされていないパート（子パートを持たないパート）のみ「重要」が自動的にONに設定される。ユーザーは手動で変更可能。
 
 **コードパーツ:**
 
@@ -1703,6 +1727,7 @@ md2mapは以下の3つの分割モードを提供する。ユーザーが分割�
 | GET | `/api/convert/available-tools` | 利用可能な変換ツール一覧取得 |
 | POST | `/api/organize-markdown` | Markdown整理（AI整理機能） |
 | POST | `/api/review` | 一括レビュー実行 |
+| POST | `/api/split/headings` | 見出し一覧取得（md2map使用） |
 | POST | `/api/split/markdown` | Markdown分割（md2map使用） |
 | POST | `/api/split/code` | コード分割（code2map使用） |
 | POST | `/api/review/structure-matching` | 構造マッチング（分割レビュー フェーズ1） |
@@ -2188,6 +2213,57 @@ OpenAI:
 ※ APIキーなどの認証情報はPOSTボディで送信（GETパラメータに含めない）
 ※ 認証情報はレスポンスやログに含めない（セキュリティ対策）
 
+#### POST /api/split/headings
+
+Markdownの見出し一覧を取得する（md2map使用）。事前重要指定セクションの選択UIで使用する。
+
+**リクエスト:**
+
+```json
+{
+  "content": "# 見出し1\n\n本文...\n\n## 見出し2\n\n..."
+}
+```
+
+| フィールド | 必須 | 説明 |
+|-----------|------|------|
+| content | ○ | Markdownテキスト |
+
+**レスポンス:**
+
+```json
+{
+  "success": true,
+  "headings": [
+    {
+      "title": "概要",
+      "level": 2,
+      "start_line": 1,
+      "end_line": 5,
+      "estimated_chars": 104
+    },
+    {
+      "title": "機能一覧",
+      "level": 2,
+      "start_line": 6,
+      "end_line": 48,
+      "estimated_chars": 961
+    }
+  ]
+}
+```
+
+| フィールド | 説明 |
+|-----------|------|
+| success | 成功/失敗 |
+| headings | 見出し情報の配列 |
+| headings[].title | 見出しテキスト |
+| headings[].level | 見出しレベル（1-2） |
+| headings[].start_line | 開始行番号 |
+| headings[].end_line | 終了行番号 |
+| headings[].estimated_chars | 推定文字数 |
+| error | エラー時のメッセージ |
+
 #### POST /api/split/markdown
 
 Markdownをセクション単位で分割する（md2map使用）。分割モード（見出し / NLP / AI）を選択可能。
@@ -2204,6 +2280,19 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
     "provider": "bedrock",
     "model": "anthropic.claude-sonnet-4-20250514-v1:0",
     "region": "us-east-1"
+  },
+  "pre_important_sections": [79, 111],
+  "pre_important_split_settings": {
+    "split_mode": "ai",
+    "heading_level": 2,
+    "split_instructions": "Mermaidブロックの途中では分割しない",
+    "max_subsections": 5
+  },
+  "normal_split_settings": {
+    "split_mode": "heading",
+    "heading_level": 2,
+    "split_instructions": null,
+    "max_subsections": 5
   }
 }
 ```
@@ -2215,6 +2304,12 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 | maxDepth | - | 分割の見出しレベル（1-6）。デフォルト: 2（H2まで） |
 | splitMode | - | 分割モード（`heading` / `nlp` / `ai`）。デフォルト: `heading` |
 | llmConfig | - | LLM設定。`splitMode` が `ai` の場合に必要 |
+| aiPromptExtraNotes | - | AIサブスプリットの注意事項に追記するテキスト（AIモード専用） |
+| pre_important_sections | - | 事前重要指定セクションの `start_line` リスト |
+| pre_important_split_settings | - | 事前重要指定セクション向け分割設定（`split_mode`, `heading_level`, `split_instructions`, `max_subsections`） |
+| normal_split_settings | - | 通常セクション向け分割設定（`split_mode`, `heading_level`, `split_instructions`, `max_subsections`） |
+
+`pre_important_sections` が指定された場合、`normal_split_settings` の設定がデフォルトの分割設定として適用され、`pre_important_split_settings` の設定が事前重要指定セクションにのみ上書き適用される。`pre_important_sections` が未指定の場合は従来通り `splitMode` が使用される。
 
 **splitMode の詳細:**
 
@@ -2243,13 +2338,16 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
       "startLine": 1,
       "endLine": 10,
       "content": "# 見出し1\n\n本文...",
-      "estimatedTokens": 500
+      "estimatedTokens": 500,
+      "pre_important": false
     }
   ],
   "indexContent": "# INDEX\n\n- MD1: 見出し1 (L1-L10)\n...",
   "mapJson": [{"id": "MD1", "title": "見出し1", "level": 1, "startLine": 1, "endLine": 10}]
 }
 ```
+
+レスポンスの各 DocumentPart に `pre_important` フィールド（bool、デフォルト: false）が含まれる。`pre_important_sections` で指定されたセクションの行範囲内に属するパートは `pre_important: true` となる。
 
 #### POST /api/split/code
 
