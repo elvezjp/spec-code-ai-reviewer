@@ -42,7 +42,7 @@ export function PreImportantPanel({
     <div className="p-3 border border-gray-200 rounded bg-white">
       <p className="text-sm font-semibold text-gray-700 mb-2">事前重要指定</p>
       <p className="text-xs text-gray-400 mb-2">
-        事前重要指定するセクションを選択してください。通常セクションと別途分割モードを設定できます。
+        事前重要指定するセクションを選択してください。通常セクションとは異なる設定で分割できます。
       </p>
       <div className="overflow-x-auto">
         <Table className="min-w-full text-sm">
