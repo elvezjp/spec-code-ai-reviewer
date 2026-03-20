@@ -14,7 +14,7 @@ dependencies = [
     "openai>=2.14.0",
     "python-dotenv>=1.0.0",
     "add-line-numbers",
-    "md2map",
+    "md2map[nlp,ai]",
     "code2map",
 ]
 
