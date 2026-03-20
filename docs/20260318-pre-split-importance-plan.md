@@ -357,6 +357,34 @@ md2map の結果には `pre_important` フラグは含まれない。
 
 ---
 
+## Step 5: ドキュメント更新
+
+### 修正対象
+
+| ファイル | 修正内容 |
+|---|---|
+| `versions/v0.9.2/spec.md` | 事前重要指定機能に関する仕様を追記 |
+| `docs/split-review.md` | 事前重要指定機能の説明を追記 |
+
+### spec.md の更新箇所
+
+| セクション | 更新内容 |
+|---|---|
+| 2.7.2 レビュー方式 | 「分割」選択時に見出し一覧を取得する動作を追記 |
+| 2.7.3 分割オプション | 事前重要指定パネルの説明を追加。設計書分割オプションを「事前重要指定セクション」「通常セクション」の2系統に分離した旨を追記 |
+| 2.7.5 分割プレビュー | 事前重要指定セクションの `pre_important` フラグ付与と、サブスプリットなしパートの重要=ON 自動設定を追記 |
+| 4.2 API詳細 | `POST /api/split/headings` エンドポイントを追加。`POST /api/split/markdown` に `pre_important_sections`、`pre_important_split_settings`、`normal_split_settings` パラメータを追記 |
+| 3.1 メイン画面 | 分割設定エリアに事前重要指定パネルと2系統の分割設定UIを追記 |
+
+### split-review.md の更新箇所
+
+| セクション | 更新内容 |
+|---|---|
+| 3. 分割設定 | 「3.5 事前重要指定」セクションを追加。見出し一覧取得、セクション選択、分割設定の2系統化、`pre_important` フラグの自動設定について記載 |
+| 8. エンドツーエンドの流れ | フロー図に事前重要指定のステップを追加 |
+
+---
+
 ## 修正順序と依存関係
 
 ```
@@ -370,6 +398,8 @@ Step 2: バックエンド API 修正（md2map の機能を利用、pre_importan
 Step 3: フロントエンド 事前重要指定 UI（Step 2 の API を利用）
   ↓
 Step 4: フロントエンド 分割後自動反映（Step 3 の UI 状態を利用）
+  ↓
+Step 5: ドキュメント更新（spec.md、split-review.md）
 ```
 
 ---
@@ -381,5 +411,61 @@ Step 4: フロントエンド 分割後自動反映（Step 3 の UI 状態を利
 | md2map | 見出し一覧取得の追加、セクション単位オーバーライド追加（[別計画書](../md2map/docs/20260320-section-overrides-plan.md)） |
 | バックエンド | 新規エンドポイント追加、既存エンドポイントのリクエスト/レスポンス拡張、`pre_important` の変換・付与 |
 | フロントエンド | 新規 UI コンポーネント追加、分割設定フローの拡張 |
+| ドキュメント | `spec.md` に事前重要指定の仕様追記、`split-review.md` に機能説明追記 |
 | code2map | 変更なし |
 | Phase 1〜3（構造マッチング・グループレビュー・統合） | MAP.json の `pre_important` をヒントとして活用可能（本計画では任意） |
+
+---
+
+## 完了チェックリスト
+
+### Step 0: v0.9.2 作成
+
+- [x] `versions/v0.9.1` を `versions/v0.9.2` にコピー
+- [x] v0.9.2 の全バージョン番号を更新
+- [x] インフラ設定（Docker/Nginx/PM2）に v0.9.2 を追加
+- [x] `latest` シンボリックリンクを v0.9.2 に更新
+- [x] 全バージョンの `useVersions.ts` に v0.9.2 を追加
+
+### Step 1: md2map 見出し一覧取得 / セクション単位オーバーライド
+
+- [x] md2map 側の計画書作成（[20260320-section-overrides-plan.md](../md2map/docs/20260320-section-overrides-plan.md)）
+- [ ] md2map の `extract_headings()` 実装完了・テスト通過
+- [ ] md2map の `section_overrides` 実装完了・テスト通過
+- [ ] md2map が main にマージされ、subtree で取り込み済み
+- [ ] `pyproject.toml` の md2map 参照を `branch = "main"` に戻す
+
+### Step 2: バックエンド API 修正
+
+- [ ] `HeadingsRequest` / `HeadingsResponse` スキーマの追加
+- [ ] `POST /api/split/headings` エンドポイントの実装
+- [ ] `SplitMarkdownRequest` に `pre_important_sections` / `pre_important_split_settings` / `normal_split_settings` を追加
+- [ ] `POST /api/split/markdown` で `section_overrides` への変換ロジックを実装
+- [ ] `POST /api/split/markdown` のレスポンスに `pre_important` フラグを付与するロジックを実装
+- [ ] バックエンドテスト追加・全テスト通過
+
+### Step 3: フロントエンド 事前重要指定 UI
+
+- [ ] `PreImportantPanel.tsx` コンポーネントの実装
+- [ ] `SplitSettingsSection.tsx` に事前重要指定パネルと2系統の分割設定を組み込み
+- [ ] `useSplitSettings.ts` に事前重要指定の状態管理を追加
+- [ ] `api.ts` に `fetchHeadings()` と分割設定パラメータを追加
+- [ ] 型定義（`types/index.ts`）の更新
+- [ ] フロントエンドテスト追加・全テスト通過
+
+### Step 4: フロントエンド 分割後自動反映
+
+- [ ] 分割結果受信時の `pre_important` フラグに基づく重要=ON 自動設定ロジック
+- [ ] 見出し一覧のキャッシュ管理（MD変更時リセット）
+- [ ] フロントエンドテスト追加・全テスト通過
+
+### Step 5: ドキュメント更新
+
+- [ ] `versions/v0.9.2/spec.md` に事前重要指定の仕様を追記
+- [ ] `docs/split-review.md` に事前重要指定の説明を追記
+
+### 最終確認
+
+- [ ] 全バックエンドテスト通過
+- [ ] 全フロントエンドテスト通過
+- [ ] 手動動作確認（事前重要指定 → 分割プレビュー → 重要=ON 自動設定の一連のフロー）
