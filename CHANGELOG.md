@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Heading list is cached across batch/split mode toggles; reset on design markdown change
   - Uses md2map v0.3.1 `extract_headings()` / `section_overrides` features
 
+### Fixed
+- **Retry with summarized spec not working** (#66): Fixed issue where clicking the retry button during group review did not pass the selected doc/code mode (original/summarize) to the retry handler, causing retries to always use the original (unsummarized) content even when "要約" was selected
+
 ### Changed
 - **md2map update**: Updated to v0.3.1 (heading list extraction, section-level override feature)
 - **Configuration file updates**: Set v0.9.2 as the latest version

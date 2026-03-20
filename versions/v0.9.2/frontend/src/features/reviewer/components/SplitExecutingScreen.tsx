@@ -9,7 +9,7 @@ interface SplitExecutingScreenProps {
   state: SplitReviewState
   onBack: () => void
   onRetryStructureMatching: () => void
-  onRetryGroup: (groupId: string) => void
+  onRetryGroup: (groupId: string, docMode?: 'original' | 'summarize', codeMode?: 'original' | 'summarize') => void
   onSkipGroup: (groupId: string) => void
   onRetryIntegrate: () => void
   currentDocumentContent?: string
@@ -224,7 +224,7 @@ export function SplitExecutingScreen({
                 {/* リトライ / スキップ ボタン */}
                 <div className="flex items-center justify-center gap-3 mt-3">
                   <button
-                    onClick={() => onRetryGroup(errorGroup.groupId)}
+                    onClick={() => onRetryGroup(errorGroup.groupId, retryDocMode, retryCodeMode)}
                     disabled={retryDisabled}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white text-sm rounded-md transition"
                   >
