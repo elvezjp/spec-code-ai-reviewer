@@ -8,8 +8,8 @@ The latest version is supported:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.9.1   | :white_check_mark: |
-| < 0.9.1 | :x:                |
+| 0.9.2   | :white_check_mark: |
+| < 0.9.2 | :x:                |
 
 ## Reporting a Vulnerability
 
