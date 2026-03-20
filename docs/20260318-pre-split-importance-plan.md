@@ -1,5 +1,7 @@
 # 事前重要指定機能 修正計画書
 
+> **対応完了**: [PR #65](https://github.com/elvezjp/spec-code-ai-reviewer/pull/65) で実装済み（2026-03-20）
+
 ## 概要
 
 分割前に重要なシート・セクションを指定する「事前重要指定」機能を追加する。
@@ -430,42 +432,42 @@ Step 5: ドキュメント更新（spec.md、split-review.md）
 ### Step 1: md2map 見出し一覧取得 / セクション単位オーバーライド
 
 - [x] md2map 側の計画書作成（[20260320-section-overrides-plan.md](../md2map/docs/20260320-section-overrides-plan.md)）
-- [ ] md2map の `extract_headings()` 実装完了・テスト通過
-- [ ] md2map の `section_overrides` 実装完了・テスト通過
-- [ ] md2map が main にマージされ、subtree で取り込み済み
-- [ ] `pyproject.toml` の md2map 参照を `branch = "main"` に戻す
+- [x] md2map の `extract_headings()` 実装完了・テスト通過
+- [x] md2map の `section_overrides` 実装完了・テスト通過
+- [x] md2map が main にマージされ、subtree で取り込み済み
+- [x] `pyproject.toml` の md2map 参照を `branch = "main"` に戻す
 
 ### Step 2: バックエンド API 修正
 
-- [ ] `HeadingsRequest` / `HeadingsResponse` スキーマの追加
-- [ ] `POST /api/split/headings` エンドポイントの実装
-- [ ] `SplitMarkdownRequest` に `pre_important_sections` / `pre_important_split_settings` / `normal_split_settings` を追加
-- [ ] `POST /api/split/markdown` で `section_overrides` への変換ロジックを実装
-- [ ] `POST /api/split/markdown` のレスポンスに `pre_important` フラグを付与するロジックを実装
-- [ ] バックエンドテスト追加・全テスト通過
+- [x] `HeadingsRequest` / `HeadingsResponse` スキーマの追加
+- [x] `POST /api/split/headings` エンドポイントの実装
+- [x] `SplitMarkdownRequest` に `preImportantSections` / `preImportantSplitSettings` / `normalSplitSettings` を追加
+- [x] `POST /api/split/markdown` で `section_overrides` への変換ロジックを実装
+- [x] `POST /api/split/markdown` のレスポンスに `preImportant` フラグを付与するロジックを実装
+- [x] バックエンドテスト追加・全テスト通過（178件）
 
 ### Step 3: フロントエンド 事前重要指定 UI
 
-- [ ] `PreImportantPanel.tsx` コンポーネントの実装
-- [ ] `SplitSettingsSection.tsx` に事前重要指定パネルと2系統の分割設定を組み込み
-- [ ] `useSplitSettings.ts` に事前重要指定の状態管理を追加
-- [ ] `api.ts` に `fetchHeadings()` と分割設定パラメータを追加
-- [ ] 型定義（`types/index.ts`）の更新
-- [ ] フロントエンドテスト追加・全テスト通過
+- [x] `PreImportantPanel.tsx` コンポーネントの実装
+- [x] `SplitSettingsSection.tsx` に事前重要指定パネルと2系統の分割設定を組み込み
+- [x] `useSplitSettings.ts` に事前重要指定の状態管理を追加
+- [x] `api.ts` に `fetchHeadings()` と分割設定パラメータを追加
+- [x] 型定義（`types/index.ts`）の更新
+- [x] フロントエンドテスト全通過（140件）
 
 ### Step 4: フロントエンド 分割後自動反映
 
-- [ ] 分割結果受信時の `pre_important` フラグに基づく重要=ON 自動設定ロジック
-- [ ] 見出し一覧のキャッシュ管理（MD変更時リセット）
-- [ ] フロントエンドテスト追加・全テスト通過
+- [x] 分割結果受信時の `preImportant` フラグに基づく重要=ON 自動設定ロジック
+- [x] 見出し一覧のキャッシュ管理（MD変更時リセット）
+- [x] 見出し取得エラー時のUI表示（エラーメッセージ表示、分割オプション非表示）
 
 ### Step 5: ドキュメント更新
 
-- [ ] `versions/v0.9.2/spec.md` に事前重要指定の仕様を追記
-- [ ] `docs/split-review.md` に事前重要指定の説明を追記
+- [x] `versions/v0.9.2/spec.md` に事前重要指定の仕様を追記
+- [x] `docs/split-review.md` に事前重要指定の説明を追記
 
 ### 最終確認
 
-- [ ] 全バックエンドテスト通過
-- [ ] 全フロントエンドテスト通過
-- [ ] 手動動作確認（事前重要指定 → 分割プレビュー → 重要=ON 自動設定の一連のフロー）
+- [x] 全バックエンドテスト通過（178件）
+- [x] 全フロントエンドテスト通過（140件）
+- [x] 手動動作確認（事前重要指定 → 分割プレビュー → 重要=ON 自動設定の一連のフロー）
