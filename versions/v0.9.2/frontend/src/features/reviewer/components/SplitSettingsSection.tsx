@@ -213,7 +213,7 @@ export function SplitSettingsSection({
               {/* 設計書 — 通常セクション */}
               {settings.reviewMode === 'split' && (
                 <DocumentSplitSettingsBlock
-                  title={hasPreImportantSelected ? '設計書 — 通常セクション' : '設計書'}
+                  title="設計書 — 通常セクション"
                   radioNamePrefix="normal"
                   splitSettings={normalSplitSettings}
                   onSplitSettingsChange={onNormalSplitSettingsChange}
