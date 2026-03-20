@@ -1,7 +1,6 @@
 """CLI エントリポイント"""
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
@@ -95,25 +94,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="AI サブスプリットの注意事項に追記するテキスト",
     )
-    build_parser.add_argument(
-        "--section-overrides",
-        default=None,
-        help="セクション単位の分割設定オーバーライド（JSON ファイルパスまたは JSON 文字列）",
-    )
-
-    # headings サブコマンド
-    headings_parser = subparsers.add_parser(
-        "headings", help="見出し一覧を取得（JSON 出力）"
-    )
-    headings_parser.add_argument("input_file", help="解析対象のマークダウンファイル")
-    headings_parser.add_argument(
-        "--max-depth",
-        type=int,
-        default=6,
-        choices=range(1, 7),
-        metavar="N",
-        help="取得対象の最大見出し深さ 1-6（デフォルト: 6）",
-    )
 
     return parser
 
@@ -143,42 +123,10 @@ def cmd_build(args: argparse.Namespace) -> int:
     if lines is None:
         return 1
 
-    # section_overrides の解析
-    section_overrides = None
-    if args.section_overrides:
-        overrides_str = args.section_overrides
-        # ファイルパスの場合はファイルから読み込み
-        overrides_path = Path(overrides_str)
-        if overrides_path.exists():
-            try:
-                section_overrides = json.loads(
-                    overrides_path.read_text(encoding="utf-8")
-                )
-            except (json.JSONDecodeError, OSError) as exc:
-                logger.error(f"Failed to read section-overrides file: {exc}")
-                return 1
-        else:
-            try:
-                section_overrides = json.loads(overrides_str)
-            except json.JSONDecodeError as exc:
-                logger.error(f"Invalid section-overrides JSON: {exc}")
-                return 1
-        if not isinstance(section_overrides, list):
-            logger.error("section-overrides must be a JSON array")
-            return 1
-
     # パース
     logger.info(f"Parsing: {input_path}")
-
-    # AI モードが必要かどうか判定（デフォルトまたはオーバーライド）
-    needs_ai = args.split_mode == "ai"
-    if section_overrides:
-        needs_ai = needs_ai or any(
-            o.get("split_mode") == "ai" for o in section_overrides
-        )
-
     llm_config = None
-    if needs_ai:
+    if args.split_mode == "ai":
         from md2map.llm.factory import build_llm_config_from_env
         try:
             llm_config = build_llm_config_from_env(
@@ -196,7 +144,6 @@ def cmd_build(args: argparse.Namespace) -> int:
             max_subsections=args.max_subsections,
             llm_config=llm_config,
             ai_prompt_extra_notes=args.ai_prompt_extra_notes,
-            section_overrides=section_overrides,
         )
     except (ValueError, RuntimeError) as exc:
         logger.error(str(exc))
@@ -258,27 +205,6 @@ def cmd_build(args: argparse.Namespace) -> int:
     return 2 if warnings else 0
 
 
-def cmd_headings(args: argparse.Namespace) -> int:
-    """headings コマンドの実行
-
-    Args:
-        args: パース済みの引数
-
-    Returns:
-        終了コード (0: 成功, 1: エラー)
-    """
-    input_path = Path(args.input_file)
-    if not input_path.exists():
-        print(f"Error: File not found: {args.input_file}", file=sys.stderr)
-        return 1
-
-    content = input_path.read_text(encoding="utf-8")
-    parser = MarkdownParser()
-    headings = parser.extract_headings(content, max_depth=args.max_depth)
-    print(json.dumps(headings, ensure_ascii=False, indent=2))
-    return 0
-
-
 def main() -> int:
     """メインエントリポイント
 
@@ -290,8 +216,6 @@ def main() -> int:
 
     if args.command == "build":
         return cmd_build(args)
-    elif args.command == "headings":
-        return cmd_headings(args)
 
     return 1
 

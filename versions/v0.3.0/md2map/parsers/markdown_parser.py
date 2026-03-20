@@ -73,103 +73,36 @@ class MarkdownParser(BaseParser):
         llm_config: Optional["LLMConfig"] = None,
         llm_provider: Optional["BaseLLMProvider"] = None,
         ai_prompt_extra_notes: Optional[str] = None,
-        section_overrides: Optional[List[Dict[str, any]]] = None,
     ) -> None:
         if split_mode not in {"heading", "nlp", "ai"}:
             raise ValueError(f"Invalid split_mode: {split_mode}")
         self._nlp_tokenizer = None
         self._llm_provider: Optional["BaseLLMProvider"] = None
-        self._llm_config = llm_config
         if split_mode == "nlp":
-            self._ensure_nlp_tokenizer()
+            try:
+                from sudachipy import dictionary
+            except ImportError as exc:
+                raise RuntimeError(
+                    "NLP mode requires optional dependency. "
+                    "Install with: pip install md2map[nlp]"
+                ) from exc
+            self._nlp_tokenizer = dictionary.Dictionary().create()
         if split_mode == "ai":
             if llm_provider is not None:
                 self._llm_provider = llm_provider
+            elif llm_config is not None:
+                from md2map.llm.factory import get_llm_provider
+                self._llm_provider = get_llm_provider(llm_config)
             else:
-                self._ensure_llm_provider()
+                # 後方互換: 環境変数からフォールバック
+                from md2map.llm.factory import build_llm_config_from_env
+                fallback_config = build_llm_config_from_env(provider="bedrock")
+                from md2map.llm.factory import get_llm_provider
+                self._llm_provider = get_llm_provider(fallback_config)
         self.split_mode = split_mode
         self.split_threshold = max(1, split_threshold)
         self.max_subsections = max(1, max_subsections)
         self._ai_prompt_extra_notes = ai_prompt_extra_notes
-        # セクション単位のオーバーライドマップ（start_line → 設定 dict）
-        self._override_map: Dict[int, Dict[str, any]] = {}
-        if section_overrides:
-            for o in section_overrides:
-                self._override_map[o["start_line"]] = o
-
-    def _ensure_llm_provider(self) -> None:
-        """LLM provider が未初期化なら初期化する（遅延初期化）"""
-        if self._llm_provider is not None:
-            return
-        if self._llm_config is not None:
-            from md2map.llm.factory import get_llm_provider
-            self._llm_provider = get_llm_provider(self._llm_config)
-        else:
-            # 後方互換: 環境変数からフォールバック
-            from md2map.llm.factory import build_llm_config_from_env, get_llm_provider
-            fallback_config = build_llm_config_from_env(provider="bedrock")
-            self._llm_provider = get_llm_provider(fallback_config)
-
-    def _ensure_nlp_tokenizer(self) -> None:
-        """NLP tokenizer が未初期化なら初期化する（遅延初期化）"""
-        if self._nlp_tokenizer is not None:
-            return
-        try:
-            from sudachipy import dictionary
-        except ImportError as exc:
-            raise RuntimeError(
-                "NLP mode requires optional dependency. "
-                "Install with: pip install md2map[nlp]"
-            ) from exc
-        self._nlp_tokenizer = dictionary.Dictionary().create()
-
-    def _resolve_settings(self, section: Section) -> Dict[str, any]:
-        """セクションに適用する設定を解決する
-
-        オーバーライドがあればコンストラクタ引数の値を上書き。
-        なければコンストラクタ引数の値をそのまま返す。
-        """
-        default = {
-            "split_mode": self.split_mode,
-            "split_threshold": self.split_threshold,
-            "max_subsections": self.max_subsections,
-            "ai_prompt_extra_notes": self._ai_prompt_extra_notes or "",
-        }
-        override = self._override_map.get(section.start_line)
-        if override is None:
-            return default
-        return {**default, **{k: v for k, v in override.items() if k != "start_line"}}
-
-    def extract_headings(self, content: str, max_depth: int = 6) -> List[Dict[str, any]]:
-        """見出し一覧を軽量に取得する（ファイル生成・サブスプリットなし）
-
-        既存の _extract_headings() + _build_sections() を内部で再利用し、
-        行番号の整合性を保証する。
-
-        Args:
-            content: マークダウンテキスト
-            max_depth: 最大見出し深さ（1-6、デフォルト: 6）
-
-        Returns:
-            見出し情報のリスト [{"title", "level", "start_line", "end_line", "estimated_chars"}]
-        """
-        lines = content.splitlines(keepends=True)
-        headings = self._extract_headings(lines, max_depth)
-        if not headings:
-            return []
-        sections = self._build_sections(headings, lines, "")
-        return [
-            {
-                "title": s.title,
-                "level": s.level,
-                "start_line": s.start_line,
-                "end_line": s.end_line,
-                "estimated_chars": sum(
-                    len(line) for line in lines[s.start_line - 1 : s.end_line]
-                ),
-            }
-            for s in sections
-        ]
 
     def parse(
         self, file_path: str, max_depth: int = 3
@@ -223,12 +156,8 @@ class MarkdownParser(BaseParser):
         # セクション構築
         sections = self._build_sections(headings, lines, file_name)
 
-        # 追加分割（heading モード以外、またはオーバーライドあり）
-        has_non_heading_override = any(
-            o.get("split_mode", self.split_mode) != "heading"
-            for o in self._override_map.values()
-        )
-        if self.split_mode != "heading" or has_non_heading_override:
+        # 追加分割（heading モード以外）
+        if self.split_mode != "heading":
             sections = self._refine_sections(sections, lines)
 
         # 各セクションの追加情報を抽出
@@ -498,20 +427,15 @@ class MarkdownParser(BaseParser):
 
     def _refine_sections(self, sections: List[Section], lines: List[str]) -> List[Section]:
         """セクションを再分割してサブスプリットを挿入する"""
+        if self.max_subsections <= 1:
+            return sections
+
+        if self.split_mode not in ("nlp", "ai"):
+            return sections
+
         refined: List[Section] = []
 
         for section in sections:
-            # セクションごとに設定を解決
-            settings = self._resolve_settings(section)
-            split_mode = settings["split_mode"]
-            threshold = max(1, settings["split_threshold"])
-            max_subs = max(1, settings["max_subsections"])
-            extra_notes = settings.get("ai_prompt_extra_notes", "")
-
-            if max_subs <= 1 or split_mode == "heading":
-                refined.append(section)
-                continue
-
             # 自身のコンテンツ範囲を算出
             own_start, own_end = self._get_own_content_range(section, sections)
 
@@ -522,12 +446,11 @@ class MarkdownParser(BaseParser):
             own_text = "".join(lines[own_start - 1 : own_end])
             total_count = self._count_words(own_text)
 
-            if total_count < threshold:
+            if total_count < self.split_threshold:
                 refined.append(section)
                 continue
 
-            if split_mode == "ai":
-                self._ensure_llm_provider()
+            if self.split_mode == "ai":
                 # AI モード: 行番号ベース
                 content_lines_count = own_end - own_start + 1
                 if content_lines_count < 2:
@@ -535,13 +458,12 @@ class MarkdownParser(BaseParser):
                     continue
 
                 target_parts = min(
-                    max_subs,
-                    max(2, math.ceil(total_count / threshold)),
+                    self.max_subsections,
+                    max(2, math.ceil(total_count / self.split_threshold)),
                 )
 
                 line_ranges, _ = self._select_chunks_ai(
-                    section, lines, own_start, own_end, target_parts,
-                    extra_notes=extra_notes,
+                    section, lines, own_start, own_end, target_parts
                 )
                 if not line_ranges:
                     line_ranges = self._chunk_lines_by_threshold(
@@ -556,12 +478,11 @@ class MarkdownParser(BaseParser):
                 # 最初のサブスプリットに見出し行を含める
                 line_ranges[0] = (section.start_line, line_ranges[0][1])
                 virtual_sections = self._build_virtual_sections(
-                    section, line_ranges, split_mode=split_mode,
+                    section, line_ranges
                 )
                 refined.extend(virtual_sections)
 
-            elif split_mode == "nlp":
-                self._ensure_nlp_tokenizer()
+            else:
                 # NLP モード: 段落ベース
                 paragraphs = self._split_paragraphs(lines, own_start, own_end)
                 if len(paragraphs) < 2:
@@ -569,8 +490,8 @@ class MarkdownParser(BaseParser):
                     continue
 
                 target_parts = min(
-                    max_subs,
-                    max(2, math.ceil(total_count / threshold)),
+                    self.max_subsections,
+                    max(2, math.ceil(total_count / self.split_threshold)),
                 )
                 target_parts = min(target_parts, len(paragraphs))
 
@@ -596,7 +517,7 @@ class MarkdownParser(BaseParser):
                 # 最初のサブスプリットに見出し行を含める
                 line_ranges[0] = (section.start_line, line_ranges[0][1])
                 virtual_sections = self._build_virtual_sections(
-                    section, line_ranges, split_mode=split_mode,
+                    section, line_ranges
                 )
                 refined.extend(virtual_sections)
 
@@ -713,22 +634,16 @@ class MarkdownParser(BaseParser):
         boundaries = [idx for idx, _ in scores[:num_splits]]
         return sorted(set(boundaries))
 
-    def _build_ai_system_prompt(self, extra_notes: str = "") -> str:
+    def _build_ai_system_prompt(self) -> str:
         """AI サブスプリット用のシステムプロンプトを組み立てる
 
         実行時に変わる情報（total_lines 等）はユーザープロンプトに記載するため、
         システムプロンプトには含めない。
-
-        Args:
-            extra_notes: セクション単位のオーバーライドで指定された追加注意事項
         """
         parts = dict(DEFAULT_AI_PROMPT_PARTS)
 
-        # セクション単位のオーバーライド extra_notes があればそちらを優先、
-        # なければインスタンスの _ai_prompt_extra_notes を使用
-        effective_notes = extra_notes or (self._ai_prompt_extra_notes or "")
-        if effective_notes:
-            parts["notes"] = parts["notes"] + "\n" + effective_notes
+        if self._ai_prompt_extra_notes:
+            parts["notes"] = parts["notes"] + "\n" + self._ai_prompt_extra_notes
 
         return (
             f"# 役割\n{parts['role']}\n\n"
@@ -755,7 +670,6 @@ class MarkdownParser(BaseParser):
         own_start: int,
         own_end: int,
         target_parts: int,
-        extra_notes: str = "",
     ) -> Tuple[List[Tuple[int, int]], None]:
         """AI（LLMプロバイダー）で行番号ベースのグループ分けを取得する
 
@@ -769,7 +683,7 @@ class MarkdownParser(BaseParser):
         numbered_text = self._add_line_numbers(content)
         total_lines = own_end - own_start + 1
 
-        system_text = self._build_ai_system_prompt(extra_notes=extra_notes)
+        system_text = self._build_ai_system_prompt()
         user_text = (
             f"以下のテキストを、意味的なまとまりを保ちつつ"
             f"最大 {target_parts} つに区切ってください。\n"
@@ -865,12 +779,11 @@ class MarkdownParser(BaseParser):
         self,
         section: Section,
         line_ranges: List[Tuple[int, int]],
-        split_mode: Optional[str] = None,
     ) -> List[Section]:
         """サブスプリットセクションを生成する"""
-        effective_mode = split_mode or self.split_mode
         virtual_sections: List[Section] = []
         base_level = min(section.level + 1, 6)
+        total = len(line_ranges)
 
         for i, (start_line, end_line) in enumerate(line_ranges, start=1):
             base_title = section.display_name()
@@ -882,7 +795,7 @@ class MarkdownParser(BaseParser):
                 end_line=end_line,
                 original_file=section.original_file,
                 is_subsplit=True,
-                note=f"Subsplit of {section.id or section.title} (L{start_line}\u2013L{end_line}, {effective_mode} threshold split)",
+                note=f"Subsplit of {section.id or section.title} (L{start_line}\u2013L{end_line}, {self.split_mode} threshold split)",
                 subsplit_title=subsplit_title,
             )
             virtual_sections.append(virtual)

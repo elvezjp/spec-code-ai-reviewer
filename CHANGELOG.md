@@ -5,6 +5,44 @@
 このファイルの形式は [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/lang/ja/) に準拠しています。
 
+## [0.3.1] - 2026-03-20
+
+見出し一覧取得機能とセクション単位の分割設定オーバーライド機能を追加。特定セクションに異なる分割設定（split_mode, max_subsections 等）を個別に適用できるようになりました。
+
+### 追加
+
+- **見出し一覧取得**: `headings` サブコマンド / `MarkdownParser.extract_headings()` メソッドを追加
+  - 分割実行前に見出し一覧を軽量に取得可能（LLM 不要、高速処理）
+  - JSON 形式で `title`, `level`, `start_line`, `end_line`, `estimated_chars` を出力
+  - `build` コマンドと同じコードパスを使用し、`start_line` の整合性を保証
+
+- **セクション単位オーバーライド**: `--section-overrides` CLIオプション / `section_overrides` パラメータを追加
+  - `start_line` でセクションを識別し、`split_mode`, `split_threshold`, `max_subsections`, `ai_prompt_extra_notes` を個別に上書き可能
+  - JSON ファイルパスまたは JSON 文字列で指定
+  - 未指定のフィールドはコンストラクタ引数（CLIオプション）の値を継承
+
+- **遅延初期化**: LLM provider / NLP tokenizer の遅延初期化に対応
+  - デフォルトが `heading` モードでも、オーバーライドにより `ai` / `nlp` モードが必要になった場合に自動初期化
+
+- **サンプル出力**: `docs/examples/v0.3.1/` に heading / nlp / ai モードの出力例と `headings.json` を追加
+
+- **Examples README**: `docs/examples/README.md` に各バージョンの再生成コマンドを記載
+
+### 変更
+
+- **_refine_sections()**: セクションごとに設定を解決してから分割を実行するよう変更
+- **_build_ai_system_prompt()**: セクション単位の `ai_prompt_extra_notes` オーバーライドに対応
+- **仕様書**: `headings` コマンド仕様、`--section-overrides` オプション、設定解決フロー、遅延初期化を追記
+
+### 既知の制限事項
+
+このバージョンには以下の制限があります：
+
+- NLPモードは SudachiPy のインストールが必要
+- AIモードは各プロバイダーのAPIキーまたはAWS認証情報が必要
+- 単一ファイルのみ対応（ディレクトリ単位の解析は未対応）
+- ATX形式の見出しのみ対応（Setext形式の下線見出しは未対応）
+
 ## [0.3.0] - 2026-03-11
 
 AIサブスプリットのプロンプトカスタマイズに対応。プロンプト構造を4パート構成に再設計し、注意事項パートへの追記が可能になりました。また、サブスプリット命名をLLM生成タイトルから静的な `part-N` 形式に変更し、安定性を向上させました。

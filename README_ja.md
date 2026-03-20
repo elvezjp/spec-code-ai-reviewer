@@ -76,6 +76,16 @@ uv run md2map build document.md --out ./output
 uv run md2map build document.md --out ./output --max-depth 2
 ```
 
+### 見出し一覧の取得
+
+```bash
+# 見出し一覧をJSON形式で取得（分割前の確認用）
+uv run md2map headings document.md
+
+# 見出し深度を制限
+uv run md2map headings document.md --max-depth 2
+```
+
 ### NLPモードで分割
 
 ```bash
@@ -101,6 +111,18 @@ uv run md2map build document.md --split-mode ai --ai-provider anthropic
 # モデルを指定
 uv run md2map build document.md --split-mode ai --ai-provider bedrock --ai-model global.anthropic.claude-haiku-4-5-20251001-v1:0
 ```
+
+### セクション単位のオーバーライド
+
+```bash
+# セクションごとに分割設定を上書き（JSONファイル指定）
+uv run md2map build document.md --split-mode ai --section-overrides overrides.json
+
+# セクションごとに分割設定を上書き（インラインJSON）
+uv run md2map build document.md --split-mode ai --section-overrides '[{"start_line": 79, "max_subsections": 10}]'
+```
+
+`md2map headings` で各セクションの `start_line` を取得してからオーバーライドを指定してください。
 
 ### 出力の確認
 
@@ -136,6 +158,7 @@ uv run md2map build document.md --dry-run
 | `--ai-model <MODEL>` | プロバイダー既定 | AIモデルID |
 | `--ai-region <REGION>` | `ap-northeast-1` | Bedrock用リージョン |
 | `--ai-prompt-extra-notes <TEXT>` | なし | AIプロンプトの注意事項パートに追記するテキスト |
+| `--section-overrides <JSON>` | なし | セクション単位の分割設定オーバーライド（JSONファイルパスまたはJSON文字列） |
 | `--verbose` | false | 詳細ログを出力 |
 | `--dry-run` | false | ファイル生成せずプレビューのみ |
 
