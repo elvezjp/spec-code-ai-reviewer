@@ -276,6 +276,39 @@ class OrganizeMarkdownResponse(BaseModel):
 # =============================================================================
 
 
+class HeadingsRequest(BaseModel):
+    """見出し一覧取得APIのリクエスト"""
+
+    content: str  # Markdownテキスト
+
+
+class HeadingInfo(BaseModel):
+    """見出し情報"""
+
+    title: str
+    level: int
+    start_line: int
+    end_line: int
+    estimated_chars: int
+
+
+class HeadingsResponse(BaseModel):
+    """見出し一覧取得APIのレスポンス"""
+
+    success: bool = True
+    headings: list[HeadingInfo] = []
+    error: str | None = None
+
+
+class SplitSettingsDetail(BaseModel):
+    """分割設定の詳細（事前重要指定セクション用 / 通常セクション用）"""
+
+    split_mode: Literal["ai", "heading", "nlp"] | None = None
+    heading_level: int | None = None
+    split_instructions: str | None = None
+    max_subsections: int | None = None
+
+
 class SplitMarkdownRequest(BaseModel):
     """Markdown分割APIのリクエスト"""
 
@@ -285,6 +318,10 @@ class SplitMarkdownRequest(BaseModel):
     splitMode: Literal["ai", "heading", "nlp"] = "ai"  # 分割モード
     llmConfig: LLMConfig | None = None  # AIモード用LLM設定
     aiPromptExtraNotes: str | None = None  # AIサブスプリットの注意事項に追記するテキスト（AIモード専用）
+    # 事前重要指定関連フィールド
+    pre_important_sections: list[int] | None = None  # 事前重要指定セクションの start_line リスト
+    pre_important_split_settings: SplitSettingsDetail | None = None  # 事前重要指定セクション向け分割設定
+    normal_split_settings: SplitSettingsDetail | None = None  # 通常セクション向け分割設定
 
 
 class DocumentPart(BaseModel):
@@ -299,6 +336,7 @@ class DocumentPart(BaseModel):
     endLine: int
     content: str  # パーツの内容
     estimatedTokens: int
+    pre_important: bool = False  # 事前重要指定セクションに属するか
 
 
 class SplitMarkdownResponse(BaseModel):

@@ -6,6 +6,7 @@ import type {
   ReviewResult,
   OrganizeMarkdownRequest,
   OrganizeMarkdownResponse,
+  HeadingInfo,
   SplitMarkdownRequest,
   SplitMarkdownResponse,
   SplitCodeRequest,
@@ -123,6 +124,18 @@ export async function organizeMarkdown(
 // =============================================================================
 // Split API
 // =============================================================================
+
+export async function fetchHeadings(
+  content: string
+): Promise<{ headings: HeadingInfo[] }> {
+  const response = await fetch(`${getBackendUrl()}/api/split/headings`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ markdown: content }),
+  })
+
+  return await response.json()
+}
 
 export async function splitMarkdown(
   request: SplitMarkdownRequest

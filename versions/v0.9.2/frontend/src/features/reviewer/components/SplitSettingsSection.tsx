@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react'
 import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from '@core/index'
-import type { SplitSettings, SplitMode, DocumentSplitMode, DocumentPart, CodePart, SplitPreviewResult } from '../types'
+import type { SplitSettings, SplitMode, DocumentPart, CodePart, SplitPreviewResult, HeadingInfo, PreImportantSplitSettings } from '../types'
+import { PreImportantPanel } from './PreImportantPanel'
 
 interface SplitSettingsSectionProps {
   settings: SplitSettings
@@ -24,6 +25,15 @@ interface SplitSettingsSectionProps {
   onToggleExcludedDocPart: (partId: string) => void
   onExecuteSummarize: () => void
   previewError?: string | null
+  // 事前重要指定関連
+  headings: HeadingInfo[]
+  isLoadingHeadings: boolean
+  preImportantSections: number[]
+  onTogglePreImportantSection: (startLine: number) => void
+  preImportantSplitSettings: PreImportantSplitSettings
+  normalSplitSettings: PreImportantSplitSettings
+  onPreImportantSplitSettingsChange: (settings: PreImportantSplitSettings) => void
+  onNormalSplitSettingsChange: (settings: PreImportantSplitSettings) => void
 }
 
 export function SplitSettingsSection({
@@ -47,6 +57,14 @@ export function SplitSettingsSection({
   onToggleExcludedDocPart,
   onExecuteSummarize,
   previewError,
+  headings,
+  isLoadingHeadings,
+  preImportantSections,
+  onTogglePreImportantSection,
+  preImportantSplitSettings,
+  normalSplitSettings,
+  onPreImportantSplitSettingsChange,
+  onNormalSplitSettingsChange,
 }: SplitSettingsSectionProps) {
   const [isOptionsExpanded, setIsOptionsExpanded] = useState(true)
   const prevHasDesignDocRef = useRef(hasDesignDoc)
@@ -91,16 +109,9 @@ export function SplitSettingsSection({
     }
   }, [settings, onSettingsChange, onShowToast, unsupportedCodeFiles.length])
 
-  const handleDepthChange = useCallback((depth: number) => {
-    onSettingsChange({ ...settings, documentMaxDepth: depth })
-  }, [settings, onSettingsChange])
-
-  const handleSplitModeChange = useCallback((mode: DocumentSplitMode) => {
-    onSettingsChange({ ...settings, documentSplitMode: mode })
-  }, [settings, onSettingsChange])
-
   const isSplitEnabled = settings.reviewMode === 'split'
   const canExecutePreview = isSplitEnabled && hasDesignDoc && hasCodeFiles
+  const hasPreImportantSelected = preImportantSections.length > 0
 
   useEffect(() => {
     if (settings.reviewMode === 'split' && unsupportedCodeFiles.length > 0) {
@@ -173,99 +184,34 @@ export function SplitSettingsSection({
           </button>
           {isOptionsExpanded && (
             <div className="mt-2 space-y-2">
-              {/* 設計書オプション */}
+              {/* 事前重要指定パネル */}
               {settings.reviewMode === 'split' && (
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">設計書</p>
-                  {/* 分割モード選択 */}
-                  <div className="mb-3">
-                    <span className="text-sm font-medium text-gray-700">分割モード:</span>
-                    <div className="mt-1 ml-2 space-y-1">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="splitMode"
-                          checked={settings.documentSplitMode === 'heading'}
-                          onChange={() => handleSplitModeChange('heading')}
-                          className="w-4 h-4 text-blue-600"
-                        />
-                        <span className="text-sm text-gray-700 w-20">見出し</span>
-                        <span className="text-xs text-gray-400">見出し（H2/H3等）の区切りで機械的に分割します</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="splitMode"
-                          checked={settings.documentSplitMode === 'nlp'}
-                          onChange={() => handleSplitModeChange('nlp')}
-                          className="w-4 h-4 text-blue-600"
-                        />
-                        <span className="text-sm text-gray-700 w-20">NLP</span>
-                        <span className="text-xs text-gray-400">見出しに加えて自然言語処理で意味的な区切りを検出して分割します</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="splitMode"
-                          checked={settings.documentSplitMode === 'ai'}
-                          onChange={() => handleSplitModeChange('ai')}
-                          className="w-4 h-4 text-blue-600"
-                        />
-                        <span className="text-sm text-gray-700 w-20">AI（推奨）</span>
-                        <span className="text-xs text-gray-400">見出しに加えてAIが文脈を考慮して適切に分割を行います</span>
-                      </label>
-                    </div>
-                  </div>
-                  {/* AIモード: 分割時の注意事項 */}
-                  {settings.documentSplitMode === 'ai' && (
-                    <div className="mb-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        分割時の注意事項（AIへの指示・任意）
-                      </label>
-                      <textarea
-                        value={settings.aiPromptExtraNotes}
-                        onChange={(e) => onSettingsChange({ ...settings, aiPromptExtraNotes: e.target.value })}
-                        placeholder="例: Mermaidブロックの途中では分割しない、項番単位で分割する"
-                        rows={2}
-                        className="w-full text-sm bg-white border border-gray-300 rounded px-2 py-1 resize-vertical focus:outline-none focus:border-blue-400"
-                      />
-                    </div>
-                  )}
-                  {/* 見出しレベル選択 */}
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm font-medium text-gray-700">見出しレベル:</span>
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="docDepth"
-                        checked={settings.documentMaxDepth === 2}
-                        onChange={() => handleDepthChange(2)}
-                        className="w-4 h-4 text-blue-600"
-                      />
-                      <span className="text-sm text-gray-700">H2(##)まで（推奨）</span>
-                    </label>
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="docDepth"
-                        checked={settings.documentMaxDepth === 3}
-                        onChange={() => handleDepthChange(3)}
-                        className="w-4 h-4 text-blue-600"
-                      />
-                      <span className="text-sm text-gray-700">H3(###)まで</span>
-                    </label>
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="docDepth"
-                        checked={settings.documentMaxDepth === 4}
-                        onChange={() => handleDepthChange(4)}
-                        className="w-4 h-4 text-blue-600"
-                      />
-                      <span className="text-sm text-gray-700">H4(####)まで</span>
-                    </label>
-                  </div>
-                </div>
+                <PreImportantPanel
+                  headings={headings}
+                  selectedStartLines={preImportantSections}
+                  onToggle={onTogglePreImportantSection}
+                  isLoading={isLoadingHeadings}
+                />
+              )}
+
+              {/* 設計書 — 事前重要指定セクション（事前重要指定が選択されている場合のみ表示） */}
+              {settings.reviewMode === 'split' && hasPreImportantSelected && (
+                <DocumentSplitSettingsBlock
+                  title="設計書 — 事前重要指定セクション"
+                  radioNamePrefix="preImportant"
+                  splitSettings={preImportantSplitSettings}
+                  onSplitSettingsChange={onPreImportantSplitSettingsChange}
+                />
+              )}
+
+              {/* 設計書 — 通常セクション */}
+              {settings.reviewMode === 'split' && (
+                <DocumentSplitSettingsBlock
+                  title={hasPreImportantSelected ? '設計書 — 通常セクション' : '設計書'}
+                  radioNamePrefix="normal"
+                  splitSettings={normalSplitSettings}
+                  onSplitSettingsChange={onNormalSplitSettingsChange}
+                />
               )}
 
               {/* プログラムオプション */}
@@ -312,7 +258,7 @@ export function SplitSettingsSection({
                 '分割プレビュー'
               )}
             </button>
-            {settings.documentSplitMode === 'ai' && (
+            {normalSplitSettings.splitMode === 'ai' && (
               <span className="text-xs text-muted text-gray-400">
                 ※ 設計書が大きい場合は、処理に時間が掛かったり、タイムアウトや制限等でエラーになる可能性があります。
               </span>
@@ -359,6 +305,12 @@ export function SplitSettingsSection({
                 onToggleExcludedDocPart={onToggleExcludedDocPart}
                 summarizingPartIds={summarizingPartIds}
               />
+              {/* 事前重要指定の自動設定説明 */}
+              {hasPreImportantSelected && previewResult.documentParts.some(p => p.preImportant) && (
+                <p className="text-xs text-gray-500 mt-2">
+                  ※ 事前重要指定セクションのうち、サブスプリットされていないパートは自動的に重要=ON が設定されています（手動変更可）
+                </p>
+              )}
             </div>
           )}
 
@@ -407,6 +359,112 @@ export function SplitSettingsSection({
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+function DocumentSplitSettingsBlock({
+  title,
+  radioNamePrefix,
+  splitSettings,
+  onSplitSettingsChange,
+}: {
+  title: string
+  radioNamePrefix: string
+  splitSettings: PreImportantSplitSettings
+  onSplitSettingsChange: (settings: PreImportantSplitSettings) => void
+}) {
+  return (
+    <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+      <p className="text-sm font-semibold text-gray-700 mb-2">{title}</p>
+      {/* 分割モード選択 */}
+      <div className="mb-3">
+        <span className="text-sm font-medium text-gray-700">分割モード:</span>
+        <div className="mt-1 ml-2 space-y-1">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name={`${radioNamePrefix}SplitMode`}
+              checked={splitSettings.splitMode === 'heading'}
+              onChange={() => onSplitSettingsChange({ ...splitSettings, splitMode: 'heading' })}
+              className="w-4 h-4 text-blue-600"
+            />
+            <span className="text-sm text-gray-700 w-20">見出し</span>
+            <span className="text-xs text-gray-400">見出し（H2/H3等）の区切りで機械的に分割します</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name={`${radioNamePrefix}SplitMode`}
+              checked={splitSettings.splitMode === 'nlp'}
+              onChange={() => onSplitSettingsChange({ ...splitSettings, splitMode: 'nlp' })}
+              className="w-4 h-4 text-blue-600"
+            />
+            <span className="text-sm text-gray-700 w-20">NLP</span>
+            <span className="text-xs text-gray-400">見出しに加えて自然言語処理で意味的な区切りを検出して分割します</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name={`${radioNamePrefix}SplitMode`}
+              checked={splitSettings.splitMode === 'ai'}
+              onChange={() => onSplitSettingsChange({ ...splitSettings, splitMode: 'ai' })}
+              className="w-4 h-4 text-blue-600"
+            />
+            <span className="text-sm text-gray-700 w-20">AI（推奨）</span>
+            <span className="text-xs text-gray-400">見出しに加えてAIが文脈を考慮して適切に分割を行います</span>
+          </label>
+        </div>
+      </div>
+      {/* AIモード: 分割時の注意事項 */}
+      {splitSettings.splitMode === 'ai' && (
+        <div className="mb-3">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            分割時の注意事項（AIへの指示・任意）
+          </label>
+          <textarea
+            value={splitSettings.splitInstructions}
+            onChange={(e) => onSplitSettingsChange({ ...splitSettings, splitInstructions: e.target.value })}
+            placeholder="例: Mermaidブロックの途中では分割しない、項番単位で分割する"
+            rows={2}
+            className="w-full text-sm bg-white border border-gray-300 rounded px-2 py-1 resize-vertical focus:outline-none focus:border-blue-400"
+          />
+        </div>
+      )}
+      {/* 見出しレベル選択 */}
+      <div className="flex items-center gap-4">
+        <span className="text-sm font-medium text-gray-700">見出しレベル:</span>
+        <label className="flex items-center gap-1 cursor-pointer">
+          <input
+            type="radio"
+            name={`${radioNamePrefix}DocDepth`}
+            checked={splitSettings.headingLevel === 2}
+            onChange={() => onSplitSettingsChange({ ...splitSettings, headingLevel: 2 })}
+            className="w-4 h-4 text-blue-600"
+          />
+          <span className="text-sm text-gray-700">H2(##)まで（推奨）</span>
+        </label>
+        <label className="flex items-center gap-1 cursor-pointer">
+          <input
+            type="radio"
+            name={`${radioNamePrefix}DocDepth`}
+            checked={splitSettings.headingLevel === 3}
+            onChange={() => onSplitSettingsChange({ ...splitSettings, headingLevel: 3 })}
+            className="w-4 h-4 text-blue-600"
+          />
+          <span className="text-sm text-gray-700">H3(###)まで</span>
+        </label>
+        <label className="flex items-center gap-1 cursor-pointer">
+          <input
+            type="radio"
+            name={`${radioNamePrefix}DocDepth`}
+            checked={splitSettings.headingLevel === 4}
+            onChange={() => onSplitSettingsChange({ ...splitSettings, headingLevel: 4 })}
+            className="w-4 h-4 text-blue-600"
+          />
+          <span className="text-sm text-gray-700">H4(####)まで</span>
+        </label>
+      </div>
     </div>
   )
 }

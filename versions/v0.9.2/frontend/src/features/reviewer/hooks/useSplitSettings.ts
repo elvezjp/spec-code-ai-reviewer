@@ -1,12 +1,21 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import type {
   SplitSettings,
   SplitPreviewResult,
   DocumentPart,
   CodePart,
   LlmConfig,
+  HeadingInfo,
+  PreImportantSplitSettings,
 } from '../types'
 import * as api from '../services/api'
+
+const DEFAULT_PRE_IMPORTANT_SPLIT_SETTINGS: PreImportantSplitSettings = {
+  splitMode: 'ai',
+  headingLevel: 2,
+  splitInstructions: '',
+  maxSubsections: 0,
+}
 
 interface UseSplitSettingsReturn {
   // State
@@ -18,6 +27,13 @@ interface UseSplitSettingsReturn {
   isSummarizing: boolean
   summarizingPartIds: Set<string>
   summarizeError: string | null
+
+  // 事前重要指定 State
+  headings: HeadingInfo[]
+  isLoadingHeadings: boolean
+  preImportantSections: number[]
+  preImportantSplitSettings: PreImportantSplitSettings
+  normalSplitSettings: PreImportantSplitSettings
 
   // Actions
   setSettings: (settings: SplitSettings) => void
@@ -33,6 +49,11 @@ interface UseSplitSettingsReturn {
   toggleSummarizeMode: (partId: string) => void
   toggleExcludedDocPart: (partId: string) => void
   executeSummarize: (llmConfig?: LlmConfig | null) => Promise<void>
+  fetchHeadingsForContent: (content: string) => Promise<void>
+  togglePreImportantSection: (startLine: number) => void
+  setPreImportantSplitSettings: (settings: PreImportantSplitSettings) => void
+  setNormalSplitSettings: (settings: PreImportantSplitSettings) => void
+  clearHeadingsCache: () => void
 
   // Computed
   isSplitEnabled: boolean
@@ -57,6 +78,19 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   const [isSummarizing, setIsSummarizing] = useState(false)
   const [summarizingPartIds, setSummarizingPartIds] = useState<Set<string>>(new Set())
   const [summarizeError, setSummarizeError] = useState<string | null>(null)
+
+  // 事前重要指定 State
+  const [headings, setHeadings] = useState<HeadingInfo[]>([])
+  const [isLoadingHeadings, setIsLoadingHeadings] = useState(false)
+  const [preImportantSections, setPreImportantSections] = useState<number[]>([])
+  const [preImportantSplitSettings, setPreImportantSplitSettings] = useState<PreImportantSplitSettings>(
+    { ...DEFAULT_PRE_IMPORTANT_SPLIT_SETTINGS }
+  )
+  const [normalSplitSettings, setNormalSplitSettings] = useState<PreImportantSplitSettings>(
+    { ...DEFAULT_PRE_IMPORTANT_SPLIT_SETTINGS }
+  )
+  // Cache tracking: store the markdown content hash that was used for the last heading fetch
+  const headingsCacheContentRef = useRef<string | null>(null)
 
   const togglePinnedDocPart = useCallback((partId: string) => {
     setPinnedDocPartIds(prev =>
@@ -164,6 +198,46 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     setIsSummarizing(false)
   }, [previewResult])
 
+  // 見出し一覧取得（キャッシュ対応）
+  const fetchHeadingsForContent = useCallback(async (content: string) => {
+    // キャッシュヒット: 同じコンテンツなら再取得しない
+    if (headingsCacheContentRef.current === content && headings.length > 0) {
+      return
+    }
+
+    setIsLoadingHeadings(true)
+    try {
+      const result = await api.fetchHeadings(content)
+      setHeadings(result.headings || [])
+      headingsCacheContentRef.current = content
+    } catch (err) {
+      console.error('見出し一覧の取得に失敗しました:', err)
+      setHeadings([])
+    } finally {
+      setIsLoadingHeadings(false)
+    }
+  }, [headings.length])
+
+  // 見出しキャッシュのクリア（MD変更時に呼び出す）
+  const clearHeadingsCache = useCallback(() => {
+    headingsCacheContentRef.current = null
+    setHeadings([])
+    setPreImportantSections([])
+  }, [])
+
+  // 事前重要指定セクションの切り替え
+  const togglePreImportantSection = useCallback((startLine: number) => {
+    setPreImportantSections(prev =>
+      prev.includes(startLine)
+        ? prev.filter(sl => sl !== startLine)
+        : [...prev, startLine]
+    )
+    // 事前重要指定が変更されたらプレビュー結果をクリア
+    setPreviewResult(null)
+    setPinnedDocPartIds([])
+    setError(null)
+  }, [])
+
   const executePreview = useCallback(async (
     designMarkdown: string | null,
     designFilename: string,
@@ -193,15 +267,38 @@ export function useSplitSettings(): UseSplitSettingsReturn {
 
       // 設計書分割
       if (settings.reviewMode === 'split' && designMarkdown) {
+        // 事前重要指定セクションがある場合は新しいパラメータを使用
+        const hasPreImportant = preImportantSections.length > 0
+
         const response = await api.splitMarkdown({
           content: designMarkdown,
           filename: designFilename,
-          maxDepth: settings.documentMaxDepth,
-          splitMode: settings.documentSplitMode,
-          llmConfig: settings.documentSplitMode === 'ai' ? (llmConfig ?? undefined) : undefined,
-          aiPromptExtraNotes: settings.documentSplitMode === 'ai' && settings.aiPromptExtraNotes
-            ? settings.aiPromptExtraNotes
-            : undefined,
+          maxDepth: hasPreImportant ? normalSplitSettings.headingLevel : settings.documentMaxDepth,
+          splitMode: hasPreImportant ? normalSplitSettings.splitMode : settings.documentSplitMode,
+          llmConfig: (hasPreImportant ? normalSplitSettings.splitMode === 'ai' : settings.documentSplitMode === 'ai')
+            ? (llmConfig ?? undefined) : undefined,
+          aiPromptExtraNotes: hasPreImportant
+            ? (normalSplitSettings.splitMode === 'ai' && normalSplitSettings.splitInstructions
+              ? normalSplitSettings.splitInstructions
+              : undefined)
+            : (settings.documentSplitMode === 'ai' && settings.aiPromptExtraNotes
+              ? settings.aiPromptExtraNotes
+              : undefined),
+          ...(hasPreImportant ? {
+            preImportantSections,
+            preImportantSplitSettings: {
+              splitMode: preImportantSplitSettings.splitMode,
+              headingLevel: preImportantSplitSettings.headingLevel,
+              splitInstructions: preImportantSplitSettings.splitInstructions,
+              maxSubsections: preImportantSplitSettings.maxSubsections,
+            },
+            normalSplitSettings: {
+              splitMode: normalSplitSettings.splitMode,
+              headingLevel: normalSplitSettings.headingLevel,
+              splitInstructions: normalSplitSettings.splitInstructions,
+              maxSubsections: normalSplitSettings.maxSubsections,
+            },
+          } : {}),
         })
 
         if (response.success) {
@@ -270,6 +367,16 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         }
       }
 
+      // 事前重要指定セクションのうち、サブスプリットされていないパートを自動的に重要=ONにする
+      const autoPinnedIds: string[] = []
+      if (documentParts && preImportantSections.length > 0) {
+        for (const part of documentParts) {
+          if (part.preImportant && !part.displayName.includes(': part-')) {
+            autoPinnedIds.push(part.id)
+          }
+        }
+      }
+
       setPreviewResult({
         documentParts: documentParts?.map((p) => ({ ...p, summarizeMode: 'original' as const, excluded: false })) || null,
         codeParts,
@@ -278,9 +385,10 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         codeIndex,
         codeMapJson,
         codeLanguage,
-        pinnedDocPartIds: [],
+        pinnedDocPartIds: autoPinnedIds,
         codeWarnings: allCodeWarnings,
       })
+      setPinnedDocPartIds(autoPinnedIds)
     } catch (err) {
       const message = err instanceof Error ? err.message : '分割プレビューに失敗しました'
       setError(message)
@@ -288,7 +396,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     } finally {
       setIsExecutingPreview(false)
     }
-  }, [settings.reviewMode, settings.documentMaxDepth, settings.documentSplitMode, settings.aiPromptExtraNotes])
+  }, [settings.reviewMode, settings.documentMaxDepth, settings.documentSplitMode, settings.aiPromptExtraNotes, preImportantSections, preImportantSplitSettings, normalSplitSettings])
 
   const clearPreview = useCallback(() => {
     setPreviewResult(null)
@@ -346,6 +454,11 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     isSummarizing,
     summarizingPartIds,
     summarizeError,
+    headings,
+    isLoadingHeadings,
+    preImportantSections,
+    preImportantSplitSettings,
+    normalSplitSettings,
     setSettings: handleSetSettings,
     executePreview,
     clearPreview,
@@ -354,6 +467,11 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     toggleSummarizeMode,
     toggleExcludedDocPart,
     executeSummarize,
+    fetchHeadingsForContent,
+    togglePreImportantSection,
+    setPreImportantSplitSettings,
+    setNormalSplitSettings,
+    clearHeadingsCache,
     isSplitEnabled,
     reviewMode,
     estimatedReviewCount,

@@ -18,6 +18,9 @@ from app.models.schemas import (
     DocumentPart,
     CodePart,
     LLMConfig,
+    HeadingsRequest,
+    HeadingsResponse,
+    HeadingInfo,
 )
 
 router = APIRouter()
@@ -57,6 +60,45 @@ def _convert_to_md2map_llm_config(llm_config: LLMConfig | None):
 
 
 # ---------------------------------------------------------------------------
+# 見出し一覧API
+# ---------------------------------------------------------------------------
+
+
+@router.post("/split/headings", response_model=HeadingsResponse)
+async def split_headings(request: HeadingsRequest):
+    """
+    Markdownの見出し一覧を取得する（md2map使用）
+
+    - H2までの見出しを抽出し、各セクションの行範囲と推定文字数を返す
+    - 事前重要指定セクションの選択UIで使用
+    """
+    try:
+        from md2map.parsers.markdown_parser import MarkdownParser
+
+        parser = MarkdownParser()
+        headings_data = parser.extract_headings(request.content, max_depth=2)
+
+        headings = [
+            HeadingInfo(
+                title=h["title"],
+                level=h["level"],
+                start_line=h["start_line"],
+                end_line=h["end_line"],
+                estimated_chars=h["estimated_chars"],
+            )
+            for h in headings_data
+        ]
+
+        return HeadingsResponse(success=True, headings=headings)
+
+    except Exception as e:
+        return HeadingsResponse(
+            success=False,
+            error=f"見出し一覧の取得中にエラーが発生しました: {str(e)}",
+        )
+
+
+# ---------------------------------------------------------------------------
 # 分割API
 # ---------------------------------------------------------------------------
 
@@ -88,19 +130,60 @@ async def split_markdown(request: SplitMarkdownRequest):
             with open(input_path, "w", encoding="utf-8") as f:
                 f.write(request.content)
 
+            # 事前重要指定モードかどうかを判定
+            has_pre_important = (
+                request.pre_important_sections is not None
+                and len(request.pre_important_sections) > 0
+            )
+
+            # 分割モードと設定を決定
+            if has_pre_important and request.normal_split_settings:
+                # 事前重要指定モード: 通常セクション設定をデフォルトにする
+                normal_settings = request.normal_split_settings
+                split_mode = normal_settings.split_mode or request.splitMode
+                max_subsections = normal_settings.max_subsections or int(
+                    os.environ.get("MD2MAP_MAX_SUBSECTIONS", "5")
+                )
+                ai_prompt_extra_notes = normal_settings.split_instructions or request.aiPromptExtraNotes or None
+            else:
+                # 従来モード
+                split_mode = request.splitMode
+                max_subsections = int(os.environ.get("MD2MAP_MAX_SUBSECTIONS", "5"))
+                ai_prompt_extra_notes = request.aiPromptExtraNotes or None
+
             # AIモードの場合のみ LLMConfig を変換
             md2map_llm_config = None
-            if request.splitMode == "ai":
+            if split_mode == "ai":
                 md2map_llm_config = _convert_to_md2map_llm_config(
                     request.llmConfig
                 )
 
-            max_subsections = int(os.environ.get("MD2MAP_MAX_SUBSECTIONS", "5"))
+            # section_overrides の構築（事前重要指定セクション用）
+            section_overrides = None
+            if has_pre_important and request.pre_important_split_settings:
+                pre_settings = request.pre_important_split_settings
+                pre_split_mode = pre_settings.split_mode or split_mode
+                # 事前重要指定セクションにAIモードが含まれる場合もLLMConfigが必要
+                if pre_split_mode == "ai" and md2map_llm_config is None:
+                    md2map_llm_config = _convert_to_md2map_llm_config(
+                        request.llmConfig
+                    )
+                section_overrides = [
+                    {
+                        "start_line": start_line,
+                        "split_mode": pre_split_mode,
+                        "max_subsections": pre_settings.max_subsections or max_subsections,
+                        "ai_prompt_extra_notes": pre_settings.split_instructions or "",
+                    }
+                    for start_line in request.pre_important_sections
+                ]
+
             parser = MarkdownParser(
-                split_mode=request.splitMode,
+                split_mode=split_mode,
                 llm_config=md2map_llm_config,
                 max_subsections=max_subsections,
-                ai_prompt_extra_notes=request.aiPromptExtraNotes or None,
+                ai_prompt_extra_notes=ai_prompt_extra_notes,
+                section_overrides=section_overrides,
             )
             sections, warnings = parser.parse(input_path, request.maxDepth)
 
@@ -143,12 +226,36 @@ async def split_markdown(request: SplitMarkdownRequest):
             with open(map_path, "r", encoding="utf-8") as f:
                 map_json = json.load(f)
 
+            # 事前重要指定セクションの行範囲を構築
+            # pre_important_sections の start_line から対応する見出しの end_line を取得
+            pre_important_ranges = []
+            if has_pre_important:
+                # extract_headings で見出し範囲を取得し、事前重要指定セクションの行範囲を特定
+                headings_parser = MarkdownParser()
+                headings_data = headings_parser.extract_headings(
+                    request.content, max_depth=request.maxDepth
+                )
+                for h in headings_data:
+                    if h["start_line"] in request.pre_important_sections:
+                        pre_important_ranges.append(
+                            (h["start_line"], h["end_line"])
+                        )
+
             # DocumentPartリスト構築
             parts = []
             for section in sections:
                 content = "".join(
                     lines[section.start_line - 1 : section.end_line]
                 )
+
+                # 事前重要指定判定: パートの startLine が事前重要指定セクションの範囲内か
+                is_pre_important = False
+                if pre_important_ranges:
+                    for range_start, range_end in pre_important_ranges:
+                        if range_start <= section.start_line <= range_end:
+                            is_pre_important = True
+                            break
+
                 parts.append(
                     DocumentPart(
                         id=section.id,
@@ -160,6 +267,7 @@ async def split_markdown(request: SplitMarkdownRequest):
                         endLine=section.end_line,
                         content=content,
                         estimatedTokens=_estimate_tokens(content),
+                        pre_important=is_pre_important,
                     )
                 )
 

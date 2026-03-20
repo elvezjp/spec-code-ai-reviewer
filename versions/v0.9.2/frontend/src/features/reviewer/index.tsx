@@ -117,6 +117,11 @@ export function Reviewer() {
     isSummarizing,
     summarizingPartIds,
     summarizeError,
+    headings: splitHeadings,
+    isLoadingHeadings: isSplitLoadingHeadings,
+    preImportantSections,
+    preImportantSplitSettings,
+    normalSplitSettings,
     setSettings: setSplitSettings,
     executePreview: executeSplitPreview,
     clearPreview: clearSplitPreview,
@@ -124,6 +129,11 @@ export function Reviewer() {
     toggleSummarizeMode,
     toggleExcludedDocPart,
     executeSummarize,
+    fetchHeadingsForContent,
+    togglePreImportantSection,
+    setPreImportantSplitSettings,
+    setNormalSplitSettings,
+    clearHeadingsCache,
     isSplitEnabled,
     hasPendingSummarize,
   } = useSplitSettings()
@@ -134,6 +144,22 @@ export function Reviewer() {
     groupReviews: [],
     currentGroupIndex: 0,
   })
+
+  // 「分割」選択時に見出し一覧を取得
+  useEffect(() => {
+    if (splitSettings.reviewMode === 'split' && specMarkdown) {
+      fetchHeadingsForContent(specMarkdown)
+    }
+  }, [splitSettings.reviewMode, specMarkdown, fetchHeadingsForContent])
+
+  // 設計書マークダウンが変更されたら見出しキャッシュをクリア
+  const prevSpecMarkdownRef = useRef(specMarkdown)
+  useEffect(() => {
+    if (prevSpecMarkdownRef.current !== specMarkdown) {
+      prevSpecMarkdownRef.current = specMarkdown
+      clearHeadingsCache()
+    }
+  }, [specMarkdown, clearHeadingsCache])
 
   // Wrap downloadZip to inject splitData when in split mode
   const downloadZip = useCallback(
@@ -886,6 +912,14 @@ export function Reviewer() {
           onToggleExcludedDocPart={toggleExcludedDocPart}
           onExecuteSummarize={() => executeSummarize(llmConfig)}
           previewError={splitPreviewError}
+          headings={splitHeadings}
+          isLoadingHeadings={isSplitLoadingHeadings}
+          preImportantSections={preImportantSections}
+          onTogglePreImportantSection={togglePreImportantSection}
+          preImportantSplitSettings={preImportantSplitSettings}
+          normalSplitSettings={normalSplitSettings}
+          onPreImportantSplitSettingsChange={setPreImportantSplitSettings}
+          onNormalSplitSettingsChange={setNormalSplitSettings}
         />
       </div>
 

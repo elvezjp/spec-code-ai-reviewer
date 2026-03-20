@@ -164,6 +164,21 @@ export type SplitMode = 'batch' | 'split'
 
 export type DocumentSplitMode = 'ai' | 'heading' | 'nlp'
 
+export interface HeadingInfo {
+  title: string
+  level: number
+  startLine: number
+  endLine: number
+  estimatedChars: number
+}
+
+export interface PreImportantSplitSettings {
+  splitMode: DocumentSplitMode
+  headingLevel: number
+  splitInstructions: string
+  maxSubsections: number
+}
+
 export interface SplitSettings {
   reviewMode: SplitMode
   documentMaxDepth: number // 1-6
@@ -187,6 +202,8 @@ export interface DocumentPart {
   summarizedTokens?: number
   // 除外関連
   excluded: boolean
+  // 事前重要指定
+  preImportant?: boolean
 }
 
 export interface CodePart {
@@ -207,6 +224,9 @@ export interface SplitMarkdownRequest {
   splitMode?: DocumentSplitMode
   llmConfig?: LlmConfig
   aiPromptExtraNotes?: string
+  preImportantSections?: number[]
+  preImportantSplitSettings?: PreImportantSplitSettings
+  normalSplitSettings?: PreImportantSplitSettings
 }
 
 export interface SplitMarkdownResponse {
