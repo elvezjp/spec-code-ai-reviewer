@@ -193,11 +193,36 @@ md2map 側の修正は別計画書を参照: [20260320-section-overrides-plan.md
 
 | 機能 | 概要 |
 |---|---|
-| `extract_headings()` | 見出し一覧を取得。`{ title, level, start_line, end_line, estimated_chars }` を返す |
-| `section_overrides` | セクション単位で分割設定（split_mode, max_subsections 等）をオーバーライド。`start_line` でセクションを識別 |
+| `extract_headings(content, max_depth)` | 見出し一覧を取得。`[{ title, level, start_line, end_line, estimated_chars }]` を返す |
+| `section_overrides` | セクション単位で分割設定をオーバーライド。フラットなリスト形式 `[{"start_line": N, "split_mode": "ai", ...}]`。デフォルト設定はコンストラクタ引数で渡す |
 
 md2map 自体は「事前重要指定」の概念を持たない。
 バックエンドが「事前重要指定セクション」を md2map の `section_overrides` に変換し、結果に `pre_important` フラグを付与する。
+
+### md2map の呼び出しイメージ
+
+```python
+# 見出し一覧取得
+parser = MarkdownParser()
+headings = parser.extract_headings(content, max_depth=2)
+
+# 分割実行（通常設定をコンストラクタ引数、事前重要指定セクションを section_overrides で渡す）
+parser = MarkdownParser(
+    split_mode=normal_split_settings.split_mode,       # 通常セクションのデフォルト
+    max_subsections=normal_split_settings.max_subsections,
+    ai_prompt_extra_notes=normal_split_settings.split_instructions or "",
+    section_overrides=[                                 # 事前重要指定セクションのみ上書き
+        {
+            "start_line": start_line,
+            "split_mode": pre_important_split_settings.split_mode,
+            "max_subsections": pre_important_split_settings.max_subsections,
+            "ai_prompt_extra_notes": pre_important_split_settings.split_instructions or "",
+        }
+        for start_line in pre_important_sections
+    ],
+)
+sections, warnings = parser.parse(file_path, max_depth=2)
+```
 
 ---
 
@@ -246,27 +271,27 @@ normal_split_settings: {
 
 ### バックエンドの責務: section_overrides への変換
 
-バックエンドが `pre_important_sections` + 2つの分割設定を md2map の `section_overrides` 形式に変換する。
+バックエンドが `pre_important_sections` + 2つの分割設定を md2map の API に変換する。
+通常セクションの設定はコンストラクタ引数として渡し、事前重要指定セクションの設定は `section_overrides`（フラットなリスト）として渡す。
 
 ```python
 # バックエンド側の変換ロジック
-section_overrides = {
-    "default": {
-        "split_mode": normal_split_settings.split_mode,
-        "max_subsections": normal_split_settings.max_subsections,
-        "split_threshold": 500,
-        "ai_prompt_extra_notes": normal_split_settings.split_instructions or ""
-    },
-    "overrides": [
+parser = MarkdownParser(
+    # 通常セクションの設定 → コンストラクタ引数（= 全セクションのデフォルト）
+    split_mode=normal_split_settings.split_mode,
+    max_subsections=normal_split_settings.max_subsections,
+    ai_prompt_extra_notes=normal_split_settings.split_instructions or "",
+    # 事前重要指定セクションの設定 → section_overrides（特定セクションのみ上書き）
+    section_overrides=[
         {
             "start_line": start_line,
             "split_mode": pre_important_split_settings.split_mode,
             "max_subsections": pre_important_split_settings.max_subsections,
-            "ai_prompt_extra_notes": pre_important_split_settings.split_instructions or ""
+            "ai_prompt_extra_notes": pre_important_split_settings.split_instructions or "",
         }
         for start_line in pre_important_sections
-    ]
-}
+    ],
+)
 ```
 
 ### バックエンドの責務: pre_important フラグの付与

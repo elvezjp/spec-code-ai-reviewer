@@ -595,8 +595,8 @@ xlsx = [
 
 [[package]]
 name = "md2map"
-version = "0.3.0"
-source = { git = "https://github.com/elvezjp/md2map.git?branch=main#8ac85e50db037cefa7b5a7391688a1ce205f5efd" }
+version = "0.3.1"
+source = { git = "https://github.com/elvezjp/md2map.git?branch=tominaga%2F20260320-section-overrides#8acd0d1bee5d7513be59636394d98fafcefa7dad" }
 dependencies = [
     { name = "add-line-numbers" },
 ]
@@ -1256,7 +1256,7 @@ wheels = [
 
 [[package]]
 name = "spec-code-ai-reviewer-backend"
-version = "0.9.1"
+version = "0.9.2"
 source = { editable = "." }
 dependencies = [
     { name = "add-line-numbers" },
@@ -1287,7 +1287,7 @@ requires-dist = [
     { name = "code2map", git = "https://github.com/elvezjp/code2map.git?branch=main" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "markitdown", extras = ["xlsx"], specifier = ">=0.0.1a3" },
-    { name = "md2map", git = "https://github.com/elvezjp/md2map.git?branch=main" },
+    { name = "md2map", git = "https://github.com/elvezjp/md2map.git?branch=tominaga%2F20260320-section-overrides" },
     { name = "openai", specifier = ">=2.14.0" },
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
