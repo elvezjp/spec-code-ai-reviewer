@@ -76,6 +76,16 @@ uv run md2map build document.md --out ./output
 uv run md2map build document.md --out ./output --max-depth 2
 ```
 
+### View Headings
+
+```bash
+# Get heading list as JSON (for pre-split inspection)
+uv run md2map headings document.md
+
+# Limit heading depth
+uv run md2map headings document.md --max-depth 2
+```
+
 ### NLP Mode Splitting
 
 ```bash
@@ -101,6 +111,18 @@ uv run md2map build document.md --split-mode ai --ai-provider anthropic
 # Specify a model
 uv run md2map build document.md --split-mode ai --ai-provider bedrock --ai-model global.anthropic.claude-haiku-4-5-20251001-v1:0
 ```
+
+### Section-Level Override
+
+```bash
+# Override split settings per section (JSON file)
+uv run md2map build document.md --split-mode ai --section-overrides overrides.json
+
+# Override split settings per section (inline JSON)
+uv run md2map build document.md --split-mode ai --section-overrides '[{"start_line": 79, "max_subsections": 10}]'
+```
+
+Use `md2map headings` to get `start_line` values for each section before specifying overrides.
 
 ### Check Output
 
@@ -136,6 +158,7 @@ uv run md2map build document.md --dry-run
 | `--ai-model <MODEL>` | Provider default | AI model ID |
 | `--ai-region <REGION>` | `ap-northeast-1` | AWS region for Bedrock |
 | `--ai-prompt-extra-notes <TEXT>` | None | Text to append to the AI prompt notes section |
+| `--section-overrides <JSON>` | None | Per-section split settings override (JSON file path or JSON string) |
 | `--verbose` | false | Output detailed logs |
 | `--dry-run` | false | Preview only, no file generation |
 
@@ -229,15 +252,20 @@ md2map/
 ├── tests/                 # Test code
 │   └── fixtures/          # Test fixtures
 ├── docs/                  # Documentation
+│   └── examples/          # Output examples per version
 ├── versions/              # Old version snapshots
 │   ├── v0.1.0/            # v0.1.0 snapshot
 │   ├── v0.2.0/            # v0.2.0 snapshot
+│   ├── v0.3.0/            # v0.3.0 snapshot
 │   └── README.md          # versions directory description
-├── CHANGELOG.md           # Version history
-├── CONTRIBUTING.md        # Contribution guidelines
+├── CHANGELOG.md           # Version history (English)
+├── CHANGELOG_ja.md        # Version history (Japanese)
+├── CONTRIBUTING.md        # Contribution guidelines (English)
+├── CONTRIBUTING_ja.md     # Contribution guidelines (Japanese)
 ├── README.md              # This file (English)
 ├── README_ja.md           # Japanese README
-├── SECURITY.md            # Security policy
+├── SECURITY.md            # Security policy (English)
+├── SECURITY_ja.md         # Security policy (Japanese)
 ├── spec.md                # Technical specification
 └── pyproject.toml         # Project configuration
 ```

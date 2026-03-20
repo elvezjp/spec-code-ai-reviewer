@@ -11,7 +11,7 @@
 
 設計書（Excel形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
 
-https://github.com/user-attachments/assets/90b4bc9b-b5b9-4188-8080-4cf1c99f1737
+https://github.com/user-attachments/assets/a0b63e85-5c3b-45ed-8b0c-2eb0fae89cf8
 
 ## 機能
 
@@ -142,7 +142,7 @@ v0.6.0以降はフロントエンドとバックエンドを別々に起動し�
 **ターミナル1: バックエンド起動**
 
 ```bash
-cd versions/v0.9.1/backend
+cd versions/v0.9.2/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -150,7 +150,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **ターミナル2: フロントエンド起動**
 
 ```bash
-cd versions/v0.9.1/frontend
+cd versions/v0.9.2/frontend
 npm install
 npm run dev
 ```
@@ -204,12 +204,12 @@ docker-compose down
 各バージョンのディレクトリでテストを実行します。
 
 ```bash
-# v0.9.0 バックエンドのテスト
-cd versions/v0.9.1/backend
+# v0.9.2 バックエンドのテスト
+cd versions/v0.9.2/backend
 uv run pytest tests/ -v
 
-# v0.9.0 フロントエンドのテスト
-cd versions/v0.9.1/frontend
+# v0.9.2 フロントエンドのテスト
+cd versions/v0.9.2/frontend
 npm test
 
 # v0.5.2以前のテスト（バックエンドのみ）
@@ -342,7 +342,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # 開発用Nginx設定
 │   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.9.1    # シンボリックリンク（最新版を指す）
+├── latest -> versions/v0.9.2    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
@@ -355,7 +355,8 @@ spec-code-ai-reviewer/
 │   ├── v0.8.1/                  # 旧バージョン（Vite + React）
 │   ├── v0.8.2/                  # 旧バージョン（Vite + React）
 │   ├── v0.9.0/                  # 旧バージョン（Vite + React）
-│   └── v0.9.1/                  # 最新版（Vite + React）
+│   ├── v0.9.1/                  # 旧バージョン（Vite + React）
+│   └── v0.9.2/                  # 最新版（Vite + React）
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -422,7 +423,8 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 
 | バージョン | ポート |
 |-----------|-------|
-| v0.9.1 (latest) | 8091 |
+| v0.9.2 (latest) | 8092 |
+| v0.9.1 | 8091 |
 | v0.9.0 | 8090 |
 | v0.8.2 | 8082 |
 | v0.8.1 | 8081 |
@@ -450,6 +452,7 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 | `versions/v0.7.0/frontend/src/features/config-file-generator/schema/configSchema.ts` | `meta.version` および `info.version` フィールドを更新（v0.6.0以降） |
 | `versions/v0.7.0/frontend/src/features/reviewer/index.tsx` | `APP_INFO.version` を更新（v0.6.0以降） |
 | `versions/v0.7.0/frontend/src/__tests__/features/reviewer/services/split_review_api.test.ts` | モックレスポンス内の `version` を更新（v0.6.0以降） |
+| `versions/v0.8.x〜/frontend/src/core/hooks/useVersions.ts` | 既存の全v0.8以降バージョンのDEFAULT_VERSIONSに新バージョンを追加し、`isLatest` を更新 |
 | `latest` シンボリックリンク | 新バージョンを指すように更新（`rm latest && ln -s versions/v0.7.0 latest`） |
 | `versions/v0.5.x/frontend/index.html` | VERSIONS配列を更新追加（`scripts/sync_version.py`実行、v0.5.x以前のみ） |
 

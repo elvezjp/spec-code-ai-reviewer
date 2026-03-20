@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-03-20
+
+### Added
+- **Pre-split importance designation** (#66): Designate sections as "pre-important" before splitting, allowing different split settings (split mode, heading level, AI instructions) for pre-important vs. normal sections
+  - Added `POST /api/split/headings` endpoint (H2 heading list retrieval)
+  - Added `preImportantSections`, `preImportantSplitSettings`, `normalSplitSettings` parameters to `POST /api/split/markdown`
+  - Non-subsplit parts from pre-important sections are automatically set as important (user can override)
+  - Heading list is cached across batch/split mode toggles; reset on design markdown change
+  - Uses md2map v0.3.1 `extract_headings()` / `section_overrides` features
+
+### Fixed
+- **Retry with summarized spec not working** (#66): Fixed issue where clicking the retry button during group review did not pass the selected doc/code mode (original/summarize) to the retry handler, causing retries to always use the original (unsummarized) content even when "要約" was selected
+
+### Changed
+- **md2map update**: Updated to v0.3.1 (heading list extraction, section-level override feature)
+- **Configuration file updates**: Set v0.9.2 as the latest version
+  - `nginx/version-map.conf`: Added v0.9.2 routing, changed default port to 8092
+  - `docker-compose.yml`: Added v0.9.2 frontend, port 8092
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: Added v0.9.2 entry
+
 ## [0.9.1] - 2026-03-13
 
 ### Added

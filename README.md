@@ -11,7 +11,7 @@
 
 A web application that uses AI to cross-check design documents (Excel format) against program code and verify consistency.
 
-https://github.com/user-attachments/assets/90b4bc9b-b5b9-4188-8080-4cf1c99f1737
+https://github.com/user-attachments/assets/a0b63e85-5c3b-45ed-8b0c-2eb0fae89cf8
 
 ## Features
 
@@ -142,7 +142,7 @@ For v0.6.0 and later, start frontend and backend separately.
 **Terminal 1: Start backend**
 
 ```bash
-cd versions/v0.9.1/backend
+cd versions/v0.9.2/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -150,7 +150,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **Terminal 2: Start frontend**
 
 ```bash
-cd versions/v0.9.1/frontend
+cd versions/v0.9.2/frontend
 npm install
 npm run dev
 ```
@@ -204,12 +204,12 @@ You can switch versions from the top-left balloon (routing via Cookie + Nginx ma
 Run tests in each version's directory.
 
 ```bash
-# v0.9.1 backend tests
-cd versions/v0.9.1/backend
+# v0.9.2 backend tests
+cd versions/v0.9.2/backend
 uv run pytest tests/ -v
 
-# v0.9.1 frontend tests
-cd versions/v0.9.1/frontend
+# v0.9.2 frontend tests
+cd versions/v0.9.2/frontend
 npm test
 
 # v0.5.2 and earlier tests (backend only)
@@ -341,7 +341,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # Dev Nginx config
 │   ├── spec-code-ai-reviewer.conf  # Production Nginx config
 │   └── version-map.conf         # Version switch map (shared)
-├── latest -> versions/v0.9.1    # Symlink to latest
+├── latest -> versions/v0.9.2    # Symlink to latest
 │
 ├── versions/                    # All versions
 │   ├── README.md                # Version management notes
@@ -354,7 +354,8 @@ spec-code-ai-reviewer/
 │   ├── v0.8.1/                  # Old version (Vite + React)
 │   ├── v0.8.2/                  # Old version (Vite + React)
 │   ├── v0.9.0/                  # Old version (Vite + React)
-│   └── v0.9.1/                  # Latest (Vite + React)
+│   ├── v0.9.1/                  # Previous (Vite + React)
+│   └── v0.9.2/                  # Latest (Vite + React)
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -421,7 +422,8 @@ Example: v0.2.5 -> 8000 + (2 x 10) + 5 = 8025
 
 | Version | Port |
 |-----------|------|
-| v0.9.1 (latest) | 8091 |
+| v0.9.2 (latest) | 8092 |
+| v0.9.1 | 8091 |
 | v0.9.0 | 8090 |
 | v0.8.2 | 8082 |
 | v0.8.1 | 8081 |
@@ -449,6 +451,7 @@ When adding a new version (e.g., v0.7.0), update the following files.
 | `versions/v0.7.0/frontend/src/features/config-file-generator/schema/configSchema.ts` | Update `meta.version` and `info.version` fields (v0.6.0+ only) |
 | `versions/v0.7.0/frontend/src/features/reviewer/index.tsx` | Update `APP_INFO.version` (v0.6.0+ only) |
 | `versions/v0.7.0/frontend/src/__tests__/features/reviewer/services/split_review_api.test.ts` | Update `version` in mock response (v0.6.0+ only) |
+| `versions/v0.8.x+/frontend/src/core/hooks/useVersions.ts` | Add new version to DEFAULT_VERSIONS and update `isLatest` in all existing v0.8+ versions |
 | `latest` symlink | Update to point to new version (`rm latest && ln -s versions/v0.7.0 latest`) |
 | `versions/v0.5.x/frontend/index.html` | Update VERSIONS array (run `scripts/sync_version.py`, v0.5.x and earlier only) |
 
