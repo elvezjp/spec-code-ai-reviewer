@@ -188,6 +188,7 @@ export function Reviewer() {
   const [integrateSummarizeState, setIntegrateSummarizeState] = useState<IntegrateSummarizeState>({ groups: [] })
   const [batchReviewError, setBatchReviewError] = useState<string | null>(null)
   const errorActionRef = useRef<{ action: 'retry' | 'skip'; groupId: string; docMode?: 'original' | 'summarize'; codeMode?: 'original' | 'summarize' } | null>(null)
+  const summarizeStateRef = useRef<Map<string, GroupSummarizeState>>(new Map())
 
   // System prompt text for token estimation
   const systemPromptText = useMemo(() => {
@@ -262,6 +263,7 @@ export function Reviewer() {
   }, [])
 
   const handleSummarizeComplete = useCallback((groupId: string, summarizeState: GroupSummarizeState) => {
+    summarizeStateRef.current.set(groupId, summarizeState)
     setSplitReviewState((prev) => ({
       ...prev,
       groupReviews: prev.groupReviews.map((g) =>
@@ -533,13 +535,16 @@ export function Reviewer() {
           try {
             // リトライ時は要約版コンテンツを使用する可能性がある
             const currentGroupState = groupReviewResults[i]
-            const effectiveDocContent = currentGroupState.summarizeState?.documentSummarized
+            // summarizeStateはReact stateに保存されるため、ローカル配列には反映されない
+            // refから最新の要約データを取得する
+            const latestSummarizeState = summarizeStateRef.current.get(group.groupId) || currentGroupState.summarizeState
+            const effectiveDocContent = latestSummarizeState?.documentSummarized
               && currentGroupState.usedSummarizedDoc
-              ? currentGroupState.summarizeState.documentSummarized
+              ? latestSummarizeState.documentSummarized
               : documentContent
-            const effectiveCodeContent = currentGroupState.summarizeState?.codeSummarized
+            const effectiveCodeContent = latestSummarizeState?.codeSummarized
               && currentGroupState.usedSummarizedCode
-              ? currentGroupState.summarizeState.codeSummarized
+              ? latestSummarizeState.codeSummarized
               : codeContent
 
             const groupResponse = await executeGroupReview({
