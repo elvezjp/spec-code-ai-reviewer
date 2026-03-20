@@ -267,7 +267,7 @@ async def split_markdown(request: SplitMarkdownRequest):
                         endLine=section.end_line,
                         content=content,
                         estimatedTokens=_estimate_tokens(content),
-                        pre_important=is_pre_important,
+                        preImportant=is_pre_important,
                     )
                 )
 

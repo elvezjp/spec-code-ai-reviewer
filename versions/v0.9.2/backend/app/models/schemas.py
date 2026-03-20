@@ -336,7 +336,7 @@ class DocumentPart(BaseModel):
     endLine: int
     content: str  # パーツの内容
     estimatedTokens: int
-    pre_important: bool = False  # 事前重要指定セクションに属するか
+    preImportant: bool = False  # 事前重要指定セクションに属するか
 
 
 class SplitMarkdownResponse(BaseModel):

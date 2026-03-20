@@ -727,11 +727,11 @@ class TestSplitMarkdownPreImportantAPI:
         assert len(data["parts"]) == 3
 
         # 概要セクション（start_line=1）は事前重要指定ではない
-        assert data["parts"][0]["pre_important"] is False
+        assert data["parts"][0]["preImportant"] is False
         # 変更履歴セクション（start_line=6）は事前重要指定
-        assert data["parts"][1]["pre_important"] is True
+        assert data["parts"][1]["preImportant"] is True
         # その他セクション（start_line=21）は事前重要指定ではない
-        assert data["parts"][2]["pre_important"] is False
+        assert data["parts"][2]["preImportant"] is False
 
         # MarkdownParser のコンストラクタ引数を確認
         # 1つ目の呼び出し（parse用）: section_overrides が渡されている
@@ -806,7 +806,7 @@ class TestSplitMarkdownPreImportantAPI:
         assert data["success"] is True
         assert len(data["parts"]) == 1
         # pre_important はデフォルト False
-        assert data["parts"][0]["pre_important"] is False
+        assert data["parts"][0]["preImportant"] is False
 
         # MarkdownParser に section_overrides が渡されていないことを確認
         call_kwargs = mock_parser_cls.call_args[1]
