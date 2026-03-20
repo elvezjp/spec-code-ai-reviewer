@@ -34,7 +34,7 @@ import type { SplitReviewState, GroupReviewState, GroupSummarizeState, Integrate
 
 const APP_INFO = {
   name: 'spec-code-ai-reviewer',
-  version: 'v0.9.1',
+  version: 'v0.9.2',
   description: '設計書-Javaプログラム突合 AIレビュアー',
   copyright: '© 株式会社エルブズ',
   url: 'https://elvez.co.jp',
