@@ -614,7 +614,7 @@ xlsx = [
 [[package]]
 name = "md2map"
 version = "0.3.1"
-source = { git = "https://github.com/elvezjp/md2map.git?branch=tominaga%2F20260320-section-overrides#b21e79a45ec714956371574dda545f05be561296" }
+source = { git = "https://github.com/elvezjp/md2map.git?branch=main#88dde906ab41bf4b8260b24da4e0ec5b586a37e0" }
 dependencies = [
     { name = "add-line-numbers" },
 ]
@@ -1389,7 +1389,7 @@ requires-dist = [
     { name = "code2map", git = "https://github.com/elvezjp/code2map.git?branch=main" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "markitdown", extras = ["xlsx"], specifier = ">=0.0.1a3" },
-    { name = "md2map", extras = ["nlp", "ai"], git = "https://github.com/elvezjp/md2map.git?branch=tominaga%2F20260320-section-overrides" },
+    { name = "md2map", extras = ["nlp", "ai"], git = "https://github.com/elvezjp/md2map.git?branch=main" },
     { name = "openai", specifier = ">=2.14.0" },
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
