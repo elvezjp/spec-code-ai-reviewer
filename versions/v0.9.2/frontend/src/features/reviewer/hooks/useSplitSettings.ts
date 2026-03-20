@@ -31,6 +31,7 @@ interface UseSplitSettingsReturn {
   // 事前重要指定 State
   headings: HeadingInfo[]
   isLoadingHeadings: boolean
+  headingsError: string | null
   preImportantSections: number[]
   preImportantSplitSettings: PreImportantSplitSettings
   normalSplitSettings: PreImportantSplitSettings
@@ -82,6 +83,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   // 事前重要指定 State
   const [headings, setHeadings] = useState<HeadingInfo[]>([])
   const [isLoadingHeadings, setIsLoadingHeadings] = useState(false)
+  const [headingsError, setHeadingsError] = useState<string | null>(null)
   const [preImportantSections, setPreImportantSections] = useState<number[]>([])
   const [preImportantSplitSettings, setPreImportantSplitSettings] = useState<PreImportantSplitSettings>(
     { ...DEFAULT_PRE_IMPORTANT_SPLIT_SETTINGS }
@@ -206,12 +208,20 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     }
 
     setIsLoadingHeadings(true)
+    setHeadingsError(null)
     try {
       const result = await api.fetchHeadings(content)
-      setHeadings(result.headings || [])
-      headingsCacheContentRef.current = content
+      if (result.success === false) {
+        setHeadingsError(result.error || '見出し一覧の取得に失敗しました')
+        setHeadings([])
+      } else {
+        setHeadings(result.headings || [])
+        headingsCacheContentRef.current = content
+      }
     } catch (err) {
+      const message = err instanceof Error ? err.message : '見出し一覧の取得に失敗しました'
       console.error('見出し一覧の取得に失敗しました:', err)
+      setHeadingsError(message)
       setHeadings([])
     } finally {
       setIsLoadingHeadings(false)
@@ -222,6 +232,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   const clearHeadingsCache = useCallback(() => {
     headingsCacheContentRef.current = null
     setHeadings([])
+    setHeadingsError(null)
     setPreImportantSections([])
   }, [])
 
@@ -456,6 +467,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     summarizeError,
     headings,
     isLoadingHeadings,
+    headingsError,
     preImportantSections,
     preImportantSplitSettings,
     normalSplitSettings,

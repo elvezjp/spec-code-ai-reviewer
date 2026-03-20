@@ -6,6 +6,7 @@ interface PreImportantPanelProps {
   selectedStartLines: number[]
   onToggle: (startLine: number) => void
   isLoading: boolean
+  error?: string | null
 }
 
 export function PreImportantPanel({
@@ -13,12 +14,22 @@ export function PreImportantPanel({
   selectedStartLines,
   onToggle,
   isLoading,
+  error,
 }: PreImportantPanelProps) {
   if (isLoading) {
     return (
       <div className="p-3 bg-gray-50 border border-gray-200 rounded">
         <p className="text-sm font-semibold text-gray-700 mb-2">事前重要指定</p>
         <p className="text-sm text-gray-500">見出し一覧を取得中...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-3 bg-red-50 border border-red-200 rounded">
+        <p className="text-sm font-semibold text-red-700 mb-1">事前重要指定</p>
+        <p className="text-sm text-red-600">見出し一覧の取得に失敗しました: {error}</p>
       </div>
     )
   }

@@ -127,7 +127,7 @@ export async function organizeMarkdown(
 
 export async function fetchHeadings(
   content: string
-): Promise<{ headings: HeadingInfo[] }> {
+): Promise<{ success?: boolean; headings: HeadingInfo[]; error?: string }> {
   const response = await fetch(`${getBackendUrl()}/api/split/headings`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

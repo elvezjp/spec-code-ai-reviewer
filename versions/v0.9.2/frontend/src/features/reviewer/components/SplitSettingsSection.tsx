@@ -28,6 +28,7 @@ interface SplitSettingsSectionProps {
   // 事前重要指定関連
   headings: HeadingInfo[]
   isLoadingHeadings: boolean
+  headingsError: string | null
   preImportantSections: number[]
   onTogglePreImportantSection: (startLine: number) => void
   preImportantSplitSettings: PreImportantSplitSettings
@@ -59,6 +60,7 @@ export function SplitSettingsSection({
   previewError,
   headings,
   isLoadingHeadings,
+  headingsError,
   preImportantSections,
   onTogglePreImportantSection,
   preImportantSplitSettings,
@@ -191,8 +193,12 @@ export function SplitSettingsSection({
                   selectedStartLines={preImportantSections}
                   onToggle={onTogglePreImportantSection}
                   isLoading={isLoadingHeadings}
+                  error={headingsError}
                 />
               )}
+
+              {/* 見出し取得エラー時は分割オプションを非表示 */}
+              {headingsError ? null : <>
 
               {/* 設計書 — 事前重要指定セクション（事前重要指定が選択されている場合のみ表示） */}
               {settings.reviewMode === 'split' && hasPreImportantSelected && (
@@ -233,6 +239,7 @@ export function SplitSettingsSection({
                   </div>
                 </div>
               )}
+              </>}
             </div>
           )}
         </div>

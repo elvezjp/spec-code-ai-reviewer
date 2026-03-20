@@ -119,6 +119,7 @@ export function Reviewer() {
     summarizeError,
     headings: splitHeadings,
     isLoadingHeadings: isSplitLoadingHeadings,
+    headingsError: splitHeadingsError,
     preImportantSections,
     preImportantSplitSettings,
     normalSplitSettings,
@@ -914,6 +915,7 @@ export function Reviewer() {
           previewError={splitPreviewError}
           headings={splitHeadings}
           isLoadingHeadings={isSplitLoadingHeadings}
+          headingsError={splitHeadingsError}
           preImportantSections={preImportantSections}
           onTogglePreImportantSection={togglePreImportantSection}
           preImportantSplitSettings={preImportantSplitSettings}
