@@ -577,9 +577,9 @@ class TestSplitHeadingsAPI:
         assert len(data["headings"]) == 2
         assert data["headings"][0]["title"] == "概要"
         assert data["headings"][0]["level"] == 1
-        assert data["headings"][0]["start_line"] == 1
-        assert data["headings"][0]["end_line"] == 5
-        assert data["headings"][0]["estimated_chars"] == 104
+        assert data["headings"][0]["startLine"] == 1
+        assert data["headings"][0]["endLine"] == 5
+        assert data["headings"][0]["estimatedChars"] == 104
         assert data["headings"][1]["title"] == "業務フロー"
         assert data["headings"][1]["level"] == 2
 
@@ -707,15 +707,15 @@ class TestSplitMarkdownPreImportantAPI:
             "filename": "test.md",
             "maxDepth": 2,
             "splitMode": "heading",
-            "pre_important_sections": [6],  # 変更履歴セクション（start_line=6）を事前重要指定
-            "pre_important_split_settings": {
-                "split_mode": "ai",
-                "max_subsections": 10,
-                "split_instructions": "詳細に分割",
+            "preImportantSections": [6],  # 変更履歴セクション（start_line=6）を事前重要指定
+            "preImportantSplitSettings": {
+                "splitMode": "ai",
+                "maxSubsections": 10,
+                "splitInstructions": "詳細に分割",
             },
-            "normal_split_settings": {
-                "split_mode": "heading",
-                "max_subsections": 5,
+            "normalSplitSettings": {
+                "splitMode": "heading",
+                "maxSubsections": 5,
             },
         }
 

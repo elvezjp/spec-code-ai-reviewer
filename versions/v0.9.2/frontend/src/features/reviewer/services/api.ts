@@ -131,7 +131,7 @@ export async function fetchHeadings(
   const response = await fetch(`${getBackendUrl()}/api/split/headings`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ markdown: content }),
+    body: JSON.stringify({ content }),
   })
 
   return await response.json()

@@ -82,9 +82,9 @@ async def split_headings(request: HeadingsRequest):
             HeadingInfo(
                 title=h["title"],
                 level=h["level"],
-                start_line=h["start_line"],
-                end_line=h["end_line"],
-                estimated_chars=h["estimated_chars"],
+                startLine=h["start_line"],
+                endLine=h["end_line"],
+                estimatedChars=h["estimated_chars"],
             )
             for h in headings_data
         ]
@@ -132,19 +132,19 @@ async def split_markdown(request: SplitMarkdownRequest):
 
             # 事前重要指定モードかどうかを判定
             has_pre_important = (
-                request.pre_important_sections is not None
-                and len(request.pre_important_sections) > 0
+                request.preImportantSections is not None
+                and len(request.preImportantSections) > 0
             )
 
             # 分割モードと設定を決定
-            if has_pre_important and request.normal_split_settings:
+            if has_pre_important and request.normalSplitSettings:
                 # 事前重要指定モード: 通常セクション設定をデフォルトにする
-                normal_settings = request.normal_split_settings
-                split_mode = normal_settings.split_mode or request.splitMode
-                max_subsections = normal_settings.max_subsections or int(
+                normal_settings = request.normalSplitSettings
+                split_mode = normal_settings.splitMode or request.splitMode
+                max_subsections = normal_settings.maxSubsections or int(
                     os.environ.get("MD2MAP_MAX_SUBSECTIONS", "5")
                 )
-                ai_prompt_extra_notes = normal_settings.split_instructions or request.aiPromptExtraNotes or None
+                ai_prompt_extra_notes = normal_settings.splitInstructions or request.aiPromptExtraNotes or None
             else:
                 # 従来モード
                 split_mode = request.splitMode
@@ -160,9 +160,9 @@ async def split_markdown(request: SplitMarkdownRequest):
 
             # section_overrides の構築（事前重要指定セクション用）
             section_overrides = None
-            if has_pre_important and request.pre_important_split_settings:
-                pre_settings = request.pre_important_split_settings
-                pre_split_mode = pre_settings.split_mode or split_mode
+            if has_pre_important and request.preImportantSplitSettings:
+                pre_settings = request.preImportantSplitSettings
+                pre_split_mode = pre_settings.splitMode or split_mode
                 # 事前重要指定セクションにAIモードが含まれる場合もLLMConfigが必要
                 if pre_split_mode == "ai" and md2map_llm_config is None:
                     md2map_llm_config = _convert_to_md2map_llm_config(
@@ -172,10 +172,10 @@ async def split_markdown(request: SplitMarkdownRequest):
                     {
                         "start_line": start_line,
                         "split_mode": pre_split_mode,
-                        "max_subsections": pre_settings.max_subsections or max_subsections,
-                        "ai_prompt_extra_notes": pre_settings.split_instructions or "",
+                        "max_subsections": pre_settings.maxSubsections or max_subsections,
+                        "ai_prompt_extra_notes": pre_settings.splitInstructions or "",
                     }
-                    for start_line in request.pre_important_sections
+                    for start_line in request.preImportantSections
                 ]
 
             parser = MarkdownParser(
@@ -236,7 +236,7 @@ async def split_markdown(request: SplitMarkdownRequest):
                     request.content, max_depth=request.maxDepth
                 )
                 for h in headings_data:
-                    if h["start_line"] in request.pre_important_sections:
+                    if h["start_line"] in request.preImportantSections:
                         pre_important_ranges.append(
                             (h["start_line"], h["end_line"])
                         )

@@ -287,9 +287,9 @@ class HeadingInfo(BaseModel):
 
     title: str
     level: int
-    start_line: int
-    end_line: int
-    estimated_chars: int
+    startLine: int
+    endLine: int
+    estimatedChars: int
 
 
 class HeadingsResponse(BaseModel):
@@ -303,10 +303,10 @@ class HeadingsResponse(BaseModel):
 class SplitSettingsDetail(BaseModel):
     """分割設定の詳細（事前重要指定セクション用 / 通常セクション用）"""
 
-    split_mode: Literal["ai", "heading", "nlp"] | None = None
-    heading_level: int | None = None
-    split_instructions: str | None = None
-    max_subsections: int | None = None
+    splitMode: Literal["ai", "heading", "nlp"] | None = None
+    headingLevel: int | None = None
+    splitInstructions: str | None = None
+    maxSubsections: int | None = None
 
 
 class SplitMarkdownRequest(BaseModel):
@@ -319,9 +319,9 @@ class SplitMarkdownRequest(BaseModel):
     llmConfig: LLMConfig | None = None  # AIモード用LLM設定
     aiPromptExtraNotes: str | None = None  # AIサブスプリットの注意事項に追記するテキスト（AIモード専用）
     # 事前重要指定関連フィールド
-    pre_important_sections: list[int] | None = None  # 事前重要指定セクションの start_line リスト
-    pre_important_split_settings: SplitSettingsDetail | None = None  # 事前重要指定セクション向け分割設定
-    normal_split_settings: SplitSettingsDetail | None = None  # 通常セクション向け分割設定
+    preImportantSections: list[int] | None = None  # 事前重要指定セクションの start_line リスト
+    preImportantSplitSettings: SplitSettingsDetail | None = None  # 事前重要指定セクション向け分割設定
+    normalSplitSettings: SplitSettingsDetail | None = None  # 通常セクション向け分割設定
 
 
 class DocumentPart(BaseModel):
