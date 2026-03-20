@@ -174,7 +174,7 @@
 
 - 現在の実装: `versions/v0.9.1`
 - `versions/v0.9.1` を丸ごとコピーして `versions/v0.9.2` を作成し、v0.9.2 上で修正を行う
-- md2map の修正は `md2map/` ディレクトリで行う
+- md2map の修正は別計画書で実施: [20260320-section-overrides-plan.md](../md2map/docs/20260320-section-overrides-plan.md)
 
 ---
 
@@ -185,78 +185,35 @@
 
 ---
 
-## Step 1: md2map — 見出し一覧取得機能の追加
+## Step 1: md2map — 見出し一覧取得 / セクション単位オーバーライド
 
-分割実行前に見出し一覧だけを軽量に取得する機能を追加する。
+md2map 側の修正は別計画書を参照: [20260320-section-overrides-plan.md](../md2map/docs/20260320-section-overrides-plan.md)
 
-### 修正対象
+本計画で利用する md2map の機能:
 
-| ファイル | 修正内容 |
+| 機能 | 概要 |
 |---|---|
-| `md2map/md2map/parsers/markdown_parser.py` | 見出し一覧取得メソッド `extract_headings()` を追加 |
-| `md2map/md2map/cli.py` | `headings` サブコマンドを追加 |
-| `md2map/tests/` | 見出し一覧取得のテストを追加 |
+| `extract_headings()` | 見出し一覧を取得。`{ title, level, start_line, end_line, estimated_chars }` を返す |
+| `section_overrides` | セクション単位で分割設定（split_mode, max_subsections 等）をオーバーライド。`start_line` でセクションを識別 |
 
-### 入出力
-
-```
-入力:  markdown テキスト
-出力:  [{ title, level, start_line, end_line, estimated_chars }]
-```
-
-- 既存の見出し解析ロジック（正規表現による ATX 見出し抽出）を流用
-- LLM 不要、高速処理
+md2map 自体は「事前重要指定」の概念を持たない。
+バックエンドが「事前重要指定セクション」を md2map の `section_overrides` に変換し、結果に `pre_important` フラグを付与する。
 
 ---
 
-## Step 2: md2map — セクション単位の分割設定対応
-
-`pre_important_sections` パラメータを受け取り、セクションごとに分割動作を切り替える。
+## Step 2: バックエンド — API スキーマとエンドポイントの修正
 
 ### 修正対象
 
 | ファイル | 修正内容 |
 |---|---|
-| `md2map/md2map/parsers/markdown_parser.py` | `pre_important_sections` パラメータを受け取り、セクション単位で分割動作を切り替え |
-| `md2map/md2map/models/section.py` | Section に `pre_important: bool` フィールドを追加 |
-| `md2map/md2map/generators/map_generator.py` | MAP.json に `pre_important` フィールドを出力 |
-| `md2map/md2map/cli.py` | `--pre-important-sections` オプション、`--pre-important-split-mode` / `--normal-split-mode` オプションを追加 |
-| `md2map/tests/` | セクション単位分割のテストを追加 |
-
-### 分割動作
-
-事前重要指定セクションと通常セクションに対して、それぞれ独立した分割モードと設定を適用する。
-
-| 設定項目 | 事前重要指定セクション | 通常セクション |
-|---|---|---|
-| 分割モード | 独立して設定（見出し / NLP / AI） | 独立して設定（見出し / NLP / AI） |
-| 見出しレベル | 独立して設定（H2 / H3 / H4） | 独立して設定（H2 / H3 / H4） |
-| 分割時の注意事項 | 独立して設定 | 独立して設定 |
-| max_subsections | 独立して設定 | 独立して設定 |
-
-- 事前重要指定セクションから生成された分割パートには `pre_important: true` を付与
-- 通常セクションは従来通りの動作
-
-### MAP.json の変更
-
-```json
-{ "id": "MD1", "section": "API仕様", "level": 2, "path": "...",
-  "pre_important": true, ... }
-```
-
----
-
-## Step 3: バックエンド — API スキーマとエンドポイントの修正
-
-### 修正対象
-
-| ファイル | 修正内容 |
-|---|---|
-| `versions/v0.9.2/backend/app/models/schemas.py` | `SplitMarkdownRequest` に `pre_important_sections` を追加、`HeadingsRequest/Response` を追加 |
-| `versions/v0.9.2/backend/app/routers/split.py` | 見出し一覧取得エンドポイント `POST /split/headings` を追加、`POST /split/markdown` で `pre_important_sections` を md2map に渡す |
+| `versions/v0.9.2/backend/app/models/schemas.py` | `SplitMarkdownRequest` に `pre_important_sections` と分割設定を追加、`HeadingsRequest/Response` を追加 |
+| `versions/v0.9.2/backend/app/routers/split.py` | 見出し一覧取得エンドポイント `POST /split/headings` を追加、`POST /split/markdown` で `pre_important_sections` を md2map の `section_overrides` に変換して渡す |
 | `versions/v0.9.2/backend/tests/` | 新規・既存エンドポイントのテストを追加 |
 
 ### 新規エンドポイント: POST /split/headings
+
+md2map の `extract_headings()` を呼び出し、結果をそのまま返す。
 
 ```
 リクエスト: { markdown: string }
@@ -268,7 +225,7 @@
 リクエストに追加：
 
 ```
-pre_important_sections: ["1. API仕様", "2. DB設計"]
+pre_important_sections: [79, 111]    // start_line のリスト
 pre_important_split_settings: {
   split_mode: "heading" | "nlp" | "ai",
   heading_level: 2 | 3 | 4,
@@ -283,15 +240,45 @@ normal_split_settings: {
 }
 ```
 
-- `pre_important_sections`: 事前重要指定された見出しタイトルのリスト
+- `pre_important_sections`: 事前重要指定セクションの `start_line` リスト
 - `pre_important_split_settings`: 事前重要指定セクション向けの分割設定
-- `normal_split_settings`: 通常セクション向けの分割設定（従来の設定を引き継ぐ）
+- `normal_split_settings`: 通常セクション向けの分割設定
+
+### バックエンドの責務: section_overrides への変換
+
+バックエンドが `pre_important_sections` + 2つの分割設定を md2map の `section_overrides` 形式に変換する。
+
+```python
+# バックエンド側の変換ロジック
+section_overrides = {
+    "default": {
+        "split_mode": normal_split_settings.split_mode,
+        "max_subsections": normal_split_settings.max_subsections,
+        "split_threshold": 500,
+        "ai_prompt_extra_notes": normal_split_settings.split_instructions or ""
+    },
+    "overrides": [
+        {
+            "start_line": start_line,
+            "split_mode": pre_important_split_settings.split_mode,
+            "max_subsections": pre_important_split_settings.max_subsections,
+            "ai_prompt_extra_notes": pre_important_split_settings.split_instructions or ""
+        }
+        for start_line in pre_important_sections
+    ]
+}
+```
+
+### バックエンドの責務: pre_important フラグの付与
+
+md2map の結果には `pre_important` フラグは含まれない。
+バックエンドが `pre_important_sections`（start_line リスト）と md2map の結果を照合し、該当セクションの DocumentPart に `pre_important: true` を付与する。
 
 レスポンスの DocumentPart に `pre_important: bool` を追加。
 
 ---
 
-## Step 4: フロントエンド — 事前重要指定 UI の追加
+## Step 3: フロントエンド — 事前重要指定 UI の追加
 
 ### 修正対象
 
@@ -321,7 +308,7 @@ normal_split_settings: {
   - 分割モード: 見出し / NLP / AI（推奨）
   - 見出しレベル: H2(##)まで（推奨）/ H3(###)まで / H4(####)まで
   - 分割時の注意事項（AIへの指示・任意）
-- 分割プレビューボタンで `pre_important_sections`、`pre_important_split_settings`、`normal_split_settings` を API に送信
+- 分割プレビューボタンで `pre_important_sections`（start_line リスト）、`pre_important_split_settings`、`normal_split_settings` を API に送信
 
 #### 3. 「重要」「除外」を再設定
 
@@ -334,7 +321,7 @@ normal_split_settings: {
 
 ---
 
-## Step 5: フロントエンド — 分割後設定の自動反映
+## Step 4: フロントエンド — 分割後設定の自動反映
 
 ### 修正対象
 
@@ -350,15 +337,14 @@ normal_split_settings: {
 ```
 Step 0: v0.9.2 作成
   ↓
-Step 1: md2map 見出し一覧取得
+Step 1: md2map 見出し一覧取得 / セクション単位オーバーライド
+         → 別計画書: md2map/docs/20260320-section-overrides-plan.md
   ↓
-Step 2: md2map セクション単位分割
+Step 2: バックエンド API 修正（md2map の機能を利用、pre_important の変換・付与）
   ↓
-Step 3: バックエンド API 修正（Step 1, 2 の md2map を利用）
+Step 3: フロントエンド 事前重要指定 UI（Step 2 の API を利用）
   ↓
-Step 4: フロントエンド 事前重要指定 UI（Step 3 の API を利用）
-  ↓
-Step 5: フロントエンド 分割後自動反映（Step 4 の UI 状態を利用）
+Step 4: フロントエンド 分割後自動反映（Step 3 の UI 状態を利用）
 ```
 
 ---
@@ -367,8 +353,8 @@ Step 5: フロントエンド 分割後自動反映（Step 4 の UI 状態を利
 
 | 対象 | 影響 |
 |---|---|
-| md2map | 見出し一覧取得の追加、セクション単位分割設定の追加、MAP.json フィールド追加 |
-| バックエンド | 新規エンドポイント追加、既存エンドポイントのリクエスト/レスポンス拡張 |
+| md2map | 見出し一覧取得の追加、セクション単位オーバーライド追加（[別計画書](../md2map/docs/20260320-section-overrides-plan.md)） |
+| バックエンド | 新規エンドポイント追加、既存エンドポイントのリクエスト/レスポンス拡張、`pre_important` の変換・付与 |
 | フロントエンド | 新規 UI コンポーネント追加、分割設定フローの拡張 |
 | code2map | 変更なし |
 | Phase 1〜3（構造マッチング・グループレビュー・統合） | MAP.json の `pre_important` をヒントとして活用可能（本計画では任意） |
