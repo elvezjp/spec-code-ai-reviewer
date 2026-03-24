@@ -287,6 +287,8 @@ md2map headings <input_file> [--max-depth <N>]
     ↓
 見出し抽出 → セクションリスト + 警告
     ↓
+skip 指定セクションの除外（_filter_skipped_sections()）
+    ↓
 [split-mode != heading?] → Yes → セクション再分割（仮想見出し挿入）
     ↓
 セクション情報抽出（要約・キーワード・リンク・単語数）
@@ -358,7 +360,18 @@ build コマンドと同じ `_extract_headings()` + `_build_sections()` を使�
 
 `--split-mode` が `nlp` または `ai` の場合、見出しベースで抽出されたセクションのうち、再分割条件を満たすものに対してサブスプリットを挿入する。
 
-`--section-overrides` が指定されている場合、セクションごとに分割設定（`split_mode`, `split_threshold`, `max_subsections`, `ai_prompt_extra_notes`）を個別に解決する。オーバーライドで指定されていないフィールドはコンストラクタ引数（CLI オプション）の値を継承する。
+`--section-overrides` が指定されている場合、セクションごとに分割設定（`split_mode`, `split_threshold`, `max_subsections`, `ai_prompt_extra_notes`, `skip`）を個別に解決する。オーバーライドで指定されていないフィールドはコンストラクタ引数（CLI オプション）の値を継承する。
+
+**オーバーライドキー**:
+
+| キー | 型 | デフォルト | 説明 |
+|------|-----|-----------|------|
+| `start_line` | int | （必須） | 対象セクションの開始行番号 |
+| `split_mode` | str | 継承 | 分割モード（`heading`/`nlp`/`ai`） |
+| `split_threshold` | int | 継承 | 再分割対象の最小文字数/単語数 |
+| `max_subsections` | int | 継承 | 仮想見出しの最大数 |
+| `ai_prompt_extra_notes` | str | 継承 | AI プロンプト注意事項への追記テキスト |
+| `skip` | bool | `false` | `true` の場合、該当セクションとその子セクションを出力から除外する |
 
 **セクション単位の設定解決**:
 

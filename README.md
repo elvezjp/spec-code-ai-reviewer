@@ -11,7 +11,7 @@
 
 A web application that uses AI to cross-check design documents (Excel format) against program code and verify consistency.
 
-https://github.com/user-attachments/assets/a0b63e85-5c3b-45ed-8b0c-2eb0fae89cf8
+https://github.com/user-attachments/assets/7da0ece8-93b6-4a22-bea8-c275d263ef48
 
 ## Features
 
@@ -142,7 +142,7 @@ For v0.6.0 and later, start frontend and backend separately.
 **Terminal 1: Start backend**
 
 ```bash
-cd versions/v0.9.2/backend
+cd versions/v0.9.3/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -150,7 +150,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **Terminal 2: Start frontend**
 
 ```bash
-cd versions/v0.9.2/frontend
+cd versions/v0.9.3/frontend
 npm install
 npm run dev
 ```
@@ -204,12 +204,12 @@ You can switch versions from the top-left balloon (routing via Cookie + Nginx ma
 Run tests in each version's directory.
 
 ```bash
-# v0.9.2 backend tests
-cd versions/v0.9.2/backend
+# v0.9.3 backend tests
+cd versions/v0.9.3/backend
 uv run pytest tests/ -v
 
-# v0.9.2 frontend tests
-cd versions/v0.9.2/frontend
+# v0.9.3 frontend tests
+cd versions/v0.9.3/frontend
 npm test
 
 # v0.5.2 and earlier tests (backend only)
@@ -244,7 +244,9 @@ python3 scripts/sync_version.py v0.5.0
 python3 scripts/sync_version.py --no-versions-array
 ```
 
-## Environment Variables (System LLM)
+## Environment Variables
+
+### System LLM (AWS Bedrock)
 
 These environment variables are used to run the system LLM (AWS Bedrock).
 
@@ -257,7 +259,20 @@ These environment variables are used to run the system LLM (AWS Bedrock).
 | `AWS_REGION` | AWS region | `ap-northeast-1` |
 | `BEDROCK_MODEL_ID` | Model ID to use | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `BEDROCK_MAX_TOKENS` | Max response tokens | `16384` |
+
+### Split Review (md2map)
+
+Environment variables used by the split review feature.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
 | `MD2MAP_MAX_SUBSECTIONS` | Max subsplits per section in NLP/AI split mode | `5` |
+
+Example of specifying environment variables when starting the backend:
+
+```bash
+MD2MAP_MAX_SUBSECTIONS=10 uv run uvicorn app.main:app --reload --port 8000
+```
 
 ---
 
@@ -341,7 +356,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # Dev Nginx config
 │   ├── spec-code-ai-reviewer.conf  # Production Nginx config
 │   └── version-map.conf         # Version switch map (shared)
-├── latest -> versions/v0.9.2    # Symlink to latest
+├── latest -> versions/v0.9.3    # Symlink to latest
 │
 ├── versions/                    # All versions
 │   ├── README.md                # Version management notes
@@ -355,7 +370,8 @@ spec-code-ai-reviewer/
 │   ├── v0.8.2/                  # Old version (Vite + React)
 │   ├── v0.9.0/                  # Old version (Vite + React)
 │   ├── v0.9.1/                  # Previous (Vite + React)
-│   └── v0.9.2/                  # Latest (Vite + React)
+│   ├── v0.9.2/                  # Previous (Vite + React)
+│   └── v0.9.3/                  # Latest (Vite + React)
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -422,7 +438,8 @@ Example: v0.2.5 -> 8000 + (2 x 10) + 5 = 8025
 
 | Version | Port |
 |-----------|------|
-| v0.9.2 (latest) | 8092 |
+| v0.9.3 (latest) | 8093 |
+| v0.9.2 | 8092 |
 | v0.9.1 | 8091 |
 | v0.9.0 | 8090 |
 | v0.8.2 | 8082 |
@@ -463,6 +480,7 @@ When adding a new version (e.g., v0.7.0), update the following files.
 | `nginx/version-map.conf` | Add new routing; update default port |
 | `ecosystem.config.js` | Add new version to VERSIONS array (see below) |
 | `dev.ecosystem.config.js` | Add new version to VERSIONS array |
+| `.github/workflows/ci.yml` | Update `working-directory` in `backend-test` / `frontend-test` jobs to `versions/v{X.Y.Z}/backend` and `versions/v{X.Y.Z}/frontend` |
 | `docs/ec2-deployment-spec.md` | Add new version to config examples |
 | `versions/README.md` | Add directory structure, version comparison table, and update history |
 | `README.md` | Update directory structure and port table |
@@ -545,6 +563,14 @@ sudo nginx -s reload
 ## Update History
 
 For detailed change history, see [CHANGELOG.md](CHANGELOG.md).
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Security
+
+For reporting vulnerabilities, see [SECURITY.md](SECURITY.md).
 
 ## Background
 

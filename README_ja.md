@@ -11,7 +11,7 @@
 
 設計書（Excel形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
 
-https://github.com/user-attachments/assets/a0b63e85-5c3b-45ed-8b0c-2eb0fae89cf8
+https://github.com/user-attachments/assets/7da0ece8-93b6-4a22-bea8-c275d263ef48
 
 ## 機能
 
@@ -142,7 +142,7 @@ v0.6.0以降はフロントエンドとバックエンドを別々に起動し�
 **ターミナル1: バックエンド起動**
 
 ```bash
-cd versions/v0.9.2/backend
+cd versions/v0.9.3/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -150,7 +150,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **ターミナル2: フロントエンド起動**
 
 ```bash
-cd versions/v0.9.2/frontend
+cd versions/v0.9.3/frontend
 npm install
 npm run dev
 ```
@@ -204,12 +204,12 @@ docker-compose down
 各バージョンのディレクトリでテストを実行します。
 
 ```bash
-# v0.9.2 バックエンドのテスト
-cd versions/v0.9.2/backend
+# v0.9.3 バックエンドのテスト
+cd versions/v0.9.3/backend
 uv run pytest tests/ -v
 
-# v0.9.2 フロントエンドのテスト
-cd versions/v0.9.2/frontend
+# v0.9.3 フロントエンドのテスト
+cd versions/v0.9.3/frontend
 npm test
 
 # v0.5.2以前のテスト（バックエンドのみ）
@@ -244,7 +244,9 @@ python3 scripts/sync_version.py v0.5.0
 python3 scripts/sync_version.py --no-versions-array
 ```
 
-## 環境変数（システムLLM用）
+## 環境変数
+
+### システムLLM用（AWS Bedrock）
 
 システムLLM（AWS Bedrock）の実行に利用される環境変数です。
 
@@ -257,7 +259,20 @@ python3 scripts/sync_version.py --no-versions-array
 | `AWS_REGION` | AWSリージョン | `ap-northeast-1` |
 | `BEDROCK_MODEL_ID` | 使用するモデルID | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `BEDROCK_MAX_TOKENS` | レスポンスの最大トークン数 | `16384` |
+
+### 分割レビュー機能用（md2map）
+
+分割レビュー機能で使用される環境変数です。
+
+| 変数名 | 説明 | デフォルト値 |
+|--------|------|-------------|
 | `MD2MAP_MAX_SUBSECTIONS` | NLP/AIモードの1セクションあたり最大サブスプリット数 | `5` |
+
+バックエンド起動時に環境変数を指定する例：
+
+```bash
+MD2MAP_MAX_SUBSECTIONS=10 uv run uvicorn app.main:app --reload --port 8000
+```
 
 ---
 
@@ -342,7 +357,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # 開発用Nginx設定
 │   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.9.2    # シンボリックリンク（最新版を指す）
+├── latest -> versions/v0.9.3    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
@@ -356,7 +371,8 @@ spec-code-ai-reviewer/
 │   ├── v0.8.2/                  # 旧バージョン（Vite + React）
 │   ├── v0.9.0/                  # 旧バージョン（Vite + React）
 │   ├── v0.9.1/                  # 旧バージョン（Vite + React）
-│   └── v0.9.2/                  # 最新版（Vite + React）
+│   ├── v0.9.2/                  # 旧バージョン（Vite + React）
+│   └── v0.9.3/                  # 最新版（Vite + React）
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -423,7 +439,8 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 
 | バージョン | ポート |
 |-----------|-------|
-| v0.9.2 (latest) | 8092 |
+| v0.9.3 (latest) | 8093 |
+| v0.9.2 | 8092 |
 | v0.9.1 | 8091 |
 | v0.9.0 | 8090 |
 | v0.8.2 | 8082 |
@@ -464,6 +481,7 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 | `nginx/version-map.conf` | 新バージョンのルーティングを追加、defaultポート変更 |
 | `ecosystem.config.js` | VERSIONS配列に新バージョンを追加（下記参照） |
 | `dev.ecosystem.config.js` | VERSIONS配列に新バージョンを追加 |
+| `.github/workflows/ci.yml` | `backend-test` / `frontend-test` の `working-directory` を `versions/v{新}/backend` および `versions/v{新}/frontend` に更新 |
 | `docs/ec2-deployment-spec.md` | 設定例に新バージョンの記載を追加 |
 | `versions/README.md` | ディレクトリ構成、バージョン比較表、更新履歴を追加 |
 | `README.md` | ディレクトリ構成、ポート割り当て表を更新 |
@@ -546,6 +564,14 @@ sudo nginx -s reload
 ## 更新履歴
 
 詳細な変更履歴は [CHANGELOG_ja.md](CHANGELOG_ja.md) を参照してください。
+
+## 貢献
+
+貢献を歓迎します！ガイドラインは [CONTRIBUTING_ja.md](CONTRIBUTING_ja.md) を参照してください。
+
+## セキュリティ
+
+脆弱性の報告については [SECURITY_ja.md](SECURITY_ja.md) を参照してください。
 
 ## 開発の背景
 

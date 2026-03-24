@@ -210,11 +210,5 @@ __marimo__/
 .DS_Store
 
 # Example output (override parts/ exclusion above)
-!docs/examples/v0.1/output/parts/
-!docs/examples/v0.1/output/parts/**
-!docs/examples/v0.2/output-heading/parts/
-!docs/examples/v0.2/output-heading/parts/**
-!docs/examples/v0.2/output-nlp/parts/
-!docs/examples/v0.2/output-nlp/parts/**
-!docs/examples/v0.2/output-ai/parts/
-!docs/examples/v0.2/output-ai/parts/**
+!docs/examples/**/parts/
+!docs/examples/**/parts/**

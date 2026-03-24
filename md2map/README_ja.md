@@ -120,6 +120,9 @@ uv run md2map build document.md --split-mode ai --section-overrides overrides.js
 
 # セクションごとに分割設定を上書き（インラインJSON）
 uv run md2map build document.md --split-mode ai --section-overrides '[{"start_line": 79, "max_subsections": 10}]'
+
+# 特定セクションを除外
+uv run md2map build input.md --section-overrides '[{"start_line": 6, "skip": true}]'
 ```
 
 `md2map headings` で各セクションの `start_line` を取得してからオーバーライドを指定してください。

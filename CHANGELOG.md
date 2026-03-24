@@ -1,9 +1,28 @@
 # Changelog
 
+[English](./CHANGELOG.md) | [日本語](./CHANGELOG_ja.md)
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.9.3] - 2026-03-24
+
+### Added
+- **Pre-split exclusion designation** (#68): Designate sections as "pre-excluded" before splitting, completely removing unnecessary sections (changelogs, table of contents, etc.) from split processing
+  - Added `preExcludedSections` parameter to `POST /api/split/markdown`
+  - Pre-excluded sections are completely removed from `parse()` results via md2map's `skip` feature and do not appear in split preview results
+  - Mutual exclusion control between pre-important and pre-excluded designations (cannot check both on the same section)
+  - Reduces processing time, LLM API calls, and token consumption
+
+### Changed
+- **md2map update**: Updated to v0.3.2 (added `skip` option to `section_overrides`)
+- **Pre-designation panel rename**: Renamed "Pre-important designation" panel to "Pre-designation", integrating both pre-important and pre-exclusion features
+- **Configuration file updates**: Set v0.9.3 as the latest version
+  - `nginx/version-map.conf`: Added v0.9.3 routing, changed default port to 8093
+  - `docker-compose.yml`: Added v0.9.3 frontend, port 8093
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: Added v0.9.3 entry
 
 ## [0.9.2] - 2026-03-20
 
@@ -273,8 +292,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version Comparison
 
+For a detailed feature comparison table across all versions, see [versions/README.md](versions/README.md).
+
 | Version | Key Features |
 |---------|-------------|
+| 0.9.3   | Pre-split exclusion designation (completely exclude unnecessary sections from split processing) |
+| 0.9.2   | Pre-split importance designation (per-section split settings) |
 | 0.9.1   | Section exclusion, AI sub-split instructions, split preview error display, code split warnings, prevent review on split failure |
 | 0.9.0   | Split review quality improvements, pre-summarization, summarize API separation, error display improvements |
 | 0.8.2   | Line number hallucination fix, review mode display, md2map 3 modes |

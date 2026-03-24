@@ -414,3 +414,123 @@ class TestSectionOverrides:
         )
         parser.parse(str(FIXTURES_DIR / "japanese.md"))
         mock_ensure.assert_called()
+
+    def test_skip_single_section(self):
+        """skip: true で単一セクションが除外される"""
+        # simple.md: Section One starts at line 5
+        parser = MarkdownParser(
+            section_overrides=[{"start_line": 5, "skip": True}],
+        )
+        sections, _ = parser.parse(str(FIXTURES_DIR / "simple.md"))
+
+        titles = [s.title for s in sections]
+        assert "Section One" not in titles
+        # 他のセクションは残る
+        assert "Simple Document" in titles
+        assert "Section Two" in titles
+        assert "Section Three" in titles
+
+    def test_skip_section_with_children(self):
+        """親セクションとその子セクションを skip すると全て除外される"""
+        # nested.md: Level 2a (line 5), Level 3a (line 9), Level 3b (line 17)
+        # are siblings/children under Level 2a's subtree.
+        # Skip range covers the parent and its children by their start_lines.
+        parser = MarkdownParser(
+            section_overrides=[
+                {"start_line": 5, "skip": True},
+                {"start_line": 9, "skip": True},
+                {"start_line": 17, "skip": True},
+            ],
+        )
+        sections, _ = parser.parse(str(FIXTURES_DIR / "nested.md"))
+
+        titles = [s.title for s in sections]
+        assert "Level 2a" not in titles
+        assert "Level 3a" not in titles
+        assert "Level 3b" not in titles
+        # Level 1 と Level 2b 以下は残る
+        assert "Level 1" in titles
+        assert "Level 2b" in titles
+        assert "Level 3c" in titles
+
+    def test_skip_and_split_mode_coexist(self):
+        """skip と split_mode の override が共存する"""
+        # simple.md: skip Section One (line 5), override Section Two (line 9) to heading
+        parser = MarkdownParser(
+            section_overrides=[
+                {"start_line": 5, "skip": True},
+                {"start_line": 9, "split_mode": "heading"},
+            ],
+        )
+        sections, _ = parser.parse(str(FIXTURES_DIR / "simple.md"))
+
+        titles = [s.title for s in sections]
+        assert "Section One" not in titles
+        assert "Section Two" in titles
+        # heading モードなのでサブスプリットなし
+        subsplits = [s for s in sections if s.is_subsplit]
+        assert len(subsplits) == 0
+
+    def test_skip_all_sections(self):
+        """全セクションを skip すると空リストになる"""
+        # simple.md: H1=1, H2=5, H2=9, H3=13, H2=17
+        parser = MarkdownParser(
+            section_overrides=[
+                {"start_line": 1, "skip": True},
+                {"start_line": 5, "skip": True},
+                {"start_line": 9, "skip": True},
+                {"start_line": 13, "skip": True},
+                {"start_line": 17, "skip": True},
+            ],
+        )
+        sections, _ = parser.parse(str(FIXTURES_DIR / "simple.md"))
+
+        assert len(sections) == 0
+
+    def test_skip_nonexistent_start_line(self):
+        """存在しない start_line の skip は無視される"""
+        parser = MarkdownParser(
+            section_overrides=[{"start_line": 99999, "skip": True}],
+        )
+        sections, _ = parser.parse(str(FIXTURES_DIR / "simple.md"))
+
+        # 通常通り全セクションが返る
+        assert len(sections) == 5
+
+    def test_skip_does_not_affect_extract_headings(self):
+        """skip 設定は extract_headings() の結果に影響しない"""
+        parser = MarkdownParser(
+            section_overrides=[{"start_line": 5, "skip": True}],
+        )
+        content = (FIXTURES_DIR / "simple.md").read_text(encoding="utf-8")
+        headings = parser.extract_headings(content, max_depth=3)
+
+        titles = [h["title"] for h in headings]
+        # extract_headings は skip に関係なく全見出しを返す
+        assert "Section One" in titles
+        assert len(headings) == 5
+
+    def test_skip_false_explicit(self):
+        """skip: false を明示的に指定してもセクションは正常に処理される"""
+        parser = MarkdownParser(
+            section_overrides=[{"start_line": 5, "skip": False}],
+        )
+        sections, _ = parser.parse(str(FIXTURES_DIR / "simple.md"))
+
+        titles = [s.title for s in sections]
+        assert "Section One" in titles
+        assert len(sections) == 5
+
+    @patch("md2map.parsers.markdown_parser.MarkdownParser._ensure_llm_provider")
+    def test_skip_does_not_trigger_ai_init(self, mock_ensure):
+        """skip: true + split_mode: ai でも LLM プロバイダの初期化は行われない"""
+        parser = MarkdownParser(
+            split_mode="heading",
+            section_overrides=[
+                {"start_line": 5, "skip": True, "split_mode": "ai", "split_threshold": 1},
+            ],
+        )
+        parser.parse(str(FIXTURES_DIR / "simple.md"))
+
+        # skip されたセクションは処理されないので _ensure_llm_provider は呼ばれない
+        mock_ensure.assert_not_called()
