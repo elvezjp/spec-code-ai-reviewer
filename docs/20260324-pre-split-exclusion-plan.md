@@ -1,5 +1,7 @@
 # 事前除外機能 修正計画書
 
+> **対応完了**: [PR #70](https://github.com/elvezjp/spec-code-ai-reviewer/pull/70) で実装済み（2026-03-24）
+
 ## 概要
 
 分割前にセクションを「除外」として指定する「事前除外」機能を追加する。
@@ -385,51 +387,51 @@ Step 7: ドキュメント更新
 
 ### Step 0: v0.9.3 作成
 
-- [ ] `versions/v0.9.2` を `versions/v0.9.3` にコピー
-- [ ] v0.9.3 の全バージョン番号を更新
-- [ ] インフラ設定（Docker/Nginx/PM2）に v0.9.3 を追加
-- [ ] `latest` シンボリックリンクを v0.9.3 に更新
-- [ ] 全バージョンの `useVersions.ts` に v0.9.3 を追加
+- [x] `versions/v0.9.2` を `versions/v0.9.3` にコピー
+- [x] v0.9.3 の全バージョン番号を更新
+- [x] インフラ設定（Docker/Nginx/PM2）に v0.9.3 を追加
+- [x] `latest` シンボリックリンクを v0.9.3 に更新
+- [x] 全バージョンの `useVersions.ts` に v0.9.3 を追加
 
 ### Step 1: バックエンド スキーマ修正
 
-- [ ] `SplitMarkdownRequest` に `preExcludedSections` を追加
+- [x] `SplitMarkdownRequest` に `preExcludedSections` を追加
 
 ### Step 2: バックエンド エンドポイント修正
 
-- [ ] `POST /split/markdown` で `preExcludedSections` を `section_overrides` の `skip: true` に変換
+- [x] `POST /split/markdown` で `preExcludedSections` を `section_overrides` の `skip: true` に変換
 
 ### Step 3: フロントエンド 型定義・API 修正
 
-- [ ] `SplitMarkdownRequest` に `preExcludedSections` を追加
-- [ ] `splitMarkdown()` リクエストに `preExcludedSections` を追加
+- [x] `SplitMarkdownRequest` に `preExcludedSections` を追加
+- [x] `splitMarkdown()` リクエストに `preExcludedSections` を追加
 
 ### Step 4: フロントエンド PreImportantPanel 拡張
 
-- [ ] 事前除外チェックボックス列の追加
-- [ ] 排他制御の実装
-- [ ] パネルタイトル・説明文の更新
+- [x] 事前除外チェックボックス列の追加
+- [x] 排他制御の実装
+- [x] パネルタイトル・説明文の更新
 
 ### Step 5: フロントエンド 状態管理修正
 
-- [ ] `preExcludedSections` state の追加
-- [ ] `togglePreExcludedSection()` の追加（排他制御込み）
-- [ ] `togglePreImportantSection()` に排他制御を追加
-- [ ] `executePreview()` で `preExcludedSections` を API に送信
-- [ ] `clearHeadingsCache()` で `preExcludedSections` もリセット
+- [x] `preExcludedSections` state の追加
+- [x] `togglePreExcludedSection()` の追加（排他制御込み）
+- [x] `togglePreImportantSection()` に排他制御を追加
+- [x] `executePreview()` で `preExcludedSections` を API に送信
+- [x] `clearHeadingsCache()` で `preExcludedSections` もリセット
 
 ### Step 6: テスト追加
 
-- [ ] バックエンドテスト追加・全テスト通過
-- [ ] フロントエンドテスト追加・全テスト通過
+- [x] バックエンドテスト追加・全テスト通過（182件）
+- [x] フロントエンドテスト追加・全テスト通過（163件）
 
 ### Step 7: ドキュメント更新
 
-- [ ] `versions/v0.9.3/spec.md` に事前除外の仕様を追記
-- [ ] `docs/split-review.md` に事前除外の説明を追記
+- [x] `versions/v0.9.3/spec.md` に事前除外の仕様を追記
+- [x] `docs/split-review.md` に事前除外の説明を追記
 
 ### 最終確認
 
-- [ ] 全バックエンドテスト通過
-- [ ] 全フロントエンドテスト通過
+- [x] 全バックエンドテスト通過（182件）
+- [x] 全フロントエンドテスト通過（163件）
 - [ ] 手動動作確認（事前除外 → 分割プレビュー → 除外セクションが結果に含まれないことの確認）
