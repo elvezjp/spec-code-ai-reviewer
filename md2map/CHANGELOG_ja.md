@@ -7,6 +7,34 @@
 このファイルの形式は [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/lang/ja/) に準拠しています。
 
+## [0.3.2] - 2026-03-24
+
+`section_overrides` にセクション除外（skip）オプションを追加。指定セクションとその子セクションを `parse()` の結果から完全に除外できるようになりました。skip されたセクションは AI/NLP サブスプリットの対象外となり、LLM 問い合わせ回数とトークン使用量を削減できます。
+
+### 追加
+
+- **セクション除外**: `section_overrides` に `skip` オプションを追加
+  - `{"start_line": N, "skip": true}` を指定することで、対象セクションとその子を `parse()` 結果から除外
+  - `_refine_sections()` の前に除外するため、不要な AI/NLP 処理を回避
+  - `extract_headings()` は skip 設定の影響を受けない
+
+- **サンプル出力**: `docs/examples/v0.3.2/` に heading / nlp / ai モードの出力例と `headings.json` を追加
+
+### 変更
+
+- **_resolve_settings()**: デフォルト辞書に `skip` キー（デフォルト値: `false`）を追加
+- **parse()**: `_build_sections()` と `_refine_sections()` の間に `_filter_skipped_sections()` 呼び出しを追加
+- **AI 初期化判定**: skip のみのオーバーライドが不要な LLM provider 初期化をトリガーしないよう修正
+
+### 既知の制限事項
+
+このバージョンには以下の制限があります：
+
+- NLPモードは SudachiPy のインストールが必要
+- AIモードは各プロバイダーのAPIキーまたはAWS認証情報が必要
+- 単一ファイルのみ対応（ディレクトリ単位の解析は未対応）
+- ATX形式の見出しのみ対応（Setext形式の下線見出しは未対応）
+
 ## [0.3.1] - 2026-03-20
 
 見出し一覧取得機能とセクション単位の分割設定オーバーライド機能を追加。特定セクションに異なる分割設定（split_mode, max_subsections 等）を個別に適用できるようになりました。
@@ -169,3 +197,4 @@ AIサブスプリットのプロンプトカスタマイズに対応。プロン
 
 - [リポジトリ](https://github.com/elvezjp/md2map)
 - [Issueトラッカー](https://github.com/elvezjp/md2map/issues)
+- [バージョン比較](versions/README.md)

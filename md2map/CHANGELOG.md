@@ -7,6 +7,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-03-24
+
+Added skip option to `section_overrides` for excluding specific sections (and their children) from parse results. Skipped sections are not processed by AI/NLP subsplitting, reducing LLM calls and token usage.
+
+### Added
+
+- **Section skip**: Added `skip` option to `section_overrides`
+  - Specify `{"start_line": N, "skip": true}` to exclude a section and all its children from `parse()` results
+  - Skipped sections are excluded before `_refine_sections()`, avoiding unnecessary AI/NLP processing
+  - `extract_headings()` is not affected by skip settings
+
+- **Sample output**: Added heading / nlp / ai mode output examples and `headings.json` to `docs/examples/v0.3.2/`
+
+### Changed
+
+- **_resolve_settings()**: Added `skip` key with default value `false`
+- **parse()**: Added `_filter_skipped_sections()` call between `_build_sections()` and `_refine_sections()`
+- **AI initialization check**: Skip-only overrides no longer trigger unnecessary LLM provider initialization
+
+### Known Limitations
+
+This version has the following limitations:
+
+- NLP mode requires SudachiPy installation
+- AI mode requires API keys or AWS credentials for each provider
+- Single file processing only (directory-level analysis not supported)
+- ATX-style headings only (Setext-style underline headings not supported)
+
 ## [0.3.1] - 2026-03-20
 
 Added heading list retrieval and per-section split setting overrides. You can now apply different split settings (split_mode, max_subsections, etc.) to specific sections individually.
@@ -169,3 +197,4 @@ This version has the following limitations:
 
 - [Repository](https://github.com/elvezjp/md2map)
 - [Issue Tracker](https://github.com/elvezjp/md2map/issues)
+- [Version Comparison](versions/README.md)
