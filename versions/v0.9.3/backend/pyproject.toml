@@ -20,7 +20,7 @@ dependencies = [
 
 [tool.uv.sources]
 add-line-numbers = { git = "https://github.com/elvezjp/add-line-numbers.git", branch = "main" }
-md2map = { git = "https://github.com/elvezjp/md2map.git", branch = "tominaga/20260324-section-skip" }
+md2map = { git = "https://github.com/elvezjp/md2map.git", branch = "main" }
 code2map = { git = "https://github.com/elvezjp/code2map.git", branch = "main" }
 
 [build-system]

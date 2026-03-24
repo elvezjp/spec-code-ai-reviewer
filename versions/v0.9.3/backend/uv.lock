@@ -614,7 +614,7 @@ xlsx = [
 [[package]]
 name = "md2map"
 version = "0.3.2"
-source = { git = "https://github.com/elvezjp/md2map.git?branch=tominaga%2F20260324-section-skip#4b7f4ac83499ec78391ec9257d1ba38bd3f8e37a" }
+source = { git = "https://github.com/elvezjp/md2map.git?branch=main#90ee62b56ac91273baec9b327aaac379cbef68c7" }
 dependencies = [
     { name = "add-line-numbers" },
 ]
@@ -1389,7 +1389,7 @@ requires-dist = [
     { name = "code2map", git = "https://github.com/elvezjp/code2map.git?branch=main" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "markitdown", extras = ["xlsx"], specifier = ">=0.0.1a3" },
-    { name = "md2map", extras = ["nlp", "ai"], git = "https://github.com/elvezjp/md2map.git?branch=tominaga%2F20260324-section-skip" },
+    { name = "md2map", extras = ["nlp", "ai"], git = "https://github.com/elvezjp/md2map.git?branch=main" },
     { name = "openai", specifier = ">=2.14.0" },
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
