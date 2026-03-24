@@ -465,6 +465,7 @@ When adding a new version (e.g., v0.7.0), update the following files.
 | `nginx/version-map.conf` | Add new routing; update default port |
 | `ecosystem.config.js` | Add new version to VERSIONS array (see below) |
 | `dev.ecosystem.config.js` | Add new version to VERSIONS array |
+| `.github/workflows/ci.yml` | Update `working-directory` in `backend-test` / `frontend-test` jobs to `versions/v{X.Y.Z}/backend` and `versions/v{X.Y.Z}/frontend` |
 | `docs/ec2-deployment-spec.md` | Add new version to config examples |
 | `versions/README.md` | Add directory structure, version comparison table, and update history |
 | `README.md` | Update directory structure and port table |
@@ -547,6 +548,14 @@ sudo nginx -s reload
 ## Update History
 
 For detailed change history, see [CHANGELOG.md](CHANGELOG.md).
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Security
+
+For reporting vulnerabilities, see [SECURITY.md](SECURITY.md).
 
 ## Background
 

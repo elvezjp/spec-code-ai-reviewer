@@ -466,6 +466,7 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 | `nginx/version-map.conf` | 新バージョンのルーティングを追加、defaultポート変更 |
 | `ecosystem.config.js` | VERSIONS配列に新バージョンを追加（下記参照） |
 | `dev.ecosystem.config.js` | VERSIONS配列に新バージョンを追加 |
+| `.github/workflows/ci.yml` | `backend-test` / `frontend-test` の `working-directory` を `versions/v{新}/backend` および `versions/v{新}/frontend` に更新 |
 | `docs/ec2-deployment-spec.md` | 設定例に新バージョンの記載を追加 |
 | `versions/README.md` | ディレクトリ構成、バージョン比較表、更新履歴を追加 |
 | `README.md` | ディレクトリ構成、ポート割り当て表を更新 |
@@ -548,6 +549,14 @@ sudo nginx -s reload
 ## 更新履歴
 
 詳細な変更履歴は [CHANGELOG_ja.md](CHANGELOG_ja.md) を参照してください。
+
+## 貢献
+
+貢献を歓迎します！ガイドラインは [CONTRIBUTING_ja.md](CONTRIBUTING_ja.md) を参照してください。
+
+## セキュリティ
+
+脆弱性の報告については [SECURITY_ja.md](SECURITY_ja.md) を参照してください。
 
 ## 開発の背景
 

@@ -1,5 +1,7 @@
 # Changelog
 
+[English](./CHANGELOG.md) | [日本語](./CHANGELOG_ja.md)
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -289,6 +291,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## Version Comparison
+
+For a detailed feature comparison table across all versions, see [versions/README.md](versions/README.md).
 
 | Version | Key Features |
 |---------|-------------|
