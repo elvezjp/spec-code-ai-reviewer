@@ -244,7 +244,9 @@ python3 scripts/sync_version.py v0.5.0
 python3 scripts/sync_version.py --no-versions-array
 ```
 
-## 環境変数（システムLLM用）
+## 環境変数
+
+### システムLLM用（AWS Bedrock）
 
 システムLLM（AWS Bedrock）の実行に利用される環境変数です。
 
@@ -257,7 +259,20 @@ python3 scripts/sync_version.py --no-versions-array
 | `AWS_REGION` | AWSリージョン | `ap-northeast-1` |
 | `BEDROCK_MODEL_ID` | 使用するモデルID | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `BEDROCK_MAX_TOKENS` | レスポンスの最大トークン数 | `16384` |
+
+### 分割レビュー機能用（md2map）
+
+分割レビュー機能で使用される環境変数です。
+
+| 変数名 | 説明 | デフォルト値 |
+|--------|------|-------------|
 | `MD2MAP_MAX_SUBSECTIONS` | NLP/AIモードの1セクションあたり最大サブスプリット数 | `5` |
+
+バックエンド起動時に環境変数を指定する例：
+
+```bash
+MD2MAP_MAX_SUBSECTIONS=10 uv run uvicorn app.main:app --reload --port 8000
+```
 
 ---
 

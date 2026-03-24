@@ -244,7 +244,9 @@ python3 scripts/sync_version.py v0.5.0
 python3 scripts/sync_version.py --no-versions-array
 ```
 
-## Environment Variables (System LLM)
+## Environment Variables
+
+### System LLM (AWS Bedrock)
 
 These environment variables are used to run the system LLM (AWS Bedrock).
 
@@ -257,7 +259,20 @@ These environment variables are used to run the system LLM (AWS Bedrock).
 | `AWS_REGION` | AWS region | `ap-northeast-1` |
 | `BEDROCK_MODEL_ID` | Model ID to use | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `BEDROCK_MAX_TOKENS` | Max response tokens | `16384` |
+
+### Split Review (md2map)
+
+Environment variables used by the split review feature.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
 | `MD2MAP_MAX_SUBSECTIONS` | Max subsplits per section in NLP/AI split mode | `5` |
+
+Example of specifying environment variables when starting the backend:
+
+```bash
+MD2MAP_MAX_SUBSECTIONS=10 uv run uvicorn app.main:app --reload --port 8000
+```
 
 ---
 
