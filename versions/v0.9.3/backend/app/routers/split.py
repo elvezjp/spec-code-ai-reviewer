@@ -135,6 +135,10 @@ async def split_markdown(request: SplitMarkdownRequest):
                 request.preImportantSections is not None
                 and len(request.preImportantSections) > 0
             )
+            has_pre_excluded = (
+                request.preExcludedSections is not None
+                and len(request.preExcludedSections) > 0
+            )
 
             # 分割モードと設定を決定
             if has_pre_important and request.normalSplitSettings:
@@ -158,12 +162,11 @@ async def split_markdown(request: SplitMarkdownRequest):
                     request.llmConfig
                 )
 
-            # section_overrides の構築（事前重要指定セクション用）
+            # section_overrides の構築（事前重要指定セクション用 + 事前除外セクション用）
             section_overrides = None
             if has_pre_important and request.preImportantSplitSettings:
                 pre_settings = request.preImportantSplitSettings
                 pre_split_mode = pre_settings.splitMode or split_mode
-                # 事前重要指定セクションにAIモードが含まれる場合もLLMConfigが必要
                 if pre_split_mode == "ai" and md2map_llm_config is None:
                     md2map_llm_config = _convert_to_md2map_llm_config(
                         request.llmConfig
@@ -177,6 +180,15 @@ async def split_markdown(request: SplitMarkdownRequest):
                     }
                     for start_line in request.preImportantSections
                 ]
+
+            # 事前除外セクションを section_overrides に追加
+            if has_pre_excluded:
+                if section_overrides is None:
+                    section_overrides = []
+                section_overrides.extend(
+                    {"start_line": start_line, "skip": True}
+                    for start_line in request.preExcludedSections
+                )
 
             parser = MarkdownParser(
                 split_mode=split_mode,

@@ -31,6 +31,8 @@ interface SplitSettingsSectionProps {
   headingsError: string | null
   preImportantSections: number[]
   onTogglePreImportantSection: (startLine: number) => void
+  preExcludedSections: number[]
+  onTogglePreExcludedSection: (startLine: number) => void
   preImportantSplitSettings: PreImportantSplitSettings
   normalSplitSettings: PreImportantSplitSettings
   onPreImportantSplitSettingsChange: (settings: PreImportantSplitSettings) => void
@@ -63,6 +65,8 @@ export function SplitSettingsSection({
   headingsError,
   preImportantSections,
   onTogglePreImportantSection,
+  preExcludedSections,
+  onTogglePreExcludedSection,
   preImportantSplitSettings,
   normalSplitSettings,
   onPreImportantSplitSettingsChange,
@@ -192,6 +196,8 @@ export function SplitSettingsSection({
                   headings={headings}
                   selectedStartLines={preImportantSections}
                   onToggle={onTogglePreImportantSection}
+                  excludedStartLines={preExcludedSections}
+                  onToggleExcluded={onTogglePreExcludedSection}
                   isLoading={isLoadingHeadings}
                   error={headingsError}
                 />

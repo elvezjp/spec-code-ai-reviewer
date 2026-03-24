@@ -227,6 +227,7 @@ export interface SplitMarkdownRequest {
   preImportantSections?: number[]
   preImportantSplitSettings?: PreImportantSplitSettings
   normalSplitSettings?: PreImportantSplitSettings
+  preExcludedSections?: number[]
 }
 
 export interface SplitMarkdownResponse {

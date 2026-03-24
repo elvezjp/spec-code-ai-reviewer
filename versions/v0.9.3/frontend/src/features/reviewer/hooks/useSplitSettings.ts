@@ -35,6 +35,7 @@ interface UseSplitSettingsReturn {
   preImportantSections: number[]
   preImportantSplitSettings: PreImportantSplitSettings
   normalSplitSettings: PreImportantSplitSettings
+  preExcludedSections: number[]
 
   // Actions
   setSettings: (settings: SplitSettings) => void
@@ -52,6 +53,7 @@ interface UseSplitSettingsReturn {
   executeSummarize: (llmConfig?: LlmConfig | null) => Promise<void>
   fetchHeadingsForContent: (content: string) => Promise<void>
   togglePreImportantSection: (startLine: number) => void
+  togglePreExcludedSection: (startLine: number) => void
   setPreImportantSplitSettings: (settings: PreImportantSplitSettings) => void
   setNormalSplitSettings: (settings: PreImportantSplitSettings) => void
   clearHeadingsCache: () => void
@@ -85,6 +87,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   const [isLoadingHeadings, setIsLoadingHeadings] = useState(false)
   const [headingsError, setHeadingsError] = useState<string | null>(null)
   const [preImportantSections, setPreImportantSections] = useState<number[]>([])
+  const [preExcludedSections, setPreExcludedSections] = useState<number[]>([])
   const [preImportantSplitSettings, setPreImportantSplitSettings] = useState<PreImportantSplitSettings>(
     { ...DEFAULT_PRE_IMPORTANT_SPLIT_SETTINGS }
   )
@@ -234,6 +237,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     setHeadings([])
     setHeadingsError(null)
     setPreImportantSections([])
+    setPreExcludedSections([])
   }, [])
 
   // 事前重要指定セクションの切り替え
@@ -243,7 +247,23 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         ? prev.filter(sl => sl !== startLine)
         : [...prev, startLine]
     )
+    // 排他制御: 事前除外から除外
+    setPreExcludedSections(prev => prev.filter(s => s !== startLine))
     // 事前重要指定が変更されたらプレビュー結果をクリア
+    setPreviewResult(null)
+    setPinnedDocPartIds([])
+    setError(null)
+  }, [])
+
+  // 事前除外指定セクションの切り替え
+  const togglePreExcludedSection = useCallback((startLine: number) => {
+    setPreExcludedSections(prev =>
+      prev.includes(startLine)
+        ? prev.filter(s => s !== startLine)
+        : [...prev, startLine]
+    )
+    // 排他制御: 事前重要から除外
+    setPreImportantSections(prev => prev.filter(s => s !== startLine))
     setPreviewResult(null)
     setPinnedDocPartIds([])
     setError(null)
@@ -310,6 +330,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
               maxSubsections: normalSplitSettings.maxSubsections,
             },
           } : {}),
+          ...(preExcludedSections.length > 0 ? { preExcludedSections } : {}),
         })
 
         if (response.success) {
@@ -407,7 +428,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     } finally {
       setIsExecutingPreview(false)
     }
-  }, [settings.reviewMode, settings.documentMaxDepth, settings.documentSplitMode, settings.aiPromptExtraNotes, preImportantSections, preImportantSplitSettings, normalSplitSettings])
+  }, [settings.reviewMode, settings.documentMaxDepth, settings.documentSplitMode, settings.aiPromptExtraNotes, preImportantSections, preImportantSplitSettings, normalSplitSettings, preExcludedSections])
 
   const clearPreview = useCallback(() => {
     setPreviewResult(null)
@@ -471,6 +492,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     preImportantSections,
     preImportantSplitSettings,
     normalSplitSettings,
+    preExcludedSections,
     setSettings: handleSetSettings,
     executePreview,
     clearPreview,
@@ -481,6 +503,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     executeSummarize,
     fetchHeadingsForContent,
     togglePreImportantSection,
+    togglePreExcludedSection,
     setPreImportantSplitSettings,
     setNormalSplitSettings,
     clearHeadingsCache,

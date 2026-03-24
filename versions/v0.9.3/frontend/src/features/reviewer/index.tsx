@@ -121,6 +121,7 @@ export function Reviewer() {
     isLoadingHeadings: isSplitLoadingHeadings,
     headingsError: splitHeadingsError,
     preImportantSections,
+    preExcludedSections,
     preImportantSplitSettings,
     normalSplitSettings,
     setSettings: setSplitSettings,
@@ -132,6 +133,7 @@ export function Reviewer() {
     executeSummarize,
     fetchHeadingsForContent,
     togglePreImportantSection,
+    togglePreExcludedSection,
     setPreImportantSplitSettings,
     setNormalSplitSettings,
     clearHeadingsCache,
@@ -923,6 +925,8 @@ export function Reviewer() {
           headingsError={splitHeadingsError}
           preImportantSections={preImportantSections}
           onTogglePreImportantSection={togglePreImportantSection}
+          preExcludedSections={preExcludedSections}
+          onTogglePreExcludedSection={togglePreExcludedSection}
           preImportantSplitSettings={preImportantSplitSettings}
           normalSplitSettings={normalSplitSettings}
           onPreImportantSplitSettingsChange={setPreImportantSplitSettings}

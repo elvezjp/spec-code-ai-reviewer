@@ -322,6 +322,8 @@ class SplitMarkdownRequest(BaseModel):
     preImportantSections: list[int] | None = None  # 事前重要指定セクションの start_line リスト
     preImportantSplitSettings: SplitSettingsDetail | None = None  # 事前重要指定セクション向け分割設定
     normalSplitSettings: SplitSettingsDetail | None = None  # 通常セクション向け分割設定
+    # 事前除外関連フィールド
+    preExcludedSections: list[int] | None = None  # 事前除外セクションの start_line リスト
 
 
 class DocumentPart(BaseModel):
