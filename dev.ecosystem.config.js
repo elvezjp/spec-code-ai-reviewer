@@ -5,6 +5,7 @@
 const VERSIONS = [
   // latestはシンボリックリンクのため、実体バージョンのみ起動
   // workers: 複数リクエスト同時処理用（LLM API呼び出しは同期ブロッキングのため複数ワーカーが必要）
+  { name: 'spec-code-ai-reviewer-v0.9.3', cwd: 'versions/v0.9.3', port: 8093, workers: 1 },
   { name: 'spec-code-ai-reviewer-v0.9.2', cwd: 'versions/v0.9.2', port: 8092, workers: 1 },
   { name: 'spec-code-ai-reviewer-v0.9.1', cwd: 'versions/v0.9.1', port: 8091, workers: 1 },
   { name: 'spec-code-ai-reviewer-v0.9.0', cwd: 'versions/v0.9.0', port: 8090, workers: 1 },
