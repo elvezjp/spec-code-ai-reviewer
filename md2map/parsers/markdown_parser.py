@@ -134,6 +134,7 @@ class MarkdownParser(BaseParser):
             "split_threshold": self.split_threshold,
             "max_subsections": self.max_subsections,
             "ai_prompt_extra_notes": self._ai_prompt_extra_notes or "",
+            "skip": False,
         }
         override = self._override_map.get(section.start_line)
         if override is None:
@@ -223,10 +224,14 @@ class MarkdownParser(BaseParser):
         # セクション構築
         sections = self._build_sections(headings, lines, file_name)
 
+        # skip 対象セクションをフィルタ（_refine_sections() の前）
+        sections = self._filter_skipped_sections(sections)
+
         # 追加分割（heading モード以外、またはオーバーライドあり）
         has_non_heading_override = any(
             o.get("split_mode", self.split_mode) != "heading"
             for o in self._override_map.values()
+            if not o.get("skip")
         )
         if self.split_mode != "heading" or has_non_heading_override:
             sections = self._refine_sections(sections, lines)
@@ -380,6 +385,38 @@ class MarkdownParser(BaseParser):
                 section.path = section.display_name()
 
             stack.append(section)
+
+    def _filter_skipped_sections(self, sections: List[Section]) -> List[Section]:
+        """skip: true が指定されたセクション（とその子）を除外する
+
+        Args:
+            sections: セクションのリスト
+
+        Returns:
+            skip 対象を除外したセクションのリスト
+        """
+        # skip 対象の行範囲を収集
+        skip_ranges: List[Tuple[int, int]] = []
+        for section in sections:
+            settings = self._resolve_settings(section)
+            if settings.get("skip"):
+                skip_ranges.append((section.start_line, section.end_line))
+
+        if not skip_ranges:
+            return sections
+
+        # skip 範囲内のセクションを除外
+        filtered = [
+            s for s in sections
+            if not any(
+                r_start <= s.start_line and s.end_line <= r_end
+                for r_start, r_end in skip_ranges
+            )
+        ]
+
+        # 親子関係を再構築
+        self._build_hierarchy(filtered)
+        return filtered
 
     def _extract_section_info(self, section: Section, lines: List[str]) -> None:
         """セクションの追加情報（要約、キーワード、リンク）を抽出する

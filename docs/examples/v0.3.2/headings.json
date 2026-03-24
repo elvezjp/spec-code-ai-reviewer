@@ -1,0 +1,37 @@
+[
+  {
+    "title": "設計書: 20260121AIオーディター形式サンプルコーディング規約.xlsx",
+    "level": 1,
+    "start_line": 1,
+    "end_line": 5,
+    "estimated_chars": 98
+  },
+  {
+    "title": "コーディング規約一覧",
+    "level": 2,
+    "start_line": 6,
+    "end_line": 51,
+    "estimated_chars": 2130
+  },
+  {
+    "title": "補足",
+    "level": 3,
+    "start_line": 52,
+    "end_line": 55,
+    "estimated_chars": 94
+  },
+  {
+    "title": "命名規則全般（1）",
+    "level": 2,
+    "start_line": 56,
+    "end_line": 67,
+    "estimated_chars": 179
+  },
+  {
+    "title": "命名規則クラス（1）",
+    "level": 2,
+    "start_line": 68,
+    "end_line": 110,
+    "estimated_chars": 1352
+  }
+]
