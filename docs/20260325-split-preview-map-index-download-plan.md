@@ -286,25 +286,25 @@ Step 4: テスト追加
 
 ### Step 1: ダウンロードユーティリティ関数
 
-- [ ] `downloadAsFile()` ヘルパー関数を `SplitSettingsSection.tsx` に追加
+- [x] `downloadAsFile()` ヘルパー関数を `SplitSettingsSection.tsx` に追加
 
 ### Step 2: 設計書パーツのダウンロードボタン
 
-- [ ] 設計書パーツ見出しに `INDEX.md ↓` ボタンを追加
-- [ ] 設計書パーツ見出しに `MAP.json ↓` ボタンを追加
-- [ ] `documentIndex` / `documentMapJson` が null の場合は非表示
+- [x] 設計書パーツ見出しに `INDEX.md ↓` ボタンを追加
+- [x] 設計書パーツ見出しに `MAP.json ↓` ボタンを追加
+- [x] `documentIndex` / `documentMapJson` が null の場合は非表示
 
 ### Step 3: コードパーツのダウンロードボタン
 
-- [ ] コードパーツ見出しに `INDEX.md ↓` ボタンを追加
-- [ ] コードパーツ見出しに `MAP.json ↓` ボタンを追加
-- [ ] `codeIndex` / `codeMapJson` が null の場合は非表示
+- [x] コードパーツ見出しに `INDEX.md ↓` ボタンを追加
+- [x] コードパーツ見出しに `MAP.json ↓` ボタンを追加
+- [x] `codeIndex` / `codeMapJson` が null の場合は非表示
 
 ### Step 4: テスト追加
 
-- [ ] フロントエンドテスト追加・全テスト通過
+- [x] フロントエンドテスト追加・全テスト通過（180件）
 
 ### 最終確認
 
-- [ ] 全フロントエンドテスト通過
+- [x] 全フロントエンドテスト通過（180件）
 - [ ] 手動動作確認（分割プレビュー → ダウンロードボタン表示 → ファイルダウンロード → 内容確認）
