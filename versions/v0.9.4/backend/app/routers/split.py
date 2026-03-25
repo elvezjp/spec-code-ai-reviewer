@@ -208,9 +208,8 @@ async def split_markdown(request: SplitMarkdownRequest):
                 max_subsections=max_subsections,
                 ai_prompt_extra_notes=ai_prompt_extra_notes,
                 section_overrides=section_overrides,
-                # TODO: md2map が summary_mode / summary_max_chars に対応したら追加
-                # summary_mode=summary_mode,
-                # summary_max_chars=summary_max_chars,
+                summary_mode=summary_mode,
+                summary_max_chars=summary_max_chars,
             )
             sections, warnings = parser.parse(input_path, request.maxDepth)
 
