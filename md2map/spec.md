@@ -80,7 +80,7 @@ md2map は「編集のための再構成」ではなく、**レビュー・解�
 | 見出しレベル | H1〜H6（`#`の数） |
 | 行範囲 | 開始行と終了行（`L開始–L終了` 形式） |
 | 分割ファイルリンク | parts/ 内の対応ファイルへの相対パス |
-| summary | セクション冒頭の要約（最初の段落または最初の 100 文字） |
+| summary | セクション内容の要約。`text`（既定）では見出し直後の最初の段落から抽出し、`--summary-max-chars`（既定: 100）で上限文字数に切り詰める。`ai` では LLM が生成（`--summary-mode ai`、セクションオーバーライドの `summary_mode` 可）。いずれも改行除去・空白トリム等のサニタイズ後に INDEX.md に出力する。 |
 | keywords | セクション内で検出されたキーワード・用語 |
 | references | セクション内のリンク・参照一覧 |
 
@@ -189,6 +189,8 @@ md2map headings <input_file> [--max-depth <N>]
 | `--ai-region <REGION>` | 任意 | `ap-northeast-1` | Bedrock 用リージョン（未指定時は環境変数 `AWS_REGION` またはデフォルト） |
 | `--ai-prompt-extra-notes <TEXT>` | 任意 | なし | AI サブスプリットのシステムプロンプト注意事項パートに追記するテキスト |
 | `--section-overrides <JSON>` | 任意 | なし | セクション単位の分割設定オーバーライド（JSON ファイルパスまたは JSON 文字列） |
+| `--summary-max-chars <N>` | 任意 | 100 | ルールベースサマリーの文字数上限 |
+| `--summary-mode <MODE>` | 任意 | `text` | サマリー生成モード（`text`: ルールベース / `ai`: LLM要約） |
 
 **headings コマンド**
 
@@ -351,7 +353,7 @@ build コマンドと同じ `_extract_headings()` + `_build_sections()` を使�
 
 | 情報 | 説明 |
 |------|------|
-| 要約 | 最初の段落または最初の 100 文字 |
+| 要約 | `summary_mode` が `text` のときは見出し直後の最初の段落から抽出し、`summary_max_chars`（CLI: `--summary-max-chars`、既定 100）で切り詰め。`ai` のときは LLM が生成。セクションごとに `--section-overrides` で `summary_mode` / `summary_max_chars` を上書き可能 |
 | リンク | セクション内の `[text](url)` 形式のリンク |
 | キーワード | 太字（`**text**`）で囲まれたテキスト |
 | 単語数 | 日本語は文字数、英語は単語数 |
@@ -360,7 +362,9 @@ build コマンドと同じ `_extract_headings()` + `_build_sections()` を使�
 
 `--split-mode` が `nlp` または `ai` の場合、見出しベースで抽出されたセクションのうち、再分割条件を満たすものに対してサブスプリットを挿入する。
 
-`--section-overrides` が指定されている場合、セクションごとに分割設定（`split_mode`, `split_threshold`, `max_subsections`, `ai_prompt_extra_notes`, `skip`）を個別に解決する。オーバーライドで指定されていないフィールドはコンストラクタ引数（CLI オプション）の値を継承する。
+`--section-overrides` が指定されている場合、セクションごとに分割設定（`split_mode`, `split_threshold`, `max_subsections`, `ai_prompt_extra_notes`, `skip`, `summary_max_chars`, `summary_mode`）を個別に解決する。オーバーライドで指定されていないフィールドはコンストラクタ引数（CLI オプション）の値を継承する。
+
+**サブスプリットへの継承**: サブスプリット（再分割で生成されたセクション）は、自身に直接オーバーライドが指定されていない場合、親セクションのオーバーライドを継承する。通常の子セクション（見出しベースの階層）は親のオーバーライドを継承しない。
 
 **オーバーライドキー**:
 
@@ -372,6 +376,8 @@ build コマンドと同じ `_extract_headings()` + `_build_sections()` を使�
 | `max_subsections` | int | 継承 | 仮想見出しの最大数 |
 | `ai_prompt_extra_notes` | str | 継承 | AI プロンプト注意事項への追記テキスト |
 | `skip` | bool | `false` | `true` の場合、該当セクションとその子セクションを出力から除外する |
+| `summary_max_chars` | int | 継承 | ルールベースサマリーの文字数上限 |
+| `summary_mode` | str | 継承 | サマリー生成モード（`text`/`ai`） |
 
 **セクション単位の設定解決**:
 
@@ -632,13 +638,25 @@ NLP モードと同様に `<元セクション名>: part-N` 形式のタイト�
 - 見出しテキストをキーワードとして扱う
 - 文脈を理解した重要語抽出は行わない
 
-### 7.3 要約生成の限界
+### 7.3 要約生成
 
-**summary** は以下の方法で生成：
+**summary** は `summary_mode`（CLI: `--summary-mode`、既定 `text`）により生成方式を切り替える。セクション単位に `--section-overrides` で `summary_mode` / `summary_max_chars` を指定できる。
 
-- 見出し直後の最初の段落を抽出
-- 100 文字を超える場合は切り詰め
-- AI による要約生成は行わない（静的解析のみ）
+**`text`（ルールベース）**:
+- 見出し直後の最初の段落を抽出する
+- `summary_max_chars`（CLI: `--summary-max-chars`、既定 100）を超える場合は切り詰める
+
+**`ai`（LLM）**:
+- 設定済みの LLM プロバイダ（`--ai-provider` 等）を用い、セクション本文から要約を生成する
+- `--split-mode` と独立して指定できる（サマリー用のみ LLM を呼び出すことがある）
+- API キー・外部ネットワークへの送信が必要
+
+**出力前処理**:
+- 改行の除去・前後空白のトリム等によりサニタイズし、INDEX.md の Markdown 構造が壊れないようにする
+
+**限界**:
+- ルールベース要約は文脈理解に基づく重要度判断は行わない
+- LLM 要約はプロバイダ・モデル・プロンプトに依存し、長大セクションではトークン制限の影響を受け得る
 
 ### 7.4 見出しレベルのスキップ
 
@@ -728,7 +746,7 @@ NLP モードと同様に `<元セクション名>: part-N` 形式のタイト�
 
 | 機能 | 概要 | 備考 |
 |------|------|------|
-| AI 要約統合 | セクション要約の AI 生成オプション | API 連携が必要 |
+| 要約機能の高度化 | 要約プロンプトのテンプレート外部化、ドキュメント種別に応じたスタイル 等 | `v0.4.0` で `--summary-mode ai` により LLM 要約を提供済み |
 | CI/CD 統合 | GitHub Actions での自動生成、PR ごとに索引生成・差分コメント | ワークフローテンプレートの提供 |
 | Web UI | ブラウザ上での INDEX.md インタラクティブ閲覧 | 別リポジトリでの開発を検討 |
 | IDE プラグイン | VSCode 等での統合、セクションジャンプ機能 | 別リポジトリでの開発を検討 |

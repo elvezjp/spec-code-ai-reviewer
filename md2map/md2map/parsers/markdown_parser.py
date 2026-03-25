@@ -15,6 +15,22 @@ if TYPE_CHECKING:
     from md2map.llm.base_provider import BaseLLMProvider
     from md2map.llm.config import LLMConfig
 
+DEFAULT_SUMMARY_PROMPT_PARTS: Dict[str, str] = {
+    "role": (
+        "あなたはドキュメント要約の専門家です。"
+    ),
+    "purpose": (
+        "与えられたセクションの内容を簡潔に要約してください。"
+    ),
+    "format": (
+        "要約文のみを返してください。説明文やマークダウン装飾は不要です。\n"
+        "箇条書きや表形式ではなく、平文で回答してください。"
+    ),
+    "notes": (
+        "- 要約は指定された文字数以内に収めること"
+    ),
+}
+
 DEFAULT_AI_PROMPT_PARTS: Dict[str, str] = {
     "role": (
         "あなたは文書構造の分析に特化したアシスタントです。"
@@ -74,9 +90,13 @@ class MarkdownParser(BaseParser):
         llm_provider: Optional["BaseLLMProvider"] = None,
         ai_prompt_extra_notes: Optional[str] = None,
         section_overrides: Optional[List[Dict[str, any]]] = None,
+        summary_max_chars: int = 100,
+        summary_mode: str = "text",
     ) -> None:
         if split_mode not in {"heading", "nlp", "ai"}:
             raise ValueError(f"Invalid split_mode: {split_mode}")
+        if summary_mode not in {"text", "ai"}:
+            raise ValueError(f"Invalid summary_mode: {summary_mode}")
         self._nlp_tokenizer = None
         self._llm_provider: Optional["BaseLLMProvider"] = None
         self._llm_config = llm_config
@@ -91,6 +111,8 @@ class MarkdownParser(BaseParser):
         self.split_threshold = max(1, split_threshold)
         self.max_subsections = max(1, max_subsections)
         self._ai_prompt_extra_notes = ai_prompt_extra_notes
+        self.summary_max_chars = max(1, summary_max_chars)
+        self.summary_mode = summary_mode
         # セクション単位のオーバーライドマップ（start_line → 設定 dict）
         self._override_map: Dict[int, Dict[str, any]] = {}
         if section_overrides:
@@ -135,8 +157,13 @@ class MarkdownParser(BaseParser):
             "max_subsections": self.max_subsections,
             "ai_prompt_extra_notes": self._ai_prompt_extra_notes or "",
             "skip": False,
+            "summary_max_chars": self.summary_max_chars,
+            "summary_mode": self.summary_mode,
         }
         override = self._override_map.get(section.start_line)
+        # サブスプリットの場合、親セクションのオーバーライドを継承する
+        if override is None and section.is_subsplit and section.parent is not None:
+            override = self._override_map.get(section.parent.start_line)
         if override is None:
             return default
         return {**default, **{k: v for k, v in override.items() if k != "start_line"}}
@@ -425,13 +452,23 @@ class MarkdownParser(BaseParser):
             section: セクション（変更される）
             lines: ファイルの行リスト
         """
+        settings = self._resolve_settings(section)
+        summary_mode = settings["summary_mode"]
+        max_chars = settings["summary_max_chars"]
+
         # セクションの行を取得
         section_lines = lines[section.start_line - 1 : section.end_line]
         section_text = "".join(section_lines)
 
-        # 要約抽出（見出し直後の段落）
+        # 要約抽出
         skip_first = self.HEADING_PATTERN.match(section_lines[0].rstrip()) is not None
-        section.summary = self._extract_summary(section_lines, skip_first_line=skip_first)
+
+        if summary_mode == "ai":
+            section.summary = self._generate_ai_summary(section, section_text, max_chars)
+        else:
+            section.summary = self._extract_summary(
+                section_lines, skip_first_line=skip_first, max_chars=max_chars
+            )
 
         # リンク抽出
         section.links = self.LINK_PATTERN.findall(section_text)
@@ -442,14 +479,18 @@ class MarkdownParser(BaseParser):
         # 単語数カウント
         section.word_count = self._count_words(section_text)
 
-    def _extract_summary(self, lines: List[str], skip_first_line: bool = True) -> Optional[str]:
-        """最初の段落を要約として抽出する（100文字まで）
+    def _extract_summary(
+        self, lines: List[str], skip_first_line: bool = True, max_chars: int = 100
+    ) -> Optional[str]:
+        """最初の段落を要約として抽出する
 
         Args:
             lines: セクションの行リスト
+            skip_first_line: 最初の行をスキップするか
+            max_chars: 最大文字数
 
         Returns:
-            要約文字列（100文字以内）、なければNone
+            要約文字列、なければNone
         """
         content_started = False
         summary_lines: List[str] = []
@@ -481,10 +522,65 @@ class MarkdownParser(BaseParser):
         # 太字記法を除去
         summary = re.sub(r"\*\*([^*]+)\*\*", r"\1", summary)
 
-        if len(summary) > 100:
-            summary = summary[:97] + "..."
+        if len(summary) > max_chars:
+            summary = summary[: max_chars - 3] + "..."
 
-        return summary
+        return self._sanitize_summary(summary)
+
+    def _sanitize_summary(self, summary: Optional[str]) -> Optional[str]:
+        """サマリー文字列をサニタイズする
+
+        改行を除去して1行にし、前後の空白を除去する。
+
+        Args:
+            summary: サニタイズ対象の文字列
+
+        Returns:
+            サニタイズ済み文字列、None の場合は None
+        """
+        if summary is None:
+            return None
+        return " ".join(summary.strip().splitlines())
+
+    def _build_summary_system_prompt(self) -> str:
+        """AI サマリー生成用のシステムプロンプトを組み立てる"""
+        parts = dict(DEFAULT_SUMMARY_PROMPT_PARTS)
+        return (
+            f"# 役割\n{parts['role']}\n\n"
+            f"# 目的\n{parts['purpose']}\n\n"
+            f"# 出力形式\n{parts['format']}\n\n"
+            f"# 注意事項\n{parts['notes']}\n"
+        )
+
+    def _generate_ai_summary(
+        self, section: Section, section_text: str, max_chars: int
+    ) -> Optional[str]:
+        """LLMを使用してセクションの要約を生成する
+
+        Args:
+            section: セクション
+            section_text: セクションのテキスト
+            max_chars: 要約の最大文字数
+
+        Returns:
+            AI生成の要約文字列、失敗時は None
+        """
+        self._ensure_llm_provider()
+
+        logger = get_logger()
+        system_text = self._build_summary_system_prompt()
+        user_text = (
+            f"以下のセクション「{section.title}」の内容を"
+            f"{max_chars}文字以内で要約してください。\n\n"
+            f"{section_text}"
+        )
+
+        try:
+            summary = self._llm_provider.send_message(system_text, user_text)
+            return self._sanitize_summary(summary)
+        except Exception as exc:
+            logger.warning(f"AI summary generation failed for '{section.title}': {exc}")
+            return None
 
     def _count_words(self, text: str) -> int:
         """単語数/文字数をカウントする

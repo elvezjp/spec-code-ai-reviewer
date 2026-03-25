@@ -7,6 +7,42 @@
 このファイルの形式は [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/lang/ja/) に準拠しています。
 
+## [0.4.0] - 2026-03-25
+
+INDEX.md のサマリー生成を改善。ルールベースサマリーの文字数上限をパラメータで変更可能にし、LLM による要約生成モードを追加しました。分割モードとは独立してセクション単位で使い分けが可能です。
+
+### 追加
+
+- **サマリー文字数上限**: `--summary-max-chars` オプションを追加
+  - ルールベースサマリーの文字数上限を変更可能（デフォルト: 100）
+  - `--section-overrides` で `summary_max_chars` をセクション単位で指定可能
+
+- **AI サマリーモード**: `--summary-mode` オプションを追加
+  - `text`（ルールベース、デフォルト）/ `ai`（LLM要約）を選択可能
+  - `--section-overrides` で `summary_mode` をセクション単位で指定可能
+  - 分割モード（`--split-mode`）とは独立して動作
+
+- **サマリーサニタイズ**: サマリー文字列の改行除去・空白トリム処理を追加
+  - ルールベース・AI 両方の出力に適用し、INDEX.md の Markdown 構造を保護
+
+- **サンプル出力**: `docs/examples/v0.4.0/` に heading / nlp / ai モードの出力例と `headings.json` を追加
+
+### 変更
+
+- **_resolve_settings()**: デフォルト辞書に `summary_max_chars`（デフォルト値: `100`）と `summary_mode`（デフォルト値: `"text"`）を追加
+- **_extract_section_info()**: `summary_mode` に応じてルールベース / AI 要約を切り替え
+- **_extract_summary()**: `max_chars` 引数を追加（固定100文字を置き換え）、戻り値をサニタイズ
+- **AI 初期化判定**: `summary_mode` が `"ai"` の場合も LLM provider の初期化をトリガーするよう修正
+
+### 既知の制限事項
+
+このバージョンには以下の制限があります：
+
+- NLPモードは SudachiPy のインストールが必要
+- AIモードは各プロバイダーのAPIキーまたはAWS認証情報が必要
+- 単一ファイルのみ対応（ディレクトリ単位の解析は未対応）
+- ATX形式の見出しのみ対応（Setext形式の下線見出しは未対応）
+
 ## [0.3.2] - 2026-03-24
 
 `section_overrides` にセクション除外（skip）オプションを追加。指定セクションとその子セクションを `parse()` の結果から完全に除外できるようになりました。skip されたセクションは AI/NLP サブスプリットの対象外となり、LLM 問い合わせ回数とトークン使用量を削減できます。
