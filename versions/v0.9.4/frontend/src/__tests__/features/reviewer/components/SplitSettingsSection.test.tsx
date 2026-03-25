@@ -116,7 +116,7 @@ describe('SplitSettingsSection - DocumentSplitSettingsBlock', () => {
     })
   })
 
-  describe('サマリー最大文字数の表示条件', () => {
+  describe('サマリー最大文字数の表示', () => {
     it('summaryMode="text"のときサマリー最大文字数の入力が表示される', () => {
       const textSettings = { ...baseSplitSettings, summaryMode: 'text' as const }
       render(
@@ -129,7 +129,7 @@ describe('SplitSettingsSection - DocumentSplitSettingsBlock', () => {
       expect(screen.getByText('サマリー最大文字数:')).toBeInTheDocument()
     })
 
-    it('summaryMode="ai"のときサマリー最大文字数の入力が表示されない', () => {
+    it('summaryMode="ai"のときもサマリー最大文字数の入力が表示される', () => {
       const aiSettings = { ...baseSplitSettings, summaryMode: 'ai' as const }
       render(
         <SplitSettingsSection
@@ -138,7 +138,7 @@ describe('SplitSettingsSection - DocumentSplitSettingsBlock', () => {
         />
       )
 
-      expect(screen.queryByText('サマリー最大文字数:')).not.toBeInTheDocument()
+      expect(screen.getByText('サマリー最大文字数:')).toBeInTheDocument()
     })
   })
 })
