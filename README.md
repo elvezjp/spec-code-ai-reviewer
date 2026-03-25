@@ -11,7 +11,7 @@
 
 A web application that uses AI to cross-check design documents (Excel format) against program code and verify consistency.
 
-https://github.com/user-attachments/assets/7da0ece8-93b6-4a22-bea8-c275d263ef48
+https://github.com/user-attachments/assets/3535aded-930b-483a-9311-ecf8013a1748
 
 ## Features
 
@@ -142,7 +142,7 @@ For v0.6.0 and later, start frontend and backend separately.
 **Terminal 1: Start backend**
 
 ```bash
-cd versions/v0.9.3/backend
+cd versions/v0.9.4/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -150,7 +150,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **Terminal 2: Start frontend**
 
 ```bash
-cd versions/v0.9.3/frontend
+cd versions/v0.9.4/frontend
 npm install
 npm run dev
 ```
@@ -204,12 +204,12 @@ You can switch versions from the top-left balloon (routing via Cookie + Nginx ma
 Run tests in each version's directory.
 
 ```bash
-# v0.9.3 backend tests
-cd versions/v0.9.3/backend
+# v0.9.4 backend tests
+cd versions/v0.9.4/backend
 uv run pytest tests/ -v
 
-# v0.9.3 frontend tests
-cd versions/v0.9.3/frontend
+# v0.9.4 frontend tests
+cd versions/v0.9.4/frontend
 npm test
 
 # v0.5.2 and earlier tests (backend only)
@@ -356,7 +356,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # Dev Nginx config
 │   ├── spec-code-ai-reviewer.conf  # Production Nginx config
 │   └── version-map.conf         # Version switch map (shared)
-├── latest -> versions/v0.9.3    # Symlink to latest
+├── latest -> versions/v0.9.4    # Symlink to latest
 │
 ├── versions/                    # All versions
 │   ├── README.md                # Version management notes
@@ -371,7 +371,8 @@ spec-code-ai-reviewer/
 │   ├── v0.9.0/                  # Old version (Vite + React)
 │   ├── v0.9.1/                  # Previous (Vite + React)
 │   ├── v0.9.2/                  # Previous (Vite + React)
-│   └── v0.9.3/                  # Latest (Vite + React)
+│   ├── v0.9.3/                  # Previous (Vite + React)
+│   └── v0.9.4/                  # Latest (Vite + React)
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -438,7 +439,8 @@ Example: v0.2.5 -> 8000 + (2 x 10) + 5 = 8025
 
 | Version | Port |
 |-----------|------|
-| v0.9.3 (latest) | 8093 |
+| v0.9.4 (latest) | 8094 |
+| v0.9.3 | 8093 |
 | v0.9.2 | 8092 |
 | v0.9.1 | 8091 |
 | v0.9.0 | 8090 |

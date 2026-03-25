@@ -112,6 +112,13 @@ uv run md2map build document.md --split-mode ai --ai-provider anthropic
 uv run md2map build document.md --split-mode ai --ai-provider bedrock --ai-model global.anthropic.claude-haiku-4-5-20251001-v1:0
 ```
 
+### AIサマリー生成
+
+```bash
+# LLMでサマリーを生成（300文字以内）
+uv run md2map build document.md --summary-mode ai --summary-max-chars 300
+```
+
 ### セクション単位のオーバーライド
 
 ```bash
@@ -162,6 +169,8 @@ uv run md2map build document.md --dry-run
 | `--ai-region <REGION>` | `ap-northeast-1` | Bedrock用リージョン |
 | `--ai-prompt-extra-notes <TEXT>` | なし | AIプロンプトの注意事項パートに追記するテキスト |
 | `--section-overrides <JSON>` | なし | セクション単位の分割設定オーバーライド（JSONファイルパスまたはJSON文字列） |
+| `--summary-max-chars <N>` | `100` | ルールベースサマリーの文字数上限 |
+| `--summary-mode <MODE>` | `text` | サマリー生成モード（`text`: ルールベース / `ai`: LLM要約） |
 | `--verbose` | false | 詳細ログを出力 |
 | `--dry-run` | false | ファイル生成せずプレビューのみ |
 
@@ -260,6 +269,8 @@ md2map/
 │   ├── v0.1.0/            # v0.1.0 スナップショット
 │   ├── v0.2.0/            # v0.2.0 スナップショット
 │   ├── v0.3.0/            # v0.3.0 スナップショット
+│   ├── v0.3.1/            # v0.3.1 スナップショット
+│   ├── v0.3.2/            # v0.3.2 スナップショット
 │   └── README.md          # versionsディレクトリの説明
 ├── CHANGELOG.md           # 変更履歴（英語）
 ├── CHANGELOG_ja.md        # 変更履歴（日本語）

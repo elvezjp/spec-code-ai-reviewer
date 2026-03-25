@@ -7,6 +7,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4] - 2026-03-25
+
+### Added
+- **Summary mode options** (#71): Added `summaryMode` (`text`/`ai`) and `summaryMaxChars` parameters to split preview settings for controlling INDEX.md summary generation
+  - `summaryMode`: Choose between rule-based (`text`) and LLM-based (`ai`, default) summary generation
+  - `summaryMaxChars`: Control maximum summary character count (default: 100 for normal sections, 300 for pre-important sections)
+  - Summary settings can be configured independently for pre-important and normal sections
+  - Summary mode auto-syncs with split mode: AI split → AI summary, heading/NLP split → rule-based summary (manual override allowed)
+- **Max subsections UI control**: Promoted `maxSubsections` from environment variable to frontend UI input
+  - Number input shown for NLP/AI split modes (hidden for heading mode)
+  - Default value: 5 (backward compatible)
+- **MAP.json / INDEX.md download from split preview** (#73): Download design document and code MAP.json / INDEX.md individually from the split preview screen before starting review
+  - Added `spec-INDEX.md` / `spec-MAP.json` download buttons to design document parts heading
+  - Added `code-INDEX.md` / `code-MAP.json` download buttons to code parts heading
+
+### Removed
+- **`MD2MAP_MAX_SUBSECTIONS` environment variable**: Replaced by frontend UI control. The parameter is now sent directly from the frontend request
+
+### Changed
+- **Configuration file updates**: Set v0.9.4 as the latest version
+  - `nginx/version-map.conf`: Added v0.9.4 routing, changed default port to 8094
+  - `docker-compose.yml`: Added v0.9.4 frontend, port 8094
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: Added v0.9.4 entry
+
 ## [0.9.3] - 2026-03-24
 
 ### Added
@@ -296,6 +320,7 @@ For a detailed feature comparison table across all versions, see [versions/READM
 
 | Version | Key Features |
 |---------|-------------|
+| 0.9.4   | Summary mode options (text/AI), max subsections UI control, MD2MAP_MAX_SUBSECTIONS env var removed, MAP.json/INDEX.md download from split preview |
 | 0.9.3   | Pre-split exclusion designation (completely exclude unnecessary sections from split processing) |
 | 0.9.2   | Pre-split importance designation (per-section split settings) |
 | 0.9.1   | Section exclusion, AI sub-split instructions, split preview error display, code split warnings, prevent review on split failure |

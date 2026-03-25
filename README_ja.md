@@ -11,7 +11,7 @@
 
 設計書（Excel形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
 
-https://github.com/user-attachments/assets/7da0ece8-93b6-4a22-bea8-c275d263ef48
+https://github.com/user-attachments/assets/3535aded-930b-483a-9311-ecf8013a1748
 
 ## 機能
 
@@ -142,7 +142,7 @@ v0.6.0以降はフロントエンドとバックエンドを別々に起動し�
 **ターミナル1: バックエンド起動**
 
 ```bash
-cd versions/v0.9.3/backend
+cd versions/v0.9.4/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -150,7 +150,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **ターミナル2: フロントエンド起動**
 
 ```bash
-cd versions/v0.9.3/frontend
+cd versions/v0.9.4/frontend
 npm install
 npm run dev
 ```
@@ -204,12 +204,12 @@ docker-compose down
 各バージョンのディレクトリでテストを実行します。
 
 ```bash
-# v0.9.3 バックエンドのテスト
-cd versions/v0.9.3/backend
+# v0.9.4 バックエンドのテスト
+cd versions/v0.9.4/backend
 uv run pytest tests/ -v
 
-# v0.9.3 フロントエンドのテスト
-cd versions/v0.9.3/frontend
+# v0.9.4 フロントエンドのテスト
+cd versions/v0.9.4/frontend
 npm test
 
 # v0.5.2以前のテスト（バックエンドのみ）
@@ -357,7 +357,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # 開発用Nginx設定
 │   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.9.3    # シンボリックリンク（最新版を指す）
+├── latest -> versions/v0.9.4    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
@@ -372,7 +372,8 @@ spec-code-ai-reviewer/
 │   ├── v0.9.0/                  # 旧バージョン（Vite + React）
 │   ├── v0.9.1/                  # 旧バージョン（Vite + React）
 │   ├── v0.9.2/                  # 旧バージョン（Vite + React）
-│   └── v0.9.3/                  # 最新版（Vite + React）
+│   ├── v0.9.3/                  # 旧バージョン（Vite + React）
+│   └── v0.9.4/                  # 最新版（Vite + React）
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -439,7 +440,8 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 
 | バージョン | ポート |
 |-----------|-------|
-| v0.9.3 (latest) | 8093 |
+| v0.9.4 (latest) | 8094 |
+| v0.9.3 | 8093 |
 | v0.9.2 | 8092 |
 | v0.9.1 | 8091 |
 | v0.9.0 | 8090 |
