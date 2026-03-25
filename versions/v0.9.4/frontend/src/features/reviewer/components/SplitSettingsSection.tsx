@@ -558,7 +558,7 @@ function DocumentSplitSettingsBlock({
         </div>
       )}
       {/* サマリーモード */}
-      <div className="mt-3 flex items-center gap-4">
+      <div className="mt-3 flex items-center gap-4 flex-wrap">
         <span className="text-sm font-medium text-gray-700">サマリーモード:</span>
         <label className="flex items-center gap-1 cursor-pointer">
           <input
@@ -580,6 +580,7 @@ function DocumentSplitSettingsBlock({
           />
           <span className="text-sm text-gray-700">AI（推奨）</span>
         </label>
+        <span className="text-xs text-gray-400">※ セクションが長大な場合、コードやCSVを含む場合はAIモードを使用</span>
       </div>
       {/* サマリー最大文字数 */}
       <div className="mt-2 flex items-center gap-2">
