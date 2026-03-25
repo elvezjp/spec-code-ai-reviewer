@@ -2322,8 +2322,8 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 | normal_split_settings | - | 通常セクション向け分割設定（`split_mode`, `heading_level`, `split_instructions`, `max_subsections`） |
 | pre_excluded_sections | - | 事前除外セクションの `start_line` リスト。指定されたセクションは分割処理の対象から除外される |
 | maxSubsections | - | NLP/AIモードの1セクションあたり最大サブスプリット数。デフォルト: 5 |
-| summaryMode | - | サマリーモード（`text` / `ai`）。`text` はルールベース、`ai` はLLMによるサマリー生成。デフォルト: `text` |
-| summaryMaxChars | - | ルールベース（`text`）時のサマリー最大文字数。デフォルト: 100 |
+| summaryMode | - | サマリーモード（`text` / `ai`）。`text` はルールベース、`ai` はLLMによるサマリー生成。デフォルト: `ai` |
+| summaryMaxChars | - | サマリー最大文字数。デフォルト: 通常セクション100 / 事前重要指定セクション300 |
 
 `pre_important_sections` が指定された場合、`normal_split_settings` の設定がデフォルトの分割設定として適用され、`pre_important_split_settings` の設定が事前重要指定セクションにのみ上書き適用される。`pre_important_sections` が未指定の場合は従来通り `splitMode` が使用される。
 
@@ -2340,6 +2340,7 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 - `nlp` / `ai` モードでは、見出しによる基本分割に加えて、見出しのないセクションをサブスプリットとして細分化する
 - `nlp` / `ai` モードのサブスプリット最大数はフロントエンドの分割設定UIから指定可能（デフォルト: 5）
 - `ai` モード時に `llmConfig` が未指定の場合はエラーを返す
+- フロントエンドでは分割モード変更時にサマリーモードが自動連動する: `ai` → サマリーモード `ai`、`heading` / `nlp` → サマリーモード `text`（ユーザーによる手動変更は可能）
 
 **レスポンス:**
 
