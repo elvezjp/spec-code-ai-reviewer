@@ -317,6 +317,10 @@ export function useSplitSettings(): UseSplitSettingsReturn {
             : (settings.documentSplitMode === 'ai' && settings.aiPromptExtraNotes
               ? settings.aiPromptExtraNotes
               : undefined),
+          // 事前重要指定がない場合でも、通常セクション設定（UIの通常セクション）を反映する
+          summaryMode: normalSplitSettings.summaryMode,
+          summaryMaxChars: normalSplitSettings.summaryMaxChars,
+          maxSubsections: normalSplitSettings.maxSubsections,
           ...(hasPreImportant ? {
             preImportantSections,
             preImportantSplitSettings: {
