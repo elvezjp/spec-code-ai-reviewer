@@ -7,6 +7,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-25
+
+Improved INDEX.md summary generation. The character limit for rule-based summaries is now configurable, and an LLM-based summary generation mode has been added. Summary mode operates independently of split mode and can be configured per-section.
+
+### Added
+
+- **Summary character limit**: Added `--summary-max-chars` option
+  - Configurable character limit for rule-based summaries (default: 100)
+  - Per-section override via `--section-overrides` with `summary_max_chars` key
+
+- **AI summary mode**: Added `--summary-mode` option
+  - Choose between `text` (rule-based, default) and `ai` (LLM summary)
+  - Per-section override via `--section-overrides` with `summary_mode` key
+  - Operates independently of `--split-mode`
+
+- **Summary sanitization**: Added newline removal and whitespace trimming for summary strings
+  - Applied to both rule-based and AI outputs to protect INDEX.md Markdown structure
+
+- **Sample output**: Added heading / nlp / ai mode output examples and `headings.json` to `docs/examples/v0.4.0/`
+
+### Changed
+
+- **_resolve_settings()**: Added `summary_max_chars` (default: `100`) and `summary_mode` (default: `"text"`) to defaults
+- **_extract_section_info()**: Switches between rule-based and AI summary based on `summary_mode`
+- **_extract_summary()**: Added `max_chars` parameter (replacing hardcoded 100), sanitized return value
+- **AI initialization check**: `summary_mode` set to `"ai"` now triggers LLM provider initialization
+
+### Known Limitations
+
+This version has the following limitations:
+
+- NLP mode requires SudachiPy installation
+- AI mode requires API keys or AWS credentials for each provider
+- Single file processing only (directory-level analysis not supported)
+- ATX-style headings only (Setext-style underline headings not supported)
+
 ## [0.3.2] - 2026-03-24
 
 Added skip option to `section_overrides` for excluding specific sections (and their children) from parse results. Skipped sections are not processed by AI/NLP subsplitting, reducing LLM calls and token usage.

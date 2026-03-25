@@ -100,6 +100,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="セクション単位の分割設定オーバーライド（JSON ファイルパスまたは JSON 文字列）",
     )
+    build_parser.add_argument(
+        "--summary-max-chars",
+        type=int,
+        default=100,
+        help="ルールベースサマリーの文字数上限（デフォルト: 100）",
+    )
+    build_parser.add_argument(
+        "--summary-mode",
+        default="text",
+        choices=["text", "ai"],
+        help="サマリー生成モード（text: ルールベース, ai: LLM要約）",
+    )
 
     # headings サブコマンド
     headings_parser = subparsers.add_parser(
@@ -171,10 +183,11 @@ def cmd_build(args: argparse.Namespace) -> int:
     logger.info(f"Parsing: {input_path}")
 
     # AI モードが必要かどうか判定（デフォルトまたはオーバーライド）
-    needs_ai = args.split_mode == "ai"
+    needs_ai = args.split_mode == "ai" or args.summary_mode == "ai"
     if section_overrides:
         needs_ai = needs_ai or any(
-            o.get("split_mode") == "ai" for o in section_overrides
+            o.get("split_mode") == "ai" or o.get("summary_mode") == "ai"
+            for o in section_overrides
         )
 
     llm_config = None
@@ -197,6 +210,8 @@ def cmd_build(args: argparse.Namespace) -> int:
             llm_config=llm_config,
             ai_prompt_extra_notes=args.ai_prompt_extra_notes,
             section_overrides=section_overrides,
+            summary_max_chars=args.summary_max_chars,
+            summary_mode=args.summary_mode,
         )
     except (ValueError, RuntimeError) as exc:
         logger.error(str(exc))
