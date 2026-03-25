@@ -4,6 +4,21 @@ import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } fro
 import type { SplitSettings, SplitMode, DocumentPart, CodePart, SplitPreviewResult, HeadingInfo, PreImportantSplitSettings } from '../types'
 import { PreImportantPanel } from './PreImportantPanel'
 
+/**
+ * テキストコンテンツをファイルとしてダウンロードする
+ */
+function downloadAsFile(content: string, filename: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 interface SplitSettingsSectionProps {
   settings: SplitSettings
   onSettingsChange: (settings: SplitSettings) => void
@@ -302,8 +317,32 @@ export function SplitSettingsSection({
           {/* 設計書パーツ */}
           {previewResult.documentParts && previewResult.documentParts.length > 0 && (
             <div className="mb-4">
-              <h4 className="text-sm font-medium text-gray-600 mb-2">
-                ■ 設計書: {previewResult.documentParts.length} パート
+              <h4 className="text-sm font-medium text-gray-600 mb-2 flex items-center">
+                <span>■ 設計書: {previewResult.documentParts.length} パート</span>
+                <span className="ml-auto flex gap-1">
+                  {previewResult.documentIndex && (
+                    <button
+                      type="button"
+                      onClick={() => downloadAsFile(previewResult.documentIndex!, 'spec-INDEX.md', 'text/markdown')}
+                      className="px-2 py-0.5 text-xs font-normal text-white bg-blue-500 rounded hover:bg-blue-600 transition"
+                    >
+                      INDEX.md ↓
+                    </button>
+                  )}
+                  {previewResult.documentMapJson && (
+                    <button
+                      type="button"
+                      onClick={() => downloadAsFile(
+                        JSON.stringify(previewResult.documentMapJson, null, 2),
+                        'spec-MAP.json',
+                        'application/json'
+                      )}
+                      className="px-2 py-0.5 text-xs font-normal text-white bg-blue-500 rounded hover:bg-blue-600 transition"
+                    >
+                      MAP.json ↓
+                    </button>
+                  )}
+                </span>
               </h4>
               <ul className="text-xs text-gray-500 mb-2 list-disc list-inside space-y-0.5">
                 <li><strong>重要</strong>: 分割レビュー時に全てのグループで参照されます。</li>
@@ -330,13 +369,39 @@ export function SplitSettingsSection({
           {/* コードパーツ */}
           {previewResult.codeParts && previewResult.codeParts.length > 0 ? (
             <div>
-              <h4 className="text-sm font-medium text-gray-600 mb-2">
-                ■ プログラム: {previewResult.codeParts.length} パート
-                {previewResult.codeLanguage && (
-                  <span className="ml-2 text-xs text-gray-500">
-                    ({previewResult.codeLanguage})
-                  </span>
-                )}
+              <h4 className="text-sm font-medium text-gray-600 mb-2 flex items-center">
+                <span>
+                  ■ プログラム: {previewResult.codeParts.length} パート
+                  {previewResult.codeLanguage && (
+                    <span className="ml-2 text-xs text-gray-500">
+                      ({previewResult.codeLanguage})
+                    </span>
+                  )}
+                </span>
+                <span className="ml-auto flex gap-1">
+                  {previewResult.codeIndex && (
+                    <button
+                      type="button"
+                      onClick={() => downloadAsFile(previewResult.codeIndex!, 'code-INDEX.md', 'text/markdown')}
+                      className="px-2 py-0.5 text-xs font-normal text-white bg-blue-500 rounded hover:bg-blue-600 transition"
+                    >
+                      INDEX.md ↓
+                    </button>
+                  )}
+                  {previewResult.codeMapJson && (
+                    <button
+                      type="button"
+                      onClick={() => downloadAsFile(
+                        JSON.stringify(previewResult.codeMapJson, null, 2),
+                        'code-MAP.json',
+                        'application/json'
+                      )}
+                      className="px-2 py-0.5 text-xs font-normal text-white bg-blue-500 rounded hover:bg-blue-600 transition"
+                    >
+                      MAP.json ↓
+                    </button>
+                  )}
+                </span>
               </h4>
               <CodePartsTable parts={previewResult.codeParts} />
               {previewResult.codeWarnings && previewResult.codeWarnings.length > 0 && (

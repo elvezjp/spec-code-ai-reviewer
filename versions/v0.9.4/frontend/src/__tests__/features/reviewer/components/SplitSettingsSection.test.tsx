@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { SplitSettingsSection } from '@features/reviewer/components/SplitSettingsSection'
-import type { PreImportantSplitSettings, SplitSettings } from '@features/reviewer/types'
+import type { PreImportantSplitSettings, SplitSettings, SplitPreviewResult } from '@features/reviewer/types'
 
 // lucide-react のモック（アイコンコンポーネント）
 vi.mock('lucide-react', () => ({
@@ -113,6 +114,156 @@ describe('SplitSettingsSection - DocumentSplitSettingsBlock', () => {
       )
 
       expect(screen.queryByText('1セクションあたりの最大分割数:')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('MAP.json / INDEX.md ダウンロードボタンの表示', () => {
+    const makePreviewResult = (overrides: Partial<SplitPreviewResult> = {}): SplitPreviewResult => ({
+      documentParts: [
+        {
+          id: 'MD1',
+          displayName: '概要',
+          startLine: 1,
+          endLine: 10,
+          content: 'テスト内容',
+          estimatedTokens: 100,
+          summarizeMode: 'original',
+          excluded: false,
+          preImportant: false,
+        },
+      ],
+      codeParts: [
+        {
+          symbol: 'TestClass',
+          symbolType: 'class',
+          parentSymbol: null,
+          startLine: 1,
+          endLine: 50,
+          estimatedTokens: 500,
+        },
+      ],
+      documentIndex: '# INDEX\n- MD1: 概要',
+      documentMapJson: [{ id: 'MD1', section: '概要' }],
+      codeIndex: '# INDEX\n- CD1: TestClass',
+      codeMapJson: [{ id: 'CD1', symbol: 'TestClass' }],
+      codeLanguage: 'Python',
+      pinnedDocPartIds: [],
+      codeWarnings: [],
+      ...overrides,
+    })
+
+    it('プレビュー結果がある場合、設計書のINDEX.md / MAP.jsonダウンロードボタンが表示される', () => {
+      render(
+        <SplitSettingsSection
+          {...defaultProps}
+          previewResult={makePreviewResult()}
+        />
+      )
+
+      const indexButtons = screen.getAllByText('INDEX.md ↓')
+      const mapButtons = screen.getAllByText('MAP.json ↓')
+      // 設計書 + コードで2つずつ表示される
+      expect(indexButtons).toHaveLength(2)
+      expect(mapButtons).toHaveLength(2)
+    })
+
+    it('documentIndexがnullの場合、設計書のINDEX.mdボタンが表示されない', () => {
+      render(
+        <SplitSettingsSection
+          {...defaultProps}
+          previewResult={makePreviewResult({ documentIndex: null })}
+        />
+      )
+
+      // コード側の1つのみ表示
+      const indexButtons = screen.getAllByText('INDEX.md ↓')
+      expect(indexButtons).toHaveLength(1)
+    })
+
+    it('documentMapJsonがnullの場合、設計書のMAP.jsonボタンが表示されない', () => {
+      render(
+        <SplitSettingsSection
+          {...defaultProps}
+          previewResult={makePreviewResult({ documentMapJson: null })}
+        />
+      )
+
+      // コード側の1つのみ表示
+      const mapButtons = screen.getAllByText('MAP.json ↓')
+      expect(mapButtons).toHaveLength(1)
+    })
+
+    it('codeIndexがnullの場合、コードのINDEX.mdボタンが表示されない', () => {
+      render(
+        <SplitSettingsSection
+          {...defaultProps}
+          previewResult={makePreviewResult({ codeIndex: null })}
+        />
+      )
+
+      // 設計書側の1つのみ表示
+      const indexButtons = screen.getAllByText('INDEX.md ↓')
+      expect(indexButtons).toHaveLength(1)
+    })
+
+    it('codeMapJsonがnullの場合、コードのMAP.jsonボタンが表示されない', () => {
+      render(
+        <SplitSettingsSection
+          {...defaultProps}
+          previewResult={makePreviewResult({ codeMapJson: null })}
+        />
+      )
+
+      // 設計書側の1つのみ表示
+      const mapButtons = screen.getAllByText('MAP.json ↓')
+      expect(mapButtons).toHaveLength(1)
+    })
+
+    it('プレビュー結果がない場合、ダウンロードボタンが表示されない', () => {
+      render(
+        <SplitSettingsSection
+          {...defaultProps}
+          previewResult={null}
+        />
+      )
+
+      expect(screen.queryByText('INDEX.md ↓')).not.toBeInTheDocument()
+      expect(screen.queryByText('MAP.json ↓')).not.toBeInTheDocument()
+    })
+
+    it('ダウンロードボタンクリック時にBlobダウンロードが実行される', async () => {
+      const user = userEvent.setup()
+      const createObjectURLMock = vi.fn().mockReturnValue('blob:test-url')
+      const revokeObjectURLMock = vi.fn()
+      global.URL.createObjectURL = createObjectURLMock
+      global.URL.revokeObjectURL = revokeObjectURLMock
+
+      // createElement をスパイしてアンカー要素の click をモック
+      const clickMock = vi.fn()
+      const originalCreateElement = document.createElement.bind(document)
+      const createElementSpy = vi.spyOn(document, 'createElement').mockImplementation((tagName: string, options?: ElementCreationOptions) => {
+        const el = originalCreateElement(tagName, options)
+        if (tagName === 'a') {
+          el.click = clickMock
+        }
+        return el
+      })
+
+      render(
+        <SplitSettingsSection
+          {...defaultProps}
+          previewResult={makePreviewResult()}
+        />
+      )
+
+      const indexButtons = screen.getAllByText('INDEX.md ↓')
+      await user.click(indexButtons[0])
+
+      expect(createObjectURLMock).toHaveBeenCalled()
+      expect(clickMock).toHaveBeenCalled()
+      expect(revokeObjectURLMock).toHaveBeenCalled()
+
+      createElementSpy.mockRestore()
     })
   })
 
