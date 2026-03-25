@@ -26,7 +26,19 @@
 - **NLPモード**: 見出しによる基本分割に加え、見出しのない長大なセクションもサブスプリット（subsplit）として細分化
 - **AIモード**: NLPモードと同様にサブスプリットを生成するが、LLMを使用するため最も高精度。レビュー実行用のLLM設定を流用する
 
-NLP/AIモードの1セクションあたりの最大サブスプリット数は環境変数 `MD2MAP_MAX_SUBSECTIONS`（デフォルト: 5）で制御可能。
+NLP/AIモードの1セクションあたりの最大サブスプリット数はフロントエンドの分割設定UIから指定可能（デフォルト: 5）。
+
+### 1.3 サマリーモード
+
+INDEX.md の各セクションのサマリー（要約）を生成するモードを選択できます。
+
+| モード | 説明 | LLM |
+|---|---|---|
+| text（ルールベース） | セクション冒頭テキストを指定文字数で切り出す | 不要 |
+| ai（推奨） | LLMを使用して高品質なサマリーを生成する | 必要 |
+
+- `summaryMaxChars` でルールベース時のサマリー最大文字数を制御可能（デフォルト: 100）
+- サマリーモードと最大文字数はフロントエンドの分割設定UIから指定する
 
 ### 1.2 コンポーネント
 
@@ -243,7 +255,6 @@ cp .env.example .env
 | AWS_ACCESS_KEY_ID | AWS認証情報（システムLLM用） | - |
 | AWS_SECRET_ACCESS_KEY | AWS認証情報（システムLLM用） | - |
 | AWS_REGION | AWSリージョン（システムLLM用） | ap-northeast-1 |
-| MD2MAP_MAX_SUBSECTIONS | NLP/AIモードの1セクションあたり最大サブスプリット数 | 5 |
 | BEDROCK_MODEL_ID | システムLLMのBedrockモデルID | global.anthropic.claude-haiku-4-5-20251001-v1:0 |
 | BEDROCK_MAX_TOKENS | システムLLMの最大出力トークン数 | 16384 |
 | EXCEL2MD_PATH | excel2mdツールのパス | 内蔵デフォルトパス |
@@ -251,7 +262,7 @@ cp .env.example .env
 | ORGANIZE_MAX_RETRIES | 構造マッチングの最大リトライ回数 | 2 |
 
 - AWS認証情報はシステムLLM（Bedrock）使用時のみ必要。Web画面からLLM設定をアップロードする場合は不要
-- `MD2MAP_MAX_SUBSECTIONS` は大きなセクションの分割精度に影響する。値を大きくするとより細かく分割されるが、AIモードではLLM呼び出しのトークン消費が増加する
+- NLP/AIモードの最大サブスプリット数はフロントエンドの分割設定UIから指定可能（デフォルト: 5）。値を大きくするとより細かく分割されるが、AIモードではLLM呼び出しのトークン消費が増加する
 - `BEDROCK_MODEL_ID` / `BEDROCK_MAX_TOKENS` はシステムLLMのモデルとトークン上限を制御する。デフォルトで動作するため、通常は変更不要
 - `ORGANIZE_TIMEOUT_SECONDS` / `ORGANIZE_MAX_RETRIES` は構造マッチング（Phase 1）の実行制御パラメータ
 

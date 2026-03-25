@@ -2321,6 +2321,9 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 | pre_important_split_settings | - | 事前重要指定セクション向け分割設定（`split_mode`, `heading_level`, `split_instructions`, `max_subsections`） |
 | normal_split_settings | - | 通常セクション向け分割設定（`split_mode`, `heading_level`, `split_instructions`, `max_subsections`） |
 | pre_excluded_sections | - | 事前除外セクションの `start_line` リスト。指定されたセクションは分割処理の対象から除外される |
+| maxSubsections | - | NLP/AIモードの1セクションあたり最大サブスプリット数。デフォルト: 5 |
+| summaryMode | - | サマリーモード（`text` / `ai`）。`text` はルールベース、`ai` はLLMによるサマリー生成。デフォルト: `text` |
+| summaryMaxChars | - | ルールベース（`text`）時のサマリー最大文字数。デフォルト: 100 |
 
 `pre_important_sections` が指定された場合、`normal_split_settings` の設定がデフォルトの分割設定として適用され、`pre_important_split_settings` の設定が事前重要指定セクションにのみ上書き適用される。`pre_important_sections` が未指定の場合は従来通り `splitMode` が使用される。
 
@@ -2335,7 +2338,7 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 | `ai` | LLMによる意味的分割。`llmConfig` が必要 |
 
 - `nlp` / `ai` モードでは、見出しによる基本分割に加えて、見出しのないセクションをサブスプリットとして細分化する
-- `nlp` / `ai` モードのサブスプリット最大数は環境変数 `MD2MAP_MAX_SUBSECTIONS`（デフォルト: 5）で制御される
+- `nlp` / `ai` モードのサブスプリット最大数はフロントエンドの分割設定UIから指定可能（デフォルト: 5）
 - `ai` モード時に `llmConfig` が未指定の場合はエラーを返す
 
 **レスポンス:**
@@ -3062,13 +3065,8 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 | BEDROCK_MODEL_ID | システムLLMのモデルID | global.anthropic.claude-haiku-4-5-20251001-v1:0 |
 | BEDROCK_MAX_TOKENS | システムLLMの最大トークン数 | 16384 |
 
-**md2map分割設定（任意）:**
-
-| 環境変数名 | 説明 | デフォルト値 |
-|-----------|------|-------------|
-| MD2MAP_MAX_SUBSECTIONS | NLP/AIモード分割時の1セクションあたり最大サブスプリット数 | 5 |
-
 ※ ユーザーLLM設定用の環境変数は不要（リクエストごとに受け取る）
+※ NLP/AIモードの最大サブスプリット数はフロントエンドの分割設定UIから指定可能（デフォルト: 5）
 
 ---
 

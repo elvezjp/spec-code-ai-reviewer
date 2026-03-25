@@ -20,6 +20,10 @@
 - UT-SPL-017: split_markdown() - 事前重要 + 事前除外を同時指定
 - UT-SPL-018: split_markdown() - 全セクションを事前除外
 - UT-SPL-019: split_markdown() - preExcludedSections 未指定（後方互換性）
+- UT-SPL-020: split_markdown() - summaryMode/summaryMaxChars デフォルト（後方互換性）
+- UT-SPL-021: split_markdown() - maxSubsections をリクエストから取得
+- UT-SPL-022: split_markdown() - summaryMode/summaryMaxChars を section_overrides に渡す
+- UT-SPL-023: split_markdown() - summaryMode "ai" で LLM 設定が初期化される
 """
 
 from unittest.mock import MagicMock, patch
@@ -1126,3 +1130,310 @@ class TestSplitMarkdownPreExcludedAPI:
         # MarkdownParser に section_overrides が渡されていないことを確認
         call_kwargs = mock_parser_cls.call_args[1]
         assert call_kwargs.get("section_overrides") is None
+
+
+class TestSplitMarkdownSummaryAPI:
+    """summaryMode / summaryMaxChars / maxSubsections のテスト"""
+
+    @patch("md2map.generators.parts_generator.generate_parts")
+    @patch("md2map.generators.map_generator.generate_map")
+    @patch("md2map.generators.index_generator.generate_index")
+    @patch("md2map.utils.file_utils.read_file")
+    @patch("md2map.parsers.markdown_parser.MarkdownParser")
+    def test_ut_spl_020_summary_default_backward_compat(
+        self, mock_parser_cls, mock_read_file, mock_gen_index, mock_gen_map, mock_gen_parts
+    ):
+        """UT-SPL-020: summaryMode/summaryMaxChars 未指定時のデフォルト（後方互換性）"""
+        import json
+        import os
+
+        mock_section = MagicMock()
+        mock_section.title = "概要"
+        mock_section.display_name.return_value = "概要"
+        mock_section.level = 1
+        mock_section.path = "概要"
+        mock_section.start_line = 1
+        mock_section.end_line = 5
+        mock_section.id = "MD1"
+
+        mock_parser = MagicMock()
+        mock_parser.parse.return_value = ([mock_section], [])
+        mock_parser_cls.return_value = mock_parser
+
+        mock_read_file.return_value = (
+            ["# 概要\n", "\n", "これは概要です。\n", "\n", "詳細説明\n"],
+            None,
+        )
+
+        def create_output_dir(sections, lines, out_dir):
+            os.makedirs(out_dir, exist_ok=True)
+
+        mock_gen_parts.side_effect = create_output_dir
+
+        def write_index(sections, warnings, index_path, filename):
+            with open(index_path, "w", encoding="utf-8") as f:
+                f.write("# INDEX\n\n- MD1: 概要\n")
+
+        mock_gen_index.side_effect = write_index
+
+        def write_map(sections, out_dir, map_path):
+            map_data = [{"id": "MD1", "section": "概要", "level": 1, "path": "概要"}]
+            with open(map_path, "w", encoding="utf-8") as f:
+                json.dump(map_data, f)
+
+        mock_gen_map.side_effect = write_map
+
+        # summaryMode / summaryMaxChars を指定しないリクエスト
+        request = SplitMarkdownRequest(
+            content="# 概要\n\nこれは概要です。\n\n詳細説明",
+            filename="test.md",
+            maxDepth=2,
+        )
+
+        response = client.post("/api/split/markdown", json=request.model_dump())
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+
+        # MarkdownParser が呼ばれていることを確認（既存パラメータのみ）
+        call_kwargs = mock_parser_cls.call_args[1]
+        assert call_kwargs.get("section_overrides") is None
+        # max_subsections はデフォルト 5
+        assert call_kwargs["max_subsections"] == 5
+
+    @patch("md2map.generators.parts_generator.generate_parts")
+    @patch("md2map.generators.map_generator.generate_map")
+    @patch("md2map.generators.index_generator.generate_index")
+    @patch("md2map.utils.file_utils.read_file")
+    @patch("md2map.parsers.markdown_parser.MarkdownParser")
+    def test_ut_spl_021_max_subsections_from_request(
+        self, mock_parser_cls, mock_read_file, mock_gen_index, mock_gen_map, mock_gen_parts
+    ):
+        """UT-SPL-021: maxSubsections をリクエストから取得（環境変数フォールバック削除確認）"""
+        import json
+        import os
+
+        mock_section = MagicMock()
+        mock_section.title = "概要"
+        mock_section.display_name.return_value = "概要"
+        mock_section.level = 1
+        mock_section.path = "概要"
+        mock_section.start_line = 1
+        mock_section.end_line = 5
+        mock_section.id = "MD1"
+
+        mock_parser = MagicMock()
+        mock_parser.parse.return_value = ([mock_section], [])
+        mock_parser_cls.return_value = mock_parser
+
+        mock_read_file.return_value = (
+            ["# 概要\n", "\n", "これは概要です。\n", "\n", "詳細説明\n"],
+            None,
+        )
+
+        def create_output_dir(sections, lines, out_dir):
+            os.makedirs(out_dir, exist_ok=True)
+
+        mock_gen_parts.side_effect = create_output_dir
+
+        def write_index(sections, warnings, index_path, filename):
+            with open(index_path, "w", encoding="utf-8") as f:
+                f.write("# INDEX\n\n- MD1: 概要\n")
+
+        mock_gen_index.side_effect = write_index
+
+        def write_map(sections, out_dir, map_path):
+            map_data = [{"id": "MD1", "section": "概要", "level": 1, "path": "概要"}]
+            with open(map_path, "w", encoding="utf-8") as f:
+                json.dump(map_data, f)
+
+        mock_gen_map.side_effect = write_map
+
+        # maxSubsections=8 を指定（preImportantSections なし）
+        request_data = {
+            "content": "# 概要\n\nこれは概要です。\n\n詳細説明",
+            "filename": "test.md",
+            "maxDepth": 2,
+            "splitMode": "heading",
+            "maxSubsections": 8,
+        }
+
+        response = client.post("/api/split/markdown", json=request_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+
+        # MarkdownParser に max_subsections=8 が渡されていることを確認
+        call_kwargs = mock_parser_cls.call_args[1]
+        assert call_kwargs["max_subsections"] == 8
+
+    @patch("md2map.generators.parts_generator.generate_parts")
+    @patch("md2map.generators.map_generator.generate_map")
+    @patch("md2map.generators.index_generator.generate_index")
+    @patch("md2map.utils.file_utils.read_file")
+    @patch("md2map.parsers.markdown_parser.MarkdownParser")
+    def test_ut_spl_022_summary_in_section_overrides(
+        self, mock_parser_cls, mock_read_file, mock_gen_index, mock_gen_map, mock_gen_parts
+    ):
+        """UT-SPL-022: summaryMode/summaryMaxChars が section_overrides に渡される"""
+        import json
+        import os
+
+        # モックセクション
+        mock_section1 = MagicMock()
+        mock_section1.title = "概要"
+        mock_section1.display_name.return_value = "概要"
+        mock_section1.level = 2
+        mock_section1.path = "概要"
+        mock_section1.start_line = 1
+        mock_section1.end_line = 5
+        mock_section1.id = "MD1"
+
+        mock_section2 = MagicMock()
+        mock_section2.title = "変更履歴"
+        mock_section2.display_name.return_value = "変更履歴"
+        mock_section2.level = 2
+        mock_section2.path = "変更履歴"
+        mock_section2.start_line = 6
+        mock_section2.end_line = 20
+        mock_section2.id = "MD2"
+
+        # MarkdownParser のインスタンスを2つ作る（parse用 + extract_headings用）
+        mock_parser_parse = MagicMock()
+        mock_parser_parse.parse.return_value = ([mock_section1, mock_section2], [])
+
+        mock_parser_headings = MagicMock()
+        mock_parser_headings.extract_headings.return_value = [
+            {"title": "概要", "level": 2, "start_line": 1, "end_line": 5, "estimated_chars": 50},
+            {"title": "変更履歴", "level": 2, "start_line": 6, "end_line": 20, "estimated_chars": 200},
+        ]
+
+        mock_parser_cls.side_effect = [mock_parser_parse, mock_parser_headings]
+
+        lines = ["line\n"] * 20
+        mock_read_file.return_value = (lines, None)
+
+        def create_output_dir(sections, lines, out_dir):
+            os.makedirs(out_dir, exist_ok=True)
+
+        mock_gen_parts.side_effect = create_output_dir
+
+        def write_index(sections, warnings, index_path, filename):
+            with open(index_path, "w", encoding="utf-8") as f:
+                f.write("# INDEX\n")
+
+        mock_gen_index.side_effect = write_index
+
+        def write_map(sections, out_dir, map_path):
+            with open(map_path, "w", encoding="utf-8") as f:
+                json.dump([], f)
+
+        mock_gen_map.side_effect = write_map
+
+        request_data = {
+            "content": "\n".join(["line"] * 20),
+            "filename": "test.md",
+            "maxDepth": 2,
+            "splitMode": "heading",
+            "preImportantSections": [6],
+            "preImportantSplitSettings": {
+                "splitMode": "heading",
+                "summaryMode": "ai",
+                "summaryMaxChars": 200,
+            },
+            "normalSplitSettings": {
+                "splitMode": "heading",
+                "summaryMode": "text",
+                "summaryMaxChars": 150,
+            },
+        }
+
+        response = client.post("/api/split/markdown", json=request_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+
+        # 1つ目の呼び出し（parse用）の引数を確認
+        first_call_kwargs = mock_parser_cls.call_args_list[0][1]
+
+        # section_overrides に summary_mode / summary_max_chars が含まれている
+        assert first_call_kwargs["section_overrides"] is not None
+        assert len(first_call_kwargs["section_overrides"]) == 1
+        override = first_call_kwargs["section_overrides"][0]
+        assert override["start_line"] == 6
+        assert override["summary_mode"] == "ai"
+        assert override["summary_max_chars"] == 200
+
+    @patch("app.routers.split._convert_to_md2map_llm_config")
+    @patch("md2map.generators.parts_generator.generate_parts")
+    @patch("md2map.generators.map_generator.generate_map")
+    @patch("md2map.generators.index_generator.generate_index")
+    @patch("md2map.utils.file_utils.read_file")
+    @patch("md2map.parsers.markdown_parser.MarkdownParser")
+    def test_ut_spl_023_summary_ai_triggers_llm_config(
+        self, mock_parser_cls, mock_read_file, mock_gen_index, mock_gen_map,
+        mock_gen_parts, mock_convert_llm
+    ):
+        """UT-SPL-023: summaryMode 'ai' で LLM 設定が初期化される"""
+        import json
+        import os
+
+        mock_convert_llm.return_value = MagicMock()
+
+        mock_section = MagicMock()
+        mock_section.title = "概要"
+        mock_section.display_name.return_value = "概要"
+        mock_section.level = 1
+        mock_section.path = "概要"
+        mock_section.start_line = 1
+        mock_section.end_line = 5
+        mock_section.id = "MD1"
+
+        mock_parser = MagicMock()
+        mock_parser.parse.return_value = ([mock_section], [])
+        mock_parser_cls.return_value = mock_parser
+
+        mock_read_file.return_value = (
+            ["# 概要\n", "\n", "これは概要です。\n", "\n", "詳細説明\n"],
+            None,
+        )
+
+        def create_output_dir(sections, lines, out_dir):
+            os.makedirs(out_dir, exist_ok=True)
+
+        mock_gen_parts.side_effect = create_output_dir
+
+        def write_index(sections, warnings, index_path, filename):
+            with open(index_path, "w", encoding="utf-8") as f:
+                f.write("# INDEX\n\n- MD1: 概要\n")
+
+        mock_gen_index.side_effect = write_index
+
+        def write_map(sections, out_dir, map_path):
+            map_data = [{"id": "MD1", "section": "概要", "level": 1, "path": "概要"}]
+            with open(map_path, "w", encoding="utf-8") as f:
+                json.dump(map_data, f)
+
+        mock_gen_map.side_effect = write_map
+
+        # splitMode=heading だが summaryMode=ai を指定
+        request_data = {
+            "content": "# 概要\n\nこれは概要です。\n\n詳細説明",
+            "filename": "test.md",
+            "maxDepth": 2,
+            "splitMode": "heading",
+            "summaryMode": "ai",
+        }
+
+        response = client.post("/api/split/markdown", json=request_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+
+        # splitMode=heading なので split 自体は LLM 不要だが、
+        # summaryMode=ai なので _convert_to_md2map_llm_config が呼ばれる
+        mock_convert_llm.assert_called_once()

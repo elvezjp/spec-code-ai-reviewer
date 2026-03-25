@@ -141,6 +141,30 @@ describe('useSplitSettings', () => {
     })
   })
 
+  describe('DEFAULT_PRE_IMPORTANT_SPLIT_SETTINGS defaults', () => {
+    it('preImportantSplitSettingsの初期値にsummaryMode: "ai"が含まれる', () => {
+      const { result } = renderHook(() => useSplitSettings())
+      expect(result.current.preImportantSplitSettings.summaryMode).toBe('ai')
+    })
+
+    it('preImportantSplitSettingsの初期値にsummaryMaxChars: 100が含まれる', () => {
+      const { result } = renderHook(() => useSplitSettings())
+      expect(result.current.preImportantSplitSettings.summaryMaxChars).toBe(100)
+    })
+
+    it('preImportantSplitSettingsの初期値にmaxSubsections: 5が含まれる', () => {
+      const { result } = renderHook(() => useSplitSettings())
+      expect(result.current.preImportantSplitSettings.maxSubsections).toBe(5)
+    })
+
+    it('normalSplitSettingsも同じデフォルト値を持つ', () => {
+      const { result } = renderHook(() => useSplitSettings())
+      expect(result.current.normalSplitSettings.summaryMode).toBe('ai')
+      expect(result.current.normalSplitSettings.summaryMaxChars).toBe(100)
+      expect(result.current.normalSplitSettings.maxSubsections).toBe(5)
+    })
+  })
+
   describe('clearHeadingsCache', () => {
     it('clearHeadingsCacheでpreExcludedSectionsもクリアされる', () => {
       const { result } = renderHook(() => useSplitSettings())

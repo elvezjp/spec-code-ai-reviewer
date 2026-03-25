@@ -307,6 +307,8 @@ class SplitSettingsDetail(BaseModel):
     headingLevel: int | None = None
     splitInstructions: str | None = None
     maxSubsections: int | None = None
+    summaryMode: Literal["text", "ai"] | None = None       # サマリー生成モード
+    summaryMaxChars: int | None = None                      # テキストモード時の文字数上限
 
 
 class SplitMarkdownRequest(BaseModel):
@@ -318,12 +320,16 @@ class SplitMarkdownRequest(BaseModel):
     splitMode: Literal["ai", "heading", "nlp"] = "ai"  # 分割モード
     llmConfig: LLMConfig | None = None  # AIモード用LLM設定
     aiPromptExtraNotes: str | None = None  # AIサブスプリットの注意事項に追記するテキスト（AIモード専用）
+    maxSubsections: int | None = None  # グローバル最大サブスプリット数（デフォルト: 5）
     # 事前重要指定関連フィールド
     preImportantSections: list[int] | None = None  # 事前重要指定セクションの start_line リスト
     preImportantSplitSettings: SplitSettingsDetail | None = None  # 事前重要指定セクション向け分割設定
     normalSplitSettings: SplitSettingsDetail | None = None  # 通常セクション向け分割設定
     # 事前除外関連フィールド
     preExcludedSections: list[int] | None = None  # 事前除外セクションの start_line リスト
+    # サマリー生成関連フィールド
+    summaryMode: Literal["text", "ai"] | None = None  # グローバルサマリーモード（デフォルト: text）
+    summaryMaxChars: int | None = None  # グローバル文字数上限（デフォルト: 100）
 
 
 class DocumentPart(BaseModel):

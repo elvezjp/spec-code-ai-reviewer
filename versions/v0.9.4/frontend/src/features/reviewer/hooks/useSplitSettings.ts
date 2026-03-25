@@ -14,7 +14,9 @@ const DEFAULT_PRE_IMPORTANT_SPLIT_SETTINGS: PreImportantSplitSettings = {
   splitMode: 'ai',
   headingLevel: 2,
   splitInstructions: '',
-  maxSubsections: 0,
+  maxSubsections: 5,
+  summaryMode: 'ai',
+  summaryMaxChars: 100,
 }
 
 interface UseSplitSettingsReturn {
@@ -322,12 +324,16 @@ export function useSplitSettings(): UseSplitSettingsReturn {
               headingLevel: preImportantSplitSettings.headingLevel,
               splitInstructions: preImportantSplitSettings.splitInstructions,
               maxSubsections: preImportantSplitSettings.maxSubsections,
+              summaryMode: preImportantSplitSettings.summaryMode,
+              summaryMaxChars: preImportantSplitSettings.summaryMaxChars,
             },
             normalSplitSettings: {
               splitMode: normalSplitSettings.splitMode,
               headingLevel: normalSplitSettings.headingLevel,
               splitInstructions: normalSplitSettings.splitInstructions,
               maxSubsections: normalSplitSettings.maxSubsections,
+              summaryMode: normalSplitSettings.summaryMode,
+              summaryMaxChars: normalSplitSettings.summaryMaxChars,
             },
           } : {}),
           ...(preExcludedSections.length > 0 ? { preExcludedSections } : {}),

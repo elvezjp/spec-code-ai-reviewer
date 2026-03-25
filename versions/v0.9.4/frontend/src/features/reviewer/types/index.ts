@@ -164,6 +164,8 @@ export type SplitMode = 'batch' | 'split'
 
 export type DocumentSplitMode = 'ai' | 'heading' | 'nlp'
 
+export type SummaryMode = 'text' | 'ai'
+
 export interface HeadingInfo {
   title: string
   level: number
@@ -177,6 +179,8 @@ export interface PreImportantSplitSettings {
   headingLevel: number
   splitInstructions: string
   maxSubsections: number
+  summaryMode: SummaryMode
+  summaryMaxChars: number
 }
 
 export interface SplitSettings {
@@ -224,10 +228,13 @@ export interface SplitMarkdownRequest {
   splitMode?: DocumentSplitMode
   llmConfig?: LlmConfig
   aiPromptExtraNotes?: string
+  maxSubsections?: number
   preImportantSections?: number[]
   preImportantSplitSettings?: PreImportantSplitSettings
   normalSplitSettings?: PreImportantSplitSettings
   preExcludedSections?: number[]
+  summaryMode?: SummaryMode
+  summaryMaxChars?: number
 }
 
 export interface SplitMarkdownResponse {

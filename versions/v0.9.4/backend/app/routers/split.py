@@ -145,15 +145,21 @@ async def split_markdown(request: SplitMarkdownRequest):
                 # 事前重要指定モード: 通常セクション設定をデフォルトにする
                 normal_settings = request.normalSplitSettings
                 split_mode = normal_settings.splitMode or request.splitMode
-                max_subsections = normal_settings.maxSubsections or int(
-                    os.environ.get("MD2MAP_MAX_SUBSECTIONS", "5")
-                )
+                max_subsections = normal_settings.maxSubsections or request.maxSubsections or 5
                 ai_prompt_extra_notes = normal_settings.splitInstructions or request.aiPromptExtraNotes or None
             else:
                 # 従来モード
                 split_mode = request.splitMode
-                max_subsections = int(os.environ.get("MD2MAP_MAX_SUBSECTIONS", "5"))
+                max_subsections = request.maxSubsections or 5
                 ai_prompt_extra_notes = request.aiPromptExtraNotes or None
+
+            # サマリー設定を決定
+            if has_pre_important and request.normalSplitSettings:
+                summary_mode = normal_settings.summaryMode or request.summaryMode or "text"
+                summary_max_chars = normal_settings.summaryMaxChars or request.summaryMaxChars or 100
+            else:
+                summary_mode = request.summaryMode or "text"
+                summary_max_chars = request.summaryMaxChars or 100
 
             # AIモードの場合のみ LLMConfig を変換
             md2map_llm_config = None
@@ -161,6 +167,10 @@ async def split_markdown(request: SplitMarkdownRequest):
                 md2map_llm_config = _convert_to_md2map_llm_config(
                     request.llmConfig
                 )
+
+            # AIサマリーモードの場合もLLM設定が必要
+            if summary_mode == "ai" and md2map_llm_config is None:
+                md2map_llm_config = _convert_to_md2map_llm_config(request.llmConfig)
 
             # section_overrides の構築（事前重要指定セクション用 + 事前除外セクション用）
             section_overrides = None
@@ -177,6 +187,8 @@ async def split_markdown(request: SplitMarkdownRequest):
                         "split_mode": pre_split_mode,
                         "max_subsections": pre_settings.maxSubsections or max_subsections,
                         "ai_prompt_extra_notes": pre_settings.splitInstructions or "",
+                        "summary_mode": pre_settings.summaryMode or summary_mode,
+                        "summary_max_chars": pre_settings.summaryMaxChars or summary_max_chars,
                     }
                     for start_line in request.preImportantSections
                 ]
@@ -196,6 +208,9 @@ async def split_markdown(request: SplitMarkdownRequest):
                 max_subsections=max_subsections,
                 ai_prompt_extra_notes=ai_prompt_extra_notes,
                 section_overrides=section_overrides,
+                # TODO: md2map が summary_mode / summary_max_chars に対応したら追加
+                # summary_mode=summary_mode,
+                # summary_max_chars=summary_max_chars,
             )
             sections, warnings = parser.parse(input_path, request.maxDepth)
 

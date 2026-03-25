@@ -478,6 +478,60 @@ function DocumentSplitSettingsBlock({
           <span className="text-sm text-gray-700">H4(####)まで</span>
         </label>
       </div>
+      {/* 最大サブスプリット数（NLP/AIモード時） */}
+      {(splitSettings.splitMode === 'nlp' || splitSettings.splitMode === 'ai') && (
+        <div className="mt-3 flex items-center gap-2">
+          <label className="text-sm font-medium text-gray-700">1セクションあたりの最大分割数:</label>
+          <input
+            type="number"
+            min={1}
+            max={20}
+            value={splitSettings.maxSubsections}
+            onChange={(e) => onSplitSettingsChange({ ...splitSettings, maxSubsections: parseInt(e.target.value) || 5 })}
+            className="w-20 text-sm bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-400"
+          />
+        </div>
+      )}
+      {/* サマリーモード */}
+      <div className="mt-3">
+        <span className="text-sm font-medium text-gray-700">サマリーモード:</span>
+        <div className="mt-1 ml-2 flex items-center gap-4">
+          <label className="flex items-center gap-1 cursor-pointer">
+            <input
+              type="radio"
+              name={`${radioNamePrefix}SummaryMode`}
+              checked={splitSettings.summaryMode === 'text'}
+              onChange={() => onSplitSettingsChange({ ...splitSettings, summaryMode: 'text' })}
+              className="w-4 h-4 text-blue-600"
+            />
+            <span className="text-sm text-gray-700">ルールベース</span>
+          </label>
+          <label className="flex items-center gap-1 cursor-pointer">
+            <input
+              type="radio"
+              name={`${radioNamePrefix}SummaryMode`}
+              checked={splitSettings.summaryMode === 'ai'}
+              onChange={() => onSplitSettingsChange({ ...splitSettings, summaryMode: 'ai' })}
+              className="w-4 h-4 text-blue-600"
+            />
+            <span className="text-sm text-gray-700">AI（推奨）</span>
+          </label>
+        </div>
+      </div>
+      {/* サマリー最大文字数（ルールベース時） */}
+      {splitSettings.summaryMode === 'text' && (
+        <div className="mt-2 ml-2 flex items-center gap-2">
+          <label className="text-sm text-gray-700">サマリー最大文字数:</label>
+          <input
+            type="number"
+            min={10}
+            max={1000}
+            value={splitSettings.summaryMaxChars}
+            onChange={(e) => onSplitSettingsChange({ ...splitSettings, summaryMaxChars: parseInt(e.target.value) || 100 })}
+            className="w-20 text-sm bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-400"
+          />
+        </div>
+      )}
     </div>
   )
 }
