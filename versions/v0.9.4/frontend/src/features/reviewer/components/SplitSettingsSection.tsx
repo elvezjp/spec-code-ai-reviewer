@@ -580,7 +580,7 @@ function DocumentSplitSettingsBlock({
           />
           <span className="text-sm text-gray-700">AI（推奨）</span>
         </label>
-        <span className="text-xs text-gray-400">※ セクションが長大な場合、コードやCSVを含む場合はAIモードを使用</span>
+        <span className="text-xs text-gray-400">※ excel2mdで変換した場合はAIモードを使用</span>
       </div>
       {/* サマリー最大文字数 */}
       <div className="mt-2 flex items-center gap-2">
