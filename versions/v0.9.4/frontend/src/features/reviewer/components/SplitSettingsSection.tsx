@@ -464,7 +464,7 @@ function DocumentSplitSettingsBlock({
               type="radio"
               name={`${radioNamePrefix}SplitMode`}
               checked={splitSettings.splitMode === 'heading'}
-              onChange={() => onSplitSettingsChange({ ...splitSettings, splitMode: 'heading', summaryMode: 'text' })}
+              onChange={() => onSplitSettingsChange({ ...splitSettings, splitMode: 'heading' })}
               className="w-4 h-4 text-blue-600"
             />
             <span className="text-sm text-gray-700 w-20">見出し</span>
@@ -475,7 +475,7 @@ function DocumentSplitSettingsBlock({
               type="radio"
               name={`${radioNamePrefix}SplitMode`}
               checked={splitSettings.splitMode === 'nlp'}
-              onChange={() => onSplitSettingsChange({ ...splitSettings, splitMode: 'nlp', summaryMode: 'text' })}
+              onChange={() => onSplitSettingsChange({ ...splitSettings, splitMode: 'nlp' })}
               className="w-4 h-4 text-blue-600"
             />
             <span className="text-sm text-gray-700 w-20">NLP</span>
@@ -486,7 +486,7 @@ function DocumentSplitSettingsBlock({
               type="radio"
               name={`${radioNamePrefix}SplitMode`}
               checked={splitSettings.splitMode === 'ai'}
-              onChange={() => onSplitSettingsChange({ ...splitSettings, splitMode: 'ai', summaryMode: 'ai' })}
+              onChange={() => onSplitSettingsChange({ ...splitSettings, splitMode: 'ai' })}
               className="w-4 h-4 text-blue-600"
             />
             <span className="text-sm text-gray-700 w-20">AI（推奨）</span>
