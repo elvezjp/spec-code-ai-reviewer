@@ -147,9 +147,9 @@ describe('useSplitSettings', () => {
       expect(result.current.preImportantSplitSettings.summaryMode).toBe('ai')
     })
 
-    it('preImportantSplitSettingsの初期値にsummaryMaxChars: 100が含まれる', () => {
+    it('preImportantSplitSettingsの初期値にsummaryMaxChars: 300が含まれる', () => {
       const { result } = renderHook(() => useSplitSettings())
-      expect(result.current.preImportantSplitSettings.summaryMaxChars).toBe(100)
+      expect(result.current.preImportantSplitSettings.summaryMaxChars).toBe(300)
     })
 
     it('preImportantSplitSettingsの初期値にmaxSubsections: 5が含まれる', () => {

@@ -91,7 +91,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   const [preImportantSections, setPreImportantSections] = useState<number[]>([])
   const [preExcludedSections, setPreExcludedSections] = useState<number[]>([])
   const [preImportantSplitSettings, setPreImportantSplitSettings] = useState<PreImportantSplitSettings>(
-    { ...DEFAULT_PRE_IMPORTANT_SPLIT_SETTINGS }
+    { ...DEFAULT_PRE_IMPORTANT_SPLIT_SETTINGS, summaryMaxChars: 300 }
   )
   const [normalSplitSettings, setNormalSplitSettings] = useState<PreImportantSplitSettings>(
     { ...DEFAULT_PRE_IMPORTANT_SPLIT_SETTINGS }
