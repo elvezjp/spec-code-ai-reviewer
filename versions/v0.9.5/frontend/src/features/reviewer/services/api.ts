@@ -156,7 +156,7 @@ export async function fetchHeadings(
   })
 
   if (!response.ok) {
-    return { headings: [], error: `見出し一覧の取得に失敗しました (HTTP ${response.status})` }
+    return { success: false, headings: [], error: `見出し一覧の取得に失敗しました (HTTP ${response.status})` }
   }
 
   return await response.json()

@@ -216,7 +216,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     setHeadingsError(null)
     try {
       const result = await api.fetchHeadings(content)
-      if (result.success === false) {
+      if (result.success === false || result.error) {
         setHeadingsError(result.error || '見出し一覧の取得に失敗しました')
         setHeadings([])
       } else {

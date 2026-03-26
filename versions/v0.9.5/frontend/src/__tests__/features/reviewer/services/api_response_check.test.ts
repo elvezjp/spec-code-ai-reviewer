@@ -109,6 +109,7 @@ describe('fetchHeadings - response.ok チェック', () => {
     })
 
     const result = await fetchHeadings('# テスト')
+    expect(result.success).toBe(false)
     expect(result.headings).toEqual([])
     expect(result.error).toBe('見出し一覧の取得に失敗しました (HTTP 405)')
   })
@@ -120,6 +121,7 @@ describe('fetchHeadings - response.ok チェック', () => {
     })
 
     const result = await fetchHeadings('# テスト')
+    expect(result.success).toBe(false)
     expect(result.headings).toEqual([])
     expect(result.error).toBe('見出し一覧の取得に失敗しました (HTTP 500)')
   })

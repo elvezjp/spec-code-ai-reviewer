@@ -58,8 +58,11 @@ export async function fetchHeadings(content: string): Promise<...> {
 | ファイル | 修正内容 |
 |---|---|
 | `versions/v0.9.5/frontend/src/features/reviewer/services/api.ts` | `fetchHeadings()` に `response.ok` チェックを追加 |
+| `versions/v0.9.5/frontend/src/features/reviewer/hooks/useSplitSettings.ts` | `fetchHeadingsForContent()` のエラー判定条件を修正 |
 
 ### 修正内容
+
+#### api.ts
 
 ```typescript
 export async function fetchHeadings(
@@ -72,12 +75,60 @@ export async function fetchHeadings(
   })
 
   if (!response.ok) {
-    return { headings: [], error: `見出し一覧の取得に失敗しました (HTTP ${response.status})` }
+    return { success: false, headings: [], error: `見出し一覧の取得に失敗しました (HTTP ${response.status})` }
   }
 
   return await response.json()
 }
 ```
+
+> **注意**: エラーレスポンスに `success: false` を含める必要がある。呼び出し元の `useSplitSettings.ts` が `result.success === false` で判定しているため、`success` プロパティが欠落すると `undefined === false` → `false` となり、エラーが検知されない。
+
+#### useSplitSettings.ts
+
+呼び出し元のエラー判定条件も、`error` プロパティの存在チェックを追加して堅牢化する。
+
+```typescript
+// 修正前
+if (result.success === false) {
+
+// 修正後
+if (result.success === false || result.error) {
+```
+
+> **補足**: `success: false` のチェックだけでは、API レスポンスのスキーマが変わった場合に再びエラーを見逃す可能性がある。`error` プロパティの有無も併せてチェックすることで、防御的なエラーハンドリングを実現する。
+
+---
+
+### 他の API 関数の呼び出し元調査結果
+
+`fetchHeadings` 以外の API 関数は全て `assertResponseOk()` ヘルパーを使用しており、非 2xx レスポンス時はエラーを**スロー**する。呼び出し元は全て `try-catch` で囲まれているため、スローされたエラーは正しくキャッチされる。
+
+| 関数 | 呼び出し元 | エラーハンドリング | 問題 |
+|---|---|---|---|
+| `convertExcelToMarkdown()` | `useFileConversion.ts` | try-catch あり | なし |
+| `addLineNumbers()` | `useFileConversion.ts` | try-catch あり | なし |
+| `executeReview()` | `useReviewExecution.ts` | try-catch あり | なし |
+| `testLlmConnection()` | `index.tsx` | try-catch あり | なし |
+| `organizeMarkdown()` | `MarkdownOrganizer.tsx` | try-catch あり | なし |
+| `splitMarkdown()` | `useSplitSettings.ts` | try-catch あり | なし |
+| `splitCode()` | `useSplitSettings.ts` | try-catch あり | なし |
+| `executeStructureMatching()` | `index.tsx` | try-catch あり | なし |
+| `executeGroupReview()` | `index.tsx` | try-catch あり | なし |
+| `executeIntegrate()` | `index.tsx` | try-catch あり | なし |
+| `executeSummarize()` | `useSplitSettings.ts` | try-catch あり | なし |
+
+`fetchHeadings` のみがエラーをスローせずオブジェクトとして返す特殊なパターンであり、そのため `success: false` の欠落が問題になった。
+
+### バックエンド側の調査結果
+
+バックエンドの `POST /api/split/headings` エンドポイント（`split.py`）は、他のAPIと同等の実装である:
+
+- try-catch で例外をキャッチし、`HeadingsResponse(success=False, error=...)` を返す
+- 正常時は `HeadingsResponse(success=True, headings=[...])` を返す
+- レスポンススキーマ `HeadingsResponse` は `success: bool = True`, `headings: list[HeadingInfo] = []`, `error: str | None = None` を持つ
+
+**バックエンド側に問題はない。** 問題はフロントエンドの `fetchHeadings()` が `response.ok` チェックを行わず、かつエラー時にスローではなくオブジェクトを返すパターンを採用しながら `success: false` を含めていなかった点のみ。
 
 ---
 
@@ -218,6 +269,8 @@ Step 4: ドキュメント更新
 ### Step 1: fetchHeadings の response.ok チェック追加
 
 - [x] `fetchHeadings()` に `response.ok` チェックを追加
+- [x] エラーレスポンスに `success: false` を含めるよう修正（呼び出し元が `result.success === false` で判定するため）
+- [x] `useSplitSettings.ts` のエラー判定条件に `result.error` チェックを追加
 - [ ] 405 レスポンス時にエラーメッセージが表示されることを確認
 
 ### Step 2: 他の API 関数の response.ok チェック追加
