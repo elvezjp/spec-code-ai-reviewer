@@ -307,16 +307,12 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         const response = await api.splitMarkdown({
           content: designMarkdown,
           filename: designFilename,
-          maxDepth: hasPreImportant ? normalSplitSettings.headingLevel : settings.documentMaxDepth,
-          splitMode: hasPreImportant ? normalSplitSettings.splitMode : settings.documentSplitMode,
+          maxDepth: normalSplitSettings.headingLevel,
+          splitMode: normalSplitSettings.splitMode,
           llmConfig: llmConfig ?? undefined,
-          aiPromptExtraNotes: hasPreImportant
-            ? (normalSplitSettings.splitMode === 'ai' && normalSplitSettings.splitInstructions
-              ? normalSplitSettings.splitInstructions
-              : undefined)
-            : (settings.documentSplitMode === 'ai' && settings.aiPromptExtraNotes
-              ? settings.aiPromptExtraNotes
-              : undefined),
+          aiPromptExtraNotes: normalSplitSettings.splitMode === 'ai' && normalSplitSettings.splitInstructions
+            ? normalSplitSettings.splitInstructions
+            : undefined,
           // 事前重要指定がない場合でも、通常セクション設定（UIの通常セクション）を反映する
           summaryMode: normalSplitSettings.summaryMode,
           summaryMaxChars: normalSplitSettings.summaryMaxChars,

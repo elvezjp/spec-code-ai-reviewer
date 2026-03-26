@@ -1,10 +1,15 @@
-# 修正計画書: AIモード分割プレビューのサイレントフォールバック問題
+# 修正計画書: 分割プレビューのサイレントフォールバック・分割モード不整合
 
 ## 概要
 
-分割プレビューでAIモードまたはAIサマリーを選択した際、LLM認証情報が不正（APIキー誤り・期限切れ・未設定等）でもエラー表示なく `success: true` で結果が返る。ユーザーはAIで分割されたと認識するが、実際には機械的な行数ベース分割にサイレントフォールバックしている。
+分割プレビューに関する2つの問題を修正する。
 
-対応 Issue: [#84](https://github.com/elvezjp/spec-code-ai-reviewer/issues/84)
+1. **サイレントフォールバック問題**: AIモードまたはAIサマリー選択時、LLM認証情報が不正でもエラー表示なく `success: true` で結果が返る
+2. **分割モード送信元の不整合**: 事前重要指定なし時にUIの分割モード選択がリクエストに反映されない
+
+対応 Issue:
+- [#84 AIモード分割プレビューでLLM認証情報が不正な場合にエラーなく結果が返る](https://github.com/elvezjp/spec-code-ai-reviewer/issues/84)
+- [#86 分割プレビューで事前重要指定なし時にUIの分割モード選択が反映されない](https://github.com/elvezjp/spec-code-ai-reviewer/issues/86)
 
 ## 背景
 
@@ -35,7 +40,30 @@ llmConfig: (hasPreImportant ? normalSplitSettings.splitMode === 'ai' : settings.
 
 md2map は `llm_config` を渡しても実際にAIが必要になるまでプロバイダーを初期化しない（遅延初期化）ため、**常に渡しても問題ない**。
 
-### 問題2: md2map がAIフォールバック時に警告を返さない（別途修正中）
+### 問題2: 分割モード送信元の不整合（#86）
+
+`useSplitSettings.ts` の `executePreview` でリクエストを構築する際、`splitMode` の取得元が `hasPreImportant` の有無で分岐している:
+
+```typescript
+// useSplitSettings.ts:310-311
+splitMode: hasPreImportant ? normalSplitSettings.splitMode : settings.documentSplitMode,
+```
+
+- `hasPreImportant = true` → `normalSplitSettings.splitMode`（UIの選択が反映される）
+- `hasPreImportant = false` → `settings.documentSplitMode`（デフォルト `'ai'` のまま）
+
+一方、`summaryMode` / `maxSubsections` / `summaryMaxChars` は常に `normalSplitSettings` から取得されており、`splitMode` だけが不整合になっている:
+
+```typescript
+// こちらは常に normalSplitSettings（hasPreImportant 非依存）
+summaryMode: normalSplitSettings.summaryMode,
+summaryMaxChars: normalSplitSettings.summaryMaxChars,
+maxSubsections: normalSplitSettings.maxSubsections,
+```
+
+この結果、ユーザーがUIでNLPや見出しモードを選択しても、事前重要指定なし時は常にAIモードがバックエンドに送信される。同様に `maxDepth` と `aiPromptExtraNotes` にも同じ不整合がある。
+
+### 問題3: md2map がAIフォールバック時に警告を返さない（別途修正済み）
 
 `_select_chunks_ai()` でLLM API呼び出しが失敗すると、例外をキャッチして空リストを返す:
 
@@ -196,7 +224,43 @@ if (response.success) {
 
 ---
 
-## Step 4: テスト
+## Step 4: フロントエンド — 分割モード送信元の統一（#86）
+
+### 修正対象
+
+| ファイル | 修正内容 |
+|---|---|
+| `versions/v0.9.5/frontend/src/features/reviewer/hooks/useSplitSettings.ts` | `splitMode` / `maxDepth` / `aiPromptExtraNotes` の取得元を `normalSplitSettings` に統一 |
+
+### 修正内容
+
+`splitMarkdown` リクエスト構築時、`hasPreImportant` の有無で分岐していた3つのパラメータを `normalSplitSettings` から常に取得するよう統一する。
+
+```typescript
+// 修正前（splitMode だけ settings から取得 — 不整合）
+maxDepth: hasPreImportant ? normalSplitSettings.headingLevel : settings.documentMaxDepth,
+splitMode: hasPreImportant ? normalSplitSettings.splitMode : settings.documentSplitMode,
+aiPromptExtraNotes: hasPreImportant
+  ? (normalSplitSettings.splitMode === 'ai' && normalSplitSettings.splitInstructions
+    ? normalSplitSettings.splitInstructions
+    : undefined)
+  : (settings.documentSplitMode === 'ai' && settings.aiPromptExtraNotes
+    ? settings.aiPromptExtraNotes
+    : undefined),
+
+// 修正後（全て normalSplitSettings に統一）
+maxDepth: normalSplitSettings.headingLevel,
+splitMode: normalSplitSettings.splitMode,
+aiPromptExtraNotes: normalSplitSettings.splitMode === 'ai' && normalSplitSettings.splitInstructions
+  ? normalSplitSettings.splitInstructions
+  : undefined,
+```
+
+`summaryMode` / `summaryMaxChars` / `maxSubsections` は既に `normalSplitSettings` から取得されているため変更不要。
+
+---
+
+## Step 5: テスト
 
 ### バックエンド テスト
 
@@ -210,6 +274,7 @@ if (response.success) {
 |---|---|
 | llmConfig の常時送信 | `splitMarkdown` 呼び出し時に splitMode に関わらず `llmConfig` が含まれること |
 | 設計書警告の表示 | warnings が存在する場合、警告パネルが表示されること |
+| splitMode の送信元 | `hasPreImportant` の有無にかかわらず `normalSplitSettings.splitMode` が送信されること |
 
 ---
 
@@ -222,7 +287,9 @@ Step 2: バックエンド — warnings を SplitMarkdownResponse に含める�
   ↓
 Step 3: フロントエンド — 設計書分割の warnings を表示（Step 2 に依存）
   ↓
-Step 4: テスト
+Step 4: フロントエンド — 分割モード送信元の統一（独立して実施可能）
+  ↓
+Step 5: テスト
 ```
 
 > md2map 側の warnings 対応が完了すると、バックエンド・フロントエンドの伝搬経路を通じて自動的にユーザーに警告が表示される。
@@ -235,7 +302,7 @@ Step 4: テスト
 |---|---|
 | バックエンド（schemas.py） | `SplitMarkdownResponse` に `warnings` フィールド追加（デフォルト空リストのため後方互換） |
 | バックエンド（split.py） | warnings の伝搬追加 |
-| フロントエンド（hooks） | `llmConfig` の条件分岐削除、documentWarnings の追加 |
+| フロントエンド（hooks） | `llmConfig` の条件分岐削除、documentWarnings の追加、splitMode 送信元の統一 |
 | フロントエンド（UI） | 設計書警告パネルの追加 |
 | md2map | 変更なし（別途修正中） |
 | code2map | 変更なし |
@@ -245,6 +312,7 @@ Step 4: テスト
 ## 関連
 
 - Issue: [#84 AIモード分割プレビューでLLM認証情報が不正な場合にエラーなく結果が返る](https://github.com/elvezjp/spec-code-ai-reviewer/issues/84)
+- Issue: [#86 分割プレビューで事前重要指定なし時にUIの分割モード選択が反映されない](https://github.com/elvezjp/spec-code-ai-reviewer/issues/86)
 - 分割レビュー機能の詳細: [split-review.md](split-review.md)
 - 分割エラーハンドリング計画書: [20260312-issue52-53-split-error-handling-plan.md](20260312-issue52-53-split-error-handling-plan.md)
 
@@ -268,10 +336,17 @@ Step 4: テスト
 - [ ] `executePreview` で documentWarnings を収集・保持
 - [ ] `SplitSettingsSection.tsx` に設計書警告パネルを追加
 
-### Step 4: テスト
+### Step 4: フロントエンド — 分割モード送信元の統一
+
+- [ ] `splitMode` を `normalSplitSettings.splitMode` から常に取得するよう修正
+- [ ] `maxDepth` を `normalSplitSettings.headingLevel` から常に取得するよう修正
+- [ ] `aiPromptExtraNotes` を `normalSplitSettings` から常に取得するよう修正
+
+### Step 5: テスト
 
 - [ ] バックエンド: warnings 伝搬テスト
 - [ ] フロントエンド: llmConfig 常時送信テスト
 - [ ] フロントエンド: 設計書警告パネル表示テスト
+- [ ] フロントエンド: splitMode 送信元テスト
 - [ ] 全バックエンドテスト通過
 - [ ] 全フロントエンドテスト通過
