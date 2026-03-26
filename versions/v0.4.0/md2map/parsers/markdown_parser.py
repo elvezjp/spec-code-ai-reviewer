@@ -213,7 +213,6 @@ class MarkdownParser(BaseParser):
         """
         logger = get_logger()
         warnings: List[str] = []
-        self._warnings = warnings
 
         # ファイル読み込み
         lines, read_warnings = read_file(file_path)
@@ -580,9 +579,7 @@ class MarkdownParser(BaseParser):
             summary = self._llm_provider.send_message(system_text, user_text)
             return self._sanitize_summary(summary)
         except Exception as exc:
-            warning_msg = f"AI summary generation failed for '{section.title}': {exc}"
-            logger.warning(warning_msg)
-            self._warnings.append(warning_msg)
+            logger.warning(f"AI summary generation failed for '{section.title}': {exc}")
             return None
 
     def _count_words(self, text: str) -> int:
@@ -920,9 +917,7 @@ class MarkdownParser(BaseParser):
         try:
             response_text = self._llm_provider.send_message(system_text, user_text)
         except Exception as exc:
-            warning_msg = f"AI API call failed: {exc}"
-            logger.warning(warning_msg)
-            self._warnings.append(warning_msg)
+            logger.warning(f"AI API call failed: {exc}")
             return [], None
 
         # LLM が ```json ... ``` で囲んで返す場合に対応
