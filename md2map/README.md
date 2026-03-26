@@ -271,6 +271,7 @@ md2map/
 │   ├── v0.3.0/            # v0.3.0 snapshot
 │   ├── v0.3.1/            # v0.3.1 snapshot
 │   ├── v0.3.2/            # v0.3.2 snapshot
+│   ├── v0.4.0/            # v0.4.0 snapshot
 │   └── README.md          # versions directory description
 ├── CHANGELOG.md           # Version history (English)
 ├── CHANGELOG_ja.md        # Version history (Japanese)

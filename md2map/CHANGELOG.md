@@ -7,6 +7,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-03-26
+
+Improved error reporting by including LLM call failure information in the `warnings` list returned by `parse()`. Callers (e.g., backend APIs) can now detect AI split and AI summary failures. Also fixed subsplits to inherit parent section's `section_overrides` settings.
+
+### Added
+
+- **LLM failure warnings**: When AI split or AI summary LLM calls fail, error messages are now added to the `warnings` list returned by `parse()`
+  - Supported in both `_generate_ai_summary()` and `_select_chunks_ai()`
+  - Existing `logger.warning()` log output is preserved
+
+- **Subsplit override inheritance**: Fixed `_resolve_settings()` so that subsplits inherit parent section's `section_overrides` settings
+  - `summary_mode` and other overrides specified on parent sections now apply to their subsplits
+
+- **Sample output**: Added heading / nlp / ai / ai+summary mode output examples and `headings.json` to `docs/examples/v0.4.1/`
+
+### Changed
+
+- **parse()**: Introduced `self._warnings` instance variable to make `warnings` list accessible from LLM call methods
+- **_resolve_settings()**: For subsplits (`is_subsplit=True`), falls back to parent section's `start_line` for override map lookup
+
+### Known Limitations
+
+This version has the following limitations:
+
+- NLP mode requires SudachiPy installation
+- AI mode requires API keys or AWS credentials for each provider
+- Single file processing only (directory-level analysis not supported)
+- ATX-style headings only (Setext-style underline headings not supported)
+
 ## [0.4.0] - 2026-03-25
 
 Improved INDEX.md summary generation. The character limit for rule-based summaries is now configurable, and an LLM-based summary generation mode has been added. Summary mode operates independently of split mode and can be configured per-section.
