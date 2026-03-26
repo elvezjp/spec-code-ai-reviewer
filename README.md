@@ -260,20 +260,6 @@ These environment variables are used to run the system LLM (AWS Bedrock).
 | `BEDROCK_MODEL_ID` | Model ID to use | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `BEDROCK_MAX_TOKENS` | Max response tokens | `16384` |
 
-### Split Review (md2map)
-
-Environment variables used by the split review feature.
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `MD2MAP_MAX_SUBSECTIONS` | Max subsplits per section in NLP/AI split mode | `5` |
-
-Example of specifying environment variables when starting the backend:
-
-```bash
-MD2MAP_MAX_SUBSECTIONS=10 uv run uvicorn app.main:app --reload --port 8000
-```
-
 ---
 
 ## FAQ / Troubleshooting
@@ -342,6 +328,15 @@ Try again with a maximum tokens value that is lower than 10000.
 | POST | `/api/convert/add-line-numbers` | Add line numbers |
 | GET | `/api/convert/available-tools` | List available conversion tools |
 | POST | `/api/review` | Run review |
+| POST | `/api/test-connection` | Test LLM connection |
+| POST | `/api/review/structure-matching` | Structure matching (split review) |
+| POST | `/api/review/group` | Group review (split review) |
+| POST | `/api/review/integrate` | Integrate results (split review) |
+| POST | `/api/organize-markdown` | AI Markdown organization |
+| POST | `/api/split/headings` | Get H2 heading list |
+| POST | `/api/split/markdown` | Split design document |
+| POST | `/api/split/code` | Split source code |
+| POST | `/api/summarize` | Generate summary |
 
 ## Directory Structure
 
