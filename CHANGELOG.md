@@ -7,6 +7,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.5] - 2026-03-26
+
+### Fixed
+- **HTTP response check for all API functions** (#79): Added `response.ok` check to all API functions including `fetchHeadings()`, ensuring non-2xx responses (405, 500, etc.) are properly detected
+  - Fixed a bug where the pre-important panel was not displayed when the backend was an older version (e.g., v0.9.1) that returned 405 for `POST /api/split/headings`
+  - Introduced `assertResponseOk()` helper function and applied uniform non-2xx response error handling to all 12 API functions
+  - Added `result.error` check to `useSplitSettings.ts` error detection for robustness
+
 ## [0.9.4] - 2026-03-26
 
 ### Added
