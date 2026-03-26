@@ -122,7 +122,10 @@ describe('SplitSettingsSection - DocumentSplitSettingsBlock', () => {
       documentParts: [
         {
           id: 'MD1',
+          section: '概要',
           displayName: '概要',
+          level: 2,
+          path: '概要',
           startLine: 1,
           endLine: 10,
           content: 'テスト内容',
@@ -134,11 +137,13 @@ describe('SplitSettingsSection - DocumentSplitSettingsBlock', () => {
       ],
       codeParts: [
         {
+          id: 'CD1',
           symbol: 'TestClass',
           symbolType: 'class',
           parentSymbol: null,
           startLine: 1,
           endLine: 50,
+          content: 'class TestClass:\n    pass',
           estimatedTokens: 500,
         },
       ],

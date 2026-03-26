@@ -22,6 +22,10 @@ RUN mkdir -p /etc/apt/keyrings \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
+# Rustのインストール（sudachipy のビルドに必要 - ARM64環境でprebuilt wheelが無いため）
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
 # uvのインストール
 RUN pip3 install --no-cache-dir --break-system-packages uv
 
