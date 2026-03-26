@@ -204,11 +204,11 @@ You can switch versions from the top-left balloon (routing via Cookie + Nginx ma
 Run tests in each version's directory.
 
 ```bash
-# v0.9.4 backend tests
+# v0.9.5 backend tests
 cd versions/v0.9.5/backend
 uv run pytest tests/ -v
 
-# v0.9.4 frontend tests
+# v0.9.5 frontend tests
 cd versions/v0.9.5/frontend
 npm test
 

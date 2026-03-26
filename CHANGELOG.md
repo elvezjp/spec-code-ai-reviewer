@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.9.5] - 2026-03-26
 
+### Added
+- **Frontend-backend version mismatch detection** (#81): Check backend version on startup and display a warning banner if it doesn't match the frontend version
+  - Added `GET /api/health` endpoint (shared logic with existing `GET /health`)
+  - Also warns when older backends don't support `/api/health` (404/405)
+
 ### Fixed
 - **HTTP response check for all API functions** (#79): Added `response.ok` check to all API functions including `fetchHeadings()`, ensuring non-2xx responses (405, 500, etc.) are properly detected
   - Fixed a bug where the pre-important panel was not displayed when the backend was an older version (e.g., v0.9.1) that returned 405 for `POST /api/split/headings`
@@ -331,6 +336,7 @@ For a detailed feature comparison table across all versions, see [versions/READM
 
 | Version | Key Features |
 |---------|-------------|
+| 0.9.5   | Frontend-backend version mismatch detection, HTTP response check for all API functions |
 | 0.9.4   | Summary mode options (text/AI), max subsections UI control, MD2MAP_MAX_SUBSECTIONS env var removed, MAP.json/INDEX.md download from split preview, split preview re-run |
 | 0.9.3   | Pre-split exclusion designation (completely exclude unnecessary sections from split processing) |
 | 0.9.2   | Pre-split importance designation (per-section split settings) |

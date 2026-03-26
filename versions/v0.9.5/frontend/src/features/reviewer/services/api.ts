@@ -25,6 +25,36 @@ const getBackendUrl = (): string => {
   return ''
 }
 
+// =============================================================================
+// Health Check API
+// =============================================================================
+
+export interface HealthResponse {
+  status: string
+  version: string
+}
+
+export type HealthResult =
+  | { ok: true; data: HealthResponse }
+  | { ok: false; reason: 'http_error'; status: number }
+  | { ok: false; reason: 'network_error' }
+
+export async function fetchHealth(): Promise<HealthResult> {
+  try {
+    const response = await fetch(`${getBackendUrl()}/api/health`)
+    if (!response.ok) {
+      return { ok: false, reason: 'http_error', status: response.status }
+    }
+    return { ok: true, data: await response.json() }
+  } catch {
+    return { ok: false, reason: 'network_error' }
+  }
+}
+
+// =============================================================================
+// Common Utilities
+// =============================================================================
+
 /**
  * レスポンスのステータスコードをチェックし、非 2xx の場合はエラーをスローする
  */

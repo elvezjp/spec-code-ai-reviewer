@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useCallback, useState, useRef } from 'react'
-import { Settings, FileText, BookOpen } from 'lucide-react'
+import { Settings, FileText, BookOpen, AlertTriangle, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import {
   Layout,
@@ -29,7 +29,7 @@ import {
   SplitSettingsSection,
 } from './components'
 import { useFileConversion, useReviewExecution, useReviewerSettings, useZipExport, useSplitSettings } from './hooks'
-import { testLlmConnection, executeStructureMatching, executeGroupReview, executeIntegrate } from './services/api'
+import { testLlmConnection, executeStructureMatching, executeGroupReview, executeIntegrate, fetchHealth } from './services/api'
 import type { SplitReviewState, GroupReviewState, GroupSummarizeState, IntegrateSummarizeState, ReviewExecutionData } from './types'
 
 const APP_INFO = {
@@ -46,6 +46,7 @@ export function Reviewer() {
   const { versions, currentVersion, switchVersion } = useVersions()
   const [toastMessage, setToastMessage] = useState('')
   const toastTimerRef = useRef<number | null>(null)
+  const [versionMismatch, setVersionMismatch] = useState<{ frontend: string; backend: string } | null>(null)
 
   // File conversion
   const {
@@ -209,9 +210,24 @@ export function Reviewer() {
     systemPromptText
   )
 
-  // Load tools on mount
+  // Load tools and check backend version on mount
   useEffect(() => {
     loadTools()
+
+    // バックエンドバージョンチェック（非同期、UIをブロックしない）
+    fetchHealth().then((result) => {
+      if (result.ok) {
+        const feVersion = APP_INFO.version.replace(/^v/, '')
+        const beVersion = result.data.version.replace(/^v/, '')
+        if (feVersion !== beVersion) {
+          setVersionMismatch({ frontend: APP_INFO.version, backend: `v${beVersion}` })
+        }
+      } else if (result.reason === 'http_error') {
+        // 古いバックエンドで /api/health が未実装（404, 405等）
+        setVersionMismatch({ frontend: APP_INFO.version, backend: '不明（バージョン確認API未対応）' })
+      }
+      // network_error の場合は何もしない（バックエンド未起動は他のAPIで検知される）
+    })
   }, [loadTools])
 
   const showToast = useCallback((message: string) => {
@@ -803,6 +819,22 @@ export function Reviewer() {
       />
 
       {/* Spec files section */}
+      {/* バージョン不一致警告バナー */}
+      {versionMismatch && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg flex items-start gap-2">
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 text-sm text-amber-800">
+            バックエンド ({versionMismatch.backend}) とフロントエンド ({versionMismatch.frontend}) のバージョンが一致しません。正しく動作しない可能性があります。
+          </div>
+          <button
+            onClick={() => setVersionMismatch(null)}
+            className="text-amber-600 hover:text-amber-800 flex-shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <Card className="mb-6">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">設計書 (Excel)</h2>
         <div className="flex items-center gap-2 mb-2">

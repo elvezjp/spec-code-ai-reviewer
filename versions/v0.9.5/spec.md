@@ -1747,7 +1747,8 @@ md2mapは以下の3つの分割モードを提供する。ユーザーが分割�
 | POST | `/api/review/integrate` | 結果統合（分割レビュー フェーズ3） |
 | POST | `/api/summarize` | テキスト要約（設計書・コード・レビュー結果） |
 | POST | `/api/test-connection` | LLM接続テスト |
-| GET | `/health` | ヘルスチェック（ALB用） |
+| GET | `/api/health` | ヘルスチェック（フロントエンド用、バージョン情報付き） |
+| GET | `/health` | ヘルスチェック（ALB用、`/api/health` と同一レスポンス） |
 
 ### 4.2 API詳細
 
@@ -2155,22 +2156,29 @@ OpenAI:
 }
 ```
 
-#### GET /health
+#### GET /api/health
 
-サーバーの稼働状態を確認する。ALBヘルスチェック用のシンプルなエンドポイント。
+サーバーの稼働状態とバージョン情報を返す。フロントエンドからのバージョン不一致検知に使用する。
 
 **レスポンス:**
 
 ```json
 {
   "status": "healthy",
-  "version": "0.9.1"
+  "version": "0.9.5"
 }
 ```
 
 ※ `version` は `backend/pyproject.toml` の `version` フィールドから `importlib.metadata.version()` で取得する
-※ LLM接続テストは行わない（ALBヘルスチェックでのコスト発生を防ぐため）
+※ LLM接続テストは行わない（コスト発生を防ぐため）
+※ フロントエンドは起動時にこのエンドポイントを呼び出し、`APP_INFO.version` と比較する。不一致時は画面上部に警告バナーを表示する
+
+#### GET /health
+
+`GET /api/health` と同一のレスポンスを返す。ALBヘルスチェック用のエンドポイント。
+
 ※ Basic認証除外（ALBからのアクセスを許可するため）
+※ フロントエンドからは `/api/health` を使用する（Vite プロキシ経由で到達可能にするため）
 
 #### POST /api/test-connection
 

@@ -204,11 +204,11 @@ docker-compose down
 各バージョンのディレクトリでテストを実行します。
 
 ```bash
-# v0.9.4 バックエンドのテスト
+# v0.9.5 バックエンドのテスト
 cd versions/v0.9.5/backend
 uv run pytest tests/ -v
 
-# v0.9.4 フロントエンドのテスト
+# v0.9.5 フロントエンドのテスト
 cd versions/v0.9.5/frontend
 npm test
 
