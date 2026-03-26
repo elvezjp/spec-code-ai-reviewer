@@ -613,8 +613,8 @@ xlsx = [
 
 [[package]]
 name = "md2map"
-version = "0.4.0"
-source = { git = "https://github.com/elvezjp/md2map.git?branch=main#e27da649de4b4ddf15417ea84b2c91b3a3e28fb5" }
+version = "0.4.1"
+source = { git = "https://github.com/elvezjp/md2map.git?branch=main#d64c5f6b6c13d4c15884754777049b845e6a8658" }
 dependencies = [
     { name = "add-line-numbers" },
 ]
