@@ -304,7 +304,7 @@ Step 5: テスト
 | バックエンド（split.py） | warnings の伝搬追加 |
 | フロントエンド（hooks） | `llmConfig` の条件分岐削除、documentWarnings の追加、splitMode 送信元の統一 |
 | フロントエンド（UI） | 設計書警告パネルの追加 |
-| md2map | 変更なし（別途修正中） |
+| md2map | subtree最新化済み（LLM失敗時の warnings 対応を含む v0.4.1） |
 | code2map | 変更なし |
 
 ---
@@ -322,31 +322,31 @@ Step 5: テスト
 
 ### Step 1: フロントエンド — llmConfig を常に渡す
 
-- [ ] `useSplitSettings.ts` の `llmConfig` 条件分岐を削除し常時渡しに変更
+- [x] `useSplitSettings.ts` の `llmConfig` 条件分岐を削除し常時渡しに変更
 
 ### Step 2: バックエンド — warnings を SplitMarkdownResponse に含める
 
-- [ ] `SplitMarkdownResponse` に `warnings: list[str] = []` フィールドを追加
-- [ ] `split_markdown` エンドポイントで warnings をレスポンスに含める
+- [x] `SplitMarkdownResponse` に `warnings: list[str] = []` フィールドを追加
+- [x] `split_markdown` エンドポイントで warnings をレスポンスに含める
 
 ### Step 3: フロントエンド — 設計書分割の warnings を表示
 
-- [ ] `SplitMarkdownResponse` 型に `warnings` フィールドを追加
-- [ ] `SplitPreviewResult` に `documentWarnings` を追加
-- [ ] `executePreview` で documentWarnings を収集・保持
-- [ ] `SplitSettingsSection.tsx` に設計書警告パネルを追加
+- [x] `SplitMarkdownResponse` 型に `warnings` フィールドを追加
+- [x] `SplitPreviewResult` に `documentWarnings` を追加
+- [x] `executePreview` で documentWarnings を収集・保持
+- [x] `SplitSettingsSection.tsx` に設計書警告パネルを追加
 
 ### Step 4: フロントエンド — 分割モード送信元の統一
 
-- [ ] `splitMode` を `normalSplitSettings.splitMode` から常に取得するよう修正
-- [ ] `maxDepth` を `normalSplitSettings.headingLevel` から常に取得するよう修正
-- [ ] `aiPromptExtraNotes` を `normalSplitSettings` から常に取得するよう修正
+- [x] `splitMode` を `normalSplitSettings.splitMode` から常に取得するよう修正
+- [x] `maxDepth` を `normalSplitSettings.headingLevel` から常に取得するよう修正
+- [x] `aiPromptExtraNotes` を `normalSplitSettings` から常に取得するよう修正
 
 ### Step 5: テスト
 
-- [ ] バックエンド: warnings 伝搬テスト
-- [ ] フロントエンド: llmConfig 常時送信テスト
-- [ ] フロントエンド: 設計書警告パネル表示テスト
-- [ ] フロントエンド: splitMode 送信元テスト
-- [ ] 全バックエンドテスト通過
-- [ ] 全フロントエンドテスト通過
+- [x] バックエンド: warnings 伝搬テスト（UT-SPL-024）
+- [x] フロントエンド: llmConfig 常時送信テスト（UT-SPLA-012）
+- [x] フロントエンド: warnings レスポンス処理テスト（UT-SPLA-011）
+- [x] フロントエンド: splitMode 送信元テスト（UT-SPLA-013）
+- [x] 全バックエンドテスト通過（190件）
+- [x] 全フロントエンドテスト通過（205件）
