@@ -470,7 +470,7 @@ When adding a new version (e.g., v0.7.0), update the following files.
 | `versions/v0.7.0/frontend/src/features/config-file-generator/schema/configSchema.ts` | Update `meta.version` and `info.version` fields (v0.6.0+ only) |
 | `versions/v0.7.0/frontend/src/features/reviewer/index.tsx` | Update `APP_INFO.version` (v0.6.0+ only) |
 | `versions/v0.7.0/frontend/src/__tests__/features/reviewer/services/split_review_api.test.ts` | Update `version` in mock response (v0.6.0+ only) |
-| `versions/v0.8.x+/frontend/src/core/hooks/useVersions.ts` | Add new version to DEFAULT_VERSIONS and update `isLatest` in all existing v0.8+ versions |
+| `versions/v0.9.x+/frontend/src/core/hooks/useVersions.ts` | Add new version to DEFAULT_VERSIONS and update `isLatest` in all existing v0.9+ versions |
 | `latest` symlink | Update to point to new version (`rm latest && ln -s versions/v0.7.0 latest`) |
 | `versions/v0.5.x/frontend/index.html` | Update VERSIONS array (run `scripts/sync_version.py`, v0.5.x and earlier only) |
 
