@@ -21,11 +21,15 @@
  * - UT-ARCK-017: executeReview() - 500 レスポンスでエラーをスロー
  * - UT-ARCK-018: testLlmConnection() - 500 レスポンスでエラーをスロー
  * - UT-ARCK-019: organizeMarkdown() - 500 レスポンスでエラーをスロー
+ * - UT-ARCK-020: fetchHealth() - 正常レスポンス
+ * - UT-ARCK-021: fetchHealth() - 非2xxレスポンスでnullを返す
+ * - UT-ARCK-022: fetchHealth() - ネットワークエラーでnullを返す
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   assertResponseOk,
+  fetchHealth,
   fetchHeadings,
   splitMarkdown,
   splitCode,
@@ -233,5 +237,49 @@ describe('各 API 関数 - 非 2xx レスポンスでエラーをスロー', () 
     await expect(
       organizeMarkdown({ markdown: '# Test', policy: 'test' })
     ).rejects.toThrow('マークダウン整形に失敗しました (HTTP 500')
+  })
+})
+
+describe('fetchHealth', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('UT-ARCK-020: 正常レスポンス', async () => {
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ status: 'healthy', version: '0.9.5' }),
+    })
+
+    const result = await fetchHealth()
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data).toEqual({ status: 'healthy', version: '0.9.5' })
+    }
+    expect(global.fetch).toHaveBeenCalledWith('/api/health')
+  })
+
+  it('UT-ARCK-021: 非2xxレスポンスでhttp_errorを返す', async () => {
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+    })
+
+    const result = await fetchHealth()
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.reason).toBe('http_error')
+      expect(result.status).toBe(404)
+    }
+  })
+
+  it('UT-ARCK-022: ネットワークエラーでnetwork_errorを返す', async () => {
+    ;(global.fetch as any).mockRejectedValueOnce(new Error('Network error'))
+
+    const result = await fetchHealth()
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.reason).toBe('network_error')
+    }
   })
 })

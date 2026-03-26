@@ -39,14 +39,26 @@ app.include_router(organize.router, prefix="/api", tags=["organize"])
 app.include_router(split.router, prefix="/api", tags=["split"])
 app.include_router(summarize.router, prefix="/api", tags=["summarize"])
 
-# フロントエンドの静的ファイル配信
-FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend"
-
-# 静的ファイル（画像など）を配信
-app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="static")
+# ヘルスチェック（StaticFilesマウントより前に定義する必要がある）
+async def _health_response():
+    """ヘルスチェック共通ロジック"""
+    return {"status": "healthy", "version": APP_VERSION}
 
 
 @app.get("/health")
 async def health_check():
     """ヘルスチェック（ルートレベル）- ALB用"""
-    return {"status": "healthy", "version": APP_VERSION}
+    return await _health_response()
+
+
+@app.get("/api/health")
+async def api_health_check():
+    """ヘルスチェック（API配下）- フロントエンド用"""
+    return await _health_response()
+
+
+# フロントエンドの静的ファイル配信
+FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend"
+
+# 静的ファイル（画像など）を配信
+app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="static")
