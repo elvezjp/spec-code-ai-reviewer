@@ -371,6 +371,20 @@ export function SplitSettingsSection({
             </div>
           )}
 
+          {/* 設計書分割の警告（AIフォールバック等） */}
+          {previewResult.documentWarnings && previewResult.documentWarnings.length > 0 && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded">
+              <p className="text-sm font-medium text-amber-800">
+                設計書分割時に警告があります（結果が不完全な可能性があります）
+              </p>
+              <ul className="mt-1 text-xs text-amber-700 list-disc list-inside space-y-0.5">
+                {previewResult.documentWarnings.map((w, i) => (
+                  <li key={i}>{w}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* コードパーツ */}
           {previewResult.codeParts && previewResult.codeParts.length > 0 ? (
             <div>
