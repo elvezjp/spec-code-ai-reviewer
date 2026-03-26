@@ -271,8 +271,8 @@ export function SplitSettingsSection({
         <div className="mb-4 space-y-2">
           <div className="flex items-center gap-3">
             <button
-              onClick={onExecutePreview}
-              disabled={!canExecutePreview || isExecuting || !!previewResult}
+              onClick={previewResult ? () => { onClearPreview(); onExecutePreview(); } : onExecutePreview}
+              disabled={!canExecutePreview || isExecuting}
               className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               {isExecuting ? (
@@ -281,16 +281,21 @@ export function SplitSettingsSection({
                   プレビュー実行中...
                 </>
               ) : previewResult ? (
-                'プレビュー実行済み'
+                'プレビュー再実行'
               ) : (
                 '分割プレビュー'
               )}
             </button>
-            {normalSplitSettings.splitMode === 'ai' && (
+            {previewResult ? (
+              <span className="text-xs">
+                <span className="text-green-600">✓ 分割プレビュー完了: </span>
+                <span className="text-gray-400">設定を変更した場合は再実行してください。</span>
+              </span>
+            ) : normalSplitSettings.splitMode === 'ai' ? (
               <span className="text-xs text-muted text-gray-400">
                 ※ 設計書が大きい場合は、処理に時間が掛かったり、タイムアウトや制限等でエラーになる可能性があります。
               </span>
-            )}
+            ) : null}
           </div>
           {/* プレビューエラー */}
           {previewError && (
