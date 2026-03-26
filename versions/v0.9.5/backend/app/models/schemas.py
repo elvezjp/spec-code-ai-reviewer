@@ -354,6 +354,7 @@ class SplitMarkdownResponse(BaseModel):
     parts: list[DocumentPart] = []
     indexContent: str | None = None  # INDEX.md相当の内容
     mapJson: list[dict] | None = None  # md2map生成のMAP.json
+    warnings: list[str] = []  # パース時の警告メッセージ
     error: str | None = None
 
 

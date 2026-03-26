@@ -293,6 +293,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
       let documentParts: DocumentPart[] | null = null
       let documentIndex: string | null = null
       let documentMapJson: Record<string, unknown>[] | null = null
+      let documentWarnings: string[] = []
       let codeParts: CodePart[] | null = null
       let codeIndex: string | null = null
       let codeMapJson: Record<string, unknown>[] | null = null
@@ -306,17 +307,12 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         const response = await api.splitMarkdown({
           content: designMarkdown,
           filename: designFilename,
-          maxDepth: hasPreImportant ? normalSplitSettings.headingLevel : settings.documentMaxDepth,
-          splitMode: hasPreImportant ? normalSplitSettings.splitMode : settings.documentSplitMode,
-          llmConfig: (hasPreImportant ? normalSplitSettings.splitMode === 'ai' : settings.documentSplitMode === 'ai')
-            ? (llmConfig ?? undefined) : undefined,
-          aiPromptExtraNotes: hasPreImportant
-            ? (normalSplitSettings.splitMode === 'ai' && normalSplitSettings.splitInstructions
-              ? normalSplitSettings.splitInstructions
-              : undefined)
-            : (settings.documentSplitMode === 'ai' && settings.aiPromptExtraNotes
-              ? settings.aiPromptExtraNotes
-              : undefined),
+          maxDepth: normalSplitSettings.headingLevel,
+          splitMode: normalSplitSettings.splitMode,
+          llmConfig: llmConfig ?? undefined,
+          aiPromptExtraNotes: normalSplitSettings.splitMode === 'ai' && normalSplitSettings.splitInstructions
+            ? normalSplitSettings.splitInstructions
+            : undefined,
           // 事前重要指定がない場合でも、通常セクション設定（UIの通常セクション）を反映する
           summaryMode: normalSplitSettings.summaryMode,
           summaryMaxChars: normalSplitSettings.summaryMaxChars,
@@ -347,6 +343,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
           documentParts = response.parts
           documentIndex = response.indexContent || null
           documentMapJson = response.mapJson || null
+          documentWarnings = response.warnings || []
         } else {
           throw new Error(response.error || '設計書の分割に失敗しました')
         }
@@ -428,6 +425,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
         codeMapJson,
         codeLanguage,
         pinnedDocPartIds: autoPinnedIds,
+        documentWarnings,
         codeWarnings: allCodeWarnings,
       })
       setPinnedDocPartIds(autoPinnedIds)

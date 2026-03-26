@@ -302,6 +302,7 @@ async def split_markdown(request: SplitMarkdownRequest):
             parts=parts,
             indexContent=index_content,
             mapJson=map_json,
+            warnings=warnings,
         )
 
     except Exception as e:

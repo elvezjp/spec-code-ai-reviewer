@@ -816,3 +816,62 @@ class TestSubsplitOverrideInheritance:
 
         settings = parser._resolve_settings(subsplit)
         assert settings["summary_max_chars"] == 300
+
+
+class TestLLMFailureWarnings:
+    """LLM 呼び出し失敗時に warnings にエラー情報が追加されることのテスト"""
+
+    @patch("md2map.parsers.markdown_parser.MarkdownParser._ensure_llm_provider")
+    def test_ai_summary_failure_adds_warning(self, mock_ensure):
+        """summary_mode='ai' で LLM が例外を投げた場合、warnings にメッセージが含まれる"""
+        mock_provider = MagicMock()
+        mock_provider.send_message.side_effect = Exception("401 Unauthorized")
+
+        parser = MarkdownParser(summary_mode="ai")
+        parser._llm_provider = mock_provider
+        sections, warnings = parser.parse(str(FIXTURES_DIR / "simple.md"))
+
+        ai_warnings = [w for w in warnings if "AI summary generation failed" in w]
+        assert len(ai_warnings) > 0
+        assert "401 Unauthorized" in ai_warnings[0]
+
+    @patch("md2map.parsers.markdown_parser.MarkdownParser._ensure_llm_provider")
+    def test_ai_split_failure_adds_warning(self, mock_ensure):
+        """split_mode='ai' で LLM が例外を投げた場合、warnings にメッセージが含まれる"""
+        mock_provider = MagicMock()
+        mock_provider.send_message.side_effect = Exception("Connection timeout")
+
+        parser = MarkdownParser(split_mode="ai", split_threshold=1)
+        parser._llm_provider = mock_provider
+        sections, warnings = parser.parse(str(FIXTURES_DIR / "simple.md"))
+
+        ai_warnings = [w for w in warnings if "AI API call failed" in w]
+        assert len(ai_warnings) > 0
+        assert "Connection timeout" in ai_warnings[0]
+
+    @patch("md2map.parsers.markdown_parser.MarkdownParser._ensure_llm_provider")
+    def test_multiple_section_failures_all_reported(self, mock_ensure):
+        """複数セクションで LLM が失敗した場合、各セクションの warning が全て含まれる"""
+        mock_provider = MagicMock()
+        mock_provider.send_message.side_effect = Exception("Service unavailable")
+
+        parser = MarkdownParser(summary_mode="ai")
+        parser._llm_provider = mock_provider
+        sections, warnings = parser.parse(str(FIXTURES_DIR / "simple.md"))
+
+        ai_warnings = [w for w in warnings if "AI summary generation failed" in w]
+        # simple.md には複数セクションがあるため、複数の warning が出る
+        assert len(ai_warnings) >= 2
+
+    @patch("md2map.parsers.markdown_parser.MarkdownParser._ensure_llm_provider")
+    def test_successful_llm_no_ai_warnings(self, mock_ensure):
+        """LLM が正常応答した場合、LLM 関連の warning が warnings に含まれない"""
+        mock_provider = MagicMock()
+        mock_provider.send_message.return_value = "正常な要約文"
+
+        parser = MarkdownParser(summary_mode="ai")
+        parser._llm_provider = mock_provider
+        sections, warnings = parser.parse(str(FIXTURES_DIR / "simple.md"))
+
+        ai_warnings = [w for w in warnings if "AI summary generation failed" in w or "AI API call failed" in w]
+        assert len(ai_warnings) == 0

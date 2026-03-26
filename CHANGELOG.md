@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Also warns when older backends don't support `/api/health` (404/405)
 
 ### Fixed
+- **AI split preview silent fallback fix** (#84): Fixed issue where split preview returned results without error even when LLM credentials were invalid
+  - Added `warnings` field to `SplitMarkdownResponse` to propagate md2map `parse()` warnings to the frontend
+  - Added document split warning panel (same UI format as code split warnings)
+  - Simplified `llmConfig` to always be sent to the `splitMarkdown` API regardless of split mode
+- **Split mode source mismatch fix** (#86): Fixed issue where UI split mode selection was not reflected in API requests when no pre-important sections were selected
+  - Unified `splitMode` / `maxDepth` / `aiPromptExtraNotes` source to always use `normalSplitSettings`
 - **HTTP response check for all API functions** (#79): Added `response.ok` check to all API functions including `fetchHeadings()`, ensuring non-2xx responses (405, 500, etc.) are properly detected
   - Fixed a bug where the pre-important panel was not displayed when the backend was an older version (e.g., v0.9.1) that returned 405 for `POST /api/split/headings`
   - Introduced `assertResponseOk()` helper function and applied uniform non-2xx response error handling to all 12 API functions
@@ -336,7 +342,7 @@ For a detailed feature comparison table across all versions, see [versions/READM
 
 | Version | Key Features |
 |---------|-------------|
-| 0.9.5   | Frontend-backend version mismatch detection, HTTP response check for all API functions |
+| 0.9.5   | Frontend-backend version mismatch detection, HTTP response check for all API functions, AI split silent fallback fix, split mode source mismatch fix |
 | 0.9.4   | Summary mode options (text/AI), max subsections UI control, MD2MAP_MAX_SUBSECTIONS env var removed, MAP.json/INDEX.md download from split preview, split preview re-run |
 | 0.9.3   | Pre-split exclusion designation (completely exclude unnecessary sections from split processing) |
 | 0.9.2   | Pre-split importance designation (per-section split settings) |

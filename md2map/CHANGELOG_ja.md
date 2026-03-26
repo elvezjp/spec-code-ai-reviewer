@@ -7,6 +7,35 @@
 このファイルの形式は [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/lang/ja/) に準拠しています。
 
+## [0.4.1] - 2026-03-26
+
+LLM 呼び出し失敗時のエラー情報を `parse()` の戻り値 `warnings` に含めるよう改善。呼び出し元（バックエンド API 等）が AI 分割・AI サマリーの失敗を検知できるようになりました。また、サブスプリットが親セクションの `section_overrides` 設定を継承するよう修正しました。
+
+### 追加
+
+- **LLM 失敗時の warnings**: AI 分割・AI サマリーの LLM 呼び出しが失敗した場合、`parse()` が返す `warnings` リストにエラーメッセージを追加
+  - `_generate_ai_summary()` と `_select_chunks_ai()` の両方で対応
+  - 既存の `logger.warning()` によるログ出力はそのまま維持
+
+- **サブスプリットの override 継承**: `_resolve_settings()` でサブスプリットが親セクションの `section_overrides` 設定を継承するよう修正
+  - 親セクションに指定した `summary_mode` 等がサブスプリットにも適用される
+
+- **サンプル出力**: `docs/examples/v0.4.1/` に heading / nlp / ai / ai+summary モードの出力例と `headings.json` を追加
+
+### 変更
+
+- **parse()**: `self._warnings` インスタンス変数を導入し、LLM 呼び出しメソッドから `warnings` リストにアクセス可能に
+- **_resolve_settings()**: サブスプリット（`is_subsplit=True`）の場合、親セクションの `start_line` でオーバーライドマップをフォールバック検索
+
+### 既知の制限事項
+
+このバージョンには以下の制限があります：
+
+- NLPモードは SudachiPy のインストールが必要
+- AIモードは各プロバイダーのAPIキーまたはAWS認証情報が必要
+- 単一ファイルのみ対応（ディレクトリ単位の解析は未対応）
+- ATX形式の見出しのみ対応（Setext形式の下線見出しは未対応）
+
 ## [0.4.0] - 2026-03-25
 
 INDEX.md のサマリー生成を改善。ルールベースサマリーの文字数上限をパラメータで変更可能にし、LLM による要約生成モードを追加しました。分割モードとは独立してセクション単位で使い分けが可能です。

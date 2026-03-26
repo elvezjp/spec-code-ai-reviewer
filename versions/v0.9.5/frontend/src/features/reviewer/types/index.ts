@@ -242,6 +242,7 @@ export interface SplitMarkdownResponse {
   parts: DocumentPart[]
   indexContent?: string
   mapJson?: Record<string, unknown>[]
+  warnings?: string[]
   error?: string
 }
 
@@ -269,6 +270,7 @@ export interface SplitPreviewResult {
   codeMapJson: Record<string, unknown>[] | null
   codeLanguage: string | null
   pinnedDocPartIds: string[]  // 全グループ共通の設計書パーツID
+  documentWarnings: string[]  // 設計書分割時の警告メッセージ
   codeWarnings: string[]  // コード分割時の警告メッセージ
 }
 

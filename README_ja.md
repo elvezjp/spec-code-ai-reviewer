@@ -260,20 +260,6 @@ python3 scripts/sync_version.py --no-versions-array
 | `BEDROCK_MODEL_ID` | 使用するモデルID | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `BEDROCK_MAX_TOKENS` | レスポンスの最大トークン数 | `16384` |
 
-### 分割レビュー機能用（md2map）
-
-分割レビュー機能で使用される環境変数です。
-
-| 変数名 | 説明 | デフォルト値 |
-|--------|------|-------------|
-| `MD2MAP_MAX_SUBSECTIONS` | NLP/AIモードの1セクションあたり最大サブスプリット数 | `5` |
-
-バックエンド起動時に環境変数を指定する例：
-
-```bash
-MD2MAP_MAX_SUBSECTIONS=10 uv run uvicorn app.main:app --reload --port 8000
-```
-
 ---
 
 ## よくある質問と回答/トラブルシューティング
@@ -343,6 +329,15 @@ Try again with a maximum tokens value that is lower than 10000.
 | POST | `/api/convert/add-line-numbers` | 行番号付与 |
 | GET | `/api/convert/available-tools` | 利用可能な変換ツール一覧取得 |
 | POST | `/api/review` | レビュー実行 |
+| POST | `/api/test-connection` | LLM接続テスト |
+| POST | `/api/review/structure-matching` | 構造マッチング（分割レビュー） |
+| POST | `/api/review/group` | グループレビュー（分割レビュー） |
+| POST | `/api/review/integrate` | 結果統合（分割レビュー） |
+| POST | `/api/organize-markdown` | AIマークダウン整理 |
+| POST | `/api/split/headings` | H2見出し一覧取得 |
+| POST | `/api/split/markdown` | 設計書分割 |
+| POST | `/api/split/code` | コード分割 |
+| POST | `/api/summarize` | サマリー生成 |
 
 ## ディレクトリ構成
 
