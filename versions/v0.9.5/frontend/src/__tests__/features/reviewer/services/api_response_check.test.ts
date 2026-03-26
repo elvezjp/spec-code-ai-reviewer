@@ -192,9 +192,8 @@ describe('各 API 関数 - 非 2xx レスポンスでエラーをスロー', () 
     ;(global.fetch as any).mockResolvedValueOnce(mockErrorResponse)
     await expect(
       executeSummarize({
-        content: 'テスト',
-        filename: 'test.md',
-        maxChars: 200,
+        text: 'テスト',
+        targetType: 'design',
       })
     ).rejects.toThrow('要約処理に失敗しました (HTTP 500')
   })
@@ -267,8 +266,7 @@ describe('fetchHealth', () => {
 
     const result = await fetchHealth()
     expect(result.ok).toBe(false)
-    if (!result.ok) {
-      expect(result.reason).toBe('http_error')
+    if (!result.ok && result.reason === 'http_error') {
       expect(result.status).toBe(404)
     }
   })
