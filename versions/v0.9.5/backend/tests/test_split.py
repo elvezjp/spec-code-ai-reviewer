@@ -24,6 +24,7 @@
 - UT-SPL-021: split_markdown() - maxSubsections をリクエストから取得
 - UT-SPL-022: split_markdown() - summaryMode/summaryMaxChars を section_overrides に渡す
 - UT-SPL-023: split_markdown() - summaryMode "ai" で LLM 設定が初期化される
+- UT-SPL-024: split_markdown() - parse() の warnings がレスポンスに含まれる
 """
 
 from unittest.mock import MagicMock, patch
@@ -1437,3 +1438,74 @@ class TestSplitMarkdownSummaryAPI:
         # splitMode=heading なので split 自体は LLM 不要だが、
         # summaryMode=ai なので _convert_to_md2map_llm_config が呼ばれる
         mock_convert_llm.assert_called_once()
+
+    @patch("md2map.generators.parts_generator.generate_parts")
+    @patch("md2map.generators.map_generator.generate_map")
+    @patch("md2map.generators.index_generator.generate_index")
+    @patch("md2map.utils.file_utils.read_file")
+    @patch("md2map.parsers.markdown_parser.MarkdownParser")
+    def test_ut_spl_024_warnings_propagated(
+        self, mock_parser_cls, mock_read_file, mock_gen_index, mock_gen_map, mock_gen_parts
+    ):
+        """UT-SPL-024: parse() の warnings がレスポンスに含まれる"""
+        import json
+        import os
+
+        mock_section = MagicMock()
+        mock_section.title = "概要"
+        mock_section.display_name.return_value = "概要"
+        mock_section.level = 1
+        mock_section.path = "概要"
+        mock_section.start_line = 1
+        mock_section.end_line = 5
+        mock_section.id = "MD1"
+
+        # parse() が warnings を返す
+        mock_parser = MagicMock()
+        mock_parser.parse.return_value = (
+            [mock_section],
+            [
+                "AI API call failed: Invalid credentials",
+                "セクション「概要」のAIサブスプリットに失敗したため、ルールベースの分割を使用しました",
+            ],
+        )
+        mock_parser_cls.return_value = mock_parser
+
+        mock_read_file.return_value = (
+            ["# 概要\n", "\n", "これは概要です。\n", "\n", "詳細説明\n"],
+            None,
+        )
+
+        def create_output_dir(sections, lines, out_dir):
+            os.makedirs(out_dir, exist_ok=True)
+
+        mock_gen_parts.side_effect = create_output_dir
+
+        def write_index(sections, warnings, index_path, filename):
+            with open(index_path, "w", encoding="utf-8") as f:
+                f.write("# INDEX\n\n- MD1: 概要\n")
+
+        mock_gen_index.side_effect = write_index
+
+        def write_map(sections, out_dir, map_path):
+            map_data = [{"id": "MD1", "section": "概要", "level": 1, "path": "概要"}]
+            with open(map_path, "w", encoding="utf-8") as f:
+                json.dump(map_data, f)
+
+        mock_gen_map.side_effect = write_map
+
+        request_data = {
+            "content": "# 概要\n\nこれは概要です。\n\n詳細説明",
+            "filename": "test.md",
+            "maxDepth": 2,
+        }
+
+        response = client.post("/api/split/markdown", json=request_data)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert "warnings" in data
+        assert len(data["warnings"]) == 2
+        assert "AI API call failed" in data["warnings"][0]
+        assert "ルールベース" in data["warnings"][1]

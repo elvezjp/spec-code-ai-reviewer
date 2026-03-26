@@ -12,6 +12,9 @@
  * - UT-SPLA-008: splitCode() - シンボルなし
  * - UT-SPLA-009: splitCode() - エラー（未対応言語）
  * - UT-SPLA-010: splitCode() - ネットワークエラー
+ * - UT-SPLA-011: splitMarkdown() - warnings を含むレスポンス
+ * - UT-SPLA-012: splitMarkdown() - llmConfig が常に送信される
+ * - UT-SPLA-013: splitMarkdown() - splitMode がリクエストに反映される
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -193,6 +196,89 @@ describe('splitMarkdown', () => {
         maxDepth: 2,
       })
     ).rejects.toThrow('Network error')
+  })
+
+  it('UT-SPLA-011: warnings を含むレスポンス', async () => {
+    const mockResponse = {
+      success: true,
+      parts: [],
+      indexContent: '# INDEX\n',
+      warnings: [
+        'AI API call failed: Invalid credentials',
+        'セクション「概要」のAIサブスプリットに失敗したため、ルールベースの分割を使用しました',
+      ],
+    }
+
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    })
+
+    const result = await splitMarkdown({
+      content: '# 概要\n\nテスト',
+      filename: 'test.md',
+      maxDepth: 2,
+    })
+
+    expect(result.success).toBe(true)
+    expect(result.warnings).toHaveLength(2)
+    expect(result.warnings![0]).toContain('AI API call failed')
+    expect(result.warnings![1]).toContain('ルールベース')
+  })
+
+  it('UT-SPLA-012: llmConfig が常に送信される', async () => {
+    const mockResponse = {
+      success: true,
+      parts: [],
+      indexContent: '# INDEX\n',
+    }
+
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    })
+
+    await splitMarkdown({
+      content: '# 概要',
+      filename: 'test.md',
+      maxDepth: 2,
+      splitMode: 'heading',
+      llmConfig: {
+        provider: 'anthropic',
+        model: 'claude-3-haiku',
+        apiKey: 'test-key',
+      },
+    })
+
+    const callArgs = (global.fetch as any).mock.calls[0]
+    const requestBody = JSON.parse(callArgs[1].body)
+    expect(requestBody.splitMode).toBe('heading')
+    expect(requestBody.llmConfig).toBeDefined()
+    expect(requestBody.llmConfig.provider).toBe('anthropic')
+  })
+
+  it('UT-SPLA-013: splitMode がリクエストに反映される', async () => {
+    const mockResponse = {
+      success: true,
+      parts: [],
+      indexContent: '# INDEX\n',
+    }
+
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    })
+
+    await splitMarkdown({
+      content: '# 概要',
+      filename: 'test.md',
+      maxDepth: 2,
+      splitMode: 'nlp',
+    })
+
+    const callArgs = (global.fetch as any).mock.calls[0]
+    const requestBody = JSON.parse(callArgs[1].body)
+    expect(requestBody.splitMode).toBe('nlp')
   })
 })
 
