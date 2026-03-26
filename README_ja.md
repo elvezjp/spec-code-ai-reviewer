@@ -142,7 +142,7 @@ v0.6.0以降はフロントエンドとバックエンドを別々に起動し�
 **ターミナル1: バックエンド起動**
 
 ```bash
-cd versions/v0.9.4/backend
+cd versions/v0.9.5/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -150,7 +150,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **ターミナル2: フロントエンド起動**
 
 ```bash
-cd versions/v0.9.4/frontend
+cd versions/v0.9.5/frontend
 npm install
 npm run dev
 ```
@@ -205,11 +205,11 @@ docker-compose down
 
 ```bash
 # v0.9.4 バックエンドのテスト
-cd versions/v0.9.4/backend
+cd versions/v0.9.5/backend
 uv run pytest tests/ -v
 
 # v0.9.4 フロントエンドのテスト
-cd versions/v0.9.4/frontend
+cd versions/v0.9.5/frontend
 npm test
 
 # v0.5.2以前のテスト（バックエンドのみ）
@@ -357,7 +357,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # 開発用Nginx設定
 │   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.9.4    # シンボリックリンク（最新版を指す）
+├── latest -> versions/v0.9.5    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
@@ -373,7 +373,8 @@ spec-code-ai-reviewer/
 │   ├── v0.9.1/                  # 旧バージョン（Vite + React）
 │   ├── v0.9.2/                  # 旧バージョン（Vite + React）
 │   ├── v0.9.3/                  # 旧バージョン（Vite + React）
-│   └── v0.9.4/                  # 最新版（Vite + React）
+│   ├── v0.9.4/                  # 旧バージョン（Vite + React）
+│   └── v0.9.5/                  # 最新版（Vite + React）
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -440,7 +441,8 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 
 | バージョン | ポート |
 |-----------|-------|
-| v0.9.4 (latest) | 8094 |
+| v0.9.5 (latest) | 8095 |
+| v0.9.4 | 8094 |
 | v0.9.3 | 8093 |
 | v0.9.2 | 8092 |
 | v0.9.1 | 8091 |
@@ -471,7 +473,7 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 | `versions/v0.7.0/frontend/src/features/config-file-generator/schema/configSchema.ts` | `meta.version` および `info.version` フィールドを更新（v0.6.0以降） |
 | `versions/v0.7.0/frontend/src/features/reviewer/index.tsx` | `APP_INFO.version` を更新（v0.6.0以降） |
 | `versions/v0.7.0/frontend/src/__tests__/features/reviewer/services/split_review_api.test.ts` | モックレスポンス内の `version` を更新（v0.6.0以降） |
-| `versions/v0.8.x〜/frontend/src/core/hooks/useVersions.ts` | 既存の全v0.8以降バージョンのDEFAULT_VERSIONSに新バージョンを追加し、`isLatest` を更新 |
+| `versions/v0.9.x〜/frontend/src/core/hooks/useVersions.ts` | 既存の全v0.9以降バージョンのDEFAULT_VERSIONSに新バージョンを追加し、`isLatest` を更新 |
 | `latest` シンボリックリンク | 新バージョンを指すように更新（`rm latest && ln -s versions/v0.7.0 latest`） |
 | `versions/v0.5.x/frontend/index.html` | VERSIONS配列を更新追加（`scripts/sync_version.py`実行、v0.5.x以前のみ） |
 
