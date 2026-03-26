@@ -17,6 +17,7 @@ describe('organizeMarkdown', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -47,6 +48,7 @@ describe('organizeMarkdown', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -68,6 +70,7 @@ describe('organizeMarkdown', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -89,6 +92,7 @@ describe('organizeMarkdown', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -109,6 +113,7 @@ describe('organizeMarkdown', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 

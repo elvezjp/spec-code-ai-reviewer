@@ -209,34 +209,34 @@ Step 4: ドキュメント更新
 
 ### Step 0: v0.9.5 作成
 
-- [ ] `versions/v0.9.4` を `versions/v0.9.5` にコピー
-- [ ] v0.9.5 の全バージョン番号を更新
-- [ ] インフラ設定（Docker/Nginx/PM2）に v0.9.5 を追加
-- [ ] `latest` シンボリックリンクを v0.9.5 に更新
-- [ ] 全バージョンの `useVersions.ts` に v0.9.5 を追加
+- [x] `versions/v0.9.4` を `versions/v0.9.5` にコピー
+- [x] v0.9.5 の全バージョン番号を更新
+- [x] インフラ設定（Docker/Nginx/PM2）に v0.9.5 を追加
+- [x] `latest` シンボリックリンクを v0.9.5 に更新
+- [x] 全バージョンの `useVersions.ts` に v0.9.5 を追加
 
 ### Step 1: fetchHeadings の response.ok チェック追加
 
-- [ ] `fetchHeadings()` に `response.ok` チェックを追加
+- [x] `fetchHeadings()` に `response.ok` チェックを追加
 - [ ] 405 レスポンス時にエラーメッセージが表示されることを確認
 
 ### Step 2: 他の API 関数の response.ok チェック追加
 
-- [ ] `assertResponseOk()` ヘルパー関数の追加
-- [ ] 全 API 関数に `response.ok` チェックを適用
+- [x] `assertResponseOk()` ヘルパー関数の追加
+- [x] 全 API 関数に `response.ok` チェックを適用
 
 ### Step 3: テスト追加
 
-- [ ] `fetchHeadings` の HTTP エラーレスポンス時のテスト追加
-- [ ] `assertResponseOk` のテスト追加
-- [ ] 全フロントエンドテスト通過
+- [x] `fetchHeadings` の HTTP エラーレスポンス時のテスト追加
+- [x] `assertResponseOk` のテスト追加
+- [x] 全フロントエンドテスト通過（199件）
 
 ### Step 4: ドキュメント更新
 
-- [ ] `versions/v0.9.5/spec.md` のバージョン番号更新
+- [x] `versions/v0.9.5/spec.md` のバージョン番号更新
 
 ### 最終確認
 
-- [ ] 全バックエンドテスト通過
-- [ ] 全フロントエンドテスト通過
+- [x] 全バックエンドテスト通過（186件）
+- [x] 全フロントエンドテスト通過（199件）
 - [ ] 手動動作確認（v0.9.1 バックエンドで分割モード選択時にエラーメッセージが表示されること）

@@ -54,6 +54,7 @@ describe('splitMarkdown', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -117,6 +118,7 @@ describe('splitMarkdown', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -144,6 +146,7 @@ describe('splitMarkdown', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -166,6 +169,7 @@ describe('splitMarkdown', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -227,6 +231,7 @@ describe('splitCode', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -281,6 +286,7 @@ describe('splitCode', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -306,6 +312,7 @@ describe('splitCode', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -328,6 +335,7 @@ describe('splitCode', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 

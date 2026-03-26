@@ -54,6 +54,7 @@ describe('executeStructureMatching', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -114,6 +115,7 @@ describe('executeStructureMatching', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -141,6 +143,7 @@ describe('executeStructureMatching', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -165,6 +168,7 @@ describe('executeStructureMatching', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -224,6 +228,7 @@ describe('executeGroupReview', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -258,6 +263,7 @@ describe('executeGroupReview', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -293,6 +299,7 @@ describe('executeGroupReview', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -353,6 +360,7 @@ describe('executeIntegrate', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -409,6 +417,7 @@ describe('executeIntegrate', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 
@@ -447,6 +456,7 @@ describe('executeIntegrate', () => {
     }
 
     ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => mockResponse,
     })
 

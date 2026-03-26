@@ -25,6 +25,22 @@ const getBackendUrl = (): string => {
   return ''
 }
 
+/**
+ * レスポンスのステータスコードをチェックし、非 2xx の場合はエラーをスローする
+ */
+export async function assertResponseOk(response: Response, context: string): Promise<void> {
+  if (!response.ok) {
+    let detail = ''
+    try {
+      const body = await response.text()
+      if (body) detail = `: ${body}`
+    } catch {
+      // ボディ読み取り失敗は無視
+    }
+    throw new Error(`${context} (HTTP ${response.status}${detail})`)
+  }
+}
+
 export async function fetchAvailableTools(): Promise<ConversionTool[]> {
   try {
     const response = await fetch(`${getBackendUrl()}/api/convert/available-tools`)
@@ -52,6 +68,7 @@ export async function convertExcelToMarkdown(
     body: formData,
   })
 
+  await assertResponseOk(response, 'Excel変換に失敗しました')
   return await response.json()
 }
 
@@ -66,6 +83,7 @@ export async function addLineNumbers(
     body: formData,
   })
 
+  await assertResponseOk(response, '行番号付与に失敗しました')
   return await response.json()
 }
 
@@ -78,6 +96,7 @@ export async function executeReview(
     body: JSON.stringify(request),
   })
 
+  await assertResponseOk(response, 'レビュー実行に失敗しました')
   return await response.json()
 }
 
@@ -106,6 +125,7 @@ export async function testLlmConnection(
     body: JSON.stringify(config || {}),
   })
 
+  await assertResponseOk(response, '接続テストに失敗しました')
   return await response.json()
 }
 
@@ -118,6 +138,7 @@ export async function organizeMarkdown(
     body: JSON.stringify(request),
   })
 
+  await assertResponseOk(response, 'マークダウン整形に失敗しました')
   return await response.json()
 }
 
@@ -134,6 +155,10 @@ export async function fetchHeadings(
     body: JSON.stringify({ content }),
   })
 
+  if (!response.ok) {
+    return { headings: [], error: `見出し一覧の取得に失敗しました (HTTP ${response.status})` }
+  }
+
   return await response.json()
 }
 
@@ -146,6 +171,7 @@ export async function splitMarkdown(
     body: JSON.stringify(request),
   })
 
+  await assertResponseOk(response, '分割処理に失敗しました')
   return await response.json()
 }
 
@@ -158,6 +184,7 @@ export async function splitCode(
     body: JSON.stringify(request),
   })
 
+  await assertResponseOk(response, 'コード分割に失敗しました')
   return await response.json()
 }
 
@@ -174,6 +201,7 @@ export async function executeStructureMatching(
     body: JSON.stringify(request),
   })
 
+  await assertResponseOk(response, '構造マッチングに失敗しました')
   return await response.json()
 }
 
@@ -186,6 +214,7 @@ export async function executeGroupReview(
     body: JSON.stringify(request),
   })
 
+  await assertResponseOk(response, 'グループレビューに失敗しました')
   return await response.json()
 }
 
@@ -198,6 +227,7 @@ export async function executeIntegrate(
     body: JSON.stringify(request),
   })
 
+  await assertResponseOk(response, '結果統合に失敗しました')
   return await response.json()
 }
 
@@ -210,5 +240,6 @@ export async function executeSummarize(
     body: JSON.stringify(request),
   })
 
+  await assertResponseOk(response, '要約処理に失敗しました')
   return await response.json()
 }
