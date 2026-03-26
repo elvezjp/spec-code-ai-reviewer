@@ -308,7 +308,7 @@ class SplitSettingsDetail(BaseModel):
     splitInstructions: str | None = None
     maxSubsections: int | None = None
     summaryMode: Literal["text", "ai"] | None = None       # サマリー生成モード
-    summaryMaxChars: int | None = None                      # テキストモード時の文字数上限
+    summaryMaxChars: int | None = Field(default=None, ge=10, le=1000)  # テキストモード時の文字数上限
 
 
 class SplitMarkdownRequest(BaseModel):
@@ -329,7 +329,7 @@ class SplitMarkdownRequest(BaseModel):
     preExcludedSections: list[int] | None = None  # 事前除外セクションの start_line リスト
     # サマリー生成関連フィールド
     summaryMode: Literal["text", "ai"] | None = None  # グローバルサマリーモード（デフォルト: text）
-    summaryMaxChars: int | None = None  # グローバル文字数上限（デフォルト: 100）
+    summaryMaxChars: int | None = Field(default=None, ge=10, le=1000)  # グローバル文字数上限（デフォルト: 100）
 
 
 class DocumentPart(BaseModel):

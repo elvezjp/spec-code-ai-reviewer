@@ -2323,7 +2323,7 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 | pre_excluded_sections | - | 事前除外セクションの `start_line` リスト。指定されたセクションは分割処理の対象から除外される |
 | maxSubsections | - | NLP/AIモードの1セクションあたり最大サブスプリット数。デフォルト: 5 |
 | summaryMode | - | サマリーモード（`text` / `ai`）。`text` はルールベース、`ai` はLLMによるサマリー生成。デフォルト: `ai` |
-| summaryMaxChars | - | サマリー最大文字数。デフォルト: 通常セクション100 / 事前重要指定セクション300 |
+| summaryMaxChars | - | サマリー最大文字数（10〜1000）。デフォルト: 通常セクション100 / 事前重要指定セクション300 |
 
 `pre_important_sections` が指定された場合、`normal_split_settings` の設定がデフォルトの分割設定として適用され、`pre_important_split_settings` の設定が事前重要指定セクションにのみ上書き適用される。`pre_important_sections` が未指定の場合は従来通り `splitMode` が使用される。
 
