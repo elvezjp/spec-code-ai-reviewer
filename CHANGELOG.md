@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.4] - 2026-03-25
+## [0.9.4] - 2026-03-26
 
 ### Added
 - **Summary mode options** (#71): Added `summaryMode` (`text`/`ai`) and `summaryMaxChars` parameters to split preview settings for controlling INDEX.md summary generation
@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MAP.json / INDEX.md download from split preview** (#73): Download design document and code MAP.json / INDEX.md individually from the split preview screen before starting review
   - Added `spec-INDEX.md` / `spec-MAP.json` download buttons to design document parts heading
   - Added `code-INDEX.md` / `code-MAP.json` download buttons to code parts heading
+- **Split preview re-run** (#76): After preview execution, the button changes to "Re-run preview", enabling one-click result clear and re-execution
+  - Re-preview after settings change completes in a single click
+  - Displays completion message next to the button ("✓ Split preview complete: Please re-run if you changed settings.")
 
 ### Removed
 - **`MD2MAP_MAX_SUBSECTIONS` environment variable**: Replaced by frontend UI control. The parameter is now sent directly from the frontend request
@@ -320,7 +323,7 @@ For a detailed feature comparison table across all versions, see [versions/READM
 
 | Version | Key Features |
 |---------|-------------|
-| 0.9.4   | Summary mode options (text/AI), max subsections UI control, MD2MAP_MAX_SUBSECTIONS env var removed, MAP.json/INDEX.md download from split preview |
+| 0.9.4   | Summary mode options (text/AI), max subsections UI control, MD2MAP_MAX_SUBSECTIONS env var removed, MAP.json/INDEX.md download from split preview, split preview re-run |
 | 0.9.3   | Pre-split exclusion designation (completely exclude unnecessary sections from split processing) |
 | 0.9.2   | Pre-split importance designation (per-section split settings) |
 | 0.9.1   | Section exclusion, AI sub-split instructions, split preview error display, code split warnings, prevent review on split failure |
