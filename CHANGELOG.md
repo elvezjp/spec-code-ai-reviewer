@@ -336,6 +336,7 @@ For a detailed feature comparison table across all versions, see [versions/READM
 
 | Version | Key Features |
 |---------|-------------|
+| 0.9.5   | Frontend-backend version mismatch detection, HTTP response check for all API functions |
 | 0.9.4   | Summary mode options (text/AI), max subsections UI control, MD2MAP_MAX_SUBSECTIONS env var removed, MAP.json/INDEX.md download from split preview, split preview re-run |
 | 0.9.3   | Pre-split exclusion designation (completely exclude unnecessary sections from split processing) |
 | 0.9.2   | Pre-split importance designation (per-section split settings) |
