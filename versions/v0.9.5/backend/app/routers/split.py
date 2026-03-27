@@ -161,26 +161,14 @@ async def split_markdown(request: SplitMarkdownRequest):
                 summary_mode = request.summaryMode or "text"
                 summary_max_chars = request.summaryMaxChars or 100
 
-            # AIモードの場合のみ LLMConfig を変換
-            md2map_llm_config = None
-            if split_mode == "ai":
-                md2map_llm_config = _convert_to_md2map_llm_config(
-                    request.llmConfig
-                )
-
-            # AIサマリーモードの場合もLLM設定が必要
-            if summary_mode == "ai" and md2map_llm_config is None:
-                md2map_llm_config = _convert_to_md2map_llm_config(request.llmConfig)
+            # LLMConfig を変換（md2map は遅延初期化のため、常に渡しても不要なら無視される）
+            md2map_llm_config = _convert_to_md2map_llm_config(request.llmConfig)
 
             # section_overrides の構築（事前重要指定セクション用 + 事前除外セクション用）
             section_overrides = None
             if has_pre_important and request.preImportantSplitSettings:
                 pre_settings = request.preImportantSplitSettings
                 pre_split_mode = pre_settings.splitMode or split_mode
-                if pre_split_mode == "ai" and md2map_llm_config is None:
-                    md2map_llm_config = _convert_to_md2map_llm_config(
-                        request.llmConfig
-                    )
                 section_overrides = [
                     {
                         "start_line": start_line,
