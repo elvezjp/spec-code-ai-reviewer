@@ -586,3 +586,288 @@ Step 7: ドキュメント更新
 - [x] 全バックエンドテスト通過（190件）
 - [x] 全フロントエンドテスト通過（205件）
 - [ ] 手動動作確認（コードパートの除外 → 構造マッチング → 除外シンボルがグループに含まれないことの確認）
+
+---
+
+## 追加修正計画（コードレビュー指摘事項）
+
+v0.9.6 の実装完了後のコードレビューで、設計書パートとコードパートの処理を比較した結果、以下の不足・不整合が判明した。
+
+### 問題一覧
+
+| # | 分類 | 概要 | 重要度 |
+|---|---|---|---|
+| 1 | コードパート不足 | `hasCodePendingSummarize` 時の警告メッセージが未実装 | 中 |
+| 2 | コードパート不足 | CodePartsTable にコード内容プレビュー（`PartContentPreview`）がない | 低 |
+| 3 | コードパート不足 | CodePartsTable に要約結果プレビュー（`SummarizedTextPreview`）がない | 低 |
+| 4 | コードパート不足 | コードパーツテーブルに「重要/要約/除外」の説明テキストがない | 低 |
+| 5 | フィルタリング不整合 | `executeSummarize`（設計書）に `!p.excluded` 防御フィルタがない | 低 |
+| 6 | フィルタリング不整合 | `hasPendingSummarize`（設計書）に `!p.excluded` 防御フィルタがない | 低 |
+| 7 | 両者共通バグ | `clearPreview` で `summarizeError` / `codeSummarizeError` がクリアされない | 中 |
+| 8 | 両者共通バグ | `estimatedReviewCount` が除外パートを考慮していない | 低 |
+
+---
+
+### 問題 1: `hasCodePendingSummarize` 時の警告メッセージが未実装
+
+**対象ファイル:** `versions/v0.9.6/frontend/src/features/reviewer/index.tsx`
+
+**現状:** レビューボタンは `hasCodePendingSummarize` で正しく disabled されるが、設計書パートにある「⚠ 要約が選択されていますが未実行です」に相当するメッセージがコードパート側にない。ユーザーにはレビューボタンが押せない理由が分からない。
+
+**修正内容:** `hasPendingSummarize` の警告メッセージの直後に、`hasCodePendingSummarize` 用の同等メッセージを追加する。
+
+```tsx
+{isSplitEnabled && hasCodePendingSummarize && (
+  <p className="text-xs text-orange-500 mt-1 text-center">
+    ⚠ コードパートの要約が選択されていますが未実行です。「選択した要約を実行」をクリックしてから、レビューを実行してください。
+  </p>
+)}
+```
+
+---
+
+### 問題 2: CodePartsTable にコード内容プレビューがない
+
+**対象ファイル:** `versions/v0.9.6/frontend/src/features/reviewer/components/SplitSettingsSection.tsx`
+
+**現状:** 設計書パートの `DocumentPartsTable` には各セクションの内容を展開表示できる `PartContentPreview` コンポーネントがあるが、`CodePartsTable` にはない。
+
+**修正内容:** `CodePartsTable` のシンボル名セルに `PartContentPreview` を追加する。既存の `PartContentPreview` コンポーネントはそのまま再利用可能。
+
+```tsx
+<TableCell>
+  {part.parentSymbol ? `${part.parentSymbol}#${part.symbol}` : part.symbol}
+  <PartContentPreview content={part.content} />  {/* 追加 */}
+</TableCell>
+```
+
+---
+
+### 問題 3: CodePartsTable に要約結果プレビューがない
+
+**対象ファイル:** `versions/v0.9.6/frontend/src/features/reviewer/components/SplitSettingsSection.tsx`
+
+**現状:** 設計書パートには要約完了後に `SummarizedTextPreview` で要約結果を確認できるが、コードパートには要約結果を確認する手段がない。
+
+**修正内容:** `CodePartsTable` のシンボル名セルに `SummarizedTextPreview` を追加する。
+
+```tsx
+<TableCell>
+  {part.parentSymbol ? `${part.parentSymbol}#${part.symbol}` : part.symbol}
+  <PartContentPreview content={part.content} />
+  {/* 追加 ↓ */}
+  {part.summarizedContent && part.summarizeMode === 'summarize' && (
+    <SummarizedTextPreview text={part.summarizedContent} />
+  )}
+</TableCell>
+```
+
+---
+
+### 問題 4: コードパーツテーブルに説明テキストがない
+
+**対象ファイル:** `versions/v0.9.6/frontend/src/features/reviewer/components/SplitSettingsSection.tsx`
+
+**現状:** 設計書パーツセクションにはチェックボックスの使い方を説明するリスト（重要/要約/除外の意味）があるが、コードパーツセクションにはない。
+
+**修正内容:** コードパーツの `<h4>` タグと `<CodePartsTable>` の間に説明テキストを追加する。
+
+```tsx
+<ul className="text-xs text-gray-500 mb-2 list-disc list-inside space-y-0.5">
+  <li><strong>重要</strong>: 分割レビュー時に全てのグループで参照されます。</li>
+  <li><strong>要約</strong>: レビュー時に要約テキストで代替されます。トークン数が大きいシンボルに使用してください。</li>
+  <li><strong>除外</strong>: 構造マッチング・グループレビューの対象から外します。メソッドが個別に存在するクラス全体シンボルの除外に有効です。</li>
+</ul>
+```
+
+---
+
+### 問題 5: `executeSummarize`（設計書）に `!p.excluded` 防御フィルタがない
+
+**対象ファイル:** `versions/v0.9.6/frontend/src/features/reviewer/hooks/useSplitSettings.ts`
+
+**現状:** コードパートの `executeCodeSummarize` は `!p.excluded` でフィルタしているが、設計書パートの `executeSummarize` にはこのフィルタがない。`toggleExcludedDocPart` が `summarizeMode` を `'original'` にリセットするため実害は薄いが、防御的コーディングとして不統一。
+
+**修正内容:** `executeSummarize` のターゲットフィルタに `!p.excluded` を追加する。
+
+```typescript
+// 修正前
+const targets = previewResult.documentParts.filter(
+  (p) => p.summarizeMode === 'summarize' && !p.summarizedContent
+)
+
+// 修正後
+const targets = previewResult.documentParts.filter(
+  (p) => p.summarizeMode === 'summarize' && !p.summarizedContent && !p.excluded
+)
+```
+
+---
+
+### 問題 6: `hasPendingSummarize`（設計書）に `!p.excluded` 防御フィルタがない
+
+**対象ファイル:** `versions/v0.9.6/frontend/src/features/reviewer/hooks/useSplitSettings.ts`
+
+**現状:** 問題 5 と同じ理由で、`hasPendingSummarize` にも `!p.excluded` フィルタがない。
+
+**修正内容:**
+
+```typescript
+// 修正前
+const hasPendingSummarize = useMemo(() => {
+  if (!previewResult?.documentParts) return false
+  return previewResult.documentParts.some(
+    (p) => p.summarizeMode === 'summarize' && !p.summarizedContent
+  )
+}, [previewResult])
+
+// 修正後
+const hasPendingSummarize = useMemo(() => {
+  if (!previewResult?.documentParts) return false
+  return previewResult.documentParts.some(
+    (p) => p.summarizeMode === 'summarize' && !p.summarizedContent && !p.excluded
+  )
+}, [previewResult])
+```
+
+---
+
+### 問題 7: `clearPreview` で要約エラー状態がクリアされない
+
+**対象ファイル:** `versions/v0.9.6/frontend/src/features/reviewer/hooks/useSplitSettings.ts`
+
+**現状:** `clearPreview` は `setError(null)` でプレビューエラーをクリアするが、`summarizeError` と `codeSummarizeError` はクリアしない。プレビュー再実行後に前回の要約エラーメッセージが画面に残る可能性がある。
+
+**修正内容:**
+
+```typescript
+const clearPreview = useCallback(() => {
+  setPreviewResult(null)
+  setPinnedDocPartIds([])
+  setPinnedCodePartIds([])
+  setError(null)
+  setSummarizeError(null)        // 追加
+  setCodeSummarizeError(null)    // 追加
+}, [])
+```
+
+---
+
+### 問題 8: `estimatedReviewCount` が除外パートを考慮していない
+
+**対象ファイル:** `versions/v0.9.6/frontend/src/features/reviewer/hooks/useSplitSettings.ts`
+
+**現状:** レビュー回数の推定で `documentParts?.length` と `codeParts?.length` をそのまま使用しており、除外パートも含めてカウントされるため推定値が過大になる。
+
+**修正内容:**
+
+```typescript
+// 修正前
+const docCount = previewResult.documentParts?.length || 0
+const codeCount = previewResult.codeParts?.length || 0
+
+// 修正後
+const docCount = previewResult.documentParts?.filter(p => !p.excluded).length || 0
+const codeCount = previewResult.codeParts?.filter(p => !p.excluded).length || 0
+```
+
+---
+
+### ドキュメント更新（追加修正に伴う）
+
+問題 1〜4 の修正に伴い、以下のドキュメントも更新が必要。
+
+#### `versions/v0.9.6/spec.md` の更新
+
+**2.7.5 分割プレビュー — コードパーツテーブル（問題 2, 3 対応）:**
+
+コードパーツテーブルの説明にコンテンツプレビュー・要約結果プレビュー機能を追記する。
+
+```markdown
+// 修正前（推定トークン行の後）
+コードパートの除外・重要指定・要約は設計書パートと同じ操作性で提供される。
+
+// 修正後
+各コードシンボルは「内容を表示」で展開表示でき、要約実行後は「要約結果を表示」で要約内容を確認できる。
+コードパートの除外・重要指定・要約は設計書パートと同じ操作性で提供される。
+```
+
+**2.7.7 事前要約機能（問題 1 対応）:**
+
+事前要約機能の説明がほぼ設計書パートのみの記述になっているため、コードパートにも適用される旨を追記する。
+
+```markdown
+// 修正前
+分割プレビューで設計書パートを事前に要約し、グループレビュー時のトークン消費を削減する機能。
+
+// 修正後
+分割プレビューで設計書パートおよびコードパートを事前に要約し、グループレビュー時のトークン消費を削減する機能。
+```
+
+```markdown
+// 修正前（要約フロー 1行目）
+1. 分割プレビューの設計書パーツテーブルで、各パートの「要約」チェックボックスを選択
+
+// 修正後
+1. 分割プレビューの設計書パーツテーブルまたはコードパーツテーブルで、各パートの「要約」チェックボックスを選択
+```
+
+```markdown
+// 修正前（レビュー実行時の動作）
+- 「要約」選択かつ未実行のパートがある場合、レビュー実行ボタンは disabled
+
+// 修正後
+- 設計書またはコードで「要約」選択かつ未実行のパートがある場合、レビュー実行ボタンは disabled となり、該当する警告メッセージが表示される
+```
+
+```markdown
+// 修正前（要約API）
+- 要約は `/api/summarize` エンドポイントを使用（`targetType: "design"`）
+
+// 修正後
+- 設計書の要約は `/api/summarize` エンドポイントを使用（`targetType: "design"`）
+- コードの要約は同エンドポイントを使用（`targetType: "code"`）
+```
+
+**2.7.6 セクション除外機能（問題 2 対応）:**
+
+除外フローの確認手段にコードパートの記述を追記する。
+
+```markdown
+// 修正前（除外フロー 1行目）
+1. 分割プレビューの設計書パーツテーブルで、各パートの「内容を表示」で内容を確認する
+
+// 修正後
+1. 分割プレビューの設計書パーツテーブルまたはコードパーツテーブルで、各パートの「内容を表示」で内容を確認する
+```
+
+#### `docs/split-review.md` の更新
+
+**4.2 セクション除外（問題 2 対応）:**
+
+コードパートでもコンテンツプレビューが利用できる旨を補足する（現状は設計書側の除外フローでのみ言及あり、変更後は両方で「内容を表示」が利用可能になるため）。
+
+**4.3 事前要約（問題 1 対応）:**
+
+レビュー実行ボタンのdisabled条件に警告メッセージの表示を追記する。
+
+```markdown
+// 追記
+- 設計書またはコードで「要約」選択かつ未実行のパートがある場合、レビュー実行ボタンは disabled となり、該当する警告メッセージが表示される
+```
+
+---
+
+### 追加修正の完了チェックリスト
+
+- [ ] 問題 1: `hasCodePendingSummarize` 警告メッセージの追加
+- [ ] 問題 2: CodePartsTable に `PartContentPreview` を追加
+- [ ] 問題 3: CodePartsTable に `SummarizedTextPreview` を追加
+- [ ] 問題 4: コードパーツテーブルに説明テキストを追加
+- [ ] 問題 5: `executeSummarize` に `!p.excluded` フィルタを追加
+- [ ] 問題 6: `hasPendingSummarize` に `!p.excluded` フィルタを追加
+- [ ] 問題 7: `clearPreview` に要約エラー状態のクリアを追加
+- [ ] 問題 8: `estimatedReviewCount` で除外パートを除外
+- [ ] `versions/v0.9.6/spec.md` のドキュメント更新（2.7.5, 2.7.6, 2.7.7）
+- [ ] `docs/split-review.md` のドキュメント更新（4.2, 4.3）
+- [ ] 全フロントエンドテスト通過
