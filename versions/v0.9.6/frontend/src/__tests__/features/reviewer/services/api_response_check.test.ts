@@ -247,13 +247,13 @@ describe('fetchHealth', () => {
   it('UT-ARCK-020: 正常レスポンス', async () => {
     ;(global.fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ status: 'healthy', version: '0.9.5' }),
+      json: async () => ({ status: 'healthy', version: '0.9.6' }),
     })
 
     const result = await fetchHealth()
     expect(result.ok).toBe(true)
     if (result.ok) {
-      expect(result.data).toEqual({ status: 'healthy', version: '0.9.5' })
+      expect(result.data).toEqual({ status: 'healthy', version: '0.9.6' })
     }
     expect(global.fetch).toHaveBeenCalledWith('/api/health')
   })
