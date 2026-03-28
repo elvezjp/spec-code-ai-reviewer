@@ -93,6 +93,11 @@ export function IntegrateRetrySettingsPanel({
     }
 
     setSummarizingGroupIds(new Set())
+    // 要約完了後、ローカルの updatedGroups で判定（propsのsummarizeStateはまだ更新前のため）
+    const hasPending = completedGroups.some(
+      (g) => groupModes[g.groupId] === 'summarize' && !updatedGroups.find(s => s.groupId === g.groupId)?.summarizedReport
+    )
+    onModeChange?.(hasPending)
   }
 
   const handleModeChange = (groupId: string, mode: 'original' | 'summarize') => {

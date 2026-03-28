@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Estimated review count excludes excluded parts**: Fixed `estimatedReviewCount` to exclude excluded parts from count
 - **Retry settings summarize preview left-align**: Fixed summarized text being center-aligned in retry settings panel during split review execution
 - **Code parts table horizontal scroll fix**: Inlined symbol type into symbol name column and used `table-fixed` to prevent horizontal scrolling
+- **Integration retry button not enabling after summarization** (#92): Fixed retry button remaining disabled after all group summarizations complete. The pending check was referencing stale props instead of local summarization results
 
 ### Changed
 - **md2map update**: Updated subtree to latest
