@@ -12,10 +12,10 @@ const VERSIONS = [
   { name: 'spec-code-ai-reviewer-v0.9.2', cwd: 'versions/v0.9.2', port: 8092, workers: 1 },
   { name: 'spec-code-ai-reviewer-v0.9.1', cwd: 'versions/v0.9.1', port: 8091, workers: 1 },
   { name: 'spec-code-ai-reviewer-v0.9.0', cwd: 'versions/v0.9.0', port: 8090, workers: 1 },
-  { name: 'spec-code-ai-reviewer-v0.8.2', cwd: 'versions/v0.8.2', port: 8082, workers: 1 },
-  { name: 'spec-code-ai-reviewer-v0.8.1', cwd: 'versions/v0.8.1', port: 8081, workers: 1 },
-  { name: 'spec-code-ai-reviewer-v0.8.0', cwd: 'versions/v0.8.0', port: 8080, workers: 1 },
-  // v0.7.0以前は起動対象外
+  // v0.8.2以前は起動対象外
+  // { name: 'spec-code-ai-reviewer-v0.8.2', cwd: 'versions/v0.8.2', port: 8082, workers: 1 },
+  // { name: 'spec-code-ai-reviewer-v0.8.1', cwd: 'versions/v0.8.1', port: 8081, workers: 1 },
+  // { name: 'spec-code-ai-reviewer-v0.8.0', cwd: 'versions/v0.8.0', port: 8080, workers: 1 },
   // { name: 'spec-code-ai-reviewer-v0.7.0', cwd: 'versions/v0.7.0', port: 8070, workers: 1 },
   // { name: 'spec-code-ai-reviewer-v0.6.0', cwd: 'versions/v0.6.0', port: 8060, workers: 1 },
   // { name: 'spec-code-ai-reviewer-v0.5.2', cwd: 'versions/v0.5.2', port: 8052, workers: 1 },
