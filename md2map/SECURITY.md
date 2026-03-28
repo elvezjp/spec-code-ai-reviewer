@@ -8,8 +8,8 @@ Security updates are provided for the following versions. We recommend using the
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.4.1   | :white_check_mark: |
-| < 0.4.1 | :x:                |
+| 0.4.2   | :white_check_mark: |
+| < 0.4.2 | :x:                |
 
 ## Reporting a Vulnerability
 
