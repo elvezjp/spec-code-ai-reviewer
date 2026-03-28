@@ -1,0 +1,62 @@
+[
+  {
+    "id": "MD1",
+    "section": "設計書: 20260121AIオーディター形式サンプルコーディング規約.xlsx",
+    "level": 1,
+    "path": "設計書: 20260121AIオーディター形式サンプルコーディング規約.xlsx",
+    "original_file": "20260218サンプルコーディング規約.md",
+    "original_start_line": 1,
+    "original_end_line": 5,
+    "word_count": 84,
+    "part_file": "parts/設計書_20260121AIオーディター形式サンプルコーディング規約.xlsx.md",
+    "checksum": "bdb0d818feb12e008d455d3b3985a13a1e8d0f9c9176c94f15578c0aa37a3f94"
+  },
+  {
+    "id": "MD2",
+    "section": "コーディング規約一覧",
+    "level": 2,
+    "path": "設計書: 20260121AIオーディター形式サンプルコーディング規約.xlsx > コーディング規約一覧",
+    "original_file": "20260218サンプルコーディング規約.md",
+    "original_start_line": 6,
+    "original_end_line": 51,
+    "word_count": 1634,
+    "part_file": "parts/設計書_20260121AIオーディター形式サンプルコーディング規約.xlsx_コーディング規約一覧.md",
+    "checksum": "bc874c61955061f40d68846ec3f48b2d0ad886da28d7156a5125f5e22cde00bb"
+  },
+  {
+    "id": "MD3",
+    "section": "補足",
+    "level": 3,
+    "path": "設計書: 20260121AIオーディター形式サンプルコーディング規約.xlsx > コーディング規約一覧 > 補足",
+    "original_file": "20260218サンプルコーディング規約.md",
+    "original_start_line": 52,
+    "original_end_line": 55,
+    "word_count": 86,
+    "part_file": "parts/設計書_20260121AIオーディター形式サンプルコーディング規約.xlsx_コーディング規約一覧_補足.md",
+    "checksum": "f2a79d4e3dce4b1ab1bafd4128c0110b453ab8516b92caff883cb791f472fdef"
+  },
+  {
+    "id": "MD4",
+    "section": "命名規則全般（1）",
+    "level": 2,
+    "path": "設計書: 20260121AIオーディター形式サンプルコーディング規約.xlsx > 命名規則全般（1）",
+    "original_file": "20260218サンプルコーディング規約.md",
+    "original_start_line": 56,
+    "original_end_line": 67,
+    "word_count": 140,
+    "part_file": "parts/設計書_20260121AIオーディター形式サンプルコーディング規約.xlsx_命名規則全般（1）.md",
+    "checksum": "8221c69dc8b3ba8820ce49765591107937504efa6b06847fbe072ab4ce78ef3b"
+  },
+  {
+    "id": "MD5",
+    "section": "命名規則クラス（1）",
+    "level": 2,
+    "path": "設計書: 20260121AIオーディター形式サンプルコーディング規約.xlsx > 命名規則クラス（1）",
+    "original_file": "20260218サンプルコーディング規約.md",
+    "original_start_line": 68,
+    "original_end_line": 110,
+    "word_count": 1261,
+    "part_file": "parts/設計書_20260121AIオーディター形式サンプルコーディング規約.xlsx_命名規則クラス（1）.md",
+    "checksum": "a022cc75ea9cd7734104da807fa4159a85b80eb6a6c4cbbbd9fa1c761bef29b6"
+  }
+]

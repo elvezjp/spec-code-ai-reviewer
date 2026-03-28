@@ -7,6 +7,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2026-03-28
+
+Updated OpenAI and Bedrock LLM provider API calls to latest specifications. OpenAI now uses `max_completion_tokens` parameter (required for gpt-5.2+). Bedrock migrated from `invoke_model` to Converse API for multi-model support.
+
+### Changed
+
+- **OpenAI provider**: Changed `max_tokens` parameter to `max_completion_tokens` in `chat.completions.create()` call
+  - Required for newer OpenAI models (gpt-5.2 and later) that no longer support `max_tokens`
+
+- **Bedrock provider**: Migrated from `invoke_model` (raw JSON body) to `converse` API
+  - Replaced Anthropic-specific `anthropic_version` + `invoke_model` with model-agnostic Converse API
+  - Token limit now specified via `inferenceConfig={"maxTokens": ...}` instead of JSON body
+  - Supports Anthropic, Amazon Nova, and other Bedrock-compatible models
+  - Removed `import json` dependency (no longer needed)
+
+### Added
+
+- **`.env` file support**: CLI now loads `.env` file at startup via `python-dotenv`
+  - Existing environment variables take precedence (`override=False`)
+  - `.env.example` template included for reference
+  - `python-dotenv` added to `ai` optional dependencies
+
+- **Authentication documentation**: Added credential setup guide to README
+  - Required environment variables per provider (OpenAI / Anthropic / Bedrock)
+  - `.env` file usage instructions
+  - LLM config resolution order documented in spec.md
+
+### Known Limitations
+
+This version has the following limitations:
+
+- NLP mode requires SudachiPy installation
+- AI mode requires API keys or AWS credentials for each provider
+- Single file processing only (directory-level analysis not supported)
+- ATX-style headings only (Setext-style underline headings not supported)
+
 ## [0.4.1] - 2026-03-26
 
 Improved error reporting by including LLM call failure information in the `warnings` list returned by `parse()`. Callers (e.g., backend APIs) can now detect AI split and AI summary failures. Also fixed subsplits to inherit parent section's `section_overrides` settings.
@@ -258,8 +294,31 @@ This version has the following limitations:
 - ATX-style headings only (Setext-style underline headings not supported)
 - Internal link auto-correction not supported (detection only)
 
+## Version Comparison
+
+| Version | Highlights |
+| ------- | ---------- |
+| 0.4.2 | OpenAI/Bedrock client APIs updated; `.env` loading; authentication docs |
+| 0.4.1 | LLM failures surfaced in `parse()` warnings; subsplit inherits `section_overrides` |
+| 0.4.0 | Configurable rule-based summaries; per-section AI summary mode |
+| 0.3.2 | `section_overrides` `skip` to exclude sections (and children) from parsing |
+| 0.3.1 | `headings` subcommand; `--section-overrides`; lazy LLM/NLP initialization |
+| 0.3.0 | AI prompt `notes` customization; stable `part-N` subsplit naming |
+| 0.2.0 | NLP and AI split modes; multi-provider LLM (OpenAI, Anthropic, Bedrock) |
+| 0.1.0 | Initial release: heading-based split, INDEX.md, parts/, MAP.json |
+
+For frozen source trees per release, see [versions/README.md](versions/README.md).
+
 ## Links
 
 - [Repository](https://github.com/elvezjp/md2map)
 - [Issue Tracker](https://github.com/elvezjp/md2map/issues)
-- [Version Comparison](versions/README.md)
+
+[0.4.2]: https://github.com/elvezjp/md2map/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/elvezjp/md2map/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/elvezjp/md2map/compare/v0.3.2...v0.4.0
+[0.3.2]: https://github.com/elvezjp/md2map/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/elvezjp/md2map/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/elvezjp/md2map/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/elvezjp/md2map/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/elvezjp/md2map/releases/tag/v0.1.0

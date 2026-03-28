@@ -96,6 +96,29 @@ uv run md2map build document.md --split-mode nlp
 uv run md2map build document.md --split-mode nlp --split-threshold 300
 ```
 
+### Authentication (AI Mode)
+
+AI mode requires credentials for the selected provider. Set them via environment variables or a `.env` file.
+
+| Provider | Required Environment Variables | Default Model |
+|----------|-------------------------------|---------------|
+| OpenAI | `OPENAI_API_KEY` | `gpt-4o-mini` |
+| Anthropic | `ANTHROPIC_API_KEY` | `claude-haiku-4-5-20251001` |
+| Bedrock | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` (or IAM role) | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
+
+You can also set `MD2MAP_AI_MODEL` to override the default model for any provider.
+
+#### Using a `.env` file
+
+Copy the template and fill in your credentials:
+
+```bash
+cp .env.example .env
+# Edit .env with your credentials
+```
+
+Environment variables set in the shell take precedence over `.env` values.
+
 ### AI Mode Splitting
 
 ```bash
@@ -272,6 +295,7 @@ md2map/
 │   ├── v0.3.1/            # v0.3.1 snapshot
 │   ├── v0.3.2/            # v0.3.2 snapshot
 │   ├── v0.4.0/            # v0.4.0 snapshot
+│   ├── v0.4.1/            # v0.4.1 snapshot
 │   └── README.md          # versions directory description
 ├── CHANGELOG.md           # Version history (English)
 ├── CHANGELOG_ja.md        # Version history (Japanese)

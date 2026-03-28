@@ -539,16 +539,19 @@ AI モードは複数の LLM プロバイダーに対応する。プロバイダ
 
 **対応プロバイダー**:
 
-| プロバイダー | 実装クラス | 必要な認証情報 | デフォルトモデル |
-|-------------|-----------|---------------|-----------------|
-| `openai` | `OpenAIProvider` | `OPENAI_API_KEY` 環境変数 | `gpt-4o-mini` |
-| `anthropic` | `AnthropicProvider` | `ANTHROPIC_API_KEY` 環境変数 | `claude-haiku-4-5-20251001` |
-| `bedrock` | `BedrockProvider` | AWS 認証情報（IAM ロールまたは環境変数） | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
+| プロバイダー | 実装クラス | API 方式 | 必要な認証情報 | デフォルトモデル |
+|-------------|-----------|---------|---------------|-----------------|
+| `openai` | `OpenAIProvider` | `chat.completions.create` （`max_completion_tokens`） | `OPENAI_API_KEY` 環境変数 | `gpt-4o-mini` |
+| `anthropic` | `AnthropicProvider` | `messages.create`（`max_tokens`） | `ANTHROPIC_API_KEY` 環境変数 | `claude-haiku-4-5-20251001` |
+| `bedrock` | `BedrockProvider` | Converse API（`inferenceConfig.maxTokens`） | AWS 認証情報（IAM ロールまたは環境変数） | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 
 **LLM 設定の解決順序**:
-1. CLI オプション（`--ai-model`, `--ai-region`）
-2. 環境変数（`MD2MAP_AI_MODEL`, `AWS_REGION` 等）
-3. プロバイダーごとのデフォルト値
+1. `llm_provider`（プロバイダーインスタンスの直接注入 — 外部アプリ・テスト用）
+2. `llm_config`（設定オブジェクトの直接注入 — 外部アプリ用）
+3. CLI オプション（`--ai-model`, `--ai-region`）
+4. 環境変数（`MD2MAP_AI_MODEL`, `AWS_REGION` 等）
+5. `.env` ファイル（`override=False` のため、既存環境変数より低優先）
+6. プロバイダーごとのデフォルト値
 
 **最大出力トークン数**: 800（固定）
 

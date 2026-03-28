@@ -179,6 +179,116 @@ class MockLLMProvider(BaseLLMProvider):
         return self.response_text
 
 
+# ---------------------------------------------------------------------------
+# OpenAI プロバイダー API 呼び出しテスト
+# ---------------------------------------------------------------------------
+
+
+class TestOpenAIProviderAPICall:
+    """OpenAI プロバイダーの API 呼び出しパラメータテスト"""
+
+    def test_uses_max_completion_tokens(self):
+        """max_completion_tokens パラメータで API が呼ばれることを確認"""
+        config = LLMConfig(provider="openai", model="gpt-4o-mini", api_key="sk-test", max_tokens=800)
+
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "test response"
+        mock_client.chat.completions.create.return_value = mock_response
+
+        mock_openai_module = MagicMock()
+        mock_openai_module.OpenAI.return_value = mock_client
+
+        with patch.dict("sys.modules", {"openai": mock_openai_module}):
+            # モジュールキャッシュをクリアして再インポート
+            import importlib
+            import md2map.llm.openai_provider as oai_mod
+            importlib.reload(oai_mod)
+            provider = oai_mod.OpenAIProvider(config)
+            result = provider.send_message("system", "user")
+
+        call_kwargs = mock_client.chat.completions.create.call_args
+        assert "max_completion_tokens" in call_kwargs.kwargs
+        assert "max_tokens" not in call_kwargs.kwargs
+        assert call_kwargs.kwargs["max_completion_tokens"] == 800
+        assert result == "test response"
+
+
+# ---------------------------------------------------------------------------
+# Bedrock プロバイダー API 呼び出しテスト
+# ---------------------------------------------------------------------------
+
+
+class TestBedrockProviderAPICall:
+    """Bedrock プロバイダーの Converse API 呼び出しテスト"""
+
+    def test_uses_converse_api(self):
+        """converse API が正しいパラメータで呼ばれることを確認"""
+        config = LLMConfig(
+            provider="bedrock",
+            model="anthropic.claude-haiku-4-5-20251001-v1:0",
+            region="us-east-1",
+            max_tokens=800,
+        )
+
+        mock_client = MagicMock()
+        mock_client.converse.return_value = {
+            "output": {
+                "message": {
+                    "content": [{"text": "test response"}],
+                },
+            },
+        }
+
+        mock_boto3_module = MagicMock()
+        mock_boto3_module.client.return_value = mock_client
+
+        with patch.dict("sys.modules", {"boto3": mock_boto3_module}):
+            import importlib
+            import md2map.llm.bedrock_provider as br_mod
+            importlib.reload(br_mod)
+            provider = br_mod.BedrockProvider(config)
+            result = provider.send_message("system prompt", "user message")
+
+        mock_client.converse.assert_called_once()
+        call_kwargs = mock_client.converse.call_args.kwargs
+        assert call_kwargs["modelId"] == "anthropic.claude-haiku-4-5-20251001-v1:0"
+        assert call_kwargs["system"] == [{"text": "system prompt"}]
+        assert call_kwargs["messages"] == [{"role": "user", "content": [{"text": "user message"}]}]
+        assert call_kwargs["inferenceConfig"] == {"maxTokens": 800}
+        assert result == "test response"
+
+    def test_converse_empty_response_raises(self):
+        """Converse API が空レスポンスを返した場合に RuntimeError"""
+        config = LLMConfig(
+            provider="bedrock",
+            model="anthropic.claude-haiku-4-5-20251001-v1:0",
+            region="us-east-1",
+        )
+
+        mock_client = MagicMock()
+        mock_client.converse.return_value = {
+            "output": {"message": {"content": []}},
+        }
+
+        mock_boto3_module = MagicMock()
+        mock_boto3_module.client.return_value = mock_client
+
+        with patch.dict("sys.modules", {"boto3": mock_boto3_module}):
+            import importlib
+            import md2map.llm.bedrock_provider as br_mod
+            importlib.reload(br_mod)
+            provider = br_mod.BedrockProvider(config)
+            with pytest.raises(RuntimeError, match="empty response"):
+                provider.send_message("system", "user")
+
+
+# ---------------------------------------------------------------------------
+# MarkdownParser への注入テスト
+# ---------------------------------------------------------------------------
+
+
 class TestMarkdownParserLLMInjection:
     """MarkdownParser への LLM プロバイダー注入テスト"""
 
