@@ -1,13 +1,11 @@
 """Amazon Bedrock プロバイダー"""
 
-import json
-
 from md2map.llm.base_provider import BaseLLMProvider
 from md2map.llm.config import LLMConfig
 
 
 class BedrockProvider(BaseLLMProvider):
-    """Amazon Bedrock (Claude) を使用する LLM プロバイダー"""
+    """Amazon Bedrock (Converse API) を使用する LLM プロバイダー"""
 
     def __init__(self, config: LLMConfig) -> None:
         try:
@@ -33,24 +31,19 @@ class BedrockProvider(BaseLLMProvider):
         self._client = boto3.client(**client_kwargs)
 
     def send_message(self, system_prompt: str, user_message: str) -> str:
-        body = json.dumps({
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": self._max_tokens,
-            "system": system_prompt,
-            "messages": [
-                {"role": "user", "content": user_message},
-            ],
-        })
-
-        response = self._client.invoke_model(
+        response = self._client.converse(
             modelId=self._model,
-            contentType="application/json",
-            accept="application/json",
-            body=body,
+            messages=[{
+                "role": "user",
+                "content": [{"text": user_message}],
+            }],
+            system=[{"text": system_prompt}],
+            inferenceConfig={"maxTokens": self._max_tokens},
         )
 
-        response_body = json.loads(response["body"].read())
-        content = response_body.get("content", [])
+        output = response.get("output", {})
+        message = output.get("message", {})
+        content = message.get("content", [])
         if not content or not content[0].get("text"):
             raise RuntimeError("Bedrock API returned empty response")
         return content[0]["text"]

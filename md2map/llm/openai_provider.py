@@ -27,7 +27,7 @@ class OpenAIProvider(BaseLLMProvider):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},
             ],
-            max_tokens=self._max_tokens,
+            max_completion_tokens=self._max_tokens,
         )
         if not response.choices or not response.choices[0].message.content:
             raise RuntimeError("OpenAI API returned empty response")

@@ -5,6 +5,7 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -237,6 +238,52 @@ class TestCLIOutput:
             assert "section:" in content
             assert "level:" in content
             assert "-->" in content
+
+
+# ---------------------------------------------------------------------------
+# dotenv 読み込みテスト
+# ---------------------------------------------------------------------------
+
+
+class TestDotenvLoading:
+    """CLI の .env ファイル読み込みテスト"""
+
+    def test_load_dotenv_called_on_main(self):
+        """main() 実行時に load_dotenv が呼ばれることを確認"""
+        mock_load_dotenv = MagicMock()
+        mock_dotenv_module = MagicMock()
+        mock_dotenv_module.load_dotenv = mock_load_dotenv
+
+        with patch.dict("sys.modules", {"dotenv": mock_dotenv_module}):
+            import importlib
+            import md2map.cli as cli_mod
+            importlib.reload(cli_mod)
+            # 引数なしは SystemExit(2) になるが、load_dotenv はその前に呼ばれる
+            with patch("sys.argv", ["md2map"]):
+                with pytest.raises(SystemExit):
+                    cli_mod.main()
+            mock_load_dotenv.assert_called_once_with(override=False)
+
+    def test_dotenv_import_error_ignored(self):
+        """python-dotenv が未インストールでもエラーにならないことを確認"""
+        with patch.dict("sys.modules", {"dotenv": None}):
+            import importlib
+            import md2map.cli as cli_mod
+            importlib.reload(cli_mod)
+            # ImportError が握りつぶされ、argparse まで到達する（SystemExit はサブコマンド未指定のため）
+            with patch("sys.argv", ["md2map"]):
+                with pytest.raises(SystemExit) as exc_info:
+                    cli_mod.main()
+                # argparse の usage エラー（exit code 2）に到達 = dotenv の ImportError で落ちていない
+                assert exc_info.value.code == 2
+
+    def test_env_var_takes_precedence_over_dotenv(self):
+        """環境変数が .env より優先されることを確認"""
+        # override=False なので、既存の環境変数が優先される
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "from-env"}, clear=False):
+            from md2map.llm.factory import build_llm_config_from_env
+            config = build_llm_config_from_env(provider="openai")
+            assert config.api_key == "from-env"
 
 
 class TestCLIJapanese:

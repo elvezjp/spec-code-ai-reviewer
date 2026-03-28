@@ -300,6 +300,12 @@ def main() -> int:
     Returns:
         終了コード
     """
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(override=False)
+    except ImportError:
+        pass
+
     parser = build_arg_parser()
     args = parser.parse_args()
 
