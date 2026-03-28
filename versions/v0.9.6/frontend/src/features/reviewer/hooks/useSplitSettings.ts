@@ -30,6 +30,12 @@ interface UseSplitSettingsReturn {
   summarizingPartIds: Set<string>
   summarizeError: string | null
 
+  // コードパート State
+  pinnedCodePartIds: string[]
+  isCodeSummarizing: boolean
+  codeSummarizingPartIds: Set<string>
+  codeSummarizeError: string | null
+
   // 事前重要指定 State
   headings: HeadingInfo[]
   isLoadingHeadings: boolean
@@ -60,11 +66,18 @@ interface UseSplitSettingsReturn {
   setNormalSplitSettings: (settings: PreImportantSplitSettings) => void
   clearHeadingsCache: () => void
 
+  // コードパート Actions
+  togglePinnedCodePart: (partId: string) => void
+  toggleCodeSummarizeMode: (partId: string) => void
+  toggleExcludedCodePart: (partId: string) => void
+  executeCodeSummarize: (llmConfig?: LlmConfig | null) => Promise<void>
+
   // Computed
   isSplitEnabled: boolean
   reviewMode: 'batch' | 'split'
   estimatedReviewCount: number
   hasPendingSummarize: boolean
+  hasCodePendingSummarize: boolean
 }
 
 const DEFAULT_SETTINGS: SplitSettings = {
@@ -83,6 +96,12 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   const [isSummarizing, setIsSummarizing] = useState(false)
   const [summarizingPartIds, setSummarizingPartIds] = useState<Set<string>>(new Set())
   const [summarizeError, setSummarizeError] = useState<string | null>(null)
+
+  // コードパート State
+  const [pinnedCodePartIds, setPinnedCodePartIds] = useState<string[]>([])
+  const [isCodeSummarizing, setIsCodeSummarizing] = useState(false)
+  const [codeSummarizingPartIds, setCodeSummarizingPartIds] = useState<Set<string>>(new Set())
+  const [codeSummarizeError, setCodeSummarizeError] = useState<string | null>(null)
 
   // 事前重要指定 State
   const [headings, setHeadings] = useState<HeadingInfo[]>([])
@@ -203,6 +222,111 @@ export function useSplitSettings(): UseSplitSettingsReturn {
 
     setSummarizingPartIds(new Set())
     setIsSummarizing(false)
+  }, [previewResult])
+
+  // コードパート: 除外トグル
+  const toggleExcludedCodePart = useCallback((partId: string) => {
+    setPreviewResult((prev) => {
+      if (!prev || !prev.codeParts) return prev
+      const target = prev.codeParts.find((p) => p.id === partId)
+      if (!target) return prev
+      const newExcluded = !target.excluded
+      return {
+        ...prev,
+        codeParts: prev.codeParts.map((p) =>
+          p.id === partId
+            ? {
+                ...p,
+                excluded: newExcluded,
+                ...(newExcluded ? { summarizeMode: 'original' as const } : {}),
+              }
+            : p
+        ),
+      }
+    })
+    setPinnedCodePartIds((prev) => prev.filter((id) => id !== partId))
+  }, [])
+
+  // コードパート: 重要指定トグル
+  const togglePinnedCodePart = useCallback((partId: string) => {
+    setPinnedCodePartIds(prev =>
+      prev.includes(partId)
+        ? prev.filter(id => id !== partId)
+        : [...prev, partId]
+    )
+  }, [])
+
+  // コードパート: 要約モードトグル
+  const toggleCodeSummarizeMode = useCallback((partId: string) => {
+    setPreviewResult((prev) => {
+      if (!prev || !prev.codeParts) return prev
+      return {
+        ...prev,
+        codeParts: prev.codeParts.map((p) =>
+          p.id === partId
+            ? {
+                ...p,
+                summarizeMode: p.summarizeMode === 'summarize' ? 'original' as const : 'summarize' as const,
+              }
+            : p
+        ),
+      }
+    })
+  }, [])
+
+  // コードパート: 要約実行
+  const executeCodeSummarize = useCallback(async (llmConfig?: LlmConfig | null) => {
+    if (!previewResult?.codeParts) return
+
+    const targets = previewResult.codeParts.filter(
+      (p) => p.summarizeMode === 'summarize' && !p.summarizedContent && !p.excluded
+    )
+    if (targets.length === 0) return
+
+    setIsCodeSummarizing(true)
+    setCodeSummarizeError(null)
+
+    for (const part of targets) {
+      setCodeSummarizingPartIds(new Set([part.id]))
+
+      try {
+        const response = await api.executeSummarize({
+          text: part.content,
+          targetType: 'code',
+          llmConfig: llmConfig || undefined,
+        })
+
+        if (response.success) {
+          setPreviewResult((prev) => {
+            if (!prev || !prev.codeParts) return prev
+            return {
+              ...prev,
+              codeParts: prev.codeParts.map((p) =>
+                p.id === part.id
+                  ? {
+                      ...p,
+                      summarizedContent: response.summarizedText || undefined,
+                      summarizedTokens: response.summarizedTokens || undefined,
+                    }
+                  : p
+              ),
+            }
+          })
+        } else {
+          const symbolName = part.parentSymbol ? `${part.parentSymbol}#${part.symbol}` : part.symbol
+          setCodeSummarizeError(`「${symbolName}」の要約に失敗しました: ${response.error || '不明なエラー'}`)
+          break
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : '不明なエラー'
+        const symbolName = part.parentSymbol ? `${part.parentSymbol}#${part.symbol}` : part.symbol
+        setCodeSummarizeError(`「${symbolName}」の要約に失敗しました: ${message}`)
+        break
+      }
+    }
+
+    setCodeSummarizingPartIds(new Set())
+    setIsCodeSummarizing(false)
   }, [previewResult])
 
   // 見出し一覧取得（キャッシュ対応）
@@ -418,7 +542,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
 
       setPreviewResult({
         documentParts: documentParts?.map((p) => ({ ...p, summarizeMode: 'original' as const, excluded: false })) || null,
-        codeParts,
+        codeParts: codeParts?.map((p) => ({ ...p, excluded: false, summarizeMode: 'original' as const })) || null,
         documentIndex,
         documentMapJson,
         codeIndex,
@@ -441,6 +565,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   const clearPreview = useCallback(() => {
     setPreviewResult(null)
     setPinnedDocPartIds([])
+    setPinnedCodePartIds([])
     setError(null)
   }, [])
 
@@ -453,6 +578,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     // 設定が変更されたらプレビュー結果をクリア
     setPreviewResult(null)
     setPinnedDocPartIds([])
+    setPinnedCodePartIds([])
     setError(null)
   }, [])
 
@@ -463,6 +589,13 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     if (!previewResult?.documentParts) return false
     return previewResult.documentParts.some(
       (p) => p.summarizeMode === 'summarize' && !p.summarizedContent
+    )
+  }, [previewResult])
+
+  const hasCodePendingSummarize = useMemo(() => {
+    if (!previewResult?.codeParts) return false
+    return previewResult.codeParts.some(
+      (p) => p.summarizeMode === 'summarize' && !p.summarizedContent && !p.excluded
     )
   }, [previewResult])
 
@@ -494,6 +627,10 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     isSummarizing,
     summarizingPartIds,
     summarizeError,
+    pinnedCodePartIds,
+    isCodeSummarizing,
+    codeSummarizingPartIds,
+    codeSummarizeError,
     headings,
     isLoadingHeadings,
     headingsError,
@@ -515,9 +652,14 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     setPreImportantSplitSettings,
     setNormalSplitSettings,
     clearHeadingsCache,
+    togglePinnedCodePart,
+    toggleCodeSummarizeMode,
+    toggleExcludedCodePart,
+    executeCodeSummarize,
     isSplitEnabled,
     reviewMode,
     estimatedReviewCount,
     hasPendingSummarize,
+    hasCodePendingSummarize,
   }
 }

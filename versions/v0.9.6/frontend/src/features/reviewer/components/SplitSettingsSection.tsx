@@ -52,6 +52,16 @@ interface SplitSettingsSectionProps {
   normalSplitSettings: PreImportantSplitSettings
   onPreImportantSplitSettingsChange: (settings: PreImportantSplitSettings) => void
   onNormalSplitSettingsChange: (settings: PreImportantSplitSettings) => void
+  // コードパート関連
+  pinnedCodePartIds: string[]
+  onTogglePinnedCodePart: (partId: string) => void
+  onToggleCodeSummarizeMode: (partId: string) => void
+  onToggleExcludedCodePart: (partId: string) => void
+  isCodeSummarizing: boolean
+  codeSummarizingPartIds: Set<string>
+  hasCodePendingSummarize: boolean
+  codeSummarizeError: string | null
+  onExecuteCodeSummarize: () => void
 }
 
 export function SplitSettingsSection({
@@ -86,6 +96,15 @@ export function SplitSettingsSection({
   normalSplitSettings,
   onPreImportantSplitSettingsChange,
   onNormalSplitSettingsChange,
+  pinnedCodePartIds,
+  onTogglePinnedCodePart,
+  onToggleCodeSummarizeMode,
+  onToggleExcludedCodePart,
+  isCodeSummarizing,
+  codeSummarizingPartIds,
+  hasCodePendingSummarize,
+  codeSummarizeError,
+  onExecuteCodeSummarize,
 }: SplitSettingsSectionProps) {
   const [isOptionsExpanded, setIsOptionsExpanded] = useState(true)
   const prevHasDesignDocRef = useRef(hasDesignDoc)
@@ -422,7 +441,21 @@ export function SplitSettingsSection({
                   )}
                 </span>
               </h4>
-              <CodePartsTable parts={previewResult.codeParts} />
+              <CodePartsTable
+                parts={previewResult.codeParts}
+                pinnedCodePartIds={pinnedCodePartIds}
+                onTogglePinnedCodePart={onTogglePinnedCodePart}
+                onToggleCodeSummarizeMode={onToggleCodeSummarizeMode}
+                onToggleExcludedCodePart={onToggleExcludedCodePart}
+                codeSummarizingPartIds={codeSummarizingPartIds}
+              />
+              <CodeSummarizeExecuteRow
+                parts={previewResult.codeParts}
+                isCodeSummarizing={isCodeSummarizing}
+                hasCodePendingSummarize={hasCodePendingSummarize}
+                codeSummarizeError={codeSummarizeError}
+                onExecuteCodeSummarize={onExecuteCodeSummarize}
+              />
               {previewResult.codeWarnings && previewResult.codeWarnings.length > 0 && (
                 <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded">
                   <p className="text-sm font-medium text-amber-800">
@@ -811,12 +844,29 @@ function SummarizedTextPreview({ text }: { text: string }) {
   )
 }
 
-function CodePartsTable({ parts }: { parts: CodePart[] }) {
+function CodePartsTable({
+  parts,
+  pinnedCodePartIds,
+  onTogglePinnedCodePart,
+  onToggleCodeSummarizeMode,
+  onToggleExcludedCodePart,
+  codeSummarizingPartIds,
+}: {
+  parts: CodePart[]
+  pinnedCodePartIds: string[]
+  onTogglePinnedCodePart: (partId: string) => void
+  onToggleCodeSummarizeMode: (partId: string) => void
+  onToggleExcludedCodePart: (partId: string) => void
+  codeSummarizingPartIds: Set<string>
+}) {
   return (
     <div className="overflow-x-auto">
       <Table className="min-w-full text-sm">
         <TableHead>
           <TableRow>
+            <TableHeaderCell className="w-14">重要</TableHeaderCell>
+            <TableHeaderCell className="w-14">要約</TableHeaderCell>
+            <TableHeaderCell className="w-14">除外</TableHeaderCell>
             <TableHeaderCell className="w-12">#</TableHeaderCell>
             <TableHeaderCell>シンボル名</TableHeaderCell>
             <TableHeaderCell className="w-20">種別</TableHeaderCell>
@@ -825,19 +875,113 @@ function CodePartsTable({ parts }: { parts: CodePart[] }) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {parts.map((part, index) => (
-            <TableRow key={`${part.symbol}-${part.startLine}`}>
-              <TableCell>{index + 1}</TableCell>
-              <TableCell>
-                {part.parentSymbol ? `${part.parentSymbol}#${part.symbol}` : part.symbol}
-              </TableCell>
-              <TableCell className="text-gray-600">{part.symbolType}</TableCell>
-              <TableCell className="text-gray-600">L{part.startLine}-L{part.endLine}</TableCell>
-              <TableCell className="text-gray-600">~{part.estimatedTokens.toLocaleString()}</TableCell>
-            </TableRow>
-          ))}
+          {parts.map((part, index) => {
+            const isSummarizingThis = codeSummarizingPartIds.has(part.id)
+            return (
+              <TableRow key={`${part.symbol}-${part.startLine}`} className={part.excluded ? 'opacity-40' : ''}>
+                <TableCell className="text-center">
+                  <input
+                    type="checkbox"
+                    checked={pinnedCodePartIds.includes(part.id)}
+                    onChange={() => onTogglePinnedCodePart(part.id)}
+                    disabled={part.excluded}
+                    className="w-4 h-4 text-blue-600 rounded disabled:cursor-not-allowed"
+                  />
+                </TableCell>
+                <TableCell className="text-center">
+                  <input
+                    type="checkbox"
+                    checked={part.summarizeMode === 'summarize'}
+                    onChange={() => onToggleCodeSummarizeMode(part.id)}
+                    disabled={part.excluded}
+                    className="w-4 h-4 text-blue-600 rounded disabled:cursor-not-allowed"
+                  />
+                </TableCell>
+                <TableCell className="text-center">
+                  <input
+                    type="checkbox"
+                    checked={part.excluded}
+                    onChange={() => onToggleExcludedCodePart(part.id)}
+                    className="w-4 h-4 text-red-500 rounded"
+                  />
+                </TableCell>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell>
+                  {part.parentSymbol ? `${part.parentSymbol}#${part.symbol}` : part.symbol}
+                </TableCell>
+                <TableCell className="text-gray-600">{part.symbolType}</TableCell>
+                <TableCell className="text-gray-600">L{part.startLine}-L{part.endLine}</TableCell>
+                <TableCell className="text-gray-600">
+                  {isSummarizingThis ? (
+                    <span className="text-blue-600">⟳ 要約中</span>
+                  ) : part.summarizeMode === 'summarize' ? (
+                    part.summarizedContent && part.summarizedTokens ? (
+                      <span>~{part.summarizedTokens.toLocaleString()}</span>
+                    ) : (
+                      <span className="text-amber-600">未実行</span>
+                    )
+                  ) : (
+                    <span>~{part.estimatedTokens.toLocaleString()}</span>
+                  )}
+                </TableCell>
+              </TableRow>
+            )
+          })}
         </TableBody>
       </Table>
+    </div>
+  )
+}
+
+function CodeSummarizeExecuteRow({
+  parts,
+  isCodeSummarizing,
+  hasCodePendingSummarize,
+  codeSummarizeError,
+  onExecuteCodeSummarize,
+}: {
+  parts: CodePart[]
+  isCodeSummarizing: boolean
+  hasCodePendingSummarize: boolean
+  codeSummarizeError: string | null
+  onExecuteCodeSummarize: () => void
+}) {
+  const totalSelected = parts.filter((p) => p.summarizeMode === 'summarize').length
+  const completedCount = parts.filter((p) => p.summarizeMode === 'summarize' && p.summarizedContent).length
+
+  if (totalSelected === 0) return null
+
+  return (
+    <div className="mt-2 space-y-1">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onExecuteCodeSummarize}
+          disabled={!hasCodePendingSummarize || isCodeSummarizing}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+        >
+          {isCodeSummarizing ? (
+            <>
+              <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
+              要約実行中...
+            </>
+          ) : (
+            '選択した要約を実行'
+          )}
+        </button>
+        <span className="text-xs text-gray-600">
+          {completedCount}/{totalSelected}件
+        </span>
+        {codeSummarizeError ? (
+          <span className="text-xs text-red-600">{codeSummarizeError}</span>
+        ) : (
+          <span className="text-xs text-gray-400">
+            「要約」を選択したコードパートを事前に要約します。
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-amber-600">
+        ※ 要約によってコードの詳細が失われることがあるため、品質検証が必要です。
+      </p>
     </div>
   )
 }

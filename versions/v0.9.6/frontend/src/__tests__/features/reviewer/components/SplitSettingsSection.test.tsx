@@ -60,6 +60,15 @@ describe('SplitSettingsSection - DocumentSplitSettingsBlock', () => {
     normalSplitSettings: { ...baseSplitSettings },
     onPreImportantSplitSettingsChange: vi.fn(),
     onNormalSplitSettingsChange: vi.fn(),
+    pinnedCodePartIds: [] as string[],
+    onTogglePinnedCodePart: vi.fn(),
+    onToggleCodeSummarizeMode: vi.fn(),
+    onToggleExcludedCodePart: vi.fn(),
+    isCodeSummarizing: false,
+    codeSummarizingPartIds: new Set<string>(),
+    hasCodePendingSummarize: false,
+    codeSummarizeError: null as string | null,
+    onExecuteCodeSummarize: vi.fn(),
   }
 
   beforeEach(() => {
@@ -145,6 +154,8 @@ describe('SplitSettingsSection - DocumentSplitSettingsBlock', () => {
           endLine: 50,
           content: 'class TestClass:\n    pass',
           estimatedTokens: 500,
+          excluded: false,
+          summarizeMode: 'original' as const,
         },
       ],
       documentIndex: '# INDEX\n- MD1: 概要',

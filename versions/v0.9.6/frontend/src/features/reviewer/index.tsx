@@ -118,6 +118,10 @@ export function Reviewer() {
     isSummarizing,
     summarizingPartIds,
     summarizeError,
+    pinnedCodePartIds,
+    isCodeSummarizing,
+    codeSummarizingPartIds,
+    codeSummarizeError,
     headings: splitHeadings,
     isLoadingHeadings: isSplitLoadingHeadings,
     headingsError: splitHeadingsError,
@@ -138,8 +142,13 @@ export function Reviewer() {
     setPreImportantSplitSettings,
     setNormalSplitSettings,
     clearHeadingsCache,
+    togglePinnedCodePart,
+    toggleCodeSummarizeMode,
+    toggleExcludedCodePart,
+    executeCodeSummarize,
     isSplitEnabled,
     hasPendingSummarize,
+    hasCodePendingSummarize,
   } = useSplitSettings()
 
   // Split review execution state
@@ -387,8 +396,13 @@ export function Reviewer() {
               })) || [],
           }
 
+      // コードパートの除外フィルタリング
+      const excludedCodePartIds = new Set(
+        splitPreviewResult.codeParts?.filter(p => p.excluded).map(p => p.id) || []
+      )
+
       const codeFileStructures = codeFiles.map((cf) => {
-        const codeParts = splitPreviewResult.codeParts || []
+        const codeParts = (splitPreviewResult.codeParts || []).filter(p => !excludedCodePartIds.has(p.id))
         return {
           filename: cf.filename,
           indexMd: splitPreviewResult.codeIndex || '',
@@ -440,7 +454,9 @@ export function Reviewer() {
               ? { id: ds.id, title: part.displayName, path: part.path }
               : ds
           })
-        group.codeSymbols = group.codeSymbols.map((cs) => {
+        group.codeSymbols = group.codeSymbols
+          .filter((cs) => !excludedCodePartIds.has(cs.id))  // 除外コードパーツを安全フィルタ
+          .map((cs) => {
           const part = splitPreviewResult.codeParts?.find((p) => p.id === cs.id)
           return part
             ? { id: cs.id, filename: codeIdToFilename[cs.id] || '', symbol: part.symbol }
@@ -464,6 +480,27 @@ export function Reviewer() {
           for (const pinned of pinnedDocSections) {
             if (!existingIds.has(pinned.id)) {
               group.docSections.push(pinned)
+            }
+          }
+        }
+      }
+
+      // 重要コードパートを全グループに注入（重複除外）
+      if (pinnedCodePartIds.length > 0) {
+        const pinnedCodeSymbols = pinnedCodePartIds
+          .filter(id => !excludedCodePartIds.has(id))
+          .map(id => {
+            const part = splitPreviewResult.codeParts?.find(p => p.id === id)
+            if (!part) return null
+            return { id: part.id, filename: codeIdToFilename[part.id] || '', symbol: part.symbol }
+          })
+          .filter((s): s is { id: string; filename: string; symbol: string } => s !== null)
+
+        for (const group of groups) {
+          const existingIds = new Set(group.codeSymbols.map(s => s.id))
+          for (const pinned of pinnedCodeSymbols) {
+            if (!existingIds.has(pinned.id)) {
+              group.codeSymbols.push(pinned)
             }
           }
         }
@@ -531,8 +568,10 @@ export function Reviewer() {
           const symbolType = part?.symbolType || 'unknown'
           const startLine = part?.startLine || 0
           const endLine = part?.endLine || 0
-          const content = part?.content || ''
-          return `### ${sym.filename}:${sym.symbol} (${symbolType}, L${startLine}-L${endLine})\n\n\`\`\`\n${content}\n\`\`\``
+          const isSummarized = part?.summarizeMode === 'summarize' && !!part?.summarizedContent
+          const content = isSummarized ? part.summarizedContent : (part?.content || '')
+          const summaryMarker = isSummarized ? ' [要約版]' : ''
+          return `### ${sym.filename}:${sym.symbol} (${symbolType}, L${startLine}-L${endLine})${summaryMarker}\n\n\`\`\`\n${content}\n\`\`\``
         }).join('\n\n')
 
         // Retry loop: execute group review, pause on error for retry/skip
@@ -701,7 +740,7 @@ export function Reviewer() {
         error: error instanceof Error ? error.message : 'レビュー実行に失敗しました',
       }))
     }
-  }, [splitPreviewResult, codeFiles, llmConfig, screenManager, currentPromptValues, pinnedDocPartIds])
+  }, [splitPreviewResult, codeFiles, llmConfig, screenManager, currentPromptValues, pinnedDocPartIds, pinnedCodePartIds])
 
   // Structure matching retry handler - re-execute from the beginning
   const handleRetryStructureMatching = useCallback(() => {
@@ -963,6 +1002,15 @@ export function Reviewer() {
           normalSplitSettings={normalSplitSettings}
           onPreImportantSplitSettingsChange={setPreImportantSplitSettings}
           onNormalSplitSettingsChange={setNormalSplitSettings}
+          pinnedCodePartIds={pinnedCodePartIds}
+          onTogglePinnedCodePart={togglePinnedCodePart}
+          onToggleCodeSummarizeMode={toggleCodeSummarizeMode}
+          onToggleExcludedCodePart={toggleExcludedCodePart}
+          isCodeSummarizing={isCodeSummarizing}
+          codeSummarizingPartIds={codeSummarizingPartIds}
+          hasCodePendingSummarize={hasCodePendingSummarize}
+          codeSummarizeError={codeSummarizeError}
+          onExecuteCodeSummarize={() => executeCodeSummarize(llmConfig)}
         />
       </div>
 
@@ -971,7 +1019,7 @@ export function Reviewer() {
         <Button
           variant="success"
           size="lg"
-          disabled={!isReviewEnabled || (isSplitEnabled && !splitPreviewResult) || (isSplitEnabled && hasPendingSummarize) || (isSplitEnabled && !!splitPreviewResult && !splitPreviewResult.codeParts?.length) || (isSplitEnabled && !!splitPreviewResult && !splitPreviewResult.documentParts?.length)}
+          disabled={!isReviewEnabled || (isSplitEnabled && !splitPreviewResult) || (isSplitEnabled && hasPendingSummarize) || (isSplitEnabled && hasCodePendingSummarize) || (isSplitEnabled && !!splitPreviewResult && !splitPreviewResult.codeParts?.length) || (isSplitEnabled && !!splitPreviewResult && !splitPreviewResult.documentParts?.length)}
           onClick={handleReviewExecute}
         >
           レビュー実行

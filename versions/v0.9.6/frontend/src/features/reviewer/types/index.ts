@@ -219,6 +219,12 @@ export interface CodePart {
   endLine: number
   content: string
   estimatedTokens: number
+  // 除外関連
+  excluded: boolean
+  // 要約関連
+  summarizeMode: 'original' | 'summarize'
+  summarizedContent?: string
+  summarizedTokens?: number
 }
 
 export interface SplitMarkdownRequest {
