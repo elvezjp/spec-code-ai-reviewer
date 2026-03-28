@@ -11,7 +11,7 @@
 
 設計書（Excel形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
 
-https://github.com/user-attachments/assets/3535aded-930b-483a-9311-ecf8013a1748
+https://github.com/user-attachments/assets/39e9ad21-1ce3-45e2-a4f9-544b7e43b013
 
 ## 機能
 
