@@ -70,14 +70,15 @@ interface UseSplitSettingsReturn {
   togglePinnedCodePart: (partId: string) => void
   toggleCodeSummarizeMode: (partId: string) => void
   toggleExcludedCodePart: (partId: string) => void
-  executeCodeSummarize: (llmConfig?: LlmConfig | null) => Promise<void>
+
+  // 要約一括実行
+  executeAllSummarize: (llmConfig?: LlmConfig | null) => Promise<void>
 
   // Computed
   isSplitEnabled: boolean
   reviewMode: 'batch' | 'split'
   estimatedReviewCount: number
-  hasPendingSummarize: boolean
-  hasCodePendingSummarize: boolean
+  hasAnyPendingSummarize: boolean
 }
 
 const DEFAULT_SETTINGS: SplitSettings = {
@@ -587,19 +588,21 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   // Computed values
   const isSplitEnabled = settings.reviewMode === 'split'
 
-  const hasPendingSummarize = useMemo(() => {
-    if (!previewResult?.documentParts) return false
-    return previewResult.documentParts.some(
+  const hasAnyPendingSummarize = useMemo(() => {
+    const docPending = previewResult?.documentParts?.some(
       (p) => p.summarizeMode === 'summarize' && !p.summarizedContent && !p.excluded
-    )
+    ) || false
+    const codePending = previewResult?.codeParts?.some(
+      (p) => p.summarizeMode === 'summarize' && !p.summarizedContent && !p.excluded
+    ) || false
+    return docPending || codePending
   }, [previewResult])
 
-  const hasCodePendingSummarize = useMemo(() => {
-    if (!previewResult?.codeParts) return false
-    return previewResult.codeParts.some(
-      (p) => p.summarizeMode === 'summarize' && !p.summarizedContent && !p.excluded
-    )
-  }, [previewResult])
+  // 設計書・コードの要約を一括実行（設計書→コードの順に逐次実行）
+  const executeAllSummarize = useCallback(async (llmConfig?: LlmConfig | null) => {
+    await executeSummarize(llmConfig)
+    await executeCodeSummarize(llmConfig)
+  }, [executeSummarize, executeCodeSummarize])
 
   const reviewMode = settings.reviewMode
 
@@ -657,11 +660,10 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     togglePinnedCodePart,
     toggleCodeSummarizeMode,
     toggleExcludedCodePart,
-    executeCodeSummarize,
+    executeAllSummarize,
     isSplitEnabled,
     reviewMode,
     estimatedReviewCount,
-    hasPendingSummarize,
-    hasCodePendingSummarize,
+    hasAnyPendingSummarize,
   }
 }

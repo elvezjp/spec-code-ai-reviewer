@@ -135,7 +135,6 @@ export function Reviewer() {
     togglePinnedDocPart,
     toggleSummarizeMode,
     toggleExcludedDocPart,
-    executeSummarize,
     fetchHeadingsForContent,
     togglePreImportantSection,
     togglePreExcludedSection,
@@ -145,10 +144,9 @@ export function Reviewer() {
     togglePinnedCodePart,
     toggleCodeSummarizeMode,
     toggleExcludedCodePart,
-    executeCodeSummarize,
+    executeAllSummarize,
     isSplitEnabled,
-    hasPendingSummarize,
-    hasCodePendingSummarize,
+    hasAnyPendingSummarize,
   } = useSplitSettings()
 
   // Split review execution state
@@ -985,11 +983,9 @@ export function Reviewer() {
           onTogglePinnedDocPart={togglePinnedDocPart}
           isSummarizing={isSummarizing}
           summarizingPartIds={summarizingPartIds}
-          hasPendingSummarize={hasPendingSummarize}
           summarizeError={summarizeError}
           onToggleSummarizeMode={toggleSummarizeMode}
           onToggleExcludedDocPart={toggleExcludedDocPart}
-          onExecuteSummarize={() => executeSummarize(llmConfig)}
           previewError={splitPreviewError}
           headings={splitHeadings}
           isLoadingHeadings={isSplitLoadingHeadings}
@@ -1008,9 +1004,9 @@ export function Reviewer() {
           onToggleExcludedCodePart={toggleExcludedCodePart}
           isCodeSummarizing={isCodeSummarizing}
           codeSummarizingPartIds={codeSummarizingPartIds}
-          hasCodePendingSummarize={hasCodePendingSummarize}
           codeSummarizeError={codeSummarizeError}
-          onExecuteCodeSummarize={() => executeCodeSummarize(llmConfig)}
+          hasAnyPendingSummarize={hasAnyPendingSummarize}
+          onExecuteAllSummarize={() => executeAllSummarize(llmConfig)}
         />
       </div>
 
@@ -1019,7 +1015,7 @@ export function Reviewer() {
         <Button
           variant="success"
           size="lg"
-          disabled={!isReviewEnabled || (isSplitEnabled && !splitPreviewResult) || (isSplitEnabled && hasPendingSummarize) || (isSplitEnabled && hasCodePendingSummarize) || (isSplitEnabled && !!splitPreviewResult && !splitPreviewResult.codeParts?.length) || (isSplitEnabled && !!splitPreviewResult && !splitPreviewResult.documentParts?.length)}
+          disabled={!isReviewEnabled || (isSplitEnabled && !splitPreviewResult) || (isSplitEnabled && hasAnyPendingSummarize) || (isSplitEnabled && !!splitPreviewResult && !splitPreviewResult.codeParts?.length) || (isSplitEnabled && !!splitPreviewResult && !splitPreviewResult.documentParts?.length)}
           onClick={handleReviewExecute}
         >
           レビュー実行
@@ -1035,14 +1031,9 @@ export function Reviewer() {
           </p>
         )}
 
-        {isSplitEnabled && hasPendingSummarize && (
+        {isSplitEnabled && hasAnyPendingSummarize && (
           <p className="text-xs text-orange-500 mt-1 text-center">
-            ⚠ 設計書パートの要約が選択されていますが未実行です。「選択した要約を実行」をクリックしてから、レビューを実行してください。
-          </p>
-        )}
-        {isSplitEnabled && hasCodePendingSummarize && (
-          <p className="text-xs text-orange-500 mt-1 text-center">
-            ⚠ コードパートの要約が選択されていますが未実行です。「選択した要約を実行」をクリックしてから、レビューを実行してください。
+            ⚠ 要約が選択されていますが未実行です。「選択した要約を実行」をクリックしてから、レビューを実行してください。
           </p>
         )}
         <p className="text-xs text-gray-400 mt-1 text-center">

@@ -34,11 +34,9 @@ interface SplitSettingsSectionProps {
   onTogglePinnedDocPart: (partId: string) => void
   isSummarizing: boolean
   summarizingPartIds: Set<string>
-  hasPendingSummarize: boolean
   summarizeError: string | null
   onToggleSummarizeMode: (partId: string) => void
   onToggleExcludedDocPart: (partId: string) => void
-  onExecuteSummarize: () => void
   previewError?: string | null
   // 事前重要指定関連
   headings: HeadingInfo[]
@@ -59,9 +57,10 @@ interface SplitSettingsSectionProps {
   onToggleExcludedCodePart: (partId: string) => void
   isCodeSummarizing: boolean
   codeSummarizingPartIds: Set<string>
-  hasCodePendingSummarize: boolean
   codeSummarizeError: string | null
-  onExecuteCodeSummarize: () => void
+  // 要約一括実行
+  hasAnyPendingSummarize: boolean
+  onExecuteAllSummarize: () => void
 }
 
 export function SplitSettingsSection({
@@ -79,11 +78,9 @@ export function SplitSettingsSection({
   onTogglePinnedDocPart,
   isSummarizing,
   summarizingPartIds,
-  hasPendingSummarize,
   summarizeError,
   onToggleSummarizeMode,
   onToggleExcludedDocPart,
-  onExecuteSummarize,
   previewError,
   headings,
   isLoadingHeadings,
@@ -102,9 +99,9 @@ export function SplitSettingsSection({
   onToggleExcludedCodePart,
   isCodeSummarizing,
   codeSummarizingPartIds,
-  hasCodePendingSummarize,
   codeSummarizeError,
-  onExecuteCodeSummarize,
+  hasAnyPendingSummarize,
+  onExecuteAllSummarize,
 }: SplitSettingsSectionProps) {
   const [isOptionsExpanded, setIsOptionsExpanded] = useState(true)
   const prevHasDesignDocRef = useRef(hasDesignDoc)
@@ -320,16 +317,6 @@ export function SplitSettingsSection({
           {previewError && (
             <p className="text-sm text-red-600">{previewError}</p>
           )}
-          {/* 要約実行ボタン */}
-          {previewResult && previewResult.documentParts && (
-            <SummarizeExecuteRow
-              parts={previewResult.documentParts}
-              isSummarizing={isSummarizing}
-              hasPendingSummarize={hasPendingSummarize}
-              summarizeError={summarizeError}
-              onExecuteSummarize={onExecuteSummarize}
-            />
-          )}
         </div>
       )}
 
@@ -454,13 +441,6 @@ export function SplitSettingsSection({
                 onToggleExcludedCodePart={onToggleExcludedCodePart}
                 codeSummarizingPartIds={codeSummarizingPartIds}
               />
-              <CodeSummarizeExecuteRow
-                parts={previewResult.codeParts}
-                isCodeSummarizing={isCodeSummarizing}
-                hasCodePendingSummarize={hasCodePendingSummarize}
-                codeSummarizeError={codeSummarizeError}
-                onExecuteCodeSummarize={onExecuteCodeSummarize}
-              />
               {previewResult.codeWarnings && previewResult.codeWarnings.length > 0 && (
                 <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded">
                   <p className="text-sm font-medium text-amber-800">
@@ -492,6 +472,18 @@ export function SplitSettingsSection({
               )}
             </div>
           )}
+
+          {/* 要約一括実行ボタン（設計書・コード統合） */}
+          <UnifiedSummarizeExecuteRow
+            documentParts={previewResult.documentParts}
+            codeParts={previewResult.codeParts}
+            isSummarizing={isSummarizing}
+            isCodeSummarizing={isCodeSummarizing}
+            hasAnyPendingSummarize={hasAnyPendingSummarize}
+            summarizeError={summarizeError}
+            codeSummarizeError={codeSummarizeError}
+            onExecuteAllSummarize={onExecuteAllSummarize}
+          />
         </div>
       )}
     </div>
@@ -775,33 +767,50 @@ function PartContentPreview({ content }: { content: string }) {
   )
 }
 
-function SummarizeExecuteRow({
-  parts,
+function UnifiedSummarizeExecuteRow({
+  documentParts,
+  codeParts,
   isSummarizing,
-  hasPendingSummarize,
+  isCodeSummarizing,
+  hasAnyPendingSummarize,
   summarizeError,
-  onExecuteSummarize,
+  codeSummarizeError,
+  onExecuteAllSummarize,
 }: {
-  parts: DocumentPart[]
+  documentParts: DocumentPart[] | null
+  codeParts: CodePart[] | null
   isSummarizing: boolean
-  hasPendingSummarize: boolean
+  isCodeSummarizing: boolean
+  hasAnyPendingSummarize: boolean
   summarizeError: string | null
-  onExecuteSummarize: () => void
+  codeSummarizeError: string | null
+  onExecuteAllSummarize: () => void
 }) {
-  const totalSelected = parts.filter((p) => p.summarizeMode === 'summarize').length
-  const completedCount = parts.filter((p) => p.summarizeMode === 'summarize' && p.summarizedContent).length
+  const docSelected = documentParts?.filter((p) => p.summarizeMode === 'summarize').length || 0
+  const docCompleted = documentParts?.filter((p) => p.summarizeMode === 'summarize' && p.summarizedContent).length || 0
+  const codeSelected = codeParts?.filter((p) => p.summarizeMode === 'summarize').length || 0
+  const codeCompleted = codeParts?.filter((p) => p.summarizeMode === 'summarize' && p.summarizedContent).length || 0
+  const totalSelected = docSelected + codeSelected
 
   if (totalSelected === 0) return null
 
+  const isAnySummarizing = isSummarizing || isCodeSummarizing
+  const anyError = summarizeError || codeSummarizeError
+
+  // 件数表示を構築
+  const countParts: string[] = []
+  if (docSelected > 0) countParts.push(`設計書: ${docCompleted}/${docSelected}件`)
+  if (codeSelected > 0) countParts.push(`コード: ${codeCompleted}/${codeSelected}件`)
+
   return (
-    <div className="space-y-1">
+    <div className="mt-4 pt-3 border-t border-gray-200 space-y-1">
       <div className="flex items-center gap-3">
         <button
-          onClick={onExecuteSummarize}
-          disabled={!hasPendingSummarize || isSummarizing}
+          onClick={onExecuteAllSummarize}
+          disabled={!hasAnyPendingSummarize || isAnySummarizing}
           className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
-          {isSummarizing ? (
+          {isAnySummarizing ? (
             <>
               <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
               要約実行中...
@@ -811,18 +820,18 @@ function SummarizeExecuteRow({
           )}
         </button>
         <span className="text-xs text-gray-600">
-          {completedCount}/{totalSelected}件
+          {countParts.join(' / ')}
         </span>
-        {summarizeError ? (
-          <span className="text-xs text-red-600">{summarizeError}</span>
+        {anyError ? (
+          <span className="text-xs text-red-600">{anyError}</span>
         ) : (
           <span className="text-xs text-gray-400">
-            「要約」を選択したセクションを事前に要約します。
+            「要約」を選択したパートを事前に要約します。
           </span>
         )}
       </div>
       <p className="text-xs text-amber-600">
-        ※ 要約によって微妙なニュアンスや制約が失われることがあるため、品質検証が必要です。
+        ※ 要約によって内容が失われることがあるため、品質検証が必要です。
       </p>
     </div>
   )
@@ -865,8 +874,8 @@ function CodePartsTable({
   codeSummarizingPartIds: Set<string>
 }) {
   return (
-    <div className="overflow-x-auto">
-      <Table className="min-w-full text-sm">
+    <div>
+      <Table className="w-full table-fixed text-sm">
         <TableHead>
           <TableRow>
             <TableHeaderCell className="w-14">重要</TableHeaderCell>
@@ -874,7 +883,6 @@ function CodePartsTable({
             <TableHeaderCell className="w-14">除外</TableHeaderCell>
             <TableHeaderCell className="w-12">#</TableHeaderCell>
             <TableHeaderCell>シンボル名</TableHeaderCell>
-            <TableHeaderCell className="w-20">種別</TableHeaderCell>
             <TableHeaderCell className="w-24">行範囲</TableHeaderCell>
             <TableHeaderCell className="w-28">推定トークン</TableHeaderCell>
           </TableRow>
@@ -911,14 +919,14 @@ function CodePartsTable({
                   />
                 </TableCell>
                 <TableCell>{index + 1}</TableCell>
-                <TableCell>
+                <TableCell className="break-all">
                   {part.parentSymbol ? `${part.parentSymbol}#${part.symbol}` : part.symbol}
+                  <span className="ml-2 text-xs text-gray-400">({part.symbolType})</span>
                   <PartContentPreview content={part.content} />
                   {part.summarizedContent && part.summarizeMode === 'summarize' && (
                     <SummarizedTextPreview text={part.summarizedContent} />
                   )}
                 </TableCell>
-                <TableCell className="text-gray-600">{part.symbolType}</TableCell>
                 <TableCell className="text-gray-600">L{part.startLine}-L{part.endLine}</TableCell>
                 <TableCell className="text-gray-600">
                   {isSummarizingThis ? (
@@ -942,55 +950,3 @@ function CodePartsTable({
   )
 }
 
-function CodeSummarizeExecuteRow({
-  parts,
-  isCodeSummarizing,
-  hasCodePendingSummarize,
-  codeSummarizeError,
-  onExecuteCodeSummarize,
-}: {
-  parts: CodePart[]
-  isCodeSummarizing: boolean
-  hasCodePendingSummarize: boolean
-  codeSummarizeError: string | null
-  onExecuteCodeSummarize: () => void
-}) {
-  const totalSelected = parts.filter((p) => p.summarizeMode === 'summarize').length
-  const completedCount = parts.filter((p) => p.summarizeMode === 'summarize' && p.summarizedContent).length
-
-  if (totalSelected === 0) return null
-
-  return (
-    <div className="mt-2 space-y-1">
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onExecuteCodeSummarize}
-          disabled={!hasCodePendingSummarize || isCodeSummarizing}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          {isCodeSummarizing ? (
-            <>
-              <Loader2 className="w-4 h-4 inline mr-1 animate-spin" />
-              要約実行中...
-            </>
-          ) : (
-            '選択した要約を実行'
-          )}
-        </button>
-        <span className="text-xs text-gray-600">
-          {completedCount}/{totalSelected}件
-        </span>
-        {codeSummarizeError ? (
-          <span className="text-xs text-red-600">{codeSummarizeError}</span>
-        ) : (
-          <span className="text-xs text-gray-400">
-            「要約」を選択したコードパートを事前に要約します。
-          </span>
-        )}
-      </div>
-      <p className="text-xs text-amber-600">
-        ※ 要約によってコードの詳細が失われることがあるため、品質検証が必要です。
-      </p>
-    </div>
-  )
-}

@@ -169,7 +169,7 @@ export function IntegrateRetrySettingsPanel({
                       要約結果を表示
                     </button>
                     {isPreviewOpen && (
-                      <div className="mt-1 p-2 bg-gray-50 border rounded text-xs text-gray-700 whitespace-pre-wrap max-h-[200px] overflow-y-auto">
+                      <div className="mt-1 p-2 bg-gray-50 border rounded text-xs text-gray-700 whitespace-pre-wrap text-left max-h-[200px] overflow-y-auto">
                         {entry.summarizedReport}
                       </div>
                     )}
