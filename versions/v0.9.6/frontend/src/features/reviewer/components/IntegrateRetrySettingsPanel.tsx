@@ -4,12 +4,14 @@ import { estimateTokens } from '../utils/tokenEstimate'
 import { executeSummarize } from '../services/api'
 import type { GroupReviewState, IntegrateSummarizeState, IntegrateGroupSummarizeEntry, LlmConfig } from '../types'
 
+type GroupMode = 'original' | 'summarize' | 'skip'
+
 interface IntegrateRetrySettingsPanelProps {
   groupReviews: GroupReviewState[]
   summarizeState: IntegrateSummarizeState
   llmConfig?: LlmConfig
   onSummarizeComplete: (state: IntegrateSummarizeState) => void
-  onModeChange?: (hasPending: boolean) => void
+  onModeChange?: (hasPending: boolean, allSkipped?: boolean) => void
 }
 
 export function IntegrateRetrySettingsPanel({
@@ -21,8 +23,8 @@ export function IntegrateRetrySettingsPanel({
 }: IntegrateRetrySettingsPanelProps) {
   const completedGroups = groupReviews.filter((g) => g.status === 'completed' && g.result)
 
-  const [groupModes, setGroupModes] = useState<Record<string, 'original' | 'summarize'>>(() => {
-    const initial: Record<string, 'original' | 'summarize'> = {}
+  const [groupModes, setGroupModes] = useState<Record<string, GroupMode>>(() => {
+    const initial: Record<string, GroupMode> = {}
     for (const g of completedGroups) {
       const entry = summarizeState.groups.find((s) => s.groupId === g.groupId)
       initial[g.groupId] = entry?.mode || 'original'
@@ -37,12 +39,16 @@ export function IntegrateRetrySettingsPanel({
   const getEntry = (groupId: string): IntegrateGroupSummarizeEntry | undefined =>
     summarizeState.groups.find((s) => s.groupId === groupId)
 
-  const computeHasPending = (modes: Record<string, 'original' | 'summarize'>) =>
+  const computeHasPending = (modes: Record<string, GroupMode>) =>
     completedGroups.some(
       (g) => modes[g.groupId] === 'summarize' && !getEntry(g.groupId)?.summarizedReport
     )
 
+  const computeAllSkipped = (modes: Record<string, GroupMode>) =>
+    completedGroups.every((g) => modes[g.groupId] === 'skip')
+
   const hasPendingSummarize = computeHasPending(groupModes)
+  const allSkipped = computeAllSkipped(groupModes)
 
   const isSummarizing = summarizingGroupIds.size > 0
 
@@ -93,12 +99,17 @@ export function IntegrateRetrySettingsPanel({
     }
 
     setSummarizingGroupIds(new Set())
+    // 要約完了後、ローカルの updatedGroups で判定（propsのsummarizeStateはまだ更新前のため）
+    const hasPending = completedGroups.some(
+      (g) => groupModes[g.groupId] === 'summarize' && !updatedGroups.find(s => s.groupId === g.groupId)?.summarizedReport
+    )
+    onModeChange?.(hasPending, computeAllSkipped(groupModes))
   }
 
-  const handleModeChange = (groupId: string, mode: 'original' | 'summarize') => {
+  const handleModeChange = (groupId: string, mode: GroupMode) => {
     const newModes = { ...groupModes, [groupId]: mode }
     setGroupModes(newModes)
-    onModeChange?.(computeHasPending(newModes))
+    onModeChange?.(computeHasPending(newModes), computeAllSkipped(newModes))
   }
 
   const formatTokens = (tokens: number) => `~${tokens.toLocaleString()} トークン`
@@ -116,7 +127,7 @@ export function IntegrateRetrySettingsPanel({
       <div className="p-2 bg-amber-50 border border-amber-200 rounded-md mb-3">
         <p className="text-xs text-amber-800">
           <span className="font-medium">⚠ 注意:</span>{' '}
-          要約によって微妙なニュアンスや制約が失われることがあるため、品質検証が必要です。
+          要約によって微妙なニュアンスや制約が失われることがあるため、品質検証が必要です。スキップしたグループは最終レポートに含まれません。
         </p>
       </div>
 
@@ -129,9 +140,10 @@ export function IntegrateRetrySettingsPanel({
             const mode = groupModes[g.groupId] || 'original'
             const isSummarizingThis = summarizingGroupIds.has(g.groupId)
             const isPreviewOpen = previewOpen[g.groupId] || false
+            const isSkipped = mode === 'skip'
 
             return (
-              <div key={g.groupId}>
+              <div key={g.groupId} className={isSkipped ? 'opacity-40' : ''}>
                 <div className="flex items-center gap-4 text-xs">
                   <span className="font-medium text-gray-600 min-w-0">{g.groupName}</span>
                   <label className="flex items-center gap-1 cursor-pointer whitespace-nowrap">
@@ -158,6 +170,16 @@ export function IntegrateRetrySettingsPanel({
                         ? formatReduction(originalTokens, entry.summarizedTokens)
                         : '未実行'}）
                   </label>
+                  <label className="flex items-center gap-1 cursor-pointer whitespace-nowrap">
+                    <input
+                      type="radio"
+                      name={`integrate-mode-${g.groupId}`}
+                      checked={mode === 'skip'}
+                      onChange={() => handleModeChange(g.groupId, 'skip')}
+                      className="text-red-500"
+                    />
+                    スキップ
+                  </label>
                 </div>
                 {mode === 'summarize' && entry?.summarizedReport && (
                   <div className="mt-1 ml-4">
@@ -180,6 +202,13 @@ export function IntegrateRetrySettingsPanel({
           })}
         </div>
       </div>
+
+      {/* 全スキップ警告 */}
+      {allSkipped && (
+        <p className="text-xs text-red-600 mb-2 text-center">
+          すべてのグループがスキップされています。最低1グループは統合対象に含めてください。
+        </p>
+      )}
 
       {/* 選択した要約を実行ボタン */}
       {hasPendingSummarize && (

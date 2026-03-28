@@ -7,6 +7,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.6] - 2026-03-28
+
+### Added
+- **Code part exclude, important designation, and summarize features** (#90): Added exclude, important designation, and summarize functionality to code parts in split review, equivalent to design document parts
+  - Added "Important", "Summarize", and "Exclude" checkboxes to code parts table
+  - Exclude large class symbols (20,000+ lines) from review and review at method level instead
+  - Pre-summarize code parts using `targetType: "code"` to reduce token consumption
+  - Inject important-designated code symbols into all groups
+  - Added content preview and summarized text preview to code parts table
+  - Unified design document and code summarize execution buttons into a single button at the bottom of preview results (executes design → code sequentially)
+- **Integration retry group skip feature** (#93): Added "Skip" option to integration retry settings. When token limit is exceeded with many groups, skip less important groups to efficiently reduce token consumption without summarizing every group
+  - Added "Original / Summarize / Skip" radio buttons to retry settings panel
+  - Skipped groups shown with greyed-out styling, all-skip prevention with warning message
+  - Skipped groups' review results are still included in ZIP downloads
+
+### Fixed
+- **Design document part defensive filter**: Added `!p.excluded` filter to `executeSummarize` / `hasPendingSummarize` to resolve inconsistency with code parts
+- **Preview clear summarize error state**: Fixed `clearPreview` not clearing `summarizeError` / `codeSummarizeError`
+- **Estimated review count excludes excluded parts**: Fixed `estimatedReviewCount` to exclude excluded parts from count
+- **Retry settings summarize preview left-align**: Fixed summarized text being center-aligned in retry settings panel during split review execution
+- **Code parts table horizontal scroll fix**: Inlined symbol type into symbol name column and used `table-fixed` to prevent horizontal scrolling
+- **Integration retry button not enabling after summarization** (#92): Fixed retry button remaining disabled after all group summarizations complete. The pending check was referencing stale props instead of local summarization results
+
+### Changed
+- **md2map update**: Updated subtree to latest
+- **Configuration file updates**: Set v0.9.6 as the latest version
+  - `nginx/version-map.conf`: Added v0.9.6 routing, changed default port to 8096
+  - `docker-compose.yml`: Added v0.9.6 frontend, port 8096
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: Added v0.9.6 entry
+
 ## [0.9.5] - 2026-03-26
 
 ### Added
@@ -342,6 +372,7 @@ For a detailed feature comparison table across all versions, see [versions/READM
 
 | Version | Key Features |
 |---------|-------------|
+| 0.9.6   | Code part exclude/important/summarize features, unified summarize button, defensive filter and error state fixes |
 | 0.9.5   | Frontend-backend version mismatch detection, HTTP response check for all API functions, AI split silent fallback fix, split mode source mismatch fix |
 | 0.9.4   | Summary mode options (text/AI), max subsections UI control, MD2MAP_MAX_SUBSECTIONS env var removed, MAP.json/INDEX.md download from split preview, split preview re-run |
 | 0.9.3   | Pre-split exclusion designation (completely exclude unnecessary sections from split processing) |

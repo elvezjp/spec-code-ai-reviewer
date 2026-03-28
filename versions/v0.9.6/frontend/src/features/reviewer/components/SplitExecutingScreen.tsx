@@ -130,6 +130,7 @@ export function SplitExecutingScreen({
   const [retryDocMode, setRetryDocMode] = useState<'original' | 'summarize'>('original')
   const [retryCodeMode, setRetryCodeMode] = useState<'original' | 'summarize'>('original')
   const [integrateHasPendingSummarize, setIntegrateHasPendingSummarize] = useState(false)
+  const [integrateAllSkipped, setIntegrateAllSkipped] = useState(false)
 
   const isPaused = state.phase === 'paused'
   const isError = state.phase === 'error'
@@ -273,7 +274,7 @@ export function SplitExecutingScreen({
 
           {isIntegrateError && (() => {
             const integrateError = state.error || ''
-            const retryDisabled = integrateHasPendingSummarize
+            const retryDisabled = integrateHasPendingSummarize || integrateAllSkipped
 
             return (
               <>
@@ -317,7 +318,10 @@ export function SplitExecutingScreen({
                       summarizeState={integrateSummarizeState}
                       llmConfig={llmConfig}
                       onSummarizeComplete={onIntegrateSummarizeComplete}
-                      onModeChange={setIntegrateHasPendingSummarize}
+                      onModeChange={(hasPending, allSkipped) => {
+                        setIntegrateHasPendingSummarize(hasPending)
+                        setIntegrateAllSkipped(allSkipped ?? false)
+                      }}
                     />
                   </div>
                 )}

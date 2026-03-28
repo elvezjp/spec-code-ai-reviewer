@@ -871,3 +871,103 @@ const codeCount = previewResult.codeParts?.filter(p => !p.excluded).length || 0
 - [x] `versions/v0.9.6/spec.md` のドキュメント更新（2.7.5, 2.7.6, 2.7.7）
 - [x] `docs/split-review.md` のドキュメント更新（4.2, 4.3）
 - [x] 全フロントエンドテスト通過（205件）
+
+---
+
+## 追加機能: 結果統合リトライのグループスキップ機能
+
+対応 Issue: [#93](https://github.com/elvezjp/spec-code-ai-reviewer/issues/93)
+
+### 背景
+
+結果統合（フェーズ3）でトークン上限エラーが発生した場合、現状ではトークン数が上限を下回るまで多くのグループレビュー結果を「要約」する必要がある。グループ数が多い場合は要約の実行回数が増え、時間的・コスト的な負担が大きい。
+
+最終レポートに含める必要がないグループ（重要度の低いグループ、問題なしと判明しているグループ等）をスキップできれば、要約の実行回数を減らしつつトークン消費を効率的に削減できる。
+
+### 現状
+
+リトライ設定パネルでは各グループに対して以下の2択のみ:
+- **そのまま**: 原文のレビュー結果を統合に使用
+- **要約**: 要約版のレビュー結果を統合に使用
+
+### 変更後
+
+3つ目の選択肢を追加:
+- **スキップ**: そのグループのレビュー結果を統合対象から除外する
+
+```
+コーディング規約の適用と命名規則
+  ○ そのまま（~3,348 トークン）  ◉ 要約（~1,693 トークン 49%削減）  ○ スキップ
+  > 要約結果を表示
+
+コーディングスタイルの実装                                          ← グレーアウト表示
+  ○ そのまま（~3,769 トークン）  ○ 要約（未実行）  ◉ スキップ
+```
+
+### 制約
+
+- 全グループをスキップにすることはできない（最低1グループは統合対象に残す必要がある）
+- スキップされたグループは最終レポートに含まれない旨をユーザーに明示する
+
+### 修正対象
+
+| ファイル | 修正内容 |
+|---|---|
+| `versions/v0.9.6/frontend/src/features/reviewer/types/index.ts` | `IntegrateGroupSummarizeEntry.mode` の型に `'skip'` を追加 |
+| `versions/v0.9.6/frontend/src/features/reviewer/components/IntegrateRetrySettingsPanel.tsx` | 「スキップ」ラジオボタン追加、スキップ行のグレーアウト表示、全スキップ防止 |
+| `versions/v0.9.6/frontend/src/features/reviewer/index.tsx` | `handleRetryIntegrate` でスキップされたグループを統合APIリクエストから除外 |
+| `versions/v0.9.6/spec.md` | 結果統合リトライのスキップ機能についての仕様を追記 |
+| `docs/split-review.md` | 結果統合エラー時のスキップ機能についての説明を追記 |
+
+### 修正詳細
+
+#### 1. 型定義の拡張（types/index.ts）
+
+```typescript
+export interface IntegrateGroupSummarizeEntry {
+  groupId: string
+  mode: 'original' | 'summarize' | 'skip'  // ← 'skip' 追加
+  summarizedReport?: string
+  originalTokens?: number
+  summarizedTokens?: number
+}
+```
+
+#### 2. IntegrateRetrySettingsPanel.tsx
+
+- `groupModes` の型を `Record<string, 'original' | 'summarize' | 'skip'>` に変更
+- `handleModeChange` の引数型に `'skip'` を追加
+- 各グループの行に3つ目のラジオボタン「スキップ」を追加
+- `computeHasPending`: スキップのグループは要約未実行判定の対象外（変更不要、`'summarize'` のみチェック）
+- スキップ行をグレーアウト表示（`opacity-40`）
+- 全グループスキップ防止: 統合対象が0件の場合はリトライボタンを disabled にし、警告メッセージを表示
+- `onModeChange` の通知: スキップは要約不要なので `hasPending` には影響しない（ただし全スキップの場合はリトライ不可にする必要あり）
+
+#### 3. handleRetryIntegrate（index.tsx）
+
+```typescript
+// 修正後: skip のグループを除外
+const groupReviewSummaries = groupReviews
+  .filter((g) => g.status === 'completed' && g.result)
+  .filter((g) => {
+    const entry = integrateSummarizeState.groups.find((s) => s.groupId === g.groupId)
+    return entry?.mode !== 'skip'
+  })
+  .map((g) => { ... })
+```
+
+### 確認事項（追加実装不要）
+
+- **要約結果の保持**: 要約→スキップ→要約に戻しても再要約は不要。要約結果は `summarizeState.groups` に `summarizedReport` として保持されており、`handleModeChange` は `groupModes`（UIの選択状態）のみを変更するため、既存の要約結果はそのまま使われる
+- **ZIP ダウンロードへの影響**: スキップしたグループのレビュー結果もZIPには含まれる。ZIP に含めるグループは `splitReviewState.groupReviews` の `status === 'completed'` でフィルタしており、`integrateSummarizeState` の `mode` とは独立しているため、スキップの影響を受けない
+
+### 完了チェックリスト
+
+- [x] 型定義に `'skip'` を追加
+- [x] IntegrateRetrySettingsPanel に「スキップ」ラジオボタンを追加
+- [x] スキップ行のグレーアウト表示
+- [x] 全グループスキップ防止（リトライボタン disabled + 警告メッセージ）
+- [x] handleRetryIntegrate でスキップグループを統合対象から除外
+- [x] 全フロントエンドテスト通過（205件）
+- [x] `versions/v0.9.6/spec.md` のドキュメント更新
+- [x] `docs/split-review.md` のドキュメント更新
