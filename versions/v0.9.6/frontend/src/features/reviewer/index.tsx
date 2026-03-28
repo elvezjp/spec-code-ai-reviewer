@@ -316,6 +316,10 @@ export function Reviewer() {
     try {
       const groupReviewSummaries = groupReviews
         .filter((g) => g.status === 'completed' && g.result)
+        .filter((g) => {
+          const entry = integrateSummarizeState.groups.find((s) => s.groupId === g.groupId)
+          return entry?.mode !== 'skip'
+        })
         .map((g) => {
           const entry = integrateSummarizeState.groups.find((s) => s.groupId === g.groupId)
           const useSummarized = entry?.mode === 'summarize' && entry?.summarizedReport

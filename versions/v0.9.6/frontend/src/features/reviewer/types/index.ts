@@ -496,7 +496,7 @@ export interface SummarizeResponse {
 
 export interface IntegrateGroupSummarizeEntry {
   groupId: string
-  mode: 'original' | 'summarize'
+  mode: 'original' | 'summarize' | 'skip'
   summarizedReport?: string
   originalTokens?: number
   summarizedTokens?: number
