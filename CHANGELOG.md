@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Inject important-designated code symbols into all groups
   - Added content preview and summarized text preview to code parts table
   - Unified design document and code summarize execution buttons into a single button at the bottom of preview results (executes design → code sequentially)
+- **Integration retry group skip feature** (#93): Added "Skip" option to integration retry settings. When token limit is exceeded with many groups, skip less important groups to efficiently reduce token consumption without summarizing every group
+  - Added "Original / Summarize / Skip" radio buttons to retry settings panel
+  - Skipped groups shown with greyed-out styling, all-skip prevention with warning message
+  - Skipped groups' review results are still included in ZIP downloads
 
 ### Fixed
 - **Design document part defensive filter**: Added `!p.excluded` filter to `executeSummarize` / `hasPendingSummarize` to resolve inconsistency with code parts
