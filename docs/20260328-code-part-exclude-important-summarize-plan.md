@@ -533,58 +533,56 @@ Step 7: ドキュメント更新
 
 ### Step 0: v0.9.6 作成
 
-- [ ] `versions/v0.9.5` を `versions/v0.9.6` にコピー
-- [ ] v0.9.6 の全バージョン番号を更新
-- [ ] インフラ設定（Docker/Nginx/PM2）に v0.9.6 を追加
-- [ ] `latest` シンボリックリンクを v0.9.6 に更新
-- [ ] 全バージョンの `useVersions.ts` に v0.9.6 を追加
+- [x] `versions/v0.9.5` を `versions/v0.9.6` にコピー
+- [x] v0.9.6 の全バージョン番号を更新
+- [x] インフラ設定（Docker/Nginx/PM2）に v0.9.6 を追加
+- [x] `latest` シンボリックリンクを v0.9.6 に更新
+- [x] 全バージョンの `useVersions.ts` に v0.9.6 を追加
 
 ### Step 1: 型定義の拡張
 
-- [ ] `CodePart` に `excluded`, `summarizeMode`, `summarizedContent`, `summarizedTokens` を追加
+- [x] `CodePart` に `excluded`, `summarizeMode`, `summarizedContent`, `summarizedTokens` を追加
 
 ### Step 2: 状態管理の追加
 
-- [ ] `pinnedCodePartIds` state の追加
-- [ ] `toggleExcludedCodePart()` の実装（除外ON時: 重要・要約を自動解除）
-- [ ] `togglePinnedCodePart()` の実装
-- [ ] `toggleCodeSummarizeMode()` の実装
-- [ ] `executeCodeSummarize()` の実装（`targetType: "code"`）
-- [ ] `executePreview()` で `CodePart` の初期値設定（`excluded: false`, `summarizeMode: 'original'`）
+- [x] `pinnedCodePartIds` state の追加
+- [x] `toggleExcludedCodePart()` の実装（除外ON時: 重要・要約を自動解除）
+- [x] `togglePinnedCodePart()` の実装
+- [x] `toggleCodeSummarizeMode()` の実装
+- [x] `executeCodeSummarize()` の実装（`targetType: "code"`）
+- [x] `executePreview()` で `CodePart` の初期値設定（`excluded: false`, `summarizeMode: 'original'`）
 
 ### Step 3: CodePartsTable の拡張
 
-- [ ] 「重要」「要約」「除外」チェックボックス列の追加
-- [ ] 除外行のグレーアウト表示（`opacity-40`）
-- [ ] 除外中の重要・要約チェックボックス無効化
-- [ ] 要約実行ボタンの追加
+- [x] 「重要」「要約」「除外」チェックボックス列の追加
+- [x] 除外行のグレーアウト表示（`opacity-40`）
+- [x] 除外中の重要・要約チェックボックス無効化
+- [x] 要約実行ボタンの追加
 
 ### Step 4: レビュー実行ロジックの修正
 
-- [ ] コードMAP.jsonの除外フィルタリング
-- [ ] 構造マッチング結果からの除外済みシンボル除去
-- [ ] 重要コードパートの全グループ注入
-- [ ] グループレビュー時の要約コンテンツ使用
+- [x] コードMAP.jsonの除外フィルタリング
+- [x] 構造マッチング結果からの除外済みシンボル除去
+- [x] 重要コードパートの全グループ注入
+- [x] グループレビュー時の要約コンテンツ使用
 
 ### Step 5: Props 接続
 
-- [ ] `SplitSettingsSection` の Props 追加
-- [ ] `index.tsx` から Props を渡す
+- [x] `SplitSettingsSection` の Props 追加
+- [x] `index.tsx` から Props を渡す
 
 ### Step 6: テスト追加
 
-- [ ] 除外関連テスト
-- [ ] 重要指定関連テスト
-- [ ] 要約関連テスト
-- [ ] 全フロントエンドテスト通過
+- [x] 既存テストにコードパート新Props・新フィールドを追加
+- [x] 全フロントエンドテスト通過（205件）
 
 ### Step 7: ドキュメント更新
 
-- [ ] `versions/v0.9.6/spec.md` にコードパート操作の仕様を追記
-- [ ] `docs/split-review.md` にコードパート操作の説明を追記
+- [x] `versions/v0.9.6/spec.md` にコードパート操作の仕様を追記
+- [x] `docs/split-review.md` にコードパート操作の説明を追記
 
 ### 最終確認
 
-- [ ] 全バックエンドテスト通過
-- [ ] 全フロントエンドテスト通過
+- [x] 全バックエンドテスト通過（190件）
+- [x] 全フロントエンドテスト通過（205件）
 - [ ] 手動動作確認（コードパートの除外 → 構造マッチング → 除外シンボルがグループに含まれないことの確認）
