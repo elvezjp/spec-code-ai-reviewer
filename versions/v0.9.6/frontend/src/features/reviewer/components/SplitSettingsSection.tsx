@@ -441,6 +441,11 @@ export function SplitSettingsSection({
                   )}
                 </span>
               </h4>
+              <ul className="text-xs text-gray-500 mb-2 list-disc list-inside space-y-0.5">
+                <li><strong>重要</strong>: 分割レビュー時に全てのグループで参照されます。</li>
+                <li><strong>要約</strong>: レビュー時に要約テキストで代替されます。トークン数が大きいシンボルに使用してください。</li>
+                <li><strong>除外</strong>: 構造マッチング・グループレビューの対象から外します。メソッドが個別に存在するクラス全体シンボルの除外に有効です。</li>
+              </ul>
               <CodePartsTable
                 parts={previewResult.codeParts}
                 pinnedCodePartIds={pinnedCodePartIds}
@@ -908,6 +913,10 @@ function CodePartsTable({
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>
                   {part.parentSymbol ? `${part.parentSymbol}#${part.symbol}` : part.symbol}
+                  <PartContentPreview content={part.content} />
+                  {part.summarizedContent && part.summarizeMode === 'summarize' && (
+                    <SummarizedTextPreview text={part.summarizedContent} />
+                  )}
                 </TableCell>
                 <TableCell className="text-gray-600">{part.symbolType}</TableCell>
                 <TableCell className="text-gray-600">L{part.startLine}-L{part.endLine}</TableCell>

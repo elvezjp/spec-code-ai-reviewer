@@ -1037,7 +1037,12 @@ export function Reviewer() {
 
         {isSplitEnabled && hasPendingSummarize && (
           <p className="text-xs text-orange-500 mt-1 text-center">
-            ⚠ 要約が選択されていますが未実行です。「選択した要約を実行」をクリックしてから、レビューを実行してください。
+            ⚠ 設計書パートの要約が選択されていますが未実行です。「選択した要約を実行」をクリックしてから、レビューを実行してください。
+          </p>
+        )}
+        {isSplitEnabled && hasCodePendingSummarize && (
+          <p className="text-xs text-orange-500 mt-1 text-center">
+            ⚠ コードパートの要約が選択されていますが未実行です。「選択した要約を実行」をクリックしてから、レビューを実行してください。
           </p>
         )}
         <p className="text-xs text-gray-400 mt-1 text-center">

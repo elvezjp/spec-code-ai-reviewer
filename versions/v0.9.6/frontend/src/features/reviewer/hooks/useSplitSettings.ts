@@ -176,7 +176,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     if (!previewResult?.documentParts) return
 
     const targets = previewResult.documentParts.filter(
-      (p) => p.summarizeMode === 'summarize' && !p.summarizedContent
+      (p) => p.summarizeMode === 'summarize' && !p.summarizedContent && !p.excluded
     )
     if (targets.length === 0) return
 
@@ -567,6 +567,8 @@ export function useSplitSettings(): UseSplitSettingsReturn {
     setPinnedDocPartIds([])
     setPinnedCodePartIds([])
     setError(null)
+    setSummarizeError(null)
+    setCodeSummarizeError(null)
   }, [])
 
   const clearError = useCallback(() => {
@@ -588,7 +590,7 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   const hasPendingSummarize = useMemo(() => {
     if (!previewResult?.documentParts) return false
     return previewResult.documentParts.some(
-      (p) => p.summarizeMode === 'summarize' && !p.summarizedContent
+      (p) => p.summarizeMode === 'summarize' && !p.summarizedContent && !p.excluded
     )
   }, [previewResult])
 
@@ -605,8 +607,8 @@ export function useSplitSettings(): UseSplitSettingsReturn {
   const estimatedReviewCount = (() => {
     if (!previewResult) return 1
 
-    const docCount = previewResult.documentParts?.length || 0
-    const codeCount = previewResult.codeParts?.length || 0
+    const docCount = previewResult.documentParts?.filter(p => !p.excluded).length || 0
+    const codeCount = previewResult.codeParts?.filter(p => !p.excluded).length || 0
 
     switch (reviewMode) {
       case 'split':

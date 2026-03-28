@@ -860,14 +860,14 @@ const codeCount = previewResult.codeParts?.filter(p => !p.excluded).length || 0
 
 ### 追加修正の完了チェックリスト
 
-- [ ] 問題 1: `hasCodePendingSummarize` 警告メッセージの追加
-- [ ] 問題 2: CodePartsTable に `PartContentPreview` を追加
-- [ ] 問題 3: CodePartsTable に `SummarizedTextPreview` を追加
-- [ ] 問題 4: コードパーツテーブルに説明テキストを追加
-- [ ] 問題 5: `executeSummarize` に `!p.excluded` フィルタを追加
-- [ ] 問題 6: `hasPendingSummarize` に `!p.excluded` フィルタを追加
-- [ ] 問題 7: `clearPreview` に要約エラー状態のクリアを追加
-- [ ] 問題 8: `estimatedReviewCount` で除外パートを除外
-- [ ] `versions/v0.9.6/spec.md` のドキュメント更新（2.7.5, 2.7.6, 2.7.7）
-- [ ] `docs/split-review.md` のドキュメント更新（4.2, 4.3）
-- [ ] 全フロントエンドテスト通過
+- [x] 問題 1: `hasCodePendingSummarize` 警告メッセージの追加
+- [x] 問題 2: CodePartsTable に `PartContentPreview` を追加
+- [x] 問題 3: CodePartsTable に `SummarizedTextPreview` を追加
+- [x] 問題 4: コードパーツテーブルに説明テキストを追加
+- [x] 問題 5: `executeSummarize` に `!p.excluded` フィルタを追加
+- [x] 問題 6: `hasPendingSummarize` に `!p.excluded` フィルタを追加
+- [x] 問題 7: `clearPreview` に要約エラー状態のクリアを追加
+- [x] 問題 8: `estimatedReviewCount` で除外パートを除外
+- [x] `versions/v0.9.6/spec.md` のドキュメント更新（2.7.5, 2.7.6, 2.7.7）
+- [x] `docs/split-review.md` のドキュメント更新（4.2, 4.3）
+- [x] 全フロントエンドテスト通過（205件）
