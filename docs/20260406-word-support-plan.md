@@ -79,7 +79,6 @@
 ## スコープ外
 
 - `.doc`（旧形式）への対応（MarkItDown非対応のため）
-- テスト（`useFileConversion.test.ts`）の更新は別途対応
 
 ## 動作確認観点
 
