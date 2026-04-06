@@ -82,9 +82,9 @@
 
 ## 動作確認観点
 
-- [ ] `.docx` を選択でき、ツールが MarkItDown に固定される
-- [ ] `.docx` と `.xlsx` の混在時、`.docx` は常に MarkItDown のまま
-- [ ] 一括ツール変更（applyToolToAll）でも `.docx` は MarkItDown のまま
-- [ ] `.doc` ファイルはファイル選択ダイアログで選択できない（`accept` 属性による制限）
-- [ ] 既存の Excel（.xlsx / .xls）の挙動に変更がない
-- [ ] バックエンドで `.docx` ファイルが `/word-to-markdown` 経由で正常に変換される
+- [x] `.docx` を選択でき、ツールが MarkItDown に固定される
+- [x] `.docx` と `.xlsx` の混在時、`.docx` は常に MarkItDown のまま
+- [x] 一括ツール変更（applyToolToAll）でも `.docx` は MarkItDown のまま
+- [x] `.doc` ファイルはファイル選択ダイアログで選択できない（`accept` 属性による制限）
+- [x] 既存の Excel（.xlsx / .xls）の挙動に変更がない
+- [x] バックエンドで `.docx` ファイルが `/word-to-markdown` 経由で正常に変換される
