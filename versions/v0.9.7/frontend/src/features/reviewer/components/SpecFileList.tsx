@@ -94,7 +94,8 @@ export function SpecFileList({
               <select
                 value={file.tool}
                 onChange={(e) => onToolChange(file.filename, e.target.value)}
-                className="border border-gray-300 rounded px-2 py-1 text-sm"
+                disabled={file.filename.toLowerCase().endsWith('.docx')}
+                className="border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 {availableTools.map((t) => (
                   <option key={t.name} value={t.name}>
@@ -102,6 +103,9 @@ export function SpecFileList({
                   </option>
                 ))}
               </select>
+              {file.filename.toLowerCase().endsWith('.docx') && (
+                <span className="text-xs text-gray-400">WordはMarkItDownのみ対応</span>
+              )}
             </div>
           </div>
         ))}

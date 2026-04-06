@@ -102,6 +102,21 @@ export async function convertExcelToMarkdown(
   return await response.json()
 }
 
+export async function convertWordToMarkdown(
+  file: File
+): Promise<{ success: boolean; markdown?: string; error?: string }> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await fetch(`${getBackendUrl()}/api/convert/word-to-markdown`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  await assertResponseOk(response, 'Word変換に失敗しました')
+  return await response.json()
+}
+
 export async function addLineNumbers(
   file: File
 ): Promise<{ success: boolean; content?: string; line_count?: number; error?: string }> {

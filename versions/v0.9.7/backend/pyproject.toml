@@ -1,6 +1,6 @@
 [project]
 name = "spec-code-ai-reviewer-backend"
-version = "0.9.6"
+version = "0.9.7"
 description = "設計書-Javaプログラム突合 AIレビュアー バックエンド"
 requires-python = ">=3.10"
 dependencies = [
@@ -8,7 +8,7 @@ dependencies = [
     "uvicorn[standard]>=0.32.0",
     "python-multipart>=0.0.12",
     "boto3>=1.35.0",
-    "markitdown[xlsx]>=0.0.1a3",
+    "markitdown[xlsx,docx]>=0.0.1a3",
     "openpyxl>=3.1.5",
     "anthropic>=0.40.0",
     "openai>=2.14.0",

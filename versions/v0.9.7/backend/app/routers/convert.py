@@ -85,6 +85,67 @@ async def convert_excel_to_markdown_api(
         )
 
 
+@router.post("/word-to-markdown", response_model=ConvertResponse)
+async def convert_word_to_markdown_api(
+    file: UploadFile = File(...),
+):
+    """
+    WordファイルをMarkdown形式に変換する
+
+    - 対応形式: .docx
+    - 最大サイズ: 10MB
+    - ツールはMarkItDownに固定
+    """
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="ファイル名が取得できません")
+
+    filename = file.filename
+    ext = filename.lower().split(".")[-1] if "." in filename else ""
+
+    if ext == "doc":
+        return ConvertResponse(
+            success=False,
+            filename=filename,
+            error=".doc形式は非対応です。.docx形式で保存し直してください。",
+        )
+
+    if ext != "docx":
+        return ConvertResponse(
+            success=False,
+            filename=filename,
+            error="対応していないファイル形式です。Word (.docx) ファイルを選択してください。",
+        )
+
+    content = await file.read()
+
+    if len(content) > MAX_EXCEL_SIZE:
+        return ConvertResponse(
+            success=False,
+            filename=filename,
+            error=f"ファイルサイズが上限（{MAX_EXCEL_SIZE // (1024*1024)}MB）を超えています。",
+        )
+
+    try:
+        markdown = convert_excel_to_markdown(content, filename, "markitdown")
+        return ConvertResponse(
+            success=True,
+            markdown=markdown,
+            filename=filename,
+        )
+    except ValueError as e:
+        return ConvertResponse(
+            success=False,
+            filename=filename,
+            error=str(e),
+        )
+    except Exception as e:
+        return ConvertResponse(
+            success=False,
+            filename=filename,
+            error=f"変換中にエラーが発生しました: {str(e)}",
+        )
+
+
 @router.post("/add-line-numbers", response_model=ConvertResponse)
 async def add_line_numbers_api(file: UploadFile = File(...)):
     """
