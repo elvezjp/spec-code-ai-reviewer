@@ -1,12 +1,12 @@
 # 設計書-Javaプログラム突合 AIレビュアー 仕様書
 
-**バージョン: 0.9.6**
+**バージョン: 0.9.7**
 
 ## 1. 概要
 
 ### 1.1 目的
 
-設計書（Excel形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
+設計書（Excel / Word形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
 レビュー結果をマークダウン形式で出力する。
 
 ### 1.2 解決する課題
@@ -103,7 +103,7 @@ example.com
 
 | 項目 | 説明 | 形式 | 制限 |
 |------|------|------|------|
-| 設計書 | レビュー対象の設計書（複数選択可） | Excel (.xlsx, .xls) | 各ファイル最大10MB |
+| 設計書 | レビュー対象の設計書（複数選択可） | Excel (.xlsx, .xls), Word (.docx) | 各ファイル最大10MB |
 | プログラム | 設計書に対応するコード（複数選択可） | 任意のテキストファイル | 各ファイル最大5MB |
 
 **複数ファイル選択時の動作:**
@@ -115,9 +115,9 @@ example.com
 
 ### 2.2 前処理機能
 
-#### 2.2.1 設計書変換（Excel → Markdown）
+#### 2.2.1 設計書変換（Excel / Word → Markdown）
 
-ExcelファイルをMarkdown形式に変換する。以下の変換ツールから選択可能。
+Excel または Word ファイルをMarkdown形式に変換する。Excel ファイルは以下の変換ツールから選択可能。Word (.docx) は MarkItDown に固定。
 
 **利用可能な変換ツール:**
 
@@ -130,9 +130,9 @@ ExcelファイルをMarkdown形式に変換する。以下の変換ツールか�
 | 項目 | 内容 |
 |------|------|
 | 処理場所 | バックエンド（Python） |
-| 入力 | Excel (.xlsx, .xls) |
+| 入力 | Excel (.xlsx, .xls) または Word (.docx) |
 | 出力 | Markdown形式テキスト |
-| 処理内容 | 選択したツールに応じてExcelをMarkdown形式に変換 |
+| 処理内容 | Excel: 選択したツールに応じてMarkdown形式に変換 / Word: MarkItDownで変換（ツール固定） |
 
 **MarkItDown変換例:**
 
@@ -1747,6 +1747,7 @@ md2mapは以下の3つの分割モードを提供する。ユーザーが分割�
 | メソッド | パス | 説明 |
 |----------|------|------|
 | POST | `/api/convert/excel-to-markdown` | Excel→Markdown変換 |
+| POST | `/api/convert/word-to-markdown` | Word→Markdown変換 |
 | POST | `/api/convert/add-line-numbers` | 行番号付与 |
 | GET | `/api/convert/available-tools` | 利用可能な変換ツール一覧取得 |
 | POST | `/api/organize-markdown` | Markdown整理（AI整理機能） |
@@ -1798,6 +1799,41 @@ tool: <変換ツール名（任意、デフォルト: markitdown）>
 {
   "success": false,
   "error": "ファイル形式が不正です"
+}
+```
+
+#### POST /api/convert/word-to-markdown
+
+Wordファイルを受け取り、MarkItDownでMarkdown形式に変換する。
+
+**リクエスト:**
+
+```
+Content-Type: multipart/form-data
+
+file: <Wordファイル>
+```
+
+| パラメータ | 必須 | 説明 |
+|-----------|------|------|
+| file | ○ | Wordファイル (.docx) |
+
+**レスポンス:**
+
+```json
+{
+  "success": true,
+  "markdown": "# 見出し\n\n本文テキスト...",
+  "filename": "spec.docx"
+}
+```
+
+**エラーレスポンス:**
+
+```json
+{
+  "success": false,
+  "error": ".doc形式は非対応です。.docx形式で保存し直してください。"
 }
 ```
 
@@ -3419,9 +3455,10 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 
 | ID | 関数 | テスト内容 | 期待結果 |
 |----|------|----------|---------|
-| UT-MD-001 | convert_excel_to_markdown() | 単一シートExcel | シート名見出し+テーブル |
-| UT-MD-002 | convert_excel_to_markdown() | 複数シートExcel | 各シートの見出し+テーブル |
-| UT-MD-003 | convert_excel_to_markdown() | 不正なファイル | エラーをスロー |
+| UT-MD-001 | convert_to_markdown() | 単一シートExcel | シート名見出し+テーブル |
+| UT-MD-002 | convert_to_markdown() | 複数シートExcel | 各シートの見出し+テーブル |
+| UT-MD-003 | convert_to_markdown() | Wordファイル (.docx) | Markdown形式テキストを返す |
+| UT-MD-004 | convert_to_markdown() | 不正なファイル形式 | エラーをスロー |
 
 **markdown_tools/registry.py:**
 
@@ -3550,6 +3587,8 @@ AIエディタに指示して、以下の試験項目からファイルを作成
 | E2E-CV-002b | Excel→Markdown変換（excel2md (CSV)、複数ファイル） | サーバー起動済み | 1. 複数Excelを選択 2. ツール「excel2md (CSV)」を選択 3. 変換ボタン押下 | 各ファイルがCSVマークダウン形式で連結表示 | |
 | E2E-CV-002c | Excel→Markdown変換（excel2md (CSV+Mermaid)、単一ファイル） | サーバー起動済み | 1. シェイプ付きExcelファイルを選択 2. ツール「excel2md (CSV+Mermaid)」を選択 3. 変換ボタン押下 | CSVマークダウン形式 + Mermaidフローチャートで表示 | |
 | E2E-CV-002d | Excel→Markdown変換（excel2md (CSV+Mermaid)、複数ファイル） | サーバー起動済み | 1. 複数Excelを選択 2. ツール「excel2md (CSV+Mermaid)」を選択 3. 変換ボタン押下 | 各ファイルがCSVマークダウン + Mermaid形式で連結表示 | |
+| E2E-CV-002e | Word→Markdown変換（.docx、単一ファイル） | サーバー起動済み | 1. Wordファイル (.docx) を選択 2. 変換ボタン押下 | Markdown形式で表示、ツールが「MarkItDown」に固定される | |
+| E2E-CV-002f | Word→Markdown変換（ExcelとWordの混在） | サーバー起動済み | 1. Excelと.docxを混在して選択 2. 変換ボタン押下 | 各ファイルが見出し付きで連結表示、.docxはMarkItDown固定のまま | |
 | E2E-CV-003 | 行番号付与（単一ファイル） | サーバー起動済み | 1. コードファイルを選択 2. 変換ボタン押下 | 行番号付きで表示、ステータス「変換済み」 | |
 | E2E-CV-004 | 行番号付与（複数ファイル） | サーバー起動済み | 1. 複数コードファイルを選択 2. 変換ボタン押下 | 各ファイルが見出し付きで連結表示 | |
 | E2E-CV-005 | 変換結果ダウンロード | 変換完了済み | ダウンロードボタン押下 | MDファイルがダウンロードされる | |

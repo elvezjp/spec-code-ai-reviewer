@@ -15,7 +15,7 @@ https://github.com/user-attachments/assets/39e9ad21-1ce3-45e2-a4f9-544b7e43b013
 
 ## 機能
 
-- **設計書変換**: Excel (.xlsx, .xls) → Markdown形式に変換（MarkItDown、excel2md使用）
+- **設計書変換**: Excel (.xlsx, .xls) / Word (.docx) → Markdown形式に変換（MarkItDown、excel2md使用。Wordは MarkItDown のみ対応）
 - **プログラム変換**: 任意のテキストファイルに行番号を付与（add-line-numbers準拠）
 - **突合レビュー**: LLM（Bedrock / Anthropic / OpenAI）を使用して設計書とコードの整合性を検証
 - **分割レビュー**: トークン上限を超える設計書・コードをセマンティック分割してレビュー（md2map / code2map使用）
@@ -49,7 +49,7 @@ LLMには入力トークンの上限があるため、大規模な設計書や�
 
 ## 使い方
 
-1. **設計書をアップロード**: Excel (.xlsx, .xls) ファイルを選択（複数可）
+1. **設計書をアップロード**: Excel (.xlsx, .xls) または Word (.docx) ファイルを選択（複数可）
    - **役割**: メイン設計書を1つ選択（それ以外は参照資料として扱われる）
    - **種別**: 設計書/要件定義書/コーディング規約など9種類から選択
    - **変換ツール**: MarkItDown / excel2md (CSV) / excel2md (CSV+Mermaid) から選択
@@ -326,6 +326,7 @@ Try again with a maximum tokens value that is lower than 10000.
 | GET | `/` | フロントエンド配信 |
 | GET | `/api/health` | ヘルスチェック |
 | POST | `/api/convert/excel-to-markdown` | Excel→Markdown変換 |
+| POST | `/api/convert/word-to-markdown` | Word→Markdown変換 |
 | POST | `/api/convert/add-line-numbers` | 行番号付与 |
 | GET | `/api/convert/available-tools` | 利用可能な変換ツール一覧取得 |
 | POST | `/api/review` | レビュー実行 |

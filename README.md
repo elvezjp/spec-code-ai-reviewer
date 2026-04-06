@@ -15,7 +15,7 @@ https://github.com/user-attachments/assets/39e9ad21-1ce3-45e2-a4f9-544b7e43b013
 
 ## Features
 
-- **Design document conversion**: Convert Excel (.xlsx, .xls) to Markdown (using MarkItDown, excel2md)
+- **Design document conversion**: Convert Excel (.xlsx, .xls) / Word (.docx) to Markdown (using MarkItDown, excel2md; Word supports MarkItDown only)
 - **Program conversion**: Add line numbers to any text file (add-line-numbers compatible)
 - **Cross-check review**: Verify consistency between the design doc and code using LLMs (Bedrock / Anthropic / OpenAI)
 - **Split review**: Semantically split large design docs and code that exceed token limits for review (using md2map / code2map)
@@ -49,7 +49,7 @@ This application splits Markdown-converted design documents and source code into
 
 ## Usage
 
-1. **Upload design documents**: Select Excel (.xlsx, .xls) files (multiple allowed)
+1. **Upload design documents**: Select Excel (.xlsx, .xls) or Word (.docx) files (multiple allowed)
    - **Role**: Select one main design document (others are treated as reference materials)
    - **Type**: Choose from 9 types such as design doc, requirements doc, coding guidelines, etc.
    - **Conversion tool**: Choose MarkItDown / excel2md (CSV) / excel2md (CSV+Mermaid)
@@ -325,6 +325,7 @@ Try again with a maximum tokens value that is lower than 10000.
 | GET | `/` | Serve frontend |
 | GET | `/api/health` | Health check |
 | POST | `/api/convert/excel-to-markdown` | Excel to Markdown conversion |
+| POST | `/api/convert/word-to-markdown` | Word to Markdown conversion |
 | POST | `/api/convert/add-line-numbers` | Add line numbers |
 | GET | `/api/convert/available-tools` | List available conversion tools |
 | POST | `/api/review` | Run review |
