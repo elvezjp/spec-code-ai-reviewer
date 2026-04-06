@@ -1,9 +1,10 @@
 """markitdown_service.py の単体テスト
 
 テストケース:
-- UT-MD-001: convert_excel_to_markdown() - 単一シートExcel
-- UT-MD-002: convert_excel_to_markdown() - 複数シートExcel
-- UT-MD-003: convert_excel_to_markdown() - 不正なファイル
+- UT-MD-001: convert_to_markdown() - 単一シートExcel
+- UT-MD-002: convert_to_markdown() - 複数シートExcel
+- UT-MD-003: convert_to_markdown() - Wordファイル (.docx)
+- UT-MD-004: convert_to_markdown() - 不正なファイル形式
 
 Note: 実際のExcelファイルを使用するため、テスト用のExcelファイルを動的に生成する
 """
@@ -12,7 +13,7 @@ import io
 
 import pytest
 
-from app.services.markitdown_service import convert_excel_to_markdown
+from app.services.markitdown_service import convert_to_markdown
 
 
 def create_simple_excel() -> bytes:
@@ -74,14 +75,32 @@ def create_multi_sheet_excel() -> bytes:
     return buffer.getvalue()
 
 
-class TestConvertExcelToMarkdown:
-    """convert_excel_to_markdown() のテスト"""
+def create_simple_docx() -> bytes:
+    """単純なWordファイルを生成"""
+    try:
+        from docx import Document
+    except ImportError:
+        pytest.skip("python-docx is not installed")
+
+    doc = Document()
+    doc.add_heading("テスト仕様書", level=1)
+    doc.add_paragraph("これはテスト用のWordファイルです。")
+    doc.add_heading("機能一覧", level=2)
+    doc.add_paragraph("ログイン機能: ユーザー認証を行う")
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    return buffer.getvalue()
+
+
+class TestConvertToMarkdown:
+    """convert_to_markdown() のテスト"""
 
     def test_ut_md_001_single_sheet(self):
         """UT-MD-001: 単一シートExcel - シート名見出し+テーブル"""
         excel_content = create_simple_excel()
 
-        result = convert_excel_to_markdown(excel_content, "spec.xlsx")
+        result = convert_to_markdown(excel_content, "spec.xlsx")
 
         # Markdownが生成されている
         assert result is not None
@@ -95,7 +114,7 @@ class TestConvertExcelToMarkdown:
         """UT-MD-002: 複数シートExcel - 各シートの見出し+テーブル"""
         excel_content = create_multi_sheet_excel()
 
-        result = convert_excel_to_markdown(excel_content, "multi.xlsx")
+        result = convert_to_markdown(excel_content, "multi.xlsx")
 
         # Markdownが生成されている
         assert result is not None
@@ -106,22 +125,31 @@ class TestConvertExcelToMarkdown:
         assert "認証" in result or "機能名" in result
         assert "API" in result or "/api/login" in result or "エンドポイント" in result
 
-    def test_ut_md_003_invalid_file(self):
-        """UT-MD-003: 不正なファイル - エラーをスロー"""
-        # 不正な拡張子
+    def test_ut_md_003_docx(self):
+        """UT-MD-003: Wordファイル (.docx) - Markdown形式テキストを返す"""
+        docx_content = create_simple_docx()
+
+        result = convert_to_markdown(docx_content, "spec.docx")
+
+        assert result is not None
+        assert len(result) > 0
+        assert "テスト仕様書" in result or "機能一覧" in result or "ログイン" in result
+
+    def test_ut_md_004_invalid_file(self):
+        """UT-MD-004: 不正なファイル形式 - エラーをスロー"""
         with pytest.raises(ValueError, match="対応していないファイル形式"):
-            convert_excel_to_markdown(b"dummy content", "file.txt")
+            convert_to_markdown(b"dummy content", "file.txt")
 
         with pytest.raises(ValueError, match="対応していないファイル形式"):
-            convert_excel_to_markdown(b"dummy content", "file.pdf")
+            convert_to_markdown(b"dummy content", "file.pdf")
 
         with pytest.raises(ValueError, match="対応していないファイル形式"):
-            convert_excel_to_markdown(b"dummy content", "file.csv")
+            convert_to_markdown(b"dummy content", "file.csv")
 
     def test_xlsx_extension(self):
         """.xlsx拡張子が受け入れられる"""
         excel_content = create_simple_excel()
-        result = convert_excel_to_markdown(excel_content, "test.xlsx")
+        result = convert_to_markdown(excel_content, "test.xlsx")
         assert result is not None
 
     def test_xls_extension(self):
@@ -132,7 +160,7 @@ class TestConvertExcelToMarkdown:
         # .xlsxで生成したファイルを.xlsとして渡すとエラーになる可能性があるが
         # 拡張子チェックは通る
         try:
-            result = convert_excel_to_markdown(excel_content, "test.xls")
+            result = convert_to_markdown(excel_content, "test.xls")
             # 変換に成功した場合
             assert result is not None
         except Exception:
@@ -144,9 +172,9 @@ class TestConvertExcelToMarkdown:
         excel_content = create_simple_excel()
 
         # 大文字拡張子
-        result = convert_excel_to_markdown(excel_content, "test.XLSX")
+        result = convert_to_markdown(excel_content, "test.XLSX")
         assert result is not None
 
         # 混合ケース
-        result = convert_excel_to_markdown(excel_content, "test.Xlsx")
+        result = convert_to_markdown(excel_content, "test.Xlsx")
         assert result is not None
