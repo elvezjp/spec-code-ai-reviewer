@@ -6,18 +6,18 @@ from typing import Optional
 from app.markdown_tools import get_markdown_tool
 
 
-SUPPORTED_EXTENSIONS = {".xlsx", ".xls"}
+SUPPORTED_EXTENSIONS = {".xlsx", ".xls", ".docx"}
 
 
-def convert_excel_to_markdown(
+def convert_to_markdown(
     file_content: bytes,
     filename: str,
     tool: Optional[str] = None,
 ) -> str:
-    """ExcelファイルをMarkdown形式に変換する。
+    """ファイルをMarkdown形式に変換する。
 
     Args:
-        file_content: Excelファイルのバイナリコンテンツ
+        file_content: ファイルのバイナリコンテンツ
         filename: ファイル名
         tool: 使用するツール名（省略時はデフォルト）
 

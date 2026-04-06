@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 
 from app.models.schemas import ConvertResponse, AvailableToolsResponse, ToolInfo
-from app.services.markitdown_service import convert_excel_to_markdown
+from app.services.markitdown_service import convert_to_markdown
 from app.services.line_numbers_service import add_line_numbers
 from app.markdown_tools import get_available_tools
 
@@ -65,7 +65,7 @@ async def convert_excel_to_markdown_api(
         )
 
     try:
-        markdown = convert_excel_to_markdown(content, filename, tool)
+        markdown = convert_to_markdown(content, filename, tool)
         return ConvertResponse(
             success=True,
             markdown=markdown,
@@ -126,7 +126,7 @@ async def convert_word_to_markdown_api(
         )
 
     try:
-        markdown = convert_excel_to_markdown(content, filename, "markitdown")
+        markdown = convert_to_markdown(content, filename, "markitdown")
         return ConvertResponse(
             success=True,
             markdown=markdown,

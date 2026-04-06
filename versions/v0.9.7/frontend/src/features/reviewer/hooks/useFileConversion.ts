@@ -40,7 +40,6 @@ const DEFAULT_TOOL = 'markitdown'
 const DEFAULT_TYPE = '設計書'
 
 const isDocxFile = (filename: string) => filename.toLowerCase().endsWith('.docx')
-const isDocFile = (filename: string) => filename.toLowerCase().endsWith('.doc')
 
 export function useFileConversion(): UseFileConversionReturn {
   const [specFiles, setSpecFiles] = useState<DesignFile[]>([])
@@ -64,10 +63,7 @@ export function useFileConversion(): UseFileConversionReturn {
   }, [])
 
   const addSpecFiles = useCallback((files: File[]) => {
-    const docFiles = files.filter((f) => isDocFile(f.name))
-    const validFiles = files.filter((f) => !isDocFile(f.name))
-
-    const newFiles: DesignFile[] = validFiles.map((file, index) => ({
+    const newFiles: DesignFile[] = files.map((file, index) => ({
       file,
       filename: file.name,
       isMain: index === 0,
@@ -77,12 +73,7 @@ export function useFileConversion(): UseFileConversionReturn {
 
     setSpecFiles(newFiles)
     setSpecMarkdown(null)
-
-    if (docFiles.length > 0) {
-      setSpecStatus(`⚠️ .doc形式は非対応です。.docx形式で保存し直してください（${docFiles.length}件を除外）`)
-    } else {
-      setSpecStatus('')
-    }
+    setSpecStatus('')
   }, [])
 
   const removeSpecFile = useCallback((filename: string) => {
