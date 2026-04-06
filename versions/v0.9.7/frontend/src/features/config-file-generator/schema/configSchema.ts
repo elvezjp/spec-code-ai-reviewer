@@ -4,7 +4,7 @@ export const CONFIG_SCHEMA: ConfigSchema = {
   meta: {
     outputTitle: '設計書-Javaプログラム突合 AIレビュアー 設定ファイル',
     outputFileName: 'reviewer-config.md',
-    version: 'v0.9.6',
+    version: 'v0.9.7',
   },
   sections: [
     {
