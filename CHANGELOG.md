@@ -7,6 +7,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.7] - 2026-04-07
+
+### Added
+- **Word (.docx) file support** (#95, Issue #26): Added Word (.docx) as a supported design document input format in addition to Excel
+  - Added new `POST /api/convert/word-to-markdown` endpoint
+  - `.docx` files are converted using MarkItDown (tool is fixed; excel2md does not support Word)
+  - Added `.docx` to the frontend file selector, enabling Word documents to be converted and reviewed
+  - Tool selector for `.docx` rows is disabled, showing "WordはMarkItDownのみ対応" (Word supports MarkItDown only)
+  - Bulk tool change (`applyToolToAll`) preserves MarkItDown for `.docx` files
+- **Backend dependency update**: Changed to `markitdown[xlsx,docx]`
+
+### Changed
+- **Service function rename**: Renamed `convert_excel_to_markdown` to `convert_to_markdown` in `markitdown_service.py` to handle both Excel and Word uniformly (added `.docx` to `SUPPORTED_EXTENSIONS`)
+- **Configuration file updates**: Set v0.9.7 as the latest version
+  - `nginx/version-map.conf`: Added v0.9.7 routing, changed default port to 8097
+
 ## [0.9.6] - 2026-03-28
 
 ### Added
@@ -372,6 +388,7 @@ For a detailed feature comparison table across all versions, see [versions/READM
 
 | Version | Key Features |
 |---------|-------------|
+| 0.9.7   | Word (.docx) file support, new `/api/convert/word-to-markdown` endpoint |
 | 0.9.6   | Code part exclude/important/summarize features, unified summarize button, defensive filter and error state fixes |
 | 0.9.5   | Frontend-backend version mismatch detection, HTTP response check for all API functions, AI split silent fallback fix, split mode source mismatch fix |
 | 0.9.4   | Summary mode options (text/AI), max subsections UI control, MD2MAP_MAX_SUBSECTIONS env var removed, MAP.json/INDEX.md download from split preview, split preview re-run |
