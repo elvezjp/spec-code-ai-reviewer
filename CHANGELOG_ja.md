@@ -7,6 +7,22 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/spec/v2.0.0.html) に準拠しています。
 
+## [0.9.7] - 2026-04-07
+
+### 追加
+- **Word (.docx) ファイル対応**（#95, Issue #26）: 設計書の入力形式として Excel に加え Word (.docx) をサポート
+  - 新エンドポイント `POST /api/convert/word-to-markdown` を追加
+  - `.docx` は MarkItDown で変換（excel2md は Word 非対応のためツール固定）
+  - フロントエンドのファイル選択に `.docx` を追加し、Wordファイルの変換・レビューが可能に
+  - `.docx` 行のツール選択を無効化し「WordはMarkItDownのみ対応」の補足テキストを表示
+  - 一括ツール変更 (`applyToolToAll`) でも `.docx` は MarkItDown のまま維持
+- **バックエンド依存関係**: `markitdown[xlsx,docx]` に変更
+
+### 変更
+- **サービス関数のリネーム**: `markitdown_service.py` の `convert_excel_to_markdown` を `convert_to_markdown` に改名し、Excel と Word を統一して扱えるよう汎化（`SUPPORTED_EXTENSIONS` に `.docx` を追加）
+- **設定ファイル更新**: v0.9.7をlatest版として設定
+  - `nginx/version-map.conf`: v0.9.7のルーティング追加、defaultポートを8097に変更
+
 ## [0.9.6] - 2026-03-28
 
 ### 追加
@@ -371,6 +387,7 @@
 
 | バージョン | 主な機能 |
 |------------|----------|
+| 0.9.7      | Word (.docx) ファイル対応、`/api/convert/word-to-markdown` エンドポイント追加 |
 | 0.9.6      | コードパートの除外・重要指定・要約機能、要約ボタン統合、防御フィルタ・エラー状態クリア修正 |
 | 0.9.5      | フロントエンド・バックエンドのバージョン不一致検知、全API関数のHTTPレスポンスチェック追加、AIモード分割のサイレントフォールバック修正、分割モード送信元不整合修正 |
 | 0.9.4      | サマリーモードオプション（text/AI）、最大サブスプリット数UI化、環境変数MD2MAP_MAX_SUBSECTIONS廃止、分割プレビューからMAP.json/INDEX.mdダウンロード、分割プレビュー再実行機能 |

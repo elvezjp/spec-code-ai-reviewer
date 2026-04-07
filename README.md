@@ -9,13 +9,13 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Stars](https://img.shields.io/github/stars/elvezjp/spec-code-ai-reviewer?style=social)](https://github.com/elvezjp/spec-code-ai-reviewer/stargazers)
 
-A web application that uses AI to cross-check design documents (Excel format) against program code and verify consistency.
+A web application that uses AI to cross-check design documents (Excel / Word format) against program code and verify consistency.
 
-https://github.com/user-attachments/assets/39e9ad21-1ce3-45e2-a4f9-544b7e43b013
+https://github.com/user-attachments/assets/8c72f49b-35c5-43af-b1f2-29b6b6b71e30
 
 ## Features
 
-- **Design document conversion**: Convert Excel (.xlsx, .xls) to Markdown (using MarkItDown, excel2md)
+- **Design document conversion**: Convert Excel (.xlsx, .xls) / Word (.docx) to Markdown (using MarkItDown, excel2md; Word supports MarkItDown only)
 - **Program conversion**: Add line numbers to any text file (add-line-numbers compatible)
 - **Cross-check review**: Verify consistency between the design doc and code using LLMs (Bedrock / Anthropic / OpenAI)
 - **Split review**: Semantically split large design docs and code that exceed token limits for review (using md2map / code2map)
@@ -49,7 +49,7 @@ This application splits Markdown-converted design documents and source code into
 
 ## Usage
 
-1. **Upload design documents**: Select Excel (.xlsx, .xls) files (multiple allowed)
+1. **Upload design documents**: Select Excel (.xlsx, .xls) or Word (.docx) files (multiple allowed)
    - **Role**: Select one main design document (others are treated as reference materials)
    - **Type**: Choose from 9 types such as design doc, requirements doc, coding guidelines, etc.
    - **Conversion tool**: Choose MarkItDown / excel2md (CSV) / excel2md (CSV+Mermaid)
@@ -142,7 +142,7 @@ For v0.6.0 and later, start frontend and backend separately.
 **Terminal 1: Start backend**
 
 ```bash
-cd versions/v0.9.6/backend
+cd versions/v0.9.7/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -150,7 +150,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **Terminal 2: Start frontend**
 
 ```bash
-cd versions/v0.9.6/frontend
+cd versions/v0.9.7/frontend
 npm install
 npm run dev
 ```
@@ -204,12 +204,12 @@ You can switch versions from the top-left balloon (routing via Cookie + Nginx ma
 Run tests in each version's directory.
 
 ```bash
-# v0.9.6 backend tests
-cd versions/v0.9.6/backend
+# v0.9.7 backend tests
+cd versions/v0.9.7/backend
 uv run pytest tests/ -v
 
-# v0.9.6 frontend tests
-cd versions/v0.9.6/frontend
+# v0.9.7 frontend tests
+cd versions/v0.9.7/frontend
 npm test
 
 # v0.5.2 and earlier tests (backend only)
@@ -325,6 +325,7 @@ Try again with a maximum tokens value that is lower than 10000.
 | GET | `/` | Serve frontend |
 | GET | `/api/health` | Health check |
 | POST | `/api/convert/excel-to-markdown` | Excel to Markdown conversion |
+| POST | `/api/convert/word-to-markdown` | Word to Markdown conversion |
 | POST | `/api/convert/add-line-numbers` | Add line numbers |
 | GET | `/api/convert/available-tools` | List available conversion tools |
 | POST | `/api/review` | Run review |
@@ -351,7 +352,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # Dev Nginx config
 │   ├── spec-code-ai-reviewer.conf  # Production Nginx config
 │   └── version-map.conf         # Version switch map (shared)
-├── latest -> versions/v0.9.6    # Symlink to latest
+├── latest -> versions/v0.9.7    # Symlink to latest
 │
 ├── versions/                    # All versions
 │   ├── README.md                # Version management notes
@@ -369,7 +370,8 @@ spec-code-ai-reviewer/
 │   ├── v0.9.3/                  # Previous (Vite + React)
 │   ├── v0.9.4/                  # Previous (Vite + React)
 │   ├── v0.9.5/                  # Previous (Vite + React)
-│   └── v0.9.6/                  # Latest (Vite + React)
+│   ├── v0.9.6/                  # Previous (Vite + React)
+│   └── v0.9.7/                  # Latest (Vite + React)
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -436,7 +438,8 @@ Example: v0.2.5 -> 8000 + (2 x 10) + 5 = 8025
 
 | Version | Port |
 |-----------|------|
-| v0.9.6 (latest) | 8096 |
+| v0.9.7 (latest) | 8097 |
+| v0.9.6 | 8096 |
 | v0.9.5 | 8095 |
 | v0.9.4 | 8094 |
 | v0.9.3 | 8093 |

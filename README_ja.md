@@ -9,13 +9,13 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Stars](https://img.shields.io/github/stars/elvezjp/spec-code-ai-reviewer?style=social)](https://github.com/elvezjp/spec-code-ai-reviewer/stargazers)
 
-設計書（Excel形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
+設計書（Excel / Word形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
 
-https://github.com/user-attachments/assets/39e9ad21-1ce3-45e2-a4f9-544b7e43b013
+https://github.com/user-attachments/assets/8c72f49b-35c5-43af-b1f2-29b6b6b71e30
 
 ## 機能
 
-- **設計書変換**: Excel (.xlsx, .xls) → Markdown形式に変換（MarkItDown、excel2md使用）
+- **設計書変換**: Excel (.xlsx, .xls) / Word (.docx) → Markdown形式に変換（MarkItDown、excel2md使用。Wordは MarkItDown のみ対応）
 - **プログラム変換**: 任意のテキストファイルに行番号を付与（add-line-numbers準拠）
 - **突合レビュー**: LLM（Bedrock / Anthropic / OpenAI）を使用して設計書とコードの整合性を検証
 - **分割レビュー**: トークン上限を超える設計書・コードをセマンティック分割してレビュー（md2map / code2map使用）
@@ -49,7 +49,7 @@ LLMには入力トークンの上限があるため、大規模な設計書や�
 
 ## 使い方
 
-1. **設計書をアップロード**: Excel (.xlsx, .xls) ファイルを選択（複数可）
+1. **設計書をアップロード**: Excel (.xlsx, .xls) または Word (.docx) ファイルを選択（複数可）
    - **役割**: メイン設計書を1つ選択（それ以外は参照資料として扱われる）
    - **種別**: 設計書/要件定義書/コーディング規約など9種類から選択
    - **変換ツール**: MarkItDown / excel2md (CSV) / excel2md (CSV+Mermaid) から選択
@@ -142,7 +142,7 @@ v0.6.0以降はフロントエンドとバックエンドを別々に起動し�
 **ターミナル1: バックエンド起動**
 
 ```bash
-cd versions/v0.9.6/backend
+cd versions/v0.9.7/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -150,7 +150,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **ターミナル2: フロントエンド起動**
 
 ```bash
-cd versions/v0.9.6/frontend
+cd versions/v0.9.7/frontend
 npm install
 npm run dev
 ```
@@ -204,12 +204,12 @@ docker-compose down
 各バージョンのディレクトリでテストを実行します。
 
 ```bash
-# v0.9.6 バックエンドのテスト
-cd versions/v0.9.6/backend
+# v0.9.7 バックエンドのテスト
+cd versions/v0.9.7/backend
 uv run pytest tests/ -v
 
-# v0.9.6 フロントエンドのテスト
-cd versions/v0.9.6/frontend
+# v0.9.7 フロントエンドのテスト
+cd versions/v0.9.7/frontend
 npm test
 
 # v0.5.2以前のテスト（バックエンドのみ）
@@ -326,6 +326,7 @@ Try again with a maximum tokens value that is lower than 10000.
 | GET | `/` | フロントエンド配信 |
 | GET | `/api/health` | ヘルスチェック |
 | POST | `/api/convert/excel-to-markdown` | Excel→Markdown変換 |
+| POST | `/api/convert/word-to-markdown` | Word→Markdown変換 |
 | POST | `/api/convert/add-line-numbers` | 行番号付与 |
 | GET | `/api/convert/available-tools` | 利用可能な変換ツール一覧取得 |
 | POST | `/api/review` | レビュー実行 |
@@ -352,7 +353,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # 開発用Nginx設定
 │   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.9.6    # シンボリックリンク（最新版を指す）
+├── latest -> versions/v0.9.7    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
@@ -370,7 +371,8 @@ spec-code-ai-reviewer/
 │   ├── v0.9.3/                  # 旧バージョン（Vite + React）
 │   ├── v0.9.4/                  # 旧バージョン（Vite + React）
 │   ├── v0.9.5/                  # 旧バージョン（Vite + React）
-│   └── v0.9.6/                  # 最新版（Vite + React）
+│   ├── v0.9.6/                  # 旧バージョン（Vite + React）
+│   └── v0.9.7/                  # 最新版（Vite + React）
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -437,7 +439,8 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 
 | バージョン | ポート |
 |-----------|-------|
-| v0.9.6 (latest) | 8096 |
+| v0.9.7 (latest) | 8097 |
+| v0.9.6 | 8096 |
 | v0.9.5 | 8095 |
 | v0.9.4 | 8094 |
 | v0.9.3 | 8093 |
