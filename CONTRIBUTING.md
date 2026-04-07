@@ -43,14 +43,14 @@ We welcome enhancement suggestions! Please create an Issue with:
 3. **Write tests** for your changes
    ```bash
    # Run backend tests
-   cd versions/v0.9.6/backend
+   cd versions/v0.9.7/backend
    uv run pytest tests/ -v
 
    # Run backend tests with coverage
    uv run pytest tests/ --cov=app --cov-report=html
 
    # Run frontend tests
-   cd versions/v0.9.6/frontend
+   cd versions/v0.9.7/frontend
    npm run test:run
 
    # Run frontend tests with coverage
@@ -91,7 +91,7 @@ git clone https://github.com/YOUR-USERNAME/spec-code-ai-reviewer.git
 cd spec-code-ai-reviewer
 
 # Install backend dependencies
-cd versions/v0.9.6/backend
+cd versions/v0.9.7/backend
 uv sync
 
 # Install frontend dependencies
@@ -103,7 +103,7 @@ npm install
 
 ```bash
 # Backend: Run all tests
-cd versions/v0.9.6/backend
+cd versions/v0.9.7/backend
 uv run pytest tests/ -v
 
 # Backend: Run a specific test file
@@ -113,7 +113,7 @@ uv run pytest tests/test_convert.py -v
 uv run pytest tests/ --cov=app --cov-report=html
 
 # Frontend: Run all tests
-cd versions/v0.9.6/frontend
+cd versions/v0.9.7/frontend
 npm run test:run
 
 # Frontend: Run tests in watch mode
@@ -176,7 +176,7 @@ Closes #123
 ## Version Management
 
 When contributing:
-- Focus on the latest version (`versions/v0.9.6/`)
+- Focus on the latest version (`versions/v0.9.7/`)
 - Maintain backward compatibility where possible
 - Clearly document breaking changes
 

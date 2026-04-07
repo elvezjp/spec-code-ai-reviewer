@@ -17,7 +17,7 @@ export const CONFIG_SCHEMA: ConfigSchema = {
           id: 'version',
           label: 'version',
           type: 'fixed',
-          value: 'v0.9.5',
+          value: 'v0.9.7',
         },
         {
           id: 'created_at',
