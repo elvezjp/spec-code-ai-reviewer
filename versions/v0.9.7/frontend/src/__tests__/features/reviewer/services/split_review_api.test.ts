@@ -390,7 +390,7 @@ describe('executeIntegrate', () => {
     expect(result.success).toBe(true)
     expect(result.report).toContain('統合レビューレポート')
     expect(result.integratedReport?.overallSummary).toContain('2グループ')
-    expect(result.reviewMeta?.version).toBe('v0.9.6')
+    expect(result.reviewMeta?.version).toBe('v0.9.7')
     expect(result.tokensUsed?.input).toBe(3000)
     expect(global.fetch).toHaveBeenCalledWith(
       '/api/review/integrate',
