@@ -9,7 +9,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Stars](https://img.shields.io/github/stars/elvezjp/spec-code-ai-reviewer?style=social)](https://github.com/elvezjp/spec-code-ai-reviewer/stargazers)
 
-設計書（Excel形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
+設計書（Excel / Word形式）とプログラムコードをAIで突合し、整合性を検証するWebアプリケーション。
 
 https://github.com/user-attachments/assets/39e9ad21-1ce3-45e2-a4f9-544b7e43b013
 
