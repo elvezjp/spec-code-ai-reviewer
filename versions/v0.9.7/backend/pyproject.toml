@@ -9,7 +9,6 @@ dependencies = [
     "python-multipart>=0.0.12",
     "boto3>=1.35.0",
     "markitdown[xlsx,docx]>=0.0.1a3",
-    "openpyxl>=3.1.5",
     "anthropic>=0.40.0",
     "openai>=2.14.0",
     "python-dotenv>=1.0.0",
@@ -34,6 +33,8 @@ packages = ["app"]
 dev-dependencies = [
     "pytest>=8.0.0",
     "httpx>=0.27.0",
+    "openpyxl>=3.1.5",
+    "python-docx>=1.1.0",
 ]
 
 [tool.pytest.ini_options]

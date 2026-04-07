@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -1362,6 +1362,19 @@ wheels = [
 ]
 
 [[package]]
+name = "python-docx"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "lxml" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a9/f7/eddfe33871520adab45aaa1a71f0402a2252050c14c7e3009446c8f4701c/python_docx-1.2.0.tar.gz", hash = "sha256:7bc9d7b7d8a69c9c02ca09216118c86552704edc23bac179283f2e38f86220ce", size = 5723256, upload-time = "2025-06-16T20:46:27.921Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d0/00/1e03a4989fa5795da308cd774f05b704ace555a70f9bf9d3be057b680bcf/python_docx-1.2.0-py3-none-any.whl", hash = "sha256:3fd478f3250fbbbfd3b94fe1e985955737c145627498896a8a6bf81f4baf66c7", size = 252987, upload-time = "2025-06-16T20:46:22.506Z" },
+]
+
+[[package]]
 name = "python-dotenv"
 version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1519,7 +1532,6 @@ dependencies = [
     { name = "markitdown", extra = ["docx", "xlsx"] },
     { name = "md2map", extra = ["ai", "nlp"] },
     { name = "openai" },
-    { name = "openpyxl" },
     { name = "python-dotenv" },
     { name = "python-multipart" },
     { name = "uvicorn", extra = ["standard"] },
@@ -1528,7 +1540,9 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "httpx" },
+    { name = "openpyxl" },
     { name = "pytest" },
+    { name = "python-docx" },
 ]
 
 [package.metadata]
@@ -1541,7 +1555,6 @@ requires-dist = [
     { name = "markitdown", extras = ["xlsx", "docx"], specifier = ">=0.0.1a3" },
     { name = "md2map", extras = ["nlp", "ai"], git = "https://github.com/elvezjp/md2map.git?branch=main" },
     { name = "openai", specifier = ">=2.14.0" },
-    { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "python-multipart", specifier = ">=0.0.12" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32.0" },
@@ -1550,7 +1563,9 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "httpx", specifier = ">=0.27.0" },
+    { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "pytest", specifier = ">=8.0.0" },
+    { name = "python-docx", specifier = ">=1.1.0" },
 ]
 
 [[package]]
