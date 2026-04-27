@@ -206,3 +206,45 @@ gh api repos/elvezjp/spec-code-ai-reviewer/dependabot/alerts --paginate \
 | Step 2（旧バージョン dismiss） | 2026-04-27 | 117 / 117 | - | `dismissed_reason=not_used`。内訳: frontend 107件（v0.7.0〜v0.9.6 各9件・v0.6.0 8件）/ backend 10件（v0.5.0〜v0.9.1 各1件、python-dotenv）。残存 open: 10 件（最新版 v0.9.7 のみ） |
 | Step 3（最新版修正） | 2026-04-27 | 10 / 10 | - | 全件マイナー/パッチ更新で解決。backend: lxml 6.0.2→6.1.0（#264）。frontend (`npm audit fix`): vite 7.3.1→7.3.2（#250-252）/ rollup 4.57.1→4.60.2（#238）/ minimatch 9.0.5→9.0.9・3.1.2→3.1.5（#241,242）/ flatted 3.3.3→3.4.2（#244）/ picomatch 4.0.3→4.0.4（#247）/ yaml 1.10.2→1.10.3（#245）。postcss 8.5.12 にも副次更新（Dependabot 未通知）。テスト: backend 191件・frontend 212件すべて成功。メジャー更新不要のため個別 issue 化なし |
 | Step 4（malware 修正） | 2026-04-27 | 0 / 0 | - | Malware タブの open アラートは 0 件のため対応不要 |
+
+---
+
+## 後追い対応: PR #98 マージ後の再スキャンによる新規アラート
+
+### 経緯
+
+PR #98 マージにより default branch が更新され、Dependabot がリポジトリ全体を再スキャン。直近で新規公開された CVE 群が一斉に検出され、open アラートが **0 件 → 151 件** に増加した。
+
+### 新規検出アラートの内訳
+
+| カテゴリ | 件数 | 対応 |
+|---|---|---|
+| git subtree 配下 | 36 | Dismiss（運用方針通り） |
+| 旧バージョン（`versions/v0.5.0`〜`v0.9.6`） | 110 | Dismiss（運用方針通り） |
+| 最新版（`versions/v0.9.7/`） | 5 | 修正対応（後述） |
+| **合計** | **151** | |
+
+### 後追い Dismiss（subtree + 旧バージョン）
+
+| 区分 | 実行日 | 件数 | 備考 |
+|---|---|---|---|
+| subtree dismiss | 2026-04-27 | 36 / 36 | `dismissed_reason=not_used`。Step 1 と同じスクリプトを再実行 |
+| 旧バージョン dismiss | 2026-04-27 | 110 / 110 | `dismissed_reason=not_used`。Step 2 と同じスクリプトを再実行 |
+
+### v0.9.7 の新規 5 件（修正対応 TODO）
+
+| # | 重要度 | パッケージ | manifest |
+|---|---|---|---|
+| 411 | low | Pygments | `versions/v0.9.7/backend/uv.lock` |
+| 412 | medium | anthropic | 同上 |
+| 413 | medium | anthropic | 同上 |
+| 414 | medium | pytest | 同上 |
+| 415 | medium | python-multipart | 同上 |
+
+→ `uv lock --upgrade-package` で対応予定（次作業）。
+
+### 学び（運用上の知見）
+
+- PR マージ直後の再スキャンで新規 CVE が一斉検出されることがある
+- `auto_dismissed` 状態のアラート（GitHub が自動 close したもの）と、手動 `dismissed` は API 上で区別される
+- 上部ナビ「Security and quality」のバッジ件数はキャッシュされており、再スキャン完了後も反映に数十分のラグがある
