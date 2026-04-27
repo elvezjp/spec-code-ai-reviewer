@@ -203,6 +203,6 @@ gh api repos/elvezjp/spec-code-ai-reviewer/dependabot/alerts --paginate \
 | Step | 実行日 | 件数 | 関連 PR / Issue | 備考 |
 |---|---|---|---|---|
 | Step 1（subtree dismiss） | 2026-04-27 | 19 / 19 | - | `dismissed_reason=not_used`。内訳: md2map 9件（root 7・versions 2）/ code2map 8件（root 2・versions 6）/ excel2md 2件。残存 open: 127 件 |
-| Step 2（旧バージョン dismiss） | - | - / 117 | - | |
+| Step 2（旧バージョン dismiss） | 2026-04-27 | 117 / 117 | - | `dismissed_reason=not_used`。内訳: frontend 107件（v0.7.0〜v0.9.6 各9件・v0.6.0 8件）/ backend 10件（v0.5.0〜v0.9.1 各1件、python-dotenv）。残存 open: 10 件（最新版 v0.9.7 のみ） |
 | Step 3（最新版修正） | - | - / 10 | - | |
 | Step 4（malware 修正） | - | - | - | |
