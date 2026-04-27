@@ -205,4 +205,4 @@ gh api repos/elvezjp/spec-code-ai-reviewer/dependabot/alerts --paginate \
 | Step 1（subtree dismiss） | 2026-04-27 | 19 / 19 | - | `dismissed_reason=not_used`。内訳: md2map 9件（root 7・versions 2）/ code2map 8件（root 2・versions 6）/ excel2md 2件。残存 open: 127 件 |
 | Step 2（旧バージョン dismiss） | 2026-04-27 | 117 / 117 | - | `dismissed_reason=not_used`。内訳: frontend 107件（v0.7.0〜v0.9.6 各9件・v0.6.0 8件）/ backend 10件（v0.5.0〜v0.9.1 各1件、python-dotenv）。残存 open: 10 件（最新版 v0.9.7 のみ） |
 | Step 3（最新版修正） | 2026-04-27 | 10 / 10 | - | 全件マイナー/パッチ更新で解決。backend: lxml 6.0.2→6.1.0（#264）。frontend (`npm audit fix`): vite 7.3.1→7.3.2（#250-252）/ rollup 4.57.1→4.60.2（#238）/ minimatch 9.0.5→9.0.9・3.1.2→3.1.5（#241,242）/ flatted 3.3.3→3.4.2（#244）/ picomatch 4.0.3→4.0.4（#247）/ yaml 1.10.2→1.10.3（#245）。postcss 8.5.12 にも副次更新（Dependabot 未通知）。テスト: backend 191件・frontend 212件すべて成功。メジャー更新不要のため個別 issue 化なし |
-| Step 4（malware 修正） | - | - | - | |
+| Step 4（malware 修正） | 2026-04-27 | 0 / 0 | - | Malware タブの open アラートは 0 件のため対応不要 |
