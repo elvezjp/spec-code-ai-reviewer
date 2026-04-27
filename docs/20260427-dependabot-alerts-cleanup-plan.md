@@ -241,7 +241,13 @@ PR #98 マージにより default branch が更新され、Dependabot がリポ�
 | 414 | medium | pytest | 同上 |
 | 415 | medium | python-multipart | 同上 |
 
-→ `uv lock --upgrade-package` で対応予定（次作業）。
+→ `uv lock --upgrade-package` で対応完了（2026-04-27）。
+
+| 区分 | 件数 | 備考 |
+|---|---|---|
+| 最新版 backend 修正 | 5 / 5 | Pygments 2.19.2→2.20.0（#411）/ anthropic 0.86.0→0.97.0（#412,413）/ pytest 9.0.2→9.0.3（#414）/ python-multipart 0.0.22→0.0.26（#415）。テスト 191件すべて成功 |
+
+※ anthropic は 0.86 → 0.97 と複数マイナー更新（0.x 系のため Breaking Changes の可能性ありだったがテストは全て成功）。
 
 ### 学び（運用上の知見）
 
