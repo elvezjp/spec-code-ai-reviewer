@@ -142,7 +142,7 @@ For v0.6.0 and later, start frontend and backend separately.
 **Terminal 1: Start backend**
 
 ```bash
-cd versions/v0.9.7/backend
+cd versions/v0.9.8/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -150,7 +150,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **Terminal 2: Start frontend**
 
 ```bash
-cd versions/v0.9.7/frontend
+cd versions/v0.9.8/frontend
 npm install
 npm run dev
 ```
@@ -204,12 +204,12 @@ You can switch versions from the top-left balloon (routing via Cookie + Nginx ma
 Run tests in each version's directory.
 
 ```bash
-# v0.9.7 backend tests
-cd versions/v0.9.7/backend
+# v0.9.8 backend tests
+cd versions/v0.9.8/backend
 uv run pytest tests/ -v
 
-# v0.9.7 frontend tests
-cd versions/v0.9.7/frontend
+# v0.9.8 frontend tests
+cd versions/v0.9.8/frontend
 npm test
 
 # v0.5.2 and earlier tests (backend only)
@@ -352,7 +352,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # Dev Nginx config
 │   ├── spec-code-ai-reviewer.conf  # Production Nginx config
 │   └── version-map.conf         # Version switch map (shared)
-├── latest -> versions/v0.9.7    # Symlink to latest
+├── latest -> versions/v0.9.8    # Symlink to latest
 │
 ├── versions/                    # All versions
 │   ├── README.md                # Version management notes
@@ -371,7 +371,8 @@ spec-code-ai-reviewer/
 │   ├── v0.9.4/                  # Previous (Vite + React)
 │   ├── v0.9.5/                  # Previous (Vite + React)
 │   ├── v0.9.6/                  # Previous (Vite + React)
-│   └── v0.9.7/                  # Latest (Vite + React)
+│   ├── v0.9.7/                  # Previous (Vite + React)
+│   └── v0.9.8/                  # Latest (Vite + React)
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -438,7 +439,8 @@ Example: v0.2.5 -> 8000 + (2 x 10) + 5 = 8025
 
 | Version | Port |
 |-----------|------|
-| v0.9.7 (latest) | 8097 |
+| v0.9.8 (latest) | 8098 |
+| v0.9.7 | 8097 |
 | v0.9.6 | 8096 |
 | v0.9.5 | 8095 |
 | v0.9.4 | 8094 |

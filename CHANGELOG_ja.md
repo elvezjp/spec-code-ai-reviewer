@@ -7,6 +7,23 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/spec/v2.0.0.html) に準拠しています。
 
+## [0.9.8] - 2026-05-11
+
+### 変更
+- **excel2md subtree を v2.1.1 に更新**（#101）: upstream `elvezjp/excel2md` `main`（コミット `c853eb2`、v2.1.1）を `excel2md/` subtree に取り込み
+  - `versions/v0.9.8/backend/app/markdown_tools/excel2md_tool.py`: `_DEFAULT_EXCEL2MD_PATH` を `excel2md/v2.0` から `excel2md/v2.1.1` に変更
+  - v2.0 → v2.1.1 で取り込まれる upstream の修正:
+    - `is_code_block` / `build_code_block_from_rows` の v1.x 互換 re-export を復元（excel2md #15）
+    - `extract_table()` 打ち切りパスの tuple アリティ不整合を修正（excel2md #24）
+    - 複数テーブル間で脚注番号が重複する不具合を修正（excel2md #25）
+    - `footnote_scope=sheet` × 非 `--split-by-sheet` 時に sheet スコープ脚注定義が出力されない不具合を修正
+    - `mermaid_generator.py` の `is_code_block` import 漏れ修正（excel2md #13）
+  - v2.0 → v2.1.1 で取り込まれる upstream の依存・Python 要件更新:
+    - 最低 Python バージョンを 3.10 に引き上げ（本プロジェクトは既に該当）
+    - pytest 9.0.3（CVE-2025-71176） / Pygments 2.20.0（CVE-2026-4539）への更新
+- **設定ファイル更新**: v0.9.8 を latest 版として設定
+  - `nginx/version-map.conf`: v0.9.8 のルーティング追加、default ポートを 8098 に変更
+
 ## [0.9.7] - 2026-04-07
 
 ### 追加
@@ -387,6 +404,7 @@
 
 | バージョン | 主な機能 |
 |------------|----------|
+| 0.9.8      | excel2md subtree を v2.1.1 に更新（re-export 復元・脚注・打ち切り修正、Python 3.10+） |
 | 0.9.7      | Word (.docx) ファイル対応、`/api/convert/word-to-markdown` エンドポイント追加 |
 | 0.9.6      | コードパートの除外・重要指定・要約機能、要約ボタン統合、防御フィルタ・エラー状態クリア修正 |
 | 0.9.5      | フロントエンド・バックエンドのバージョン不一致検知、全API関数のHTTPレスポンスチェック追加、AIモード分割のサイレントフォールバック修正、分割モード送信元不整合修正 |

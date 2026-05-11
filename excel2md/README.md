@@ -5,7 +5,7 @@
 [![Elvez](https://img.shields.io/badge/Elvez-Product-3F61A7?style=flat-square)](https://elvez.co.jp/)
 [![IXV Ecosystem](https://img.shields.io/badge/IXV-Ecosystem-3F61A7?style=flat-square)](https://elvez.co.jp/ixv/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/badge/Python-3.9+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Stars](https://img.shields.io/github/stars/elvezjp/excel2md?style=social)](https://github.com/elvezjp/excel2md/stargazers)
 
 Excel to Markdown converter. Reads Excel workbooks (.xlsx/.xlsm) and automatically generates Markdown format output.
@@ -33,14 +33,15 @@ Excel to Markdown converter. Reads Excel workbooks (.xlsx/.xlsm) and automatical
 - [CHANGELOG.md](CHANGELOG.md) - Version history
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
 - [SECURITY.md](SECURITY.md) - Security policy and best practices
-- [v2.0/spec.md](v2.0/spec.md) - Technical specification (v2.0)
+- [v2.1.1/spec.md](v2.1.1/spec.md) - Technical specification (v2.1.1, latest)
+- [v2.1.0/spec.md](v2.1.0/spec.md) - Technical specification (v2.1.0, frozen snapshot)
 - [v1.8/spec.md](v1.8/spec.md) - Technical specification (v1.8)
 
 ## Setup
 
 ### Requirements
 
-- Python 3.9 or higher
+- Python 3.10 or higher
 - [uv](https://docs.astral.sh/uv/) package manager
 
 ### Install Dependencies
@@ -56,7 +57,7 @@ uv sync
 ## Usage
 
 ```bash
-uv run python v2.0/excel_to_md.py input.xlsx
+uv run python v2.1.1/excel_to_md.py input.xlsx
 ```
 This generates:
 - `input_csv.md`: CSV markdown format (default)
@@ -70,34 +71,34 @@ This generates:
 
 **Convert with Mermaid flowchart support:**
 ```bash
-uv run python v2.0/excel_to_md.py input.xlsx --mermaid-enabled
+uv run python v2.1.1/excel_to_md.py input.xlsx --mermaid-enabled
 ```
 
 **Generate individual files per sheet:**
 ```bash
-uv run python v2.0/excel_to_md.py input.xlsx --split-by-sheet
+uv run python v2.1.1/excel_to_md.py input.xlsx --split-by-sheet
 ```
 
 **Specify CSV markdown output directory:**
 ```bash
-uv run python v2.0/excel_to_md.py input.xlsx --csv-output-dir ./output
+uv run python v2.1.1/excel_to_md.py input.xlsx --csv-output-dir ./output
 # CSV markdown: ./output/input_csv.md
 # Images: ./output/input_images/
 ```
 
 **Output standard Markdown only (no CSV output):**
 ```bash
-uv run python v2.0/excel_to_md.py input.xlsx -o output.md --no-csv-markdown-enabled
+uv run python v2.1.1/excel_to_md.py input.xlsx -o output.md --no-csv-markdown-enabled
 ```
 
 **Plain text hyperlinks (no Markdown syntax):**
 ```bash
-uv run python v2.0/excel_to_md.py input.xlsx --hyperlink-mode inline_plain
+uv run python v2.1.1/excel_to_md.py input.xlsx --hyperlink-mode inline_plain
 ```
 
 **Reduce token count (exclude CSV summary section):**
 ```bash
-uv run python v2.0/excel_to_md.py input.xlsx --no-csv-include-description
+uv run python v2.1.1/excel_to_md.py input.xlsx --no-csv-include-description
 ```
 
 ## Key Options
@@ -232,7 +233,7 @@ If a company logo image is at cell position (B2):
 List all options:
 
 ```bash
-uv run python v2.0/excel_to_md.py --help
+uv run python v2.1.1/excel_to_md.py --help
 ```
 
 Key advanced options:
@@ -247,12 +248,15 @@ Key advanced options:
 
 ```
 excel2md/
-├── v2.0/                       # Latest version
+├── v2.1.1/                     # Latest version
 │   ├── excel_to_md.py          # Entry point
 │   ├── excel2md/               # Main package
 │   ├── tests/                  # Test suite
 │   ├── spec.md                 # Specification
 │   └── spec_appendix.md        # Specification appendix
+├── v2.1.0/                     # Previous version (frozen snapshot)
+├── v2.0.1/                     # Previous version
+├── v2.0/                       # Previous version
 ├── v1.8/                       # Legacy version
 │   ├── excel_to_md.py          # Main conversion program
 │   ├── spec.md                 # Specification
@@ -264,10 +268,10 @@ excel2md/
 ├── docs/                   # Documentation
 ├── pyproject.toml          # Project metadata
 ├── LICENSE                 # MIT License
-├── README.md               # This file
-├── CONTRIBUTING.md         # Contribution guide
-├── SECURITY.md             # Security policy
-└── CHANGELOG.md            # Version history
+├── README.md / _ja.md     # README (English / Japanese)
+├── CONTRIBUTING.md / _ja.md # Contribution guide (English / Japanese)
+├── SECURITY.md / _ja.md   # Security policy (English / Japanese)
+└── CHANGELOG.md / _ja.md  # Version history (English / Japanese)
 ```
 
 ## Security
@@ -284,7 +288,7 @@ For security concerns, please see [SECURITY.md](SECURITY.md).
 
 Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-- Report bugs via [GitHub Issues](https://github.com/elvez/excel2md/issues)
+- Report bugs via [GitHub Issues](https://github.com/elvezjp/excel2md/issues)
 - Submit pull requests for improvements
 - Follow existing code style
 - Add tests for new features
