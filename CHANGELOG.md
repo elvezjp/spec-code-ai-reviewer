@@ -7,6 +7,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.8] - 2026-05-11
+
+### Changed
+- **excel2md subtree updated to v2.1.1** (#101): Pulled upstream `elvezjp/excel2md` `main` (commit `c853eb2`, v2.1.1) into the `excel2md/` subtree
+  - `versions/v0.9.8/backend/app/markdown_tools/excel2md_tool.py`: switched `_DEFAULT_EXCEL2MD_PATH` from `excel2md/v2.0` to `excel2md/v2.1.1`
+  - Brings the following upstream fixes (v2.0 → v2.1.1):
+    - Restored v1.x backward-compatible re-exports of `is_code_block` / `build_code_block_from_rows` (excel2md #15)
+    - Fixed `extract_table()` truncation path tuple arity inconsistency (excel2md #24)
+    - Fixed duplicated footnote numbering across multiple tables (excel2md #25)
+    - Fixed sheet-scope footnote definitions being dropped in non-`split-by-sheet` mode
+    - Fixed missing `is_code_block` import in `mermaid_generator.py` (excel2md #13)
+  - Brings the following upstream dependency / Python requirement updates:
+    - Minimum Python raised to 3.10 (already satisfied by this project)
+    - pytest 9.0.3 (CVE-2025-71176) / Pygments 2.20.0 (CVE-2026-4539)
+- **Configuration file updates**: Set v0.9.8 as the latest version
+  - `nginx/version-map.conf`: Added v0.9.8 routing, changed default port to 8098
+
 ## [0.9.7] - 2026-04-07
 
 ### Added
@@ -388,6 +405,7 @@ For a detailed feature comparison table across all versions, see [versions/READM
 
 | Version | Key Features |
 |---------|-------------|
+| 0.9.8   | excel2md subtree updated to v2.1.1 (re-exports / footnote / truncation fixes, Python 3.10+) |
 | 0.9.7   | Word (.docx) file support, new `/api/convert/word-to-markdown` endpoint |
 | 0.9.6   | Code part exclude/important/summarize features, unified summarize button, defensive filter and error state fixes |
 | 0.9.5   | Frontend-backend version mismatch detection, HTTP response check for all API functions, AI split silent fallback fix, split mode source mismatch fix |
