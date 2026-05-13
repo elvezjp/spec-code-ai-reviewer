@@ -580,9 +580,9 @@ For reporting vulnerabilities, see [SECURITY.md](SECURITY.md). Our Dependabot al
 
 ## Background
 
-This tool is a small practical product born from the development of the Japanese development document support AI **IXV (Ikushibu)**.
+This tool was created during the development of **IXV**, an AI development ecosystem designed for Japanese engineering teams.
 
-In IXV, we tackle the challenge of understanding, structuring, and utilizing Japanese documents in system development. This repository publishes a cut-out part of that effort.
+IXV delivers a methodology and OSS that put AI to practical use in real development workflows. This repository publishes a portion of that work.
 
 ## License
 
