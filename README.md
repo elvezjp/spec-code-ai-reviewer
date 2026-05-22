@@ -5,7 +5,7 @@
 [![Elvez](https://img.shields.io/badge/Elvez-Product-3F61A7?style=flat-square)](https://elvez.co.jp/)
 [![IXV Ecosystem](https://img.shields.io/badge/IXV-Ecosystem-3F61A7?style=flat-square)](https://elvez.co.jp/ixv/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Stars](https://img.shields.io/github/stars/elvezjp/spec-code-ai-reviewer?style=social)](https://github.com/elvezjp/spec-code-ai-reviewer/stargazers)
 
@@ -81,11 +81,11 @@ For production deployment on EC2, see [EC2 Deployment Spec](docs/ec2-deployment-
 
 #### Python Version
 
-- **Required**: Python 3.10 or later
-- **Recommended**: Python 3.11 or 3.12
+- **Required**: Python 3.11 or later
+- **Recommended**: Python 3.11 or 3.13
 - **How to check**: Run `python --version` or `python3 --version`
 
-uv automatically uses an appropriate Python version. The installed Python 3.10+ on your system will be used as-is.
+uv automatically uses an appropriate Python version. The installed Python 3.11+ on your system will be used as-is.
 
 #### Node.js Version (v0.6.0 and later)
 
@@ -142,7 +142,7 @@ For v0.6.0 and later, start frontend and backend separately.
 **Terminal 1: Start backend**
 
 ```bash
-cd versions/v0.9.8/backend
+cd versions/v0.9.9/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -150,7 +150,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **Terminal 2: Start frontend**
 
 ```bash
-cd versions/v0.9.8/frontend
+cd versions/v0.9.9/frontend
 npm install
 npm run dev
 ```
@@ -204,12 +204,12 @@ You can switch versions from the top-left balloon (routing via Cookie + Nginx ma
 Run tests in each version's directory.
 
 ```bash
-# v0.9.8 backend tests
-cd versions/v0.9.8/backend
+# v0.9.9 backend tests
+cd versions/v0.9.9/backend
 uv run pytest tests/ -v
 
-# v0.9.8 frontend tests
-cd versions/v0.9.8/frontend
+# v0.9.9 frontend tests
+cd versions/v0.9.9/frontend
 npm test
 
 # v0.5.2 and earlier tests (backend only)
@@ -352,7 +352,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # Dev Nginx config
 │   ├── spec-code-ai-reviewer.conf  # Production Nginx config
 │   └── version-map.conf         # Version switch map (shared)
-├── latest -> versions/v0.9.8    # Symlink to latest
+├── latest -> versions/v0.9.9    # Symlink to latest
 │
 ├── versions/                    # All versions
 │   ├── README.md                # Version management notes
@@ -372,7 +372,8 @@ spec-code-ai-reviewer/
 │   ├── v0.9.5/                  # Previous (Vite + React)
 │   ├── v0.9.6/                  # Previous (Vite + React)
 │   ├── v0.9.7/                  # Previous (Vite + React)
-│   └── v0.9.8/                  # Latest (Vite + React)
+│   ├── v0.9.8/                  # Previous (Vite + React)
+│   └── v0.9.9/                  # Latest (Vite + React)
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -439,7 +440,8 @@ Example: v0.2.5 -> 8000 + (2 x 10) + 5 = 8025
 
 | Version | Port |
 |-----------|------|
-| v0.9.8 (latest) | 8098 |
+| v0.9.9 (latest) | 8099 |
+| v0.9.8 | 8098 |
 | v0.9.7 | 8097 |
 | v0.9.6 | 8096 |
 | v0.9.5 | 8095 |
