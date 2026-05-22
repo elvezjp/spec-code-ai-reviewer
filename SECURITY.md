@@ -124,30 +124,19 @@ This project uses the following key dependencies:
 
 We monitor security advisories for these dependencies and update as needed.
 
-## Dependabot Alert Policy
+### Dependabot Alert Policy
 
 This repository keeps past releases archived under `versions/`, which means Dependabot alerts are also raised against their lockfiles. In addition, `add-line-numbers/`, `code2map/`, `excel2md/`, `markitdown/`, and `md2map/` are pulled in via git subtree, and their dependencies are managed in the upstream repositories. Given this, we operate Dependabot alerts as follows.
 
-### Malware tab
+**Malware tab**: Always fix, regardless of where it is detected.
 
-- **Always fix, regardless of where it is detected**
-- Malware is not left in place even in archived versions or under git subtree directories
-
-### Vulnerable tab
+**Vulnerable**: Follow the table below.
 
 | Target | Action |
 |--------|--------|
 | The latest version pointed to by `latest` | **Fix** (dependency update / PR) |
 | Older versions (`versions/`) | **Dismiss**. Bulk-close existing alerts and dismiss new ones after confirming no impact |
 | git subtree directories (`add-line-numbers/`, `code2map/`, `excel2md/`, `markitdown/`, `md2map/`) | **Dismiss**. Managed in the upstream subtree repositories |
-
-### Workflow
-
-1. When a new alert appears, first check whether it is on the **Malware** tab or the **Vulnerable** tab
-2. **Malware** → fix it regardless of location
-3. **Vulnerable** → check the location
-   - `latest` directory → fix
-   - Older versions or under git subtree → dismiss after confirming no impact
 
 A dismissed alert will not reappear for the same combination of manifest × package × CVE, but a new CVE published for the same package will be raised as a new alert.
 
