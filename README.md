@@ -5,7 +5,7 @@
 [![Elvez](https://img.shields.io/badge/Elvez-Product-3F61A7?style=flat-square)](https://elvez.co.jp/)
 [![IXV Ecosystem](https://img.shields.io/badge/IXV-Ecosystem-3F61A7?style=flat-square)](https://elvez.co.jp/ixv/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Stars](https://img.shields.io/github/stars/elvezjp/spec-code-ai-reviewer?style=social)](https://github.com/elvezjp/spec-code-ai-reviewer/stargazers)
 
@@ -81,11 +81,11 @@ For production deployment on EC2, see [EC2 Deployment Spec](docs/ec2-deployment-
 
 #### Python Version
 
-- **Required**: Python 3.10 or later
-- **Recommended**: Python 3.11 or 3.12
+- **Required**: Python 3.11 or later
+- **Recommended**: Python 3.11 or 3.13
 - **How to check**: Run `python --version` or `python3 --version`
 
-uv automatically uses an appropriate Python version. The installed Python 3.10+ on your system will be used as-is.
+uv automatically uses an appropriate Python version. The installed Python 3.11+ on your system will be used as-is.
 
 #### Node.js Version (v0.6.0 and later)
 

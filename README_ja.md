@@ -5,7 +5,7 @@
 [![Elvez](https://img.shields.io/badge/Elvez-Product-3F61A7?style=flat-square)](https://elvez.co.jp/)
 [![IXV Ecosystem](https://img.shields.io/badge/IXV-Ecosystem-3F61A7?style=flat-square)](https://elvez.co.jp/ixv/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Stars](https://img.shields.io/github/stars/elvezjp/spec-code-ai-reviewer?style=social)](https://github.com/elvezjp/spec-code-ai-reviewer/stargazers)
 
@@ -81,11 +81,11 @@ LLMには入力トークンの上限があるため、大規模な設計書や�
 
 #### Python バージョン
 
-- **必須バージョン**: Python 3.10以上
-- **推奨バージョン**: Python 3.11 または 3.12
+- **必須バージョン**: Python 3.11以上
+- **推奨バージョン**: Python 3.11 または 3.13
 - **確認方法**: `python --version` または `python3 --version` で確認してください
 
-uvが自動的に適切なPythonバージョンを使用します。システムにインストールされているPython 3.10以上のバージョンがそのまま利用されます。
+uvが自動的に適切なPythonバージョンを使用します。システムにインストールされているPython 3.11以上のバージョンがそのまま利用されます。
 
 #### Node.js バージョン（v0.6.0以降）
 
