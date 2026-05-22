@@ -142,7 +142,7 @@ v0.6.0以降はフロントエンドとバックエンドを別々に起動し�
 **ターミナル1: バックエンド起動**
 
 ```bash
-cd versions/v0.9.8/backend
+cd versions/v0.9.9/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -150,7 +150,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **ターミナル2: フロントエンド起動**
 
 ```bash
-cd versions/v0.9.8/frontend
+cd versions/v0.9.9/frontend
 npm install
 npm run dev
 ```
@@ -204,12 +204,12 @@ docker-compose down
 各バージョンのディレクトリでテストを実行します。
 
 ```bash
-# v0.9.8 バックエンドのテスト
-cd versions/v0.9.8/backend
+# v0.9.9 バックエンドのテスト
+cd versions/v0.9.9/backend
 uv run pytest tests/ -v
 
-# v0.9.8 フロントエンドのテスト
-cd versions/v0.9.8/frontend
+# v0.9.9 フロントエンドのテスト
+cd versions/v0.9.9/frontend
 npm test
 
 # v0.5.2以前のテスト（バックエンドのみ）
@@ -353,7 +353,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # 開発用Nginx設定
 │   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
 │   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.9.8    # シンボリックリンク（最新版を指す）
+├── latest -> versions/v0.9.9    # シンボリックリンク（最新版を指す）
 │
 ├── versions/                    # 全バージョン格納
 │   ├── README.md                # バージョン管理説明
@@ -373,7 +373,8 @@ spec-code-ai-reviewer/
 │   ├── v0.9.5/                  # 旧バージョン（Vite + React）
 │   ├── v0.9.6/                  # 旧バージョン（Vite + React）
 │   ├── v0.9.7/                  # 旧バージョン（Vite + React）
-│   └── v0.9.8/                  # 最新版（Vite + React）
+│   ├── v0.9.8/                  # 旧バージョン（Vite + React）
+│   └── v0.9.9/                  # 最新版（Vite + React）
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -440,7 +441,8 @@ git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --sq
 
 | バージョン | ポート |
 |-----------|-------|
-| v0.9.8 (latest) | 8098 |
+| v0.9.9 (latest) | 8099 |
+| v0.9.8 | 8098 |
 | v0.9.7 | 8097 |
 | v0.9.6 | 8096 |
 | v0.9.5 | 8095 |

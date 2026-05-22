@@ -120,7 +120,9 @@
 
 | バージョン | ポート | 計算式 | PM2プロセス名 |
 |-----------|-------|--------|--------------|
-| v0.8.2 (latest) | 8082 | 8000 + 8×10 + 2 | spec-code-ai-reviewer-v0.8.2 |
+| v0.9.9 (latest) | 8099 | 8000 + 9×10 + 9 | spec-code-ai-reviewer-v0.9.9 |
+| v0.9.8 | 8098 | 8000 + 9×10 + 8 | spec-code-ai-reviewer-v0.9.8 |
+| v0.8.2 | 8082 | 8000 + 8×10 + 2 | spec-code-ai-reviewer-v0.8.2 |
 | v0.8.1 | 8081 | 8000 + 8×10 + 1 | spec-code-ai-reviewer-v0.8.1 |
 | v0.8.0 | 8080 | 8000 + 8×10 + 0 | spec-code-ai-reviewer-v0.8.0 |
 | v0.7.0 | 8070 | 8000 + 7×10 + 0 | spec-code-ai-reviewer-v0.7.0 |

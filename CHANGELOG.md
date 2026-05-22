@@ -7,6 +7,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.9] - 2026-05-22
+
+### Changed
+- **Minimum Python raised to 3.11** (#104): `add-line-numbers`, `md2map`, and `code2map` upstream `main` now require Python `>=3.11`, so `requires-python` is bumped to `>=3.11`
+  - `versions/v0.9.9/backend/pyproject.toml`: `requires-python = ">=3.11"`
+  - `.github/workflows/ci.yml`: Python matrix changed from `["3.10", "3.13"]` to `["3.11", "3.13"]`
+- **Configuration file updates**: Set v0.9.9 as the latest version
+  - `nginx/version-map.conf`: Added v0.9.9 routing, changed default port to 8099
+  - `latest` symlink retargeted to `versions/v0.9.9`
+
+### Security
+- **Dependabot alert #502 resolved** (GHSA-65pc-fj4g-8rjx): Regenerated `uv.lock` to pick up `idna >= 3.16`
+
 ## [0.9.8] - 2026-05-11
 
 ### Changed
@@ -405,6 +418,7 @@ For a detailed feature comparison table across all versions, see [versions/READM
 
 | Version | Key Features |
 |---------|-------------|
+| 0.9.9   | Minimum Python raised to 3.11; pulled in `idna >= 3.16` (Dependabot #502) |
 | 0.9.8   | excel2md subtree updated to v2.1.1 (re-exports / footnote / truncation fixes, Python 3.10+) |
 | 0.9.7   | Word (.docx) file support, new `/api/convert/word-to-markdown` endpoint |
 | 0.9.6   | Code part exclude/important/summarize features, unified summarize button, defensive filter and error state fixes |
