@@ -135,8 +135,8 @@ This repository keeps past releases archived under `versions/`, which means Depe
 | Target | Action |
 |--------|--------|
 | The latest version pointed to by `latest` | **Fix** (dependency update / PR) |
-| Older versions (`versions/`) | **Dismiss**. Bulk-close existing alerts and dismiss new ones after confirming no impact |
-| git subtree directories (`add-line-numbers/`, `code2map/`, `excel2md/`, `markitdown/`, `md2map/`) | **Dismiss**. Managed in the upstream subtree repositories |
+| Older versions (`versions/`) | **Dismiss**. Review impact and close |
+| git subtree directories (`add-line-numbers/`, `code2map/`, `excel2md/`, `markitdown/`, `md2map/`) | **Dismiss**. Used only in older versions; review impact and close |
 
 A dismissed alert will not reappear for the same combination of manifest × package × CVE, but a new CVE published for the same package will be raised as a new alert.
 

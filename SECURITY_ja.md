@@ -135,8 +135,8 @@ spec-code-ai-reviewer には以下のセキュリティ対策が含まれてい�
 | 対象 | 対応 |
 |------|------|
 | `latest` が指す最新バージョン | **修正対応**（依存更新／PR作成） |
-| 旧バージョン（`versions/`） | **Dismiss**。既存分は一括close、新規発生時は影響を確認のうえclose |
-| git subtree 配下（`add-line-numbers/`、`code2map/`、`excel2md/`、`markitdown/`、`md2map/`） | **Dismiss**。subtree 元リポジトリ側で管理 |
+| 旧バージョン（`versions/`） | **Dismiss**。影響を確認のうえclose |
+| git subtree 配下（`add-line-numbers/`、`code2map/`、`excel2md/`、`markitdown/`、`md2map/`） | **Dismiss**。旧バージョンでしか使われないため、影響を確認のうえclose |
 
 Dismiss したアラートは「同一 manifest × 同一パッケージ × 同一 CVE」の組み合わせでは再発生しませんが、同じパッケージに別の CVE が公開された場合は新規アラートとして再通知されます。
 
