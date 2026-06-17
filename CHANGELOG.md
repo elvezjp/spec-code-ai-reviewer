@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.9] - 2026-05-22
+## [0.9.9] - 2026-06-17
 
 ### Changed
 - **Minimum Python raised to 3.11** (#104): `add-line-numbers`, `md2map`, and `code2map` upstream `main` now require Python `>=3.11`, so `requires-python` is bumped to `>=3.11`
@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Configuration file updates**: Set v0.9.9 as the latest version
   - `nginx/version-map.conf`: Added v0.9.9 routing, changed default port to 8099
   - `latest` symlink retargeted to `versions/v0.9.9`
+
+### Fixed
+- **Resolved test-mock type errors surfaced by `tsc -b`**: Test mocks had fallen behind the latest production type definitions, causing `npm run build` (`tsc -b`) to fail with type errors (a gap in the test mocks, not a product bug)
+  - `SplitSettingsSection.test.tsx`: Added required props `hasAnyPendingSummarize` / `onExecuteAllSummarize` to `defaultProps`, and added the required `documentWarnings` to `makePreviewResult`, also resolving `TS2322`
+  - `split_api.test.ts`: Added the required `maxTokens` to the `LlmConfig` mock
 
 ### Security
 - **Dependabot alert #502 resolved** (GHSA-65pc-fj4g-8rjx): Regenerated `uv.lock` to pick up `idna >= 3.16`

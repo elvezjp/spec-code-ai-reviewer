@@ -7,7 +7,7 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/spec/v2.0.0.html) に準拠しています。
 
-## [0.9.9] - 2026-05-22
+## [0.9.9] - 2026-06-17
 
 ### Changed
 - **Python 最小要件を 3.11 に引き上げ**（#104）: `add-line-numbers` / `md2map` / `code2map` の最新 main が Python `>=3.11` を要求するため、`requires-python` を `>=3.11` に変更
@@ -16,6 +16,11 @@
 - **設定ファイル更新**: v0.9.9 を latest 版として設定
   - `nginx/version-map.conf`: v0.9.9 のルーティング追加、default ポートを 8099 に変更
   - `latest` シンボリックリンクを `versions/v0.9.9` に張り替え
+
+### Fixed
+- **`tsc -b` で出ていたテストモックの型エラーを解消**: テストモックが本体の最新型定義に追従できておらず `npm run build`（`tsc -b`）で型エラーが出ていた問題を修正（本体コードの不具合ではなくテスト側モックの不足）
+  - `SplitSettingsSection.test.tsx`: `defaultProps` に必須 prop `hasAnyPendingSummarize` / `onExecuteAllSummarize` を追加。あわせて `makePreviewResult` に必須の `documentWarnings` を追加し `TS2322` も解消
+  - `split_api.test.ts`: `LlmConfig` モックに必須の `maxTokens` を追加
 
 ### Security
 - **Dependabot アラート #502 解消**（GHSA-65pc-fj4g-8rjx）: `uv.lock` 再生成により `idna >= 3.16` を取り込み
