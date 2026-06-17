@@ -23,6 +23,7 @@
   - `split_api.test.ts`: `LlmConfig` モックに必須の `maxTokens` を追加
 
 ### Security
+- **[SECURITY] `starlette` を 1.0.1 → 1.3.1 に更新**: Dependabot アラート [#911](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/911) / [#912](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/912) / [#913](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/913) / [#914](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/914)（`starlette < 1.3.1` ほか）を解消。あわせて `uv.lock` を再生成。
 - **Dependabot アラート #502 解消**（GHSA-65pc-fj4g-8rjx）: `uv.lock` 再生成により `idna >= 3.16` を取り込み
 
 ## [0.9.8] - 2026-05-11

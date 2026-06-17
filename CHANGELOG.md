@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `split_api.test.ts`: Added the required `maxTokens` to the `LlmConfig` mock
 
 ### Security
+- **[SECURITY] Bumped `starlette` from 1.0.1 to 1.3.1** to resolve Dependabot alerts [#911](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/911) / [#912](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/912) / [#913](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/913) / [#914](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/914) (`starlette < 1.3.1` and related). Also regenerated `uv.lock`.
 - **Dependabot alert #502 resolved** (GHSA-65pc-fj4g-8rjx): Regenerated `uv.lock` to pick up `idna >= 3.16`
 
 ## [0.9.8] - 2026-05-11
