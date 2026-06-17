@@ -247,6 +247,7 @@ describe('splitMarkdown', () => {
         provider: 'anthropic',
         model: 'claude-3-haiku',
         apiKey: 'test-key',
+        maxTokens: 10000,
       },
     })
 
