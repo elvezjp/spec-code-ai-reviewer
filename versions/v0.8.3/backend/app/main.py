@@ -49,14 +49,16 @@ app.include_router(review.router, prefix="/api", tags=["review"])
 app.include_router(organize.router, prefix="/api", tags=["organize"])
 app.include_router(split.router, prefix="/api", tags=["split"])
 
-# フロントエンドの静的ファイル配信
-FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend"
-
-# 静的ファイル（画像など）を配信
-app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="static")
-
-
 @app.get("/health")
 async def health_check():
     """ヘルスチェック（ルートレベル）- ALB用"""
     return {"status": "healthy", "version": APP_VERSION}
+
+
+# フロントエンドの静的ファイル配信
+FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend"
+
+# 静的ファイル（画像など）を配信
+# NOTE: "/" へのマウントは全パスにマッチするため、APIルート・/health より
+# 後に登録する必要がある（先に登録すると /health が404になる。v0.8.3で修正）
+app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="static")
