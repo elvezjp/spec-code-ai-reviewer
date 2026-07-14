@@ -1,6 +1,7 @@
 """レビューAPI"""
 
 import json
+import logging
 import re
 from importlib.metadata import version
 
@@ -34,6 +35,8 @@ from app.services.prompt_builder import build_system_prompt, build_review_meta, 
 
 # pyproject.tomlからバージョンを取得
 APP_VERSION = version("spec-code-ai-reviewer-backend")
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -91,10 +94,11 @@ async def review_api(request: ReviewRequest):
             success=False,
             error=str(e),
         )
-    except Exception as e:
+    except Exception:
+        logger.exception("一括レビューで予期しないエラーが発生")
         return ReviewResponse(
             success=False,
-            error=f"AI処理中にエラーが発生しました。しばらく待ってから再試行してください。({str(e)})",
+            error="AI処理中にエラーが発生しました。しばらく待ってから再試行してください。",
         )
 
 
@@ -341,10 +345,11 @@ async def structure_matching(request: StructureMatchingRequest):
             success=False,
             error=str(e),
         )
-    except Exception as e:
+    except Exception:
+        logger.exception("構造マッチングで予期しないエラーが発生")
         return StructureMatchingResponse(
             success=False,
-            error=f"構造マッチング中にエラーが発生しました: {str(e)}",
+            error="構造マッチング中にエラーが発生しました。しばらく待ってから再試行してください。",
         )
 
 
@@ -440,11 +445,12 @@ async def review_group(request: GroupReviewRequest):
             groupId=request.groupId,
             error=str(e),
         )
-    except Exception as e:
+    except Exception:
+        logger.exception("グループレビューで予期しないエラーが発生 (groupId=%s)", request.groupId)
         return GroupReviewResponse(
             success=False,
             groupId=request.groupId,
-            error=f"グループレビュー中にエラーが発生しました: {str(e)}",
+            error="グループレビュー中にエラーが発生しました。しばらく待ってから再試行してください。",
         )
 
 
@@ -577,8 +583,9 @@ async def integrate_reviews(request: IntegrateRequest):
             success=False,
             error=str(e),
         )
-    except Exception as e:
+    except Exception:
+        logger.exception("結果統合で予期しないエラーが発生")
         return IntegrateResponse(
             success=False,
-            error=f"結果統合中にエラーが発生しました: {str(e)}",
+            error="結果統合中にエラーが発生しました。しばらく待ってから再試行してください。",
         )

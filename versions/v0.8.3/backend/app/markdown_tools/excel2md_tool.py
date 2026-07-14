@@ -8,7 +8,8 @@ from pathlib import Path
 from .base import MarkdownTool
 
 # excel2mdモジュールへのパス（環境変数でオーバーライド可能）
-# パス構造: excel2md_tool.py -> markdown_tools -> app -> backend -> v0.4.0 -> versions -> repo_root
+# パス構造: excel2md_tool.py -> markdown_tools -> app -> backend -> vX.Y.Z -> versions -> repo_root
+# 参照先はリポジトリ直下の excel2md/v2.0（サブツリー）
 # NOTE: このパスはexcel2md_mermaid_tool.pyからもインポートされて使用される
 _DEFAULT_EXCEL2MD_PATH = (
     Path(__file__).resolve().parent.parent.parent.parent.parent.parent
@@ -51,8 +52,8 @@ class Excel2mdTool(MarkdownTool):
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmpdir_path = Path(tmpdir)
 
-                # 入力ファイルを作成
-                input_path = tmpdir_path / filename
+                # 入力ファイルを作成（パス要素を除去してパストラバーサルを防ぐ）
+                input_path = tmpdir_path / (Path(filename).name or "input.xlsx")
                 input_path.write_bytes(file_content)
 
                 # 出力パスを設定（run()がファイルを生成する）

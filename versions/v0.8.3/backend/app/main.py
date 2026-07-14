@@ -19,15 +19,26 @@ app = FastAPI(
     version=APP_VERSION,
 )
 
-# CORS設定（環境変数で制御、デフォルトは全許可）
+# CORS設定（環境変数で制御）
 # 本番環境では CORS_ORIGINS=https://example.com を設定
-cors_origins_str = os.getenv("CORS_ORIGINS", "*")
-cors_origins = ["*"] if cors_origins_str == "*" else [o.strip() for o in cors_origins_str.split(",")]
+# 未設定時はローカル開発用オリジンのみ許可（v0.8.3で全許可デフォルトを廃止）
+_DEV_ORIGINS = (
+    "http://localhost:5173,http://127.0.0.1:5173,"
+    "http://localhost:8000,http://127.0.0.1:8000"
+)
+cors_origins_str = os.getenv("CORS_ORIGINS", _DEV_ORIGINS)
+if cors_origins_str == "*":
+    # ワイルドカード指定時は credentials を無効化する（ブラウザ仕様上も併用不可）
+    cors_origins = ["*"]
+    cors_allow_credentials = False
+else:
+    cors_origins = [o.strip() for o in cors_origins_str.split(",")]
+    cors_allow_credentials = True
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_credentials=True,
+    allow_credentials=cors_allow_credentials,
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
 )

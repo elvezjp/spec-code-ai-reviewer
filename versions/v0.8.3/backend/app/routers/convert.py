@@ -1,5 +1,6 @@
 """変換API"""
 
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
@@ -8,6 +9,8 @@ from app.models.schemas import ConvertResponse, AvailableToolsResponse, ToolInfo
 from app.services.markitdown_service import convert_excel_to_markdown
 from app.services.line_numbers_service import add_line_numbers
 from app.markdown_tools import get_available_tools
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -77,11 +80,12 @@ async def convert_excel_to_markdown_api(
             filename=filename,
             error=str(e),
         )
-    except Exception as e:
+    except Exception:
+        logger.exception("Excel変換で予期しないエラーが発生 (filename=%s)", filename)
         return ConvertResponse(
             success=False,
             filename=filename,
-            error=f"変換中にエラーが発生しました: {str(e)}",
+            error="変換中にエラーが発生しました。ファイル形式を確認して再試行してください。",
         )
 
 
@@ -131,9 +135,10 @@ async def add_line_numbers_api(file: UploadFile = File(...)):
             filename=filename,
             line_count=line_count,
         )
-    except Exception as e:
+    except Exception:
+        logger.exception("行番号付与で予期しないエラーが発生 (filename=%s)", filename)
         return ConvertResponse(
             success=False,
             filename=filename,
-            error=f"変換中にエラーが発生しました: {str(e)}",
+            error="変換中にエラーが発生しました。ファイル内容を確認して再試行してください。",
         )

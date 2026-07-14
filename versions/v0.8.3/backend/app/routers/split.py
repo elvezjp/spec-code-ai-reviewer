@@ -4,6 +4,7 @@
 md2map / code2map ライブラリを使用してファイルを分割する。
 """
 
+import logging
 import os
 import tempfile
 
@@ -18,12 +19,23 @@ from app.models.schemas import (
     CodePart,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter()
 
 
 # ---------------------------------------------------------------------------
 # ユーティリティ
 # ---------------------------------------------------------------------------
+
+
+def _safe_filename(filename: str | None, default: str) -> str:
+    """アップロードされたファイル名をパス要素を除去して安全にする
+
+    `../` などのパストラバーサルを防ぐため、basename のみを使用する。
+    """
+    name = os.path.basename(filename or "")
+    return name or default
 
 
 def _estimate_tokens(text: str) -> int:
@@ -59,7 +71,9 @@ async def split_markdown(request: SplitMarkdownRequest):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # 入力ファイルを書き込み
-            input_path = os.path.join(tmpdir, request.filename or "input.md")
+            input_path = os.path.join(
+                tmpdir, _safe_filename(request.filename, "input.md")
+            )
             with open(input_path, "w", encoding="utf-8") as f:
                 f.write(request.content)
 
@@ -126,6 +140,9 @@ async def split_markdown(request: SplitMarkdownRequest):
         )
 
     except Exception as e:
+        # パーサーのエラーは入力ファイル起因のことが多く利用者が対処可能なため
+        # メッセージを返しつつ、診断用にサーバーログにも出力する
+        logger.exception("Markdown分割でエラーが発生 (filename=%s)", request.filename)
         return SplitMarkdownResponse(
             success=False,
             error=f"Markdown分割中にエラーが発生しました: {str(e)}",
@@ -177,7 +194,9 @@ async def split_code(request: SplitCodeRequest):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # 入力ファイルを書き込み
-            input_path = os.path.join(tmpdir, request.filename)
+            input_path = os.path.join(
+                tmpdir, _safe_filename(request.filename, "input.txt")
+            )
             with open(input_path, "w", encoding="utf-8") as f:
                 f.write(request.content)
 
@@ -240,6 +259,9 @@ async def split_code(request: SplitCodeRequest):
         )
 
     except Exception as e:
+        # パーサーのエラーは入力ファイル起因のことが多く利用者が対処可能なため
+        # メッセージを返しつつ、診断用にサーバーログにも出力する
+        logger.exception("コード分割でエラーが発生 (filename=%s)", request.filename)
         return SplitCodeResponse(
             success=False,
             error=f"コード分割中にエラーが発生しました: {str(e)}",

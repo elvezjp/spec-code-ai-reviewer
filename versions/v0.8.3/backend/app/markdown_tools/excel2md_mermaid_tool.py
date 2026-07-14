@@ -42,8 +42,8 @@ class Excel2mdMermaidTool(MarkdownTool):
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmpdir_path = Path(tmpdir)
 
-                # 入力ファイルを作成
-                input_path = tmpdir_path / filename
+                # 入力ファイルを作成（パス要素を除去してパストラバーサルを防ぐ）
+                input_path = tmpdir_path / (Path(filename).name or "input.xlsx")
                 input_path.write_bytes(file_content)
 
                 # 出力パスを設定（run()がファイルを生成する）
