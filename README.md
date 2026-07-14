@@ -138,7 +138,7 @@ For v0.6.0 and later, start frontend and backend separately.
 **Terminal 1: Start backend**
 
 ```bash
-cd versions/v0.8.2/backend
+cd versions/v0.8.3/backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -146,7 +146,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **Terminal 2: Start frontend**
 
 ```bash
-cd versions/v0.8.2/frontend
+cd versions/v0.8.3/frontend
 npm install
 npm run dev
 ```
@@ -201,11 +201,11 @@ Run tests in each version's directory.
 
 ```bash
 # v0.8.0 backend tests
-cd versions/v0.8.2/backend
+cd versions/v0.8.3/backend
 uv run pytest tests/ -v
 
 # v0.8.0 frontend tests
-cd versions/v0.8.2/frontend
+cd versions/v0.8.3/frontend
 npm test
 
 # v0.5.2 and earlier tests (backend only)
@@ -337,7 +337,7 @@ spec-code-ai-reviewer/
 │   ├── dev.conf                 # Dev Nginx config
 │   ├── spec-code-ai-reviewer.conf  # Production Nginx config
 │   └── version-map.conf         # Version switch map (shared)
-├── latest -> versions/v0.8.2    # Symlink to latest
+├── latest -> versions/v0.8.3    # Symlink to latest
 │
 ├── versions/                    # All versions
 │   ├── README.md                # Version management notes
@@ -348,7 +348,8 @@ spec-code-ai-reviewer/
 │   ├── v0.7.0/                  # Old version (Vite + React)
 │   ├── v0.8.0/                  # Old version (Vite + React)
 │   ├── v0.8.1/                  # Old version (Vite + React)
-│   └── v0.8.2/                  # Latest (Vite + React)
+│   ├── v0.8.2/                  # Old version (Vite + React)
+│   └── v0.8.3/                  # Latest (Vite + React)
 │       ├── backend/
 │       ├── frontend/            # Vite + React + TypeScript
 │       ├── config-file-generator-spec.md
@@ -416,7 +417,8 @@ Example: v0.2.5 -> 8000 + (2 x 10) + 5 = 8025
 
 | Version | Port |
 |-----------|------|
-| v0.8.2 (latest) | 8082 |
+| v0.8.3 (latest) | 8083 |
+| v0.8.2 | 8082 |
 | v0.8.1 | 8081 |
 | v0.8.0 | 8080 |
 | v0.7.0 | 8070 |

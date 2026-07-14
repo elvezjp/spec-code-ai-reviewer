@@ -623,152 +623,15 @@
   <script>
     // バージョン情報
     const VERSIONS = [
-      { value: 'v0.7.0', label: 'v0.7.0', isLatest: true },
+      { value: 'v0.8.3', label: 'v0.8.3', isLatest: true },
+      { value: 'v0.8.2', label: 'v0.8.2', isLatest: false },
+      { value: 'v0.8.1', label: 'v0.8.1', isLatest: false },
+      { value: 'v0.8.0', label: 'v0.8.0', isLatest: false },
+      { value: 'v0.7.0', label: 'v0.7.0', isLatest: false },
       { value: 'v0.6.0', label: 'v0.6.0', isLatest: false },
       { value: 'v0.5.2', label: 'v0.5.2', isLatest: false },
       { value: 'v0.5.1', label: 'v0.5.1', isLatest: false },
       { value: 'v0.5.0', label: 'v0.5.0', isLatest: false }
-    ]
-
-    // 最新バージョンとデフォルトバージョンを取得
-    const LATEST_VERSION = VERSIONS.find(v => v.isLatest) || VERSIONS[0];
-    const DEFAULT_VERSION = LATEST_VERSION.value;
-
-    // Cookieヘルパー
-    function getCookie(name) {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    }
-
-    function setCookie(name, value, days = 365) {
-      const expires = new Date(Date.now() + days * 864e5).toUTCString();
-      document.cookie = `${name}=${value}; expires=${expires}; path=/`;
-    }
-
-    // バージョン切替UI
-    function toggleVersionBalloon() {
-      const balloon = document.getElementById('versionBalloon');
-      if (balloon.classList.contains('hidden')) {
-        balloon.classList.remove('hidden');
-        renderVersionOptions();
-      } else {
-        closeVersionBalloon();
-      }
-    }
-
-    function closeVersionBalloon() {
-      document.getElementById('versionBalloon').classList.add('hidden');
-    }
-
-    function renderVersionOptions() {
-      const balloon = document.getElementById('versionBalloon');
-      const cookieVersion = getCookie('app_version');
-      // Cookieの値がVERSIONSリストに存在するかチェック、存在しない場合はデフォルト
-      const currentVersion = VERSIONS.find(v => v.value === cookieVersion) ? cookieVersion : DEFAULT_VERSION;
-
-      balloon.innerHTML = VERSIONS.map((v, index) => {
-        const isSelected = v.value === currentVersion;
-        const divider = index > 0 ? '<div class="version-divider"></div>' : '';
-        const checkIcon = isSelected
-          ? `<svg class="check-icon" width="16" height="16" viewBox="0 0 16 16">
-               <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" fill="none"/>
-             </svg>`
-          : '';
-        const label = v.isLatest ? `${v.label}（最新）` : v.label;
-
-        return `${divider}
-          <div class="version-option" onclick="switchVersion('${v.value}')">
-            <span class="version-option-title">${label}</span>
-            ${checkIcon}
-          </div>`;
-      }).join('');
-    }
-
-    function switchVersion(version) {
-      const versionInfo = VERSIONS.find(v => v.value === version);
-      const label = versionInfo ? versionInfo.label : version;
-
-      setCookie('app_version', version);
-      closeVersionBalloon();
-
-      // トースト表示後にリロード
-      showToast(`${label} に切り替えます...`);
-      setTimeout(() => {
-        window.location.reload();
-      }, 800);
-    }
-
-    function updateVersionDisplay() {
-      const cookieVersion = getCookie('app_version');
-      // Cookieの値がVERSIONSリストに存在するかチェック
-      const version = VERSIONS.find(v => v.value === cookieVersion);
-      // 存在しない場合はデフォルトバージョンを使用
-      const displayVersion = version || LATEST_VERSION;
-      document.getElementById('currentVersion').textContent = displayVersion.label;
-    }
-
-    // トースト表示
-    function showToast(message) {
-      const toast = document.getElementById('version-toast');
-      const toastMessage = document.getElementById('toast-message');
-      toastMessage.textContent = message;
-      toast.classList.remove('hidden');
-
-      setTimeout(() => {
-        toast.classList.add('hidden');
-      }, 3000);
-    }
-
-    // バルーン外クリックで閉じる
-    document.addEventListener('click', function(e) {
-      const selector = document.getElementById('versionSelector');
-      const balloon = document.getElementById('versionBalloon');
-      if (selector && balloon && !selector.contains(e.target) && !balloon.contains(e.target)) {
-        closeVersionBalloon();
-      }
-    });
-
-    // 状態管理
-    let specFiles = [];
-    let specMarkdown = null;
-    let designFilesWithMarkdown = [];
-    let mainSpecFilename = null;  // メインに設定された設計書のファイル名
-    let specTypes = {};
-    let specTools = {};  // ファイルごとのツール選択
-    let codeFiles = [];
-    let codeWithLineNumbers = null;
-    let codeFilesWithLineNumbers = [];
-
-    // レビューボタンの状態を更新する関数
-    function updateReviewButtonState() {
-      const reviewBtn = document.getElementById('review-btn');
-      const reviewBtnWarning = document.getElementById('review-btn-warning');
-      if (specMarkdown && codeWithLineNumbers) {
-        reviewBtn.disabled = false;
-        reviewBtnWarning.classList.add('hidden');
-      } else {
-        reviewBtn.disabled = true;
-        reviewBtnWarning.classList.remove('hidden');
-      }
-    }
-
-    // ツール選択
-    let availableTools = [];
-    const defaultTool = 'markitdown';  // デフォルトツール
-
-    // 設計書種別の設定（デフォルト値）- 配列形式
-    const DEFAULT_SPEC_TYPES = [
-      { type: '設計書', note: '機能仕様が正しく実装されているかを確認してください' },
-      { type: '要件定義書', note: '要件が漏れなく実装されているかを確認してください' },
-      { type: '処理ロジック', note: '処理手順やアルゴリズムが正しく実装されているかを確認してください' },
-      { type: '処理フロー', note: '処理の流れが正しく実装されているかを確認してください' },
-      { type: 'コーディング規約', note: 'コードがこの規約に準拠しているかを確認してください' },
-      { type: 'ネーミングルール', note: '変数名・関数名・クラス名がこのルールに準拠しているかを確認してください' },
-      { type: '製造ガイド', note: 'このガイドラインに従って実装されているかを確認してください' },
-      { type: '設計ガイド', note: 'この設計方針に従って実装されているかを確認してください' },
-      { type: '設計書とソースのマッピング', note: 'このマッピングに基づいて突合を行ってください' }
     ];
 
     // システムプロンプトの設定（デフォルト値）

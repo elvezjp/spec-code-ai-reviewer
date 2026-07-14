@@ -5,6 +5,30 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/spec/v2.0.0.html) に準拠しています。
 
+## [0.8.3] - 2026-07-15
+
+### 変更
+- **モデルデフォルト現行化**: 設定ファイルジェネレーターのデフォルトモデルを現行世代に更新
+  - Anthropic: `claude-sonnet-5` / `claude-opus-4-8` / `claude-haiku-4-5`
+  - Bedrock: `global.anthropic.claude-sonnet-4-6` / `global.anthropic.claude-opus-4-7` を追加
+  - OpenAI: `gpt-5.6` 系に更新
+- **設定ファイル更新**: v0.8.3をlatest版として設定
+  - `nginx/version-map.conf`: v0.8.3のルーティング追加、defaultポートを8083に変更
+  - `docker-compose.yml`: v0.8.3フロントエンド・ポート8083を追加
+  - `ecosystem.config.js`, `dev.ecosystem.config.js`: v0.8.3エントリ追加
+
+### 追加
+- **プロンプトキャッシュ**: 同一入力2回実行の2回目の入力コストを削減
+  - Anthropic: `cache_control` を付与
+  - Bedrock: Converse API の `cachePoint` を付与（非対応モデルは自動フォールバック）
+  - OpenAI: 自動キャッシュのため usage ログのみ追加
+
+### セキュリティ
+- **CORSデフォルト安全化**: `CORS_ORIGINS` 未設定時のデフォルトを全許可からローカル開発用オリジンのみに変更
+- **ファイル名サニタイズ**: アップロードファイル名のパス要素を除去（パストラバーサル防止）
+- **エラー露出抑制**: 予期しない内部例外の詳細をAPIレスポンスから除去しサーバーログへ出力
+
+
 ## [0.8.2] - 2026-02-21
 
 ### 修正
