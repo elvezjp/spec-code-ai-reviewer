@@ -1,5 +1,11 @@
-"""OpenAI API 連携サービス"""
+"""OpenAI API 連携サービス
 
+プロンプトキャッシュ:
+    OpenAI は対象プレフィックス（1,024トークン以上）を自動キャッシュする
+    ため、リクエスト側の変更は不要。usage のキャッシュ状況のみログ出力する。
+"""
+
+import logging
 from typing import TYPE_CHECKING
 
 from openai import APIError, AuthenticationError, OpenAI
@@ -9,6 +15,21 @@ from app.services.llm_service import LLMProvider
 
 if TYPE_CHECKING:
     from app.models.schemas import ReviewRequest
+
+logger = logging.getLogger(__name__)
+
+
+def _log_cache_usage(usage) -> None:
+    """usage のプロンプトキャッシュ状況をログ出力する（自動キャッシュの効果測定用）"""
+    if usage is None:
+        return
+    details = getattr(usage, "prompt_tokens_details", None)
+    cached = getattr(details, "cached_tokens", 0) or 0 if details else 0
+    logger.info(
+        "OpenAI prompt cache: cached=%d, total_prompt=%d",
+        cached,
+        usage.prompt_tokens,
+    )
 
 
 class OpenAIProvider(LLMProvider):
@@ -68,6 +89,7 @@ class OpenAIProvider(LLMProvider):
             )
 
             usage = response.usage
+            _log_cache_usage(usage)
 
             return self._build_success_response(
                 request=request,
@@ -101,6 +123,7 @@ class OpenAIProvider(LLMProvider):
                 ],
             )
             usage = response.usage
+            _log_cache_usage(usage)
             return (
                 response.choices[0].message.content or "",
                 usage.prompt_tokens if usage else 0,

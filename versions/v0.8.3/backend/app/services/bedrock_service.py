@@ -3,6 +3,7 @@
 Converse APIを使用してAnthropicおよびAmazon Novaモデルに対応。
 """
 
+import logging
 from typing import TYPE_CHECKING
 
 import boto3
@@ -14,8 +15,13 @@ from app.services.llm_service import LLMProvider
 if TYPE_CHECKING:
     from app.models.schemas import ReviewRequest
 
+logger = logging.getLogger(__name__)
+
 # IAMロール認証時のデフォルトリージョン
 _DEFAULT_REGION = "ap-northeast-1"
+
+# Converse API のプロンプトキャッシュ用チェックポイントブロック
+_CACHE_POINT = {"cachePoint": {"type": "default"}}
 
 
 class BedrockProvider(LLMProvider):
@@ -50,6 +56,8 @@ class BedrockProvider(LLMProvider):
 
         self._model_id = llm_config.model
         self._max_tokens = llm_config.maxTokens
+        # プロンプトキャッシュ非対応モデルを検出した場合に False にする
+        self._cache_enabled = True
 
     @property
     def provider_name(self) -> str:
@@ -58,6 +66,68 @@ class BedrockProvider(LLMProvider):
     @property
     def model_id(self) -> str:
         return self._model_id
+
+    def _converse(self, system_prompt: str, user_message: str) -> dict:
+        """cachePoint 付きで Converse API を呼び出す
+
+        system・ユーザーメッセージの末尾に cachePoint を付与する。
+        一括レビューは同一入力で2回実行されるため、2回目はキャッシュが
+        効いて入力コストが削減される。
+
+        プロンプトキャッシュ非対応モデルでは ValidationException になる
+        ため、その場合は cachePoint なしで再試行し、以降の呼び出しでも
+        キャッシュを使わない。
+        """
+        if self._cache_enabled:
+            try:
+                return self._client.converse(
+                    modelId=self._model_id,
+                    messages=[{
+                        "role": "user",
+                        "content": [{"text": user_message}, _CACHE_POINT],
+                    }],
+                    system=[{"text": system_prompt}, _CACHE_POINT],
+                    inferenceConfig={"maxTokens": self._max_tokens},
+                )
+            except ClientError as e:
+                if e.response["Error"]["Code"] != "ValidationException":
+                    raise
+                # キャッシュ非対応モデルの可能性があるため cachePoint なしで再試行
+                logger.info(
+                    "Bedrock prompt cache unsupported for %s; retrying without "
+                    "cachePoint (%s)",
+                    self._model_id,
+                    e.response["Error"]["Message"],
+                )
+                self._cache_enabled = False
+
+        return self._client.converse(
+            modelId=self._model_id,
+            messages=[{
+                "role": "user",
+                "content": [{"text": user_message}],
+            }],
+            system=[{"text": system_prompt}],
+            inferenceConfig={"maxTokens": self._max_tokens},
+        )
+
+    @staticmethod
+    def _input_tokens_with_cache(usage: dict) -> int:
+        """キャッシュ分を含めた実効入力トークン数を返し、キャッシュ状況をログ出力する
+
+        Converse API の inputTokens はキャッシュ対象外の残り部分のみのため、
+        cacheReadInputTokens / cacheWriteInputTokens を合算して総入力トークン数とする。
+        """
+        cache_read = usage.get("cacheReadInputTokens", 0)
+        cache_write = usage.get("cacheWriteInputTokens", 0)
+        uncached = usage.get("inputTokens", 0)
+        logger.info(
+            "Bedrock prompt cache: write=%d, read=%d, uncached=%d",
+            cache_write,
+            cache_read,
+            uncached,
+        )
+        return uncached + cache_read + cache_write
 
     def execute_review(
         self,
@@ -80,15 +150,7 @@ class BedrockProvider(LLMProvider):
 
         try:
             # Converse APIを使用（Anthropic/Amazon Nova両対応）
-            response = self._client.converse(
-                modelId=self._model_id,
-                messages=[{
-                    "role": "user",
-                    "content": [{"text": user_message}],
-                }],
-                system=[{"text": system_prompt}],
-                inferenceConfig={"maxTokens": self._max_tokens},
-            )
+            response = self._converse(system_prompt, user_message)
 
             usage = response.get("usage", {})
 
@@ -96,7 +158,7 @@ class BedrockProvider(LLMProvider):
                 request=request,
                 version=version,
                 llm_output=response["output"]["message"]["content"][0]["text"],
-                input_tokens=usage.get("inputTokens", 0),
+                input_tokens=self._input_tokens_with_cache(usage),
                 output_tokens=usage.get("outputTokens", 0),
             )
 
@@ -115,19 +177,11 @@ class BedrockProvider(LLMProvider):
         self, system_prompt: str, user_message: str
     ) -> tuple[str, int, int]:
         try:
-            response = self._client.converse(
-                modelId=self._model_id,
-                messages=[{
-                    "role": "user",
-                    "content": [{"text": user_message}],
-                }],
-                system=[{"text": system_prompt}],
-                inferenceConfig={"maxTokens": self._max_tokens},
-            )
+            response = self._converse(system_prompt, user_message)
             usage = response.get("usage", {})
             return (
                 response["output"]["message"]["content"][0]["text"],
-                usage.get("inputTokens", 0),
+                self._input_tokens_with_cache(usage),
                 usage.get("outputTokens", 0),
             )
         except Exception as e:
@@ -167,15 +221,7 @@ class BedrockProvider(LLMProvider):
         )
 
         try:
-            response = self._client.converse(
-                modelId=self._model_id,
-                messages=[{
-                    "role": "user",
-                    "content": [{"text": user_message}],
-                }],
-                system=[{"text": system_prompt}],
-                inferenceConfig={"maxTokens": self._max_tokens},
-            )
+            response = self._converse(system_prompt, user_message)
             return response["output"]["message"]["content"][0]["text"]
         except Exception as e:
             raise RuntimeError(f"Markdown整理中にエラーが発生しました: {str(e)}") from e

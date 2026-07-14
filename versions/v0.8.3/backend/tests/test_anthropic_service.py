@@ -132,6 +132,8 @@ class TestAnthropicProviderExecuteReview:
         mock_response.content = [MagicMock(text="## レビュー結果\n問題ありません。")]
         mock_response.usage.input_tokens = 1000
         mock_response.usage.output_tokens = 200
+        mock_response.usage.cache_creation_input_tokens = 0
+        mock_response.usage.cache_read_input_tokens = 0
         mock_client.messages.create.return_value = mock_response
 
         config = LLMConfig(
@@ -212,3 +214,70 @@ class TestAnthropicProviderExecuteReview:
 
         assert result.success is False
         assert "認証エラー" in result.error
+
+
+class TestAnthropicProviderPromptCache:
+    """AnthropicProviderのプロンプトキャッシュ（cache_control）のテスト"""
+
+    @patch("app.services.anthropic_service.Anthropic")
+    def test_create_message_includes_cache_control(self, mock_anthropic_class):
+        """messages.createのsystem・ユーザーメッセージにcache_controlが付与される"""
+        mock_client = MagicMock()
+        mock_anthropic_class.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(text="ok")]
+        mock_response.usage.input_tokens = 10
+        mock_response.usage.output_tokens = 5
+        mock_response.usage.cache_creation_input_tokens = 0
+        mock_response.usage.cache_read_input_tokens = 0
+        mock_client.messages.create.return_value = mock_response
+
+        config = LLMConfig(
+            provider="anthropic",
+            model="claude-sonnet-5",
+            apiKey="test-api-key",
+        )
+        provider = AnthropicProvider(config)
+        provider.send_message("system", "user")
+
+        kwargs = mock_client.messages.create.call_args.kwargs
+        assert kwargs["system"] == [
+            {
+                "type": "text",
+                "text": "system",
+                "cache_control": {"type": "ephemeral"},
+            }
+        ]
+        content = kwargs["messages"][0]["content"]
+        assert content == [
+            {
+                "type": "text",
+                "text": "user",
+                "cache_control": {"type": "ephemeral"},
+            }
+        ]
+
+    @patch("app.services.anthropic_service.Anthropic")
+    def test_input_tokens_include_cache_tokens(self, mock_anthropic_class):
+        """input_tokensはキャッシュ読み書き分を合算した総入力トークン数になる"""
+        mock_client = MagicMock()
+        mock_anthropic_class.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.content = [MagicMock(text="ok")]
+        mock_response.usage.input_tokens = 100
+        mock_response.usage.output_tokens = 5
+        mock_response.usage.cache_creation_input_tokens = 100
+        mock_response.usage.cache_read_input_tokens = 800
+        mock_client.messages.create.return_value = mock_response
+
+        config = LLMConfig(
+            provider="anthropic",
+            model="claude-sonnet-5",
+            apiKey="test-api-key",
+        )
+        provider = AnthropicProvider(config)
+
+        _, input_tokens, output_tokens = provider.send_message("system", "user")
+
+        assert input_tokens == 1000
+        assert output_tokens == 5

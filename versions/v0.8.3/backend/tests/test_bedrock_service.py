@@ -246,3 +246,117 @@ class TestBedrockProviderExecuteReview:
 
         assert result.success is False
         assert "ValidationException" in result.error
+
+
+class TestBedrockProviderPromptCache:
+    """BedrockProviderのプロンプトキャッシュ（cachePoint）のテスト"""
+
+    @patch("app.services.bedrock_service.boto3")
+    def test_converse_includes_cache_points(self, mock_boto3):
+        """converse呼び出しのsystem・content末尾にcachePointが付与される"""
+        mock_client = MagicMock()
+        mock_boto3.client.return_value = mock_client
+        mock_client.converse.return_value = {
+            "output": {"message": {"content": [{"text": "ok"}]}},
+            "usage": {"inputTokens": 10, "outputTokens": 5},
+        }
+
+        config = _create_system_llm_config()
+        provider = BedrockProvider(config)
+        provider.send_message("system", "user")
+
+        kwargs = mock_client.converse.call_args.kwargs
+        assert kwargs["system"][-1] == {"cachePoint": {"type": "default"}}
+        content = kwargs["messages"][0]["content"]
+        assert content[0] == {"text": "user"}
+        assert content[-1] == {"cachePoint": {"type": "default"}}
+
+    @patch("app.services.bedrock_service.boto3")
+    def test_fallback_without_cache_point_on_validation_error(self, mock_boto3):
+        """キャッシュ非対応モデル（ValidationException）ではcachePointなしで再試行する"""
+        from botocore.exceptions import ClientError
+
+        mock_client = MagicMock()
+        mock_boto3.client.return_value = mock_client
+        success_response = {
+            "output": {"message": {"content": [{"text": "ok"}]}},
+            "usage": {"inputTokens": 10, "outputTokens": 5},
+        }
+        mock_client.converse.side_effect = [
+            ClientError(
+                error_response={
+                    "Error": {
+                        "Code": "ValidationException",
+                        "Message": "cachePoint is not supported",
+                    }
+                },
+                operation_name="Converse",
+            ),
+            success_response,
+            success_response,
+        ]
+
+        config = _create_system_llm_config()
+        provider = BedrockProvider(config)
+
+        text, _, _ = provider.send_message("system", "user")
+
+        assert text == "ok"
+        assert mock_client.converse.call_count == 2
+        # 再試行時はcachePointなし
+        retry_kwargs = mock_client.converse.call_args_list[1].kwargs
+        assert retry_kwargs["system"] == [{"text": "system"}]
+        assert retry_kwargs["messages"][0]["content"] == [{"text": "user"}]
+
+        # 以降の呼び出しもcachePointなし（再試行なしの1回のみ増える）
+        provider.send_message("system", "user")
+        assert mock_client.converse.call_count == 3
+        third_kwargs = mock_client.converse.call_args_list[2].kwargs
+        assert third_kwargs["system"] == [{"text": "system"}]
+
+    @patch("app.services.bedrock_service.boto3")
+    def test_non_validation_client_error_is_not_retried(self, mock_boto3):
+        """ValidationException以外のClientErrorは再試行せずそのまま送出される"""
+        from botocore.exceptions import ClientError
+
+        mock_client = MagicMock()
+        mock_boto3.client.return_value = mock_client
+        mock_client.converse.side_effect = ClientError(
+            error_response={
+                "Error": {
+                    "Code": "ThrottlingException",
+                    "Message": "Too many requests",
+                }
+            },
+            operation_name="Converse",
+        )
+
+        config = _create_system_llm_config()
+        provider = BedrockProvider(config)
+
+        with pytest.raises(RuntimeError):
+            provider.send_message("system", "user")
+        assert mock_client.converse.call_count == 1
+
+    @patch("app.services.bedrock_service.boto3")
+    def test_input_tokens_include_cache_tokens(self, mock_boto3):
+        """inputTokensはキャッシュ読み書き分を合算した総入力トークン数になる"""
+        mock_client = MagicMock()
+        mock_boto3.client.return_value = mock_client
+        mock_client.converse.return_value = {
+            "output": {"message": {"content": [{"text": "ok"}]}},
+            "usage": {
+                "inputTokens": 100,
+                "outputTokens": 5,
+                "cacheReadInputTokens": 800,
+                "cacheWriteInputTokens": 100,
+            },
+        }
+
+        config = _create_system_llm_config()
+        provider = BedrockProvider(config)
+
+        _, input_tokens, output_tokens = provider.send_message("system", "user")
+
+        assert input_tokens == 1000
+        assert output_tokens == 5
