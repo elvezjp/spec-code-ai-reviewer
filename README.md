@@ -305,6 +305,7 @@ Try again with a maximum tokens value that is lower than 10000.
 - `max_tokens` in the config file exceeds the model limit
   - Amazon Nova Lite / Micro / Pro: 10,000
   - Anthropic Claude Haiku 4.5: 16,384
+  - Anthropic Claude Sonnet 4.6 / Opus 4.7 and later: up to 128,000 (however, since this app does not support streaming yet, 16,384 or less is recommended to avoid timeouts)
 
 **How to fix:**
 - Regenerate the config file in the config file generator

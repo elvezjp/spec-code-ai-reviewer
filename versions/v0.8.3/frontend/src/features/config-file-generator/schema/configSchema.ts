@@ -4,7 +4,7 @@ export const CONFIG_SCHEMA: ConfigSchema = {
   meta: {
     outputTitle: '設計書-Javaプログラム突合 AIレビュアー 設定ファイル',
     outputFileName: 'reviewer-config.md',
-    version: 'v0.8.2',
+    version: 'v0.8.3',
   },
   sections: [
     {
@@ -17,7 +17,7 @@ export const CONFIG_SCHEMA: ConfigSchema = {
           id: 'version',
           label: 'version',
           type: 'fixed',
-          value: 'v0.8.2',
+          value: 'v0.8.3',
         },
         {
           id: 'created_at',
@@ -45,8 +45,8 @@ export const CONFIG_SCHEMA: ConfigSchema = {
                 label: 'モデル',
                 type: 'array',
                 itemType: 'text',
-                placeholder: 'claude-sonnet-4-5-20250929',
-                defaults: ['claude-sonnet-4-5-20250929', 'claude-haiku-4-5-20251001'],
+                placeholder: 'claude-sonnet-5',
+                defaults: ['claude-sonnet-5', 'claude-opus-4-8', 'claude-haiku-4-5'],
               },
             ],
           },
@@ -70,7 +70,8 @@ export const CONFIG_SCHEMA: ConfigSchema = {
                 placeholder: 'global.anthropic.claude-haiku-4-5-20251001-v1:0',
                 defaults: [
                   'global.anthropic.claude-haiku-4-5-20251001-v1:0',
-                  'global.anthropic.claude-sonnet-4-5-20250929-v1:0',
+                  'global.anthropic.claude-sonnet-4-6',
+                  'global.anthropic.claude-opus-4-7',
                   'apac.amazon.nova-pro-v1:0',
                   'apac.amazon.nova-micro-v1:0',
                 ],
@@ -87,8 +88,8 @@ export const CONFIG_SCHEMA: ConfigSchema = {
                 label: 'モデル',
                 type: 'array',
                 itemType: 'text',
-                placeholder: 'gpt-5.2',
-                defaults: ['gpt-5.2', 'gpt-5.2-chat-latest', 'gpt-5.2-pro', 'gpt-5.1', 'gpt-4o', 'gpt-4o-mini'],
+                placeholder: 'gpt-5.6',
+                defaults: ['gpt-5.6', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.2'],
               },
             ],
           },

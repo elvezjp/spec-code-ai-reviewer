@@ -306,6 +306,7 @@ Try again with a maximum tokens value that is lower than 10000.
 - 設定ファイルの `max_tokens` がモデルの設定可能上限を超えている
   - Amazon Nova Lite / Micro / Pro: 10,000
   - Anthropic Claude Haiku 4.5: 16,384
+  - Anthropic Claude Sonnet 4.6 / Opus 4.7 以降: 最大128,000（ただし本アプリはストリーミング未対応のため、タイムアウト回避の観点で16,384以下を推奨）
 
 **対処方法:**
 - 設定ファイルジェネレータで設定ファイルを再作成する

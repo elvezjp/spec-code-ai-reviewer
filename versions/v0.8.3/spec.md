@@ -714,8 +714,8 @@ AIへの指示内容をユーザーがカスタマイズ可能。以下の4項�
 - region: us-east-1
 - maxTokens: 16384
 - models:
-  - anthropic.claude-4-5-sonnet-20241022-v2:0
-  - anthropic.claude-4-5-haiku-20241022-v1:0
+  - global.anthropic.claude-haiku-4-5-20251001-v1:0
+  - global.anthropic.claude-sonnet-4-6
 
 ## specTypes
 
@@ -785,8 +785,9 @@ AIへの指示内容をユーザーがカスタマイズ可能。以下の4項�
 - apiKey: YOUR_ANTHROPIC_API_KEY
 - maxTokens: 16384
 - models:
-  - claude-sonnet-4-20250514
-  - claude-haiku-4-20250514
+  - claude-sonnet-5
+  - claude-opus-4-8
+  - claude-haiku-4-5
 ```
 
 **Bedrock:**
@@ -800,8 +801,8 @@ AIへの指示内容をユーザーがカスタマイズ可能。以下の4項�
 - region: us-east-1
 - maxTokens: 16384
 - models:
-  - anthropic.claude-4-5-sonnet-20241022-v2:0
-  - anthropic.claude-4-5-haiku-20241022-v1:0
+  - global.anthropic.claude-haiku-4-5-20251001-v1:0
+  - global.anthropic.claude-sonnet-4-6
 ```
 
 **OpenAI:**
@@ -813,12 +814,10 @@ AIへの指示内容をユーザーがカスタマイズ可能。以下の4項�
 - apiKey: YOUR_OPENAI_API_KEY
 - maxTokens: 16384
 - models:
+  - gpt-5.6
+  - gpt-5.6-terra
+  - gpt-5.6-luna
   - gpt-5.2
-  - gpt-5.2-chat-latest
-  - gpt-5.2-pro
-  - gpt-5.1
-  - gpt-4o
-  - gpt-4o-mini
 ```
 
 **各プロバイダーの必須フィールド:**
@@ -883,7 +882,7 @@ UIに現在の保存状態を表示する:
 **ローカルストレージへの保存:**
 
 - モデル選択は設定ファイルとは別に、ローカルストレージに `provider:model` の形式で保存する
-- 例: `anthropic:claude-sonnet-4-20250514`, `bedrock:anthropic.claude-4-5-sonnet-20241022-v2:0`
+- 例: `anthropic:claude-sonnet-5`, `bedrock:global.anthropic.claude-sonnet-4-6`
 
 **モデル選択のフォールバックロジック:**
 
@@ -900,7 +899,7 @@ UIに現在の保存状態を表示する:
 **モデル選択変更時の動作:**
 
 - モデル選択を変更した場合、選択したモデルをローカルストレージに自動保存する
-- 保存形式: `provider:model`（例: `anthropic:claude-sonnet-4-20250514`）
+- 保存形式: `provider:model`（例: `anthropic:claude-sonnet-5`）
 - 設定ファイル全体の保存とは独立して、モデル選択のみ自動保存される
 
 ### 2.7 セマンティック分割レビュー
@@ -1446,8 +1445,8 @@ UIに現在の保存状態を表示する:
 │   出力最大トークン数: 16,384                                │
 │   （↑設定ファイルで指定時のみ表示、システムLLM時は非表示） │
 │                                                             │
-│   使用モデル: [claude-sonnet-4-20250514        ▼]           │
-│               ├ claude-sonnet-4-20250514                    │
+│   使用モデル: [claude-sonnet-5        ▼]           │
+│               ├ claude-sonnet-5                    │
 │               └ claude-haiku-4-20250514                     │
 │   （未設定時は「システムのデフォルトモデルを使用」選択不可）│
 │                                                             │
@@ -1712,7 +1711,7 @@ AIを使用してMarkdownを整理する。設計書1ファイルごとに呼び
   },
   "llmConfig": {
     "provider": "anthropic",
-    "model": "claude-sonnet-4-20250514",
+    "model": "claude-sonnet-5",
     "apiKey": "sk-ant-...",
     "maxTokens": 16384
   }
@@ -1825,7 +1824,7 @@ AIを使用してMarkdownを整理する。設計書1ファイルごとに呼び
   },
   "llmConfig": {
     "provider": "anthropic",
-    "model": "claude-sonnet-4-20250514",
+    "model": "claude-sonnet-5",
     "apiKey": "sk-ant-...",
     "maxTokens": 16384
   },
@@ -1871,7 +1870,7 @@ Anthropic:
 ```json
 {
   "provider": "anthropic",
-  "model": "claude-sonnet-4-20250514",
+  "model": "claude-sonnet-5",
   "apiKey": "sk-ant-...",
   "maxTokens": 16384
 }
@@ -1881,7 +1880,7 @@ Bedrock:
 ```json
 {
   "provider": "bedrock",
-  "model": "anthropic.claude-4-5-sonnet-20241022-v2:0",
+  "model": "global.anthropic.claude-sonnet-4-6",
   "accessKeyId": "AKIA...",
   "secretAccessKey": "...",
   "region": "us-east-1",
@@ -2031,7 +2030,7 @@ OpenAI:
 ```json
 {
   "provider": "anthropic",
-  "model": "claude-sonnet-4-20250514",
+  "model": "claude-sonnet-5",
   "apiKey": "sk-ant-..."
 }
 ```
@@ -2051,7 +2050,7 @@ OpenAI:
 {
   "status": "connected",
   "provider": "anthropic",
-  "model": "claude-sonnet-4-20250514"
+  "model": "claude-sonnet-5"
 }
 ```
 
@@ -2061,7 +2060,7 @@ OpenAI:
 {
   "status": "error",
   "provider": "anthropic",
-  "model": "claude-sonnet-4-20250514",
+  "model": "claude-sonnet-5",
   "error": "認証に失敗しました"
 }
 ```
