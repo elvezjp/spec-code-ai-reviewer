@@ -299,8 +299,8 @@ If you need the sources for reference, clone the upstream repositories directly 
 
 Only the latest code is kept at the repository root. Versions are managed with git tags.
 
-- The `main` branch accumulates changes for the next version as **[Unreleased]** in [CHANGELOG.md](CHANGELOG.md)
-- On release, the version in `backend/pyproject.toml` (and the frontend version labels) is finalized and a `vX.Y.Z` tag is created
+- The `main` branch accumulates changes for the next version under a `## [X.Y.Z] - Unreleased` heading in [CHANGELOG.md](CHANGELOG.md)
+- On release, the heading date is finalized, the version in `backend/pyproject.toml` (and the frontend version labels) is confirmed, and a `vX.Y.Z` tag is created
 
 ### Using Old Versions
 

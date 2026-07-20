@@ -1,7 +1,5 @@
 # 設計書-Javaプログラム突合 AIレビュアー 仕様書
 
-**バージョン: 0.10.0（開発中）**
-
 ## 1. 概要
 
 ### 1.1 目的
@@ -124,8 +122,8 @@ Excel または Word ファイルをMarkdown形式に変換する。Excel ファ
 | ツール名 | 表示名 | 説明 | 用途 |
 |---------|--------|------|------|
 | [MarkItDown](https://github.com/microsoft/markitdown) | MarkItDown | Microsoft製の汎用ファイル→Markdown変換ツール | 汎用的な変換（デフォルト） |
-| [excel2md](../../excel2md/) | excel2md (CSV) | Excelの印刷領域を解析してCSV形式で出力するツール（v1.7）。概要セクションあり、検証用メタデータなし | AI向けの構造化データ出力（トークン数削減） |
-| [excel2md](../../excel2md/) | excel2md (CSV+Mermaid) | excel2md (CSV) に加え、シェイプからMermaidフローチャートを出力するツール（v1.7） | フローチャートを含む設計書向け |
+| [excel2md](https://github.com/elvezjp/excel2md) | excel2md (CSV) | Excelの印刷領域を解析してCSV形式で出力するツール。概要セクションあり、検証用メタデータなし | AI向けの構造化データ出力（トークン数削減） |
+| [excel2md](https://github.com/elvezjp/excel2md) | excel2md (CSV+Mermaid) | excel2md (CSV) に加え、シェイプからMermaidフローチャートを出力するツール | フローチャートを含む設計書向け |
 
 | 項目 | 内容 |
 |------|------|
@@ -197,7 +195,7 @@ flowchart TD
 ```
 ````
 
-※ excel2mdの詳細な仕様については [excel2md/v1.7/spec.md](../../excel2md/v1.7/spec.md) を参照
+※ excel2mdの詳細な仕様については [excel2md リポジトリ](https://github.com/elvezjp/excel2md)の仕様書を参照
 
 #### 2.2.2 プログラム変換（行番号付与）
 
@@ -3212,7 +3210,7 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 ```
 
 
-※ リポジトリ全体の構成（マルチバージョン構成、共有リソース等）については [README.md](../../README.md) を参照
+※ リポジトリ全体の構成については [README.md](../README.md) を参照
 
 ### 8.1 バージョン管理
 
@@ -3229,9 +3227,8 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 
 1. `backend/pyproject.toml` の `version` を更新
 2. `frontend/package.json` の `version` を更新
-3. `spec.md` 冒頭のバージョン番号を手動で更新
 
-※ マルチバージョン運用（ポート割り当て、PM2設定、新バージョン追加手順等）については [README.md](../../README.md) を参照
+※ バージョン管理（git tag によるリリース運用）については [README.md](../README.md) を参照
 
 ---
 
@@ -3290,8 +3287,8 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 
 | ドキュメント | 内容 |
 |-------------|------|
-| [README.md](../../README.md) | セットアップ、起動方法、マルチバージョン運用 |
-| [EC2デプロイ仕様書](../../docs/ec2-deployment-spec.md) | EC2へのデプロイ構成詳細 |
+| [README.md](../README.md) | セットアップ、起動方法、バージョン管理 |
+| [（OLD）EC2デプロイ仕様書](ec2-deployment-spec.md) | 旧マルチバージョン構成時代のEC2デプロイ仕様（現行構成には非適用） |
 
 ---
 
@@ -3503,7 +3500,7 @@ npm run test:coverage  # カバレッジ付き
 
 ### 13.3 試験項目表
 
-試験結果はリポジトリルートの [`tests/`](../../tests/) ディレクトリに日付・通し番号付きファイルで保存する（詳細は [tests/README.md](../../tests/README.md) を参照）。
+試験結果は [`docs/tests/`](tests/) ディレクトリに日付・通し番号付きファイルで保存する（詳細は [tests/README.md](tests/README.md) を参照）。
 
 #### ファイル命名規則
 
@@ -3613,7 +3610,7 @@ AIエディタに指示して、以下の試験項目からファイルを作成
 
 #### 13.4.1 AIレビュー
 
-指示書: [`docs/tests/review.md`](../../docs/tests/review.md)
+指示書: [`docs/tests/review.md`](tests/review.md)
 
 AI にコードの静的レビューを指示し、全観点について OK / NG を判定させる。
 
@@ -3647,7 +3644,7 @@ AI にコードの静的レビューを指示し、全観点について OK / NG
 
 #### 13.4.2 シナリオテスト
 
-指示書: [`docs/tests/scenarios.md`](../../docs/tests/scenarios.md)
+指示書: [`docs/tests/scenarios.md`](tests/scenarios.md)
 
 AI にブラウザ上で画面操作を実行させ、変換からレビュー・ダウンロードまでの一連の流れを検証する。ファイル選択ダイアログが必要な操作は MANUAL とする。
 

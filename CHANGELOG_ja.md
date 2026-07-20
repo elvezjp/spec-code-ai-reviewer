@@ -7,7 +7,7 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/spec/v2.0.0.html) に準拠しています。
 
-## [Unreleased]
+## [0.10.0] - Unreleased
 
 ### Changed
 - **最新コードのみをルートで保持する構成に変更** (#103): `versions/` ディレクトリ（v0.5.0〜v0.9.9 のスナップショット）を廃止し、`versions/v0.9.9/backend` / `versions/v0.9.9/frontend` をリポジトリルートの `backend/` / `frontend/` に昇格。バージョン管理は git tag に移行し、旧構成を利用する場合は `v0.9.9` タグを checkout する
@@ -432,7 +432,7 @@
 
 ## バージョン比較
 
-全バージョンの機能比較表は [versions/README.md](versions/README.md) を参照してください。
+旧バージョン（v0.5.0〜v0.9.9）の機能比較表は [v0.9.9 タグの versions/README.md](https://github.com/elvezjp/spec-code-ai-reviewer/blob/v0.9.9/versions/README.md) を参照してください。
 
 | バージョン | 主な機能 |
 |------------|----------|

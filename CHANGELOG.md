@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.10.0] - Unreleased
 
 ### Changed
 - **Repository restructured to keep only the latest code at the root** (#103): The `versions/` directory (v0.5.0–v0.9.9 snapshots) has been removed; `versions/v0.9.9/backend` and `versions/v0.9.9/frontend` were promoted to `backend/` and `frontend/` at the repository root. Version management now uses git tags — to use the old multi-version layout, check out the `v0.9.9` tag
@@ -433,7 +433,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version Comparison
 
-For a detailed feature comparison table across all versions, see [versions/README.md](versions/README.md).
+For a detailed feature comparison table across old versions (v0.5.0–v0.9.9), see [versions/README.md in the v0.9.9 tag](https://github.com/elvezjp/spec-code-ai-reviewer/blob/v0.9.9/versions/README.md).
 
 | Version | Key Features |
 |---------|-------------|

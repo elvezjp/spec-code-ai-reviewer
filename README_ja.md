@@ -300,8 +300,8 @@ spec-code-ai-reviewer/
 
 リポジトリのルートでは最新のコードのみを保持し、バージョン管理は git tag で行います。
 
-- `main` ブランチには次バージョンの変更を [CHANGELOG_ja.md](CHANGELOG_ja.md) の **[Unreleased]** として蓄積します
-- リリース時に `backend/pyproject.toml` のバージョン（およびフロントエンドのバージョン表記）を確定し、`vX.Y.Z` タグを作成します
+- `main` ブランチには次バージョンの変更を [CHANGELOG_ja.md](CHANGELOG_ja.md) の `## [X.Y.Z] - Unreleased` 見出しの下に蓄積します
+- リリース時に見出しの日付を確定し、`backend/pyproject.toml` のバージョン（およびフロントエンドのバージョン表記）を確認のうえ、`vX.Y.Z` タグを作成します
 
 ### 旧バージョンを利用する場合
 
