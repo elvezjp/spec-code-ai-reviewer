@@ -7,6 +7,19 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/spec/v2.0.0.html) に準拠しています。
 
+## [Unreleased]
+
+### Changed
+- **最新コードのみをルートで保持する構成に変更** (#103): `versions/` ディレクトリ（v0.5.0〜v0.9.9 のスナップショット）を廃止し、`versions/v0.9.9/backend` / `versions/v0.9.9/frontend` をリポジトリルートの `backend/` / `frontend/` に昇格。バージョン管理は git tag に移行し、旧構成を利用する場合は `v0.9.9` タグを checkout する
+- **excel2md を PyPI からインストールする方式に変更** (#100): ローカル `excel2md/` ディレクトリの `sys.path` 注入を廃止し、通常の依存関係（`excel2md>=2.2.1`）と `excel2md.cli` / `excel2md.runner` の直接 import に置き換え
+- `spec.md` と `config-file-generator-spec.md` を `docs/` に移動
+
+### Removed
+- **ランタイムバージョン切替機能** (#118): バージョン切替バルーン UI（`VersionSelector` / `useVersions`）、`app_version` Cookie、Cookie + Nginx map によるルーティングを削除。設定モーダルの起動中バージョン表示は維持
+- **マルチバージョン用インフラ** (#118): `nginx/`（`version-map.conf` 含む）、`docker-compose.yml`、`Dockerfile.dev`、`docker-entrypoint.sh`、`ecosystem.config.js`、`dev.ecosystem.config.js`。今後は uvicorn + Vite による単一バージョン起動
+- **未使用の subtree ディレクトリ** (#96, #100, #103): `markitdown/`、`excel2md/`、`add-line-numbers/`、`code2map/`、`md2map/`。いずれも PyPI または uv の git ソースから取得する。ソース参照が必要な場合は各上流リポジトリを clone する
+- `latest` シンボリックリンクと `scripts/sync_version.py`（単一バージョン構成では不要）
+
 ## [0.9.9] - 2026-06-17
 
 ### Changed

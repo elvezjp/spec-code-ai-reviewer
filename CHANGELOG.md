@@ -7,6 +7,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Repository restructured to keep only the latest code at the root** (#103): The `versions/` directory (v0.5.0–v0.9.9 snapshots) has been removed; `versions/v0.9.9/backend` and `versions/v0.9.9/frontend` were promoted to `backend/` and `frontend/` at the repository root. Version management now uses git tags — to use the old multi-version layout, check out the `v0.9.9` tag
+- **excel2md is now installed from PyPI** (#100): Replaced the `sys.path` injection of the local `excel2md/` directory with a normal dependency (`excel2md>=2.2.1`) and direct imports of `excel2md.cli` / `excel2md.runner`
+- `spec.md` and `config-file-generator-spec.md` moved to `docs/`
+
+### Removed
+- **Runtime version switching** (#118): The version-selector balloon UI (`VersionSelector` / `useVersions`), the `app_version` cookie, and the Cookie + Nginx map routing have been removed. The settings modal still shows the running version
+- **Multi-version infrastructure** (#118): `nginx/` (including `version-map.conf`), `docker-compose.yml`, `Dockerfile.dev`, `docker-entrypoint.sh`, `ecosystem.config.js`, and `dev.ecosystem.config.js`. The app now starts as a single version via uvicorn + Vite
+- **Unused subtree directories** (#96, #100, #103): `markitdown/`, `excel2md/`, `add-line-numbers/`, `code2map/`, and `md2map/` — all are consumed from PyPI or git sources via uv. Clone the upstream repositories if you need the sources for reference
+- `latest` symlink and `scripts/sync_version.py` (no longer needed with a single version at the root)
+
 ## [0.9.9] - 2026-06-17
 
 ### Changed
