@@ -15,6 +15,7 @@ dependencies = [
     "add-line-numbers",
     "md2map[nlp,ai]",
     "code2map",
+    "excel2md>=2.2.1",
 ]
 
 [tool.uv.sources]

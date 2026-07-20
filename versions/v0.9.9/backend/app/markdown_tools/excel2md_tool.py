@@ -1,23 +1,12 @@
 """excel2md を用いた Markdown 変換ツール。"""
 
-import os
-import sys
 import tempfile
 from pathlib import Path
 
-from .base import MarkdownTool
+from excel2md.cli import build_argparser
+from excel2md.runner import run
 
-# excel2mdモジュールへのパス（環境変数でオーバーライド可能）
-# パス構造: excel2md_tool.py -> markdown_tools -> app -> backend -> v0.4.0 -> versions -> repo_root
-# NOTE: このパスはexcel2md_mermaid_tool.pyからもインポートされて使用される
-_DEFAULT_EXCEL2MD_PATH = (
-    Path(__file__).resolve().parent.parent.parent.parent.parent.parent
-    / "excel2md"
-    / "v2.1.1"
-)
-EXCEL2MD_PATH = Path(
-    os.environ.get("EXCEL2MD_PATH", str(_DEFAULT_EXCEL2MD_PATH))
-)
+from .base import MarkdownTool
 
 
 class Excel2mdTool(MarkdownTool):
@@ -38,58 +27,46 @@ class Excel2mdTool(MarkdownTool):
 
     def convert(self, file_content: bytes, filename: str) -> str:
         """file_contentとfilenameを受け取りCSVマークダウン文字列を返す。"""
-        # sys.pathを一時的に変更してexcel2mdをインポート
-        original_path = sys.path.copy()
-        try:
-            if str(EXCEL2MD_PATH) not in sys.path:
-                sys.path.insert(0, str(EXCEL2MD_PATH))
+        # 一時ディレクトリで作業
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
 
-            # excel2mdモジュールをインポート
-            from excel_to_md import build_argparser, run
+            # 入力ファイルを作成
+            input_path = tmpdir_path / filename
+            input_path.write_bytes(file_content)
 
-            # 一時ディレクトリで作業
-            with tempfile.TemporaryDirectory() as tmpdir:
-                tmpdir_path = Path(tmpdir)
+            # 出力パスを設定（run()がファイルを生成する）
+            output_basename = input_path.stem
+            # CSVマークダウンモードでは {basename}_csv.md が生成される
+            expected_output = tmpdir_path / f"{output_basename}_csv.md"
 
-                # 入力ファイルを作成
-                input_path = tmpdir_path / filename
-                input_path.write_bytes(file_content)
+            # argparserでオプションを設定
+            # 概要セクションあり（デフォルト）、検証用メタデータなし
+            parser = build_argparser()
+            args = parser.parse_args(
+                [
+                    str(input_path),
+                    "-o",
+                    str(tmpdir_path / f"{output_basename}.md"),
+                    "--csv-markdown-enabled",
+                    "--no-csv-include-metadata",
+                ]
+            )
 
-                # 出力パスを設定（run()がファイルを生成する）
-                output_basename = input_path.stem
-                # CSVマークダウンモードでは {basename}_csv.md が生成される
-                expected_output = tmpdir_path / f"{output_basename}_csv.md"
+            # 変換実行
+            result = run(str(input_path), args.output, args)
 
-                # argparserでオプションを設定
-                # 概要セクションあり（デフォルト）、検証用メタデータなし
-                parser = build_argparser()
-                args = parser.parse_args(
-                    [
-                        str(input_path),
-                        "-o",
-                        str(tmpdir_path / f"{output_basename}.md"),
-                        "--csv-markdown-enabled",
-                        "--no-csv-include-metadata",
-                    ]
+            # 出力ファイルを読み取り
+            if result and Path(result).exists():
+                output_file = Path(result)
+            elif expected_output.exists():
+                output_file = expected_output
+            else:
+                raise RuntimeError(
+                    "excel2md変換に失敗しました: 出力ファイルが見つかりません"
                 )
 
-                # 変換実行
-                result = run(str(input_path), args.output, args)
-
-                # 出力ファイルを読み取り
-                if result and Path(result).exists():
-                    output_file = Path(result)
-                elif expected_output.exists():
-                    output_file = expected_output
-                else:
-                    raise RuntimeError(
-                        "excel2md変換に失敗しました: 出力ファイルが見つかりません"
-                    )
-
-                return output_file.read_text(encoding="utf-8")
-
-        finally:
-            sys.path = original_path
+            return output_file.read_text(encoding="utf-8")
 
     def preprocess_for_organize(self, markdown: str) -> str:
         """excel2mdの概要セクションを除去する。

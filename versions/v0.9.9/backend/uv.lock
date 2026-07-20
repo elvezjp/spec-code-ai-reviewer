@@ -294,6 +294,18 @@ wheels = [
 ]
 
 [[package]]
+name = "excel2md"
+version = "2.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "openpyxl" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/10/4b/3127d00f84f9fe7e3cddb88e7c999d82bc0c18acc5ad191b616eef6a5fd6/excel2md-2.3.0.tar.gz", hash = "sha256:12156d0d37006ae2f3dabcbaea9524a35fb774f8c7eb9c54c86b2faa56fbce66", size = 69600, upload-time = "2026-07-03T00:44:19.467Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/84/d9/d9ec4af7c21a4a04ae8277300feb0cd3138c75dbf9603fe387dd8d4187c2/excel2md-2.3.0-py3-none-any.whl", hash = "sha256:1379d30330441eaa2330f44761fffd7997da15d4a37cad5d0266ff2c566fe74e", size = 60328, upload-time = "2026-07-03T00:44:18.326Z" },
+]
+
+[[package]]
 name = "fastapi"
 version = "0.137.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1273,6 +1285,7 @@ dependencies = [
     { name = "anthropic" },
     { name = "boto3" },
     { name = "code2map" },
+    { name = "excel2md" },
     { name = "fastapi" },
     { name = "markitdown", extra = ["docx", "xlsx"] },
     { name = "md2map", extra = ["ai", "nlp"] },
@@ -1296,6 +1309,7 @@ requires-dist = [
     { name = "anthropic", specifier = ">=0.40.0" },
     { name = "boto3", specifier = ">=1.35.0" },
     { name = "code2map", git = "https://github.com/elvezjp/code2map.git?branch=main" },
+    { name = "excel2md", specifier = ">=2.2.1" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "markitdown", extras = ["xlsx", "docx"], specifier = ">=0.0.1a3" },
     { name = "md2map", extras = ["nlp", "ai"], git = "https://github.com/elvezjp/md2map.git?branch=main" },
