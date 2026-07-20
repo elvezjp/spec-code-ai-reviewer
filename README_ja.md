@@ -39,9 +39,7 @@ LLMには入力トークンの上限があるため、大規模な設計書や�
 
 ## システム構成
 
-- **フロントエンド**:
-  - v0.6.0以降: Vite + React + TypeScript + Tailwind CSS
-  - v0.5.2以前: 単一HTMLファイル + Tailwind CSS (CDN)
+- **フロントエンド**: Vite + React + TypeScript + Tailwind CSS
 - **バックエンド**: Python / FastAPI
   - MarkItDown / excel2md (Excel→Markdown変換)
   - add-line-numbers準拠 (行番号付与)
@@ -70,13 +68,6 @@ LLMには入力トークンの上限があるため、大規模な設計書や�
 
 ## セットアップ
 
-ローカル環境では以下の2通りの起動方法があります。
-
-- **単一バージョン起動**: uvicornで直接起動（開発向け）
-- **Docker Compose起動**: 本番環境と同等のマルチバージョン環境（動作確認向け）
-
-本番環境（EC2）へのデプロイについては [EC2デプロイ仕様書](docs/ec2-deployment-spec.md) を参照してください。
-
 ### 前提条件
 
 #### Python バージョン
@@ -87,13 +78,13 @@ LLMには入力トークンの上限があるため、大規模な設計書や�
 
 uvが自動的に適切なPythonバージョンを使用します。システムにインストールされているPython 3.11以上のバージョンがそのまま利用されます。
 
-#### Node.js バージョン（v0.6.0以降）
+#### Node.js バージョン
 
 - **必須バージョン**: Node.js 20以上
 - **推奨バージョン**: Node.js 22 LTS
 - **確認方法**: `node --version` で確認してください
 
-v0.6.0以降のフロントエンド（Vite + React + TypeScript）の開発・ビルドに必要です。v0.5.2以前のみ使用する場合は不要です。
+フロントエンド（Vite + React + TypeScript）の開発・ビルドに必要です。
 
 #### その他
 
@@ -101,7 +92,6 @@ v0.6.0以降のフロントエンド（Vite + React + TypeScript）の開発・�
   ```bash
   curl -LsSf https://astral.sh/uv/install.sh | sh
   ```
-- Docker / Docker Compose（Docker起動方式を使用する場合）
 
 ### インストール
 
@@ -109,7 +99,7 @@ v0.6.0以降のフロントエンド（Vite + React + TypeScript）の開発・�
 # uv をインストール（未インストールの場合）
 # 詳細: https://docs.astral.sh/uv/getting-started/installation/
 
-# Node.js をインストール（v0.6.0以降を使用する場合）
+# Node.js をインストール（未インストールの場合）
 # 詳細: https://nodejs.org/
 # macOS (Homebrew): brew install node
 # Windows: https://nodejs.org/ からインストーラをダウンロード
@@ -129,20 +119,22 @@ export AWS_ACCESS_KEY_ID=your-access-key
 export AWS_SECRET_ACCESS_KEY=your-secret-key
 export AWS_REGION=ap-northeast-1
 
-# 方法2: AWS CLI でプロファイル設定
+# 方法2: .env ファイル
+cp .env.example .env
+# .env ファイルを編集してAWS認証情報を設定
+
+# 方法3: AWS CLI でプロファイル設定
 aws configure
 ```
 
-### 単一バージョンで起動する場合
+### 起動
 
-#### v0.6.0以降（Vite + React版）
-
-v0.6.0以降はフロントエンドとバックエンドを別々に起動します。
+フロントエンドとバックエンドを別々に起動します。
 
 **ターミナル1: バックエンド起動**
 
 ```bash
-cd versions/v0.9.9/backend
+cd backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -150,7 +142,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **ターミナル2: フロントエンド起動**
 
 ```bash
-cd versions/v0.9.9/frontend
+cd frontend
 npm install
 npm run dev
 ```
@@ -159,89 +151,16 @@ npm run dev
 
 **注意**: フロントエンドはViteの開発サーバー（ポート5173）で起動し、APIリクエストはバックエンド（ポート8000）にプロキシされます。
 
-#### v0.5.2以前（単一HTMLファイル版）
-
-v0.5.2以前はバックエンドのみ起動します（フロントエンドはバックエンドから配信）。
-
-```bash
-cd versions/v0.5.2/backend
-uv sync
-uv run uvicorn app.main:app --reload --port 8000
-```
-
-ブラウザで http://localhost:8000 にアクセス
-
-**注意**: 画面左上にバージョン切替バルーンが表示されますが、単一バージョン起動時は起動したバージョンでのみ動作します。画面右上「設定」アイコンから起動中のバージョン番号を確認できます。
-
-### Docker Composeで起動する場合（マルチバージョン対応）
-
-本番環境と同等のバージョン切替機能を含む開発環境を起動できます。
-
-```bash
-# AWS認証情報を設定（システムLLMを使用する場合）
-cp .env.example .env
-# .env ファイルを編集してAWS認証情報を設定
-
-# 起動
-docker-compose up -d --build
-
-# ブラウザでアクセス
-open http://localhost:8000
-
-# ログ確認
-docker-compose logs -f
-
-# 停止
-docker-compose down
-```
-
-**注意**: AWS環境がない場合は `.env` ファイルの作成は不要です。Web画面から設定ファイルをアップロードすることで、Anthropic APIやOpenAI APIを使用できます。
-
-画面左上のバルーンでバージョン切替が可能です（Cookie + Nginx mapによるルーティング）。
-
 ### テスト実行
 
-各バージョンのディレクトリでテストを実行します。
-
 ```bash
-# v0.9.9 バックエンドのテスト
-cd versions/v0.9.9/backend
+# バックエンドのテスト
+cd backend
 uv run pytest tests/ -v
 
-# v0.9.9 フロントエンドのテスト
-cd versions/v0.9.9/frontend
+# フロントエンドのテスト
+cd frontend
 npm test
-
-# v0.5.2以前のテスト（バックエンドのみ）
-cd versions/v0.5.2/backend
-uv run pytest tests/ -v
-```
-
-### バージョン同期
-
-バージョン番号は `backend/pyproject.toml` で一元管理しています。
-フロントエンドのバージョン表記を同期するには：
-
-```bash
-python3 scripts/sync_version.py
-```
-
-このスクリプトは以下を行います：
-
-1. **バージョン番号の同期**: 各 `backend/pyproject.toml` のバージョンを読み取り、対応する `frontend/index.html` の表示を更新
-2. **VERSIONS配列の更新**: 全フロントエンドのバージョン切替UI用 `VERSIONS` 配列を、利用可能な全バージョンで更新
-
-#### オプション
-
-```bash
-# 全バージョンを同期 + VERSIONS配列更新（デフォルト）
-python3 scripts/sync_version.py
-
-# 指定バージョンのみ同期（VERSIONS配列更新なし）
-python3 scripts/sync_version.py v0.5.0
-
-# VERSIONS配列の更新をスキップ
-python3 scripts/sync_version.py --no-versions-array
 ```
 
 ## 環境変数
@@ -344,230 +263,56 @@ Try again with a maximum tokens value that is lower than 10000.
 
 ```
 spec-code-ai-reviewer/
-├── docker-compose.yml           # Docker Compose設定（マルチバージョン開発用）
-├── Dockerfile.dev               # 開発用Dockerfile（Ubuntu）
-├── docker-entrypoint.sh         # Docker起動スクリプト
-├── ecosystem.config.js          # PM2設定（本番用）
-├── dev.ecosystem.config.js      # PM2設定（開発用）
-├── nginx/
-│   ├── dev.conf                 # 開発用Nginx設定
-│   ├── spec-code-ai-reviewer.conf  # 本番用Nginx設定
-│   └── version-map.conf         # バージョン切替map（共通）
-├── latest -> versions/v0.9.9    # シンボリックリンク（最新版を指す）
-│
-├── versions/                    # 全バージョン格納
-│   ├── README.md                # バージョン管理説明
-│   ├── v0.5.0/                  # 旧バージョン
-│   ├── v0.5.1/                  # 旧バージョン
-│   ├── v0.5.2/                  # 旧バージョン
-│   ├── v0.6.0/                  # 旧バージョン（Vite + React）
-│   ├── v0.7.0/                  # 旧バージョン（Vite + React）
-│   ├── v0.8.0/                  # 旧バージョン（Vite + React）
-│   ├── v0.8.1/                  # 旧バージョン（Vite + React）
-│   ├── v0.8.2/                  # 旧バージョン（Vite + React）
-│   ├── v0.9.0/                  # 旧バージョン（Vite + React）
-│   ├── v0.9.1/                  # 旧バージョン（Vite + React）
-│   ├── v0.9.2/                  # 旧バージョン（Vite + React）
-│   ├── v0.9.3/                  # 旧バージョン（Vite + React）
-│   ├── v0.9.4/                  # 旧バージョン（Vite + React）
-│   ├── v0.9.5/                  # 旧バージョン（Vite + React）
-│   ├── v0.9.6/                  # 旧バージョン（Vite + React）
-│   ├── v0.9.7/                  # 旧バージョン（Vite + React）
-│   ├── v0.9.8/                  # 旧バージョン（Vite + React）
-│   └── v0.9.9/                  # 最新版（Vite + React）
-│       ├── backend/
-│       ├── frontend/            # Vite + React + TypeScript
-│       ├── config-file-generator-spec.md
-│       └── spec.md
-│
+├── backend/                     # バックエンド（Python / FastAPI）
+│   ├── app/
+│   ├── tests/
+│   ├── pyproject.toml           # バージョンはここで管理
+│   └── uv.lock
+├── frontend/                    # フロントエンド（Vite + React + TypeScript）
+│   ├── src/
+│   └── package.json
 ├── docs/                        # ドキュメント
-│   ├── ec2-deployment-spec.md   # EC2デプロイ仕様書
+│   ├── spec.md                  # アプリケーション仕様書
+│   ├── config-file-generator-spec.md  # 設定ファイルジェネレーター仕様書
 │   ├── split-review.md          # 分割レビュー機能の詳細
+│   ├── ec2-deployment-spec.md   # （OLD）マルチバージョン構成時代のEC2デプロイ仕様書
 │   └── tests/                   # 試験項目表
 │       └── README.md
-│
-├── scripts/                     # ユーティリティスクリプト
-│   └── sync_version.py          # バージョン同期スクリプト
-│
-├── add-line-numbers/            # サブツリー（elvezjp）
-├── code2map/                    # サブツリー（elvezjp）
-├── excel2md/                    # サブツリー（elvezjp）
-├── markitdown/                  # サブツリー（Microsoft）
-├── md2map/                      # サブツリー（elvezjp）
+├── .env.example                 # 環境変数テンプレート（AWS Bedrock）
 └── README.md                    # 本ファイル
 ```
 
 ## 関連プロジェクト
 
-このリポジトリには以下の外部リポジトリを git subtree で追加しています。
+以下の外部ツールを依存関係として使用しています（uv により PyPI または git ソースからインストール。`backend/pyproject.toml` 参照）。
 
-| ディレクトリ | リポジトリ | 説明 |
+| パッケージ | リポジトリ | 説明 |
 |-------------|-----------|------|
-| `add-line-numbers/` | https://github.com/elvezjp/add-line-numbers | ファイルに行番号を追加するツール |
-| `code2map/` | https://github.com/elvezjp/code2map | ソースコード→マインドマップ変換ツール |
-| `excel2md/` | https://github.com/elvezjp/excel2md | Excel→CSVマークダウン変換ツール |
-| `markitdown/` | https://github.com/microsoft/markitdown | 各種ファイル形式をMarkdownに変換するツール |
-| `md2map/` | https://github.com/elvezjp/md2map | Markdown→マインドマップ変換ツール |
+| add-line-numbers | https://github.com/elvezjp/add-line-numbers | ファイルに行番号を追加するツール |
+| code2map | https://github.com/elvezjp/code2map | ソースコード→マインドマップ変換ツール |
+| excel2md | https://github.com/elvezjp/excel2md | Excel→CSVマークダウン変換ツール |
+| markitdown | https://github.com/microsoft/markitdown | 各種ファイル形式をMarkdownに変換するツール |
+| md2map | https://github.com/elvezjp/md2map | Markdown→マインドマップ変換ツール |
 
-### Subtree の更新方法
-
-```bash
-# add-line-numbers を更新
-git subtree pull --prefix=add-line-numbers https://github.com/elvezjp/add-line-numbers.git main --squash
-
-# code2map を更新
-git subtree pull --prefix=code2map https://github.com/elvezjp/code2map.git main --squash
-
-# excel2md を更新
-git subtree pull --prefix=excel2md https://github.com/elvezjp/excel2md.git main --squash
-
-# markitdown を更新
-git subtree pull --prefix=markitdown https://github.com/microsoft/markitdown.git main --squash
-
-# md2map を更新
-git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --squash
-```
+ソースを参照したい場合は、各上流リポジトリを直接 clone してください（例: `git clone https://github.com/elvezjp/excel2md.git`）。これらのリポジトリは以前 git subtree として取り込まれており、その構成は `v0.9.9` タグに保存されています。
 
 ## バージョン管理
 
-### ポート割り当てルール
+リポジトリのルートでは最新のコードのみを保持し、バージョン管理は git tag で行います。
 
-セマンティックバージョニング（`vX.Y.Z`）に対応したポート割り当てルールを採用しています。
+- `main` ブランチには次バージョンの変更を [CHANGELOG_ja.md](CHANGELOG_ja.md) の `## [X.Y.Z] - Unreleased` 見出しの下に蓄積します
+- リリース時に見出しの日付を確定し、`backend/pyproject.toml` のバージョン（およびフロントエンドのバージョン表記）を確認のうえ、`vX.Y.Z` タグを作成します
 
-```
-ポート番号 = 8000 + (マイナーバージョン × 10) + パッチバージョン
-例: v0.2.5 → 8000 + (2 × 10) + 5 = 8025
-```
+### 旧バージョンを利用する場合
 
-| バージョン | ポート |
-|-----------|-------|
-| v0.9.9 (latest) | 8099 |
-| v0.9.8 | 8098 |
-| v0.9.7 | 8097 |
-| v0.9.6 | 8096 |
-| v0.9.5 | 8095 |
-| v0.9.4 | 8094 |
-| v0.9.3 | 8093 |
-| v0.9.2 | 8092 |
-| v0.9.1 | 8091 |
-| v0.9.0 | 8090 |
-| v0.8.2 | 8082 |
-| v0.8.1 | 8081 |
-| v0.8.0 | 8080 |
-| v0.7.0 | 8070 |
-| v0.6.0 | 8060 |
-| v0.5.2 | 8052 |
-| v0.5.1 | 8051 |
-| v0.5.0 | 8050 |
-
-### 新しいバージョンを追加する際の変更箇所
-
-新バージョン（例: v0.7.0）を追加する場合、以下のファイルを修正します。
-
-#### バージョンディレクトリの追加と更新
-
-| ファイル | 変更内容 |
-|---------|---------|
-| `versions/v0.7.0/` | 新バージョンのコードを配置 |
-| `versions/v0.7.0/spec.md` | バージョン番号を更新（冒頭、レビュー情報例、テスト項目） |
-| `versions/v0.7.0/config-file-generator-spec.md` | 対象バージョンを更新 |
-| `versions/v0.7.0/frontend/package.json` | versionを更新（v0.6.0以降） |
-| `versions/v0.7.0/backend/pyproject.toml` | versionを更新 |
-| `versions/v0.7.0/frontend/src/core/hooks/useVersions.ts` | DEFAULT_VERSIONSに新バージョンを追加し、`isLatest: true` を設定（v0.6.0以降） |
-| `versions/v0.7.0/frontend/src/features/config-file-generator/schema/configSchema.ts` | `meta.version` および `info.version` フィールドを更新（v0.6.0以降） |
-| `versions/v0.7.0/frontend/src/features/reviewer/index.tsx` | `APP_INFO.version` を更新（v0.6.0以降） |
-| `versions/v0.7.0/frontend/src/__tests__/features/reviewer/services/split_review_api.test.ts` | モックレスポンス内の `version` を更新（v0.6.0以降） |
-| `versions/v0.9.x〜/frontend/src/core/hooks/useVersions.ts` | 既存の全v0.9以降バージョンのDEFAULT_VERSIONSに新バージョンを追加し、`isLatest` を更新 |
-| `latest` シンボリックリンク | 新バージョンを指すように更新（`rm latest && ln -s versions/v0.7.0 latest`） |
-| `versions/v0.5.x/frontend/index.html` | VERSIONS配列を更新追加（`scripts/sync_version.py`実行、v0.5.x以前のみ） |
-
-#### 設定ファイルとドキュメントの更新
-
-| ファイル | 変更内容 |
-|---------|---------|
-| `docker-compose.yml` | backendのexposeに新ポートを追加、nginxのvolumesに新フロントエンドを追加 |
-| `nginx/version-map.conf` | 新バージョンのルーティングを追加、defaultポート変更 |
-| `ecosystem.config.js` | VERSIONS配列に新バージョンを追加（下記参照） |
-| `dev.ecosystem.config.js` | VERSIONS配列に新バージョンを追加 |
-| `.github/workflows/ci.yml` | `backend-test` / `frontend-test` の `working-directory` を `versions/v{新}/backend` および `versions/v{新}/frontend` に更新 |
-| `docs/ec2-deployment-spec.md` | 設定例に新バージョンの記載を追加 |
-| `versions/README.md` | ディレクトリ構成、バージョン比較表、更新履歴を追加 |
-| `README.md` | ディレクトリ構成、ポート割り当て表を更新 |
-| `CHANGELOG.md` / `CHANGELOG_ja.md` | 更新履歴を追記 |
-| `SECURITY.md` / `SECURITY_ja.md` | サポートバージョンを更新 |
-| `CONTRIBUTING.md` / `CONTRIBUTING_ja.md` | バージョン番号を更新 |
-
-#### ecosystem.config.js への追加例
-
-VERSIONS配列に新バージョンを追加します。`latest`はシンボリックリンクのため、実体バージョンのみ起動します：
-
-```javascript
-const VERSIONS = [
-  // latestはシンボリックリンクのため、実体バージョンのみ起動
-  { name: 'spec-code-ai-reviewer-v0.7.0', cwd: 'versions/v0.7.0', port: 8070 },  // 追加
-  { name: 'spec-code-ai-reviewer-v0.6.0', cwd: 'versions/v0.6.0', port: 8060 },
-  { name: 'spec-code-ai-reviewer-v0.5.0', cwd: 'versions/v0.5.0', port: 8050 },
-];
-```
-
-**注意**: `latest`用のプロセスは不要です。Nginxの`version-map.conf`で`default`ポートが最新版を指すため、Cookie未設定時も最新版にルーティングされます。
-
-**注意**: `PYTHONPATH` に `add-line-numbers` サブツリーのパスが設定されており、`add_line_numbers` モジュールをインポート可能にしています。
-
-#### nginx/version-map.conf への追加例
-
-```nginx
-# Cookie値に応じてバックエンドポートを振り分け
-map $cookie_app_version $backend_port {
-    "v0.7.0"  8070;  # 追加
-    "v0.6.0"  8060;
-    "v0.5.0"  8050;
-    default   8070;  # latest (v0.7.0)
-}
-
-# Cookie値に応じてフロントエンドを振り分け
-map $cookie_app_version $frontend_root {
-    "v0.7.0"  /var/www/spec-code-ai-reviewer/versions/v0.7.0/frontend;  # 追加
-    "v0.6.0"  /var/www/spec-code-ai-reviewer/versions/v0.6.0/frontend;
-    "v0.5.0"  /var/www/spec-code-ai-reviewer/versions/v0.5.0/frontend;
-    default   /var/www/spec-code-ai-reviewer/latest/frontend;
-}
-```
-
-### 本番環境での更新手順
+旧バージョン（v0.5.0〜v0.9.9）は、以前は `versions/` ディレクトリ配下にスナップショットとして保持していました。この構成（マルチバージョン用インフラの nginx / PM2 / Docker 設定、subtree を含む）は `v0.9.9` タグに保存されています。
 
 ```bash
-# （ローカルPCで実行）GitHubに登録済みの公開鍵に対応する「秘密鍵」をssh-agentへ追加
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_rsa   # 鍵ファイル名が異なる場合は適宜変更
-
-# サーバーにSSH接続（ssh-agent転送でGitHubアクセス可能にする）
-ssh -A user@example.com
-
-# 新バージョンをデプロイ
-cd /var/www/spec-code-ai-reviewer
-git pull origin main
-
-# 依存関係をインストール
-cd versions/v0.5.1/backend
-uv sync
-
-# PM2でプロセスを再構成（新バージョンのプロセスを追加）
-cd /var/www/spec-code-ai-reviewer
-pm2 delete all
-pm2 start ecosystem.config.js
-pm2 save
-
-# Nginx設定を反映（version-map.confの変更を反映）
-sudo cp nginx/version-map.conf /etc/nginx/conf.d/
-sudo nginx -t
-sudo nginx -s reload
+git checkout v0.9.9
+# 旧バージョンは versions/v0.5.0 〜 versions/v0.9.9 配下にあります
 ```
 
-**補足:**
-- `latest` シンボリックリンクは `git pull` で自動更新される（Gitがシンボリックリンクを追跡）
-- `pm2 reload` は既存プロセスの再起動のみ。新バージョン追加時は `pm2 delete all && pm2 start` で再構成が必要
-- `spec-code-ai-reviewer.conf` は `$backend_port` 変数を使用するため、`version-map.conf` の更新のみでOK
+**注意**: `v0.9.9` タグは旧構成のアーカイブ参照点のため、削除・付け替えを行わないでください。
 
 ## 更新履歴
 
@@ -579,7 +324,7 @@ sudo nginx -s reload
 
 ## セキュリティ
 
-脆弱性の報告については [SECURITY_ja.md](SECURITY_ja.md) を参照してください。アーカイブ済みの `versions/` や git subtree 配下に対する Dependabot アラートの運用方針も同ファイルに記載しています。
+脆弱性の報告については [SECURITY_ja.md](SECURITY_ja.md) を参照してください。Dependabot アラートの運用方針も同ファイルに記載しています。
 
 ## 開発の背景
 

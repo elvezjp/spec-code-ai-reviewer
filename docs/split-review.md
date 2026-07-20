@@ -10,7 +10,7 @@
 
 ## 1. md2map（設計書の分割）
 
-**ディレクトリ**: [md2map/](../md2map/)
+**リポジトリ**: [md2map](https://github.com/elvezjp/md2map)
 
 マークダウン変換済みの設計書を、3つの分割モードからユーザーが選択してセクション分割します。
 
@@ -45,10 +45,10 @@ INDEX.md の各セクションのサマリー（要約）を生成するモー�
 
 | コンポーネント | ファイル | 役割 |
 |---|---|---|
-| パーサー | [markdown_parser.py](../md2map/md2map/parsers/markdown_parser.py) | ATXスタイルの見出しを正規表現で解析。split_mode に応じて NLP/AI サブスプリットを実行 |
-| Parts生成 | [parts_generator.py](../md2map/md2map/generators/parts_generator.py) | 各セクションを個別ファイルに出力（`<H1>_<H2>_<H3>.md`形式） |
-| Index生成 | [index_generator.py](../md2map/md2map/generators/index_generator.py) | 階層ツリー構造の `INDEX.md` を作成 |
-| Map生成 | [map_generator.py](../md2map/md2map/generators/map_generator.py) | `MAP.json` を生成（id, section, level, path, 行範囲, word count, SHA-256チェックサム） |
+| パーサー | [markdown_parser.py](https://github.com/elvezjp/md2map/blob/main/md2map/parsers/markdown_parser.py) | ATXスタイルの見出しを正規表現で解析。split_mode に応じて NLP/AI サブスプリットを実行 |
+| Parts生成 | [parts_generator.py](https://github.com/elvezjp/md2map/blob/main/md2map/generators/parts_generator.py) | 各セクションを個別ファイルに出力（`<H1>_<H2>_<H3>.md`形式） |
+| Index生成 | [index_generator.py](https://github.com/elvezjp/md2map/blob/main/md2map/generators/index_generator.py) | 階層ツリー構造の `INDEX.md` を作成 |
+| Map生成 | [map_generator.py](https://github.com/elvezjp/md2map/blob/main/md2map/generators/map_generator.py) | `MAP.json` を生成（id, section, level, path, 行範囲, word count, SHA-256チェックサム） |
 
 各セクションには `MD1`, `MD2`, ... のIDが付与され、デフォルトの分割深度は **H2** です。
 
@@ -56,14 +56,14 @@ INDEX.md の各セクションのサマリー（要約）を生成するモー�
 
 ## 2. code2map（ソースコードの分割）
 
-**ディレクトリ**: [code2map/](../code2map/)
+**リポジトリ**: [code2map](https://github.com/elvezjp/code2map)
 
 ソースコードをAST（抽象構文木）解析し、クラス・メソッド・関数単位で分割します。
 
 | パーサー | ファイル | 方式 |
 |---|---|---|
-| Python | [python_parser.py](../code2map/parsers/python_parser.py) | Python標準の`ast`モジュールで解析。クラス、メソッド、トップレベル関数を抽出 |
-| Java | [java_parser.py](../code2map/parsers/java_parser.py) | `javalang`ライブラリで解析。クラス、インターフェース、メソッド、コンストラクタを抽出 |
+| Python | [python_parser.py](https://github.com/elvezjp/code2map/blob/main/code2map/parsers/python_parser.py) | Python標準の`ast`モジュールで解析。クラス、メソッド、トップレベル関数を抽出 |
+| Java | [java_parser.py](https://github.com/elvezjp/code2map/blob/main/code2map/parsers/java_parser.py) | `javalang`ライブラリで解析。クラス、インターフェース、メソッド、コンストラクタを抽出 |
 
 各シンボルには `CD1`, `CD2`, ... のIDが付与されます。ネストされた関数は親に含められます。
 
@@ -173,11 +173,11 @@ AIモード選択時、分割オプションに「分割時の注意事項（任
 
 ## 5. 3フェーズAIレビュー
 
-バックエンドのAPIは [latest/backend/app/routers/](../latest/backend/app/routers/) に実装されています。
+バックエンドのAPIは [backend/app/routers/](../backend/app/routers/) に実装されています。
 
 ### フェーズ1: 構造マッチング (`POST /api/review/structure-matching`)
 
-**ファイル**: [review.py](../latest/backend/app/routers/review.py)
+**ファイル**: [review.py](../backend/app/routers/review.py)
 
 - **入力**: 設計書とコードそれぞれの `INDEX.md` + `MAP.json`
 - **処理**: LLMが両方の構造を分析し、関連性の高いセクションとコードシンボルを **多対多** のグループにまとめる
@@ -232,16 +232,16 @@ AIモード選択時、分割オプションに「分割時の注意事項（任
 
 ## 6. フロントエンド実装
 
-**ディレクトリ**: [latest/frontend/src/features/reviewer/](../latest/frontend/src/features/reviewer/)
+**ディレクトリ**: [frontend/src/features/reviewer/](../frontend/src/features/reviewer/)
 
 | コンポーネント | ファイル | 役割 |
 |---|---|---|
-| 分割設定UI | [SplitSettingsSection.tsx](../latest/frontend/src/features/reviewer/components/SplitSettingsSection.tsx) | batch/splitモード選択、分割モード選択（見出し/NLP/AI）、分割深度設定、重要パート・要約設定、プレビュー |
-| 実行画面 | [SplitExecutingScreen.tsx](../latest/frontend/src/features/reviewer/components/SplitExecutingScreen.tsx) | 3フェーズの進捗表示（✓/⏳/○）、一時停止・再開、エラー時のリトライ・スキップ |
-| リトライ設定 | [RetrySettingsPanel.tsx](../latest/frontend/src/features/reviewer/components/RetrySettingsPanel.tsx) | グループレビューエラー時の要約・リトライ設定 |
-| 統合リトライ設定 | [IntegrateRetrySettingsPanel.tsx](../latest/frontend/src/features/reviewer/components/IntegrateRetrySettingsPanel.tsx) | 結果統合エラー時の要約・リトライ設定 |
-| 分割ロジック | [useSplitSettings.ts](../latest/frontend/src/features/reviewer/hooks/useSplitSettings.ts) | 状態管理、API呼び出し、分割モード管理、要約実行 |
-| APIサービス | [api.ts](../latest/frontend/src/features/reviewer/services/api.ts) | 各エンドポイントへのリクエスト |
+| 分割設定UI | [SplitSettingsSection.tsx](../frontend/src/features/reviewer/components/SplitSettingsSection.tsx) | batch/splitモード選択、分割モード選択（見出し/NLP/AI）、分割深度設定、重要パート・要約設定、プレビュー |
+| 実行画面 | [SplitExecutingScreen.tsx](../frontend/src/features/reviewer/components/SplitExecutingScreen.tsx) | 3フェーズの進捗表示（✓/⏳/○）、一時停止・再開、エラー時のリトライ・スキップ |
+| リトライ設定 | [RetrySettingsPanel.tsx](../frontend/src/features/reviewer/components/RetrySettingsPanel.tsx) | グループレビューエラー時の要約・リトライ設定 |
+| 統合リトライ設定 | [IntegrateRetrySettingsPanel.tsx](../frontend/src/features/reviewer/components/IntegrateRetrySettingsPanel.tsx) | 結果統合エラー時の要約・リトライ設定 |
+| 分割ロジック | [useSplitSettings.ts](../frontend/src/features/reviewer/hooks/useSplitSettings.ts) | 状態管理、API呼び出し、分割モード管理、要約実行 |
+| APIサービス | [api.ts](../frontend/src/features/reviewer/services/api.ts) | 各エンドポイントへのリクエスト |
 
 ---
 

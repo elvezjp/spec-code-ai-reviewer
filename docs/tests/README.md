@@ -28,4 +28,4 @@ tests/
 
 ## 関連ドキュメント
 
-- [spec.md](../versions/v0.9.0/spec.md) — 最新バージョンの仕様書
+- [spec.md](../spec.md) — 最新バージョンの仕様書
