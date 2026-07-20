@@ -39,9 +39,7 @@ This application splits Markdown-converted design documents and source code into
 
 ## System Architecture
 
-- **Frontend**:
-  - v0.6.0 and later: Vite + React + TypeScript + Tailwind CSS
-  - v0.5.2 and earlier: Single HTML file + Tailwind CSS (CDN)
+- **Frontend**: Vite + React + TypeScript + Tailwind CSS
 - **Backend**: Python / FastAPI
   - MarkItDown / excel2md (Excel to Markdown conversion)
   - add-line-numbers compatible (line numbering)
@@ -70,13 +68,6 @@ By default, the system LLM (AWS Bedrock configured on the server side) is used. 
 
 ## Setup
 
-There are two ways to run the app locally.
-
-- **Single-version launch**: Start directly with uvicorn (for development)
-- **Docker Compose launch**: Multi-version environment equivalent to production (for verification)
-
-For production deployment on EC2, see [EC2 Deployment Spec](docs/ec2-deployment-spec.md).
-
 ### Prerequisites
 
 #### Python Version
@@ -87,13 +78,13 @@ For production deployment on EC2, see [EC2 Deployment Spec](docs/ec2-deployment-
 
 uv automatically uses an appropriate Python version. The installed Python 3.11+ on your system will be used as-is.
 
-#### Node.js Version (v0.6.0 and later)
+#### Node.js Version
 
 - **Required**: Node.js 20 or later
 - **Recommended**: Node.js 22 LTS
 - **How to check**: Run `node --version`
 
-Required for developing/building the v0.6.0+ frontend (Vite + React + TypeScript). Not needed if you only use v0.5.2 or earlier.
+Required for developing/building the frontend (Vite + React + TypeScript).
 
 #### Other
 
@@ -101,7 +92,6 @@ Required for developing/building the v0.6.0+ frontend (Vite + React + TypeScript
   ```bash
   curl -LsSf https://astral.sh/uv/install.sh | sh
   ```
-- Docker / Docker Compose (required for Docker-based launch)
 
 ### Installation
 
@@ -109,7 +99,7 @@ Required for developing/building the v0.6.0+ frontend (Vite + React + TypeScript
 # Install uv (if not installed)
 # See: https://docs.astral.sh/uv/getting-started/installation/
 
-# Install Node.js (if using v0.6.0 or later)
+# Install Node.js (if not installed)
 # See: https://nodejs.org/
 # macOS (Homebrew): brew install node
 # Windows: Download the installer from https://nodejs.org/
@@ -129,20 +119,22 @@ export AWS_ACCESS_KEY_ID=your-access-key
 export AWS_SECRET_ACCESS_KEY=your-secret-key
 export AWS_REGION=ap-northeast-1
 
-# Option 2: Configure with AWS CLI
+# Option 2: .env file
+cp .env.example .env
+# Edit .env to set AWS credentials
+
+# Option 3: Configure with AWS CLI
 aws configure
 ```
 
-### Single-Version Launch
+### Launch
 
-#### v0.6.0 and later (Vite + React)
-
-For v0.6.0 and later, start frontend and backend separately.
+Start frontend and backend separately.
 
 **Terminal 1: Start backend**
 
 ```bash
-cd versions/v0.9.9/backend
+cd backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
@@ -150,7 +142,7 @@ uv run uvicorn app.main:app --reload --port 8000
 **Terminal 2: Start frontend**
 
 ```bash
-cd versions/v0.9.9/frontend
+cd frontend
 npm install
 npm run dev
 ```
@@ -159,89 +151,16 @@ Access http://localhost:5173 (Vite dev server)
 
 **Note**: The frontend runs on the Vite dev server (port 5173), and API requests are proxied to the backend (port 8000).
 
-#### v0.5.2 and earlier (Single HTML file)
-
-For v0.5.2 and earlier, only the backend runs (frontend is served by the backend).
-
-```bash
-cd versions/v0.5.2/backend
-uv sync
-uv run uvicorn app.main:app --reload --port 8000
-```
-
-Access http://localhost:8000
-
-**Note**: A version switch balloon appears at the top-left, but in single-version launch mode only the running version works. Check the running version number from the "Settings" icon in the top-right.
-
-### Docker Compose Launch (Multi-Version)
-
-You can start a development environment with version switching equivalent to production.
-
-```bash
-# Set AWS credentials (if using system LLM)
-cp .env.example .env
-# Edit .env to set AWS credentials
-
-# Start
-docker-compose up -d --build
-
-# Open in browser
-open http://localhost:8000
-
-# View logs
-docker-compose logs -f
-
-# Stop
-docker-compose down
-```
-
-**Note**: If you do not have an AWS environment, you do not need to create `.env`. You can use Anthropic API or OpenAI API by uploading a config file via the web UI.
-
-You can switch versions from the top-left balloon (routing via Cookie + Nginx map).
-
 ### Run Tests
 
-Run tests in each version's directory.
-
 ```bash
-# v0.9.9 backend tests
-cd versions/v0.9.9/backend
+# Backend tests
+cd backend
 uv run pytest tests/ -v
 
-# v0.9.9 frontend tests
-cd versions/v0.9.9/frontend
+# Frontend tests
+cd frontend
 npm test
-
-# v0.5.2 and earlier tests (backend only)
-cd versions/v0.5.2/backend
-uv run pytest tests/ -v
-```
-
-### Version Sync
-
-Version numbers are centrally managed in `backend/pyproject.toml`.
-To sync version labels in the frontend:
-
-```bash
-python3 scripts/sync_version.py
-```
-
-This script does the following:
-
-1. **Sync version numbers**: Reads versions from each `backend/pyproject.toml` and updates the display in the corresponding `frontend/index.html`
-2. **Update VERSIONS array**: Updates the version switcher `VERSIONS` array in all frontends with all available versions
-
-#### Options
-
-```bash
-# Sync all versions + update VERSIONS array (default)
-python3 scripts/sync_version.py
-
-# Sync only a specific version (no VERSIONS array update)
-python3 scripts/sync_version.py v0.5.0
-
-# Skip updating the VERSIONS array
-python3 scripts/sync_version.py --no-versions-array
 ```
 
 ## Environment Variables
@@ -343,230 +262,56 @@ Try again with a maximum tokens value that is lower than 10000.
 
 ```
 spec-code-ai-reviewer/
-├── docker-compose.yml           # Docker Compose config (multi-version dev)
-├── Dockerfile.dev               # Dev Dockerfile (Ubuntu)
-├── docker-entrypoint.sh         # Docker startup script
-├── ecosystem.config.js          # PM2 config (production)
-├── dev.ecosystem.config.js      # PM2 config (development)
-├── nginx/
-│   ├── dev.conf                 # Dev Nginx config
-│   ├── spec-code-ai-reviewer.conf  # Production Nginx config
-│   └── version-map.conf         # Version switch map (shared)
-├── latest -> versions/v0.9.9    # Symlink to latest
-│
-├── versions/                    # All versions
-│   ├── README.md                # Version management notes
-│   ├── v0.5.0/                  # Old version
-│   ├── v0.5.1/                  # Old version
-│   ├── v0.5.2/                  # Old version
-│   ├── v0.6.0/                  # Old version (Vite + React)
-│   ├── v0.7.0/                  # Old version (Vite + React)
-│   ├── v0.8.0/                  # Old version (Vite + React)
-│   ├── v0.8.1/                  # Old version (Vite + React)
-│   ├── v0.8.2/                  # Old version (Vite + React)
-│   ├── v0.9.0/                  # Old version (Vite + React)
-│   ├── v0.9.1/                  # Previous (Vite + React)
-│   ├── v0.9.2/                  # Previous (Vite + React)
-│   ├── v0.9.3/                  # Previous (Vite + React)
-│   ├── v0.9.4/                  # Previous (Vite + React)
-│   ├── v0.9.5/                  # Previous (Vite + React)
-│   ├── v0.9.6/                  # Previous (Vite + React)
-│   ├── v0.9.7/                  # Previous (Vite + React)
-│   ├── v0.9.8/                  # Previous (Vite + React)
-│   └── v0.9.9/                  # Latest (Vite + React)
-│       ├── backend/
-│       ├── frontend/            # Vite + React + TypeScript
-│       ├── config-file-generator-spec.md
-│       └── spec.md
-│
+├── backend/                     # Backend (Python / FastAPI)
+│   ├── app/
+│   ├── tests/
+│   ├── pyproject.toml           # Version is managed here
+│   └── uv.lock
+├── frontend/                    # Frontend (Vite + React + TypeScript)
+│   ├── src/
+│   └── package.json
 ├── docs/                        # Docs
-│   ├── ec2-deployment-spec.md   # EC2 deployment spec
+│   ├── spec.md                  # Application spec
+│   ├── config-file-generator-spec.md  # Config file generator spec
 │   ├── split-review.md          # Split review feature details
+│   ├── ec2-deployment-spec.md   # (OLD) EC2 deployment spec for the multi-version era
 │   └── tests/                   # Test cases
 │       └── README.md
-│
-├── scripts/                     # Utility scripts
-│   └── sync_version.py          # Version sync script
-│
-├── add-line-numbers/            # Subtree (elvezjp)
-├── code2map/                    # Subtree (elvezjp)
-├── excel2md/                    # Subtree (elvezjp)
-├── markitdown/                  # Subtree (Microsoft)
-├── md2map/                      # Subtree (elvezjp)
+├── .env.example                 # Env var template (AWS Bedrock)
 └── README.md                    # This file
 ```
 
 ## Related Projects
 
-This repository includes the following external repositories via git subtree.
+The following external tools are used as dependencies (installed via uv from PyPI or git sources — see `backend/pyproject.toml`).
 
-| Directory | Repository | Description |
+| Package | Repository | Description |
 |-------------|-----------|-------------|
-| `add-line-numbers/` | https://github.com/elvezjp/add-line-numbers | Tool to add line numbers to files |
-| `code2map/` | https://github.com/elvezjp/code2map | Source code to mind map conversion tool |
-| `excel2md/` | https://github.com/elvezjp/excel2md | Excel to CSV Markdown conversion tool |
-| `markitdown/` | https://github.com/microsoft/markitdown | Tool to convert various file formats to Markdown |
-| `md2map/` | https://github.com/elvezjp/md2map | Markdown to mind map conversion tool |
+| add-line-numbers | https://github.com/elvezjp/add-line-numbers | Tool to add line numbers to files |
+| code2map | https://github.com/elvezjp/code2map | Source code to mind map conversion tool |
+| excel2md | https://github.com/elvezjp/excel2md | Excel to CSV Markdown conversion tool |
+| markitdown | https://github.com/microsoft/markitdown | Tool to convert various file formats to Markdown |
+| md2map | https://github.com/elvezjp/md2map | Markdown to mind map conversion tool |
 
-### Updating Subtrees
-
-```bash
-# Update add-line-numbers
-git subtree pull --prefix=add-line-numbers https://github.com/elvezjp/add-line-numbers.git main --squash
-
-# Update code2map
-git subtree pull --prefix=code2map https://github.com/elvezjp/code2map.git main --squash
-
-# Update excel2md
-git subtree pull --prefix=excel2md https://github.com/elvezjp/excel2md.git main --squash
-
-# Update markitdown
-git subtree pull --prefix=markitdown https://github.com/microsoft/markitdown.git main --squash
-
-# Update md2map
-git subtree pull --prefix=md2map https://github.com/elvezjp/md2map.git main --squash
-```
+If you need the sources for reference, clone the upstream repositories directly (e.g., `git clone https://github.com/elvezjp/excel2md.git`). These repositories were previously embedded as git subtrees; that layout is preserved in the `v0.9.9` tag.
 
 ## Version Management
 
-### Port Assignment Rule
+Only the latest code is kept at the repository root. Versions are managed with git tags.
 
-A port assignment rule based on semantic versioning (`vX.Y.Z`) is used.
+- The `main` branch accumulates changes for the next version as **[Unreleased]** in [CHANGELOG.md](CHANGELOG.md)
+- On release, the version in `backend/pyproject.toml` (and the frontend version labels) is finalized and a `vX.Y.Z` tag is created
 
-```
-Port = 8000 + (minor version x 10) + patch version
-Example: v0.2.5 -> 8000 + (2 x 10) + 5 = 8025
-```
+### Using Old Versions
 
-| Version | Port |
-|-----------|------|
-| v0.9.9 (latest) | 8099 |
-| v0.9.8 | 8098 |
-| v0.9.7 | 8097 |
-| v0.9.6 | 8096 |
-| v0.9.5 | 8095 |
-| v0.9.4 | 8094 |
-| v0.9.3 | 8093 |
-| v0.9.2 | 8092 |
-| v0.9.1 | 8091 |
-| v0.9.0 | 8090 |
-| v0.8.2 | 8082 |
-| v0.8.1 | 8081 |
-| v0.8.0 | 8080 |
-| v0.7.0 | 8070 |
-| v0.6.0 | 8060 |
-| v0.5.2 | 8052 |
-| v0.5.1 | 8051 |
-| v0.5.0 | 8050 |
-
-### Changes Required When Adding a New Version
-
-When adding a new version (e.g., v0.7.0), update the following files.
-
-#### Add and Update Version Directory
-
-| File | Change |
-|---------|---------|
-| `versions/v0.7.0/` | Add the new version code |
-| `versions/v0.7.0/spec.md` | Update version numbers (top, review examples, test items) |
-| `versions/v0.7.0/config-file-generator-spec.md` | Update target version |
-| `versions/v0.7.0/frontend/package.json` | Update version (v0.6.0+ only) |
-| `versions/v0.7.0/backend/pyproject.toml` | Update version |
-| `versions/v0.7.0/frontend/src/core/hooks/useVersions.ts` | Add new version to DEFAULT_VERSIONS with `isLatest: true` (v0.6.0+ only) |
-| `versions/v0.7.0/frontend/src/features/config-file-generator/schema/configSchema.ts` | Update `meta.version` and `info.version` fields (v0.6.0+ only) |
-| `versions/v0.7.0/frontend/src/features/reviewer/index.tsx` | Update `APP_INFO.version` (v0.6.0+ only) |
-| `versions/v0.7.0/frontend/src/__tests__/features/reviewer/services/split_review_api.test.ts` | Update `version` in mock response (v0.6.0+ only) |
-| `versions/v0.9.x+/frontend/src/core/hooks/useVersions.ts` | Add new version to DEFAULT_VERSIONS and update `isLatest` in all existing v0.9+ versions |
-| `latest` symlink | Update to point to new version (`rm latest && ln -s versions/v0.7.0 latest`) |
-| `versions/v0.5.x/frontend/index.html` | Update VERSIONS array (run `scripts/sync_version.py`, v0.5.x and earlier only) |
-
-#### Update Config and Docs
-
-| File | Change |
-|---------|---------|
-| `docker-compose.yml` | Add new port to backend expose; add new frontend to nginx volumes |
-| `nginx/version-map.conf` | Add new routing; update default port |
-| `ecosystem.config.js` | Add new version to VERSIONS array (see below) |
-| `dev.ecosystem.config.js` | Add new version to VERSIONS array |
-| `.github/workflows/ci.yml` | Update `working-directory` in `backend-test` / `frontend-test` jobs to `versions/v{X.Y.Z}/backend` and `versions/v{X.Y.Z}/frontend` |
-| `docs/ec2-deployment-spec.md` | Add new version to config examples |
-| `versions/README.md` | Add directory structure, version comparison table, and update history |
-| `README.md` | Update directory structure and port table |
-| `CHANGELOG.md` / `CHANGELOG_ja.md` | Append change history |
-| `SECURITY.md` / `SECURITY_ja.md` | Update supported version |
-| `CONTRIBUTING.md` / `CONTRIBUTING_ja.md` | Update version numbers |
-
-#### Example: Add to ecosystem.config.js
-
-Add the new version to the VERSIONS array. `latest` is a symlink, so only real versions are started.
-
-```javascript
-const VERSIONS = [
-  // latest is a symlink, so only real versions are started
-  { name: 'spec-code-ai-reviewer-v0.7.0', cwd: 'versions/v0.7.0', port: 8070 },  // add
-  { name: 'spec-code-ai-reviewer-v0.6.0', cwd: 'versions/v0.6.0', port: 8060 },
-  { name: 'spec-code-ai-reviewer-v0.5.0', cwd: 'versions/v0.5.0', port: 8050 },
-];
-```
-
-**Note**: There is no need for a `latest` process. Since `version-map.conf` routes the `default` port to the latest version, requests without a cookie are routed to the latest version.
-
-**Note**: `PYTHONPATH` is configured with the `add-line-numbers` subtree path, so the `add_line_numbers` module can be imported.
-
-#### Example: Add to nginx/version-map.conf
-
-```nginx
-# Route backend port based on Cookie value
-map $cookie_app_version $backend_port {
-    "v0.7.0"  8070;  # add
-    "v0.6.0"  8060;
-    "v0.5.0"  8050;
-    default   8070;  # latest (v0.7.0)
-}
-
-# Route frontend based on Cookie value
-map $cookie_app_version $frontend_root {
-    "v0.7.0"  /var/www/spec-code-ai-reviewer/versions/v0.7.0/frontend;  # add
-    "v0.6.0"  /var/www/spec-code-ai-reviewer/versions/v0.6.0/frontend;
-    "v0.5.0"  /var/www/spec-code-ai-reviewer/versions/v0.5.0/frontend;
-    default   /var/www/spec-code-ai-reviewer/latest/frontend;
-}
-```
-
-### Production Update Steps
+Old versions (v0.5.0–v0.9.9) were previously kept as snapshots under a `versions/` directory. That layout, including the multi-version infrastructure (nginx / PM2 / Docker) and embedded subtrees, is preserved in the `v0.9.9` tag:
 
 ```bash
-# (Run locally) Add the private key corresponding to the registered GitHub public key to ssh-agent
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_rsa   # Adjust file name as needed
-
-# SSH into the server (enable ssh-agent forwarding to access GitHub)
-ssh -A user@example.com
-
-# Deploy new version
-cd /var/www/spec-code-ai-reviewer
-git pull origin main
-
-# Install dependencies
-cd versions/v0.5.1/backend
-uv sync
-
-# Rebuild PM2 process list (add new version)
-cd /var/www/spec-code-ai-reviewer
-pm2 delete all
-pm2 start ecosystem.config.js
-pm2 save
-
-# Apply Nginx config changes (reflect version-map.conf)
-sudo cp nginx/version-map.conf /etc/nginx/conf.d/
-sudo nginx -t
-sudo nginx -s reload
+git checkout v0.9.9
+# Old versions are under versions/v0.5.0 ... versions/v0.9.9
 ```
 
-**Notes:**
-- The `latest` symlink is updated automatically by `git pull` (Git tracks symlinks)
-- `pm2 reload` only restarts existing processes. When adding a new version, run `pm2 delete all && pm2 start` to rebuild.
-- `spec-code-ai-reviewer.conf` uses the `$backend_port` variable, so only `version-map.conf` needs updating
+**Note**: Do not delete or move the `v0.9.9` tag — it serves as the archive reference point for the old layout.
 
 ## Update History
 
@@ -578,7 +323,7 @@ Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines
 
 ## Security
 
-For reporting vulnerabilities, see [SECURITY.md](SECURITY.md). Our Dependabot alert handling policy (covering archived `versions/` and git subtree directories) is also documented there.
+For reporting vulnerabilities, see [SECURITY.md](SECURITY.md). Our Dependabot alert handling policy is also documented there.
 
 ## Background
 
