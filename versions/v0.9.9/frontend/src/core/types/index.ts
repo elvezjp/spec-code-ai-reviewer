@@ -76,13 +76,6 @@ export interface Settings {
   systemPrompts: SystemPromptPreset[]
 }
 
-// バージョン情報
-export interface VersionInfo {
-  value: string
-  label: string
-  isLatest: boolean
-}
-
 // ファイル情報（変換用）
 export interface FileWithMetadata {
   file: File

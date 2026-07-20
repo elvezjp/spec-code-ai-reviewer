@@ -10,12 +10,10 @@ import {
   SettingsModal,
   TokenEstimator,
   SystemPromptEditor,
-  VersionSelector,
   ScreenContainer,
   useModal,
   useScreenManager,
   useTokenEstimation,
-  useVersions,
 } from '@core/index'
 import type { ScreenState } from '@core/types'
 import {
@@ -43,7 +41,6 @@ const APP_INFO = {
 export function Reviewer() {
   const settingsModal = useModal()
   const screenManager = useScreenManager()
-  const { versions, currentVersion, switchVersion } = useVersions()
   const [toastMessage, setToastMessage] = useState('')
   const toastTimerRef = useRef<number | null>(null)
   const [versionMismatch, setVersionMismatch] = useState<{ frontend: string; backend: string } | null>(null)
@@ -832,13 +829,6 @@ export function Reviewer() {
       {/* Header */}
       <Header
         title={APP_INFO.description}
-        leftContent={
-          <VersionSelector
-            versions={versions}
-            currentVersion={currentVersion}
-            onVersionSelect={switchVersion}
-          />
-        }
         rightContent={
           <div className="flex items-center gap-3">
             <Link

@@ -29,7 +29,6 @@ export {
 export { ScreenContainer } from './components/shared/ScreenContainer'
 export { TokenEstimator } from './components/shared/TokenEstimator'
 export { SystemPromptEditor } from './components/shared/SystemPromptEditor'
-export { VersionSelector } from './components/shared/VersionSelector'
 
 // Hooks
 export { useModal } from './hooks/useModal'
@@ -41,5 +40,4 @@ export {
   DEFAULT_LLM_SETTINGS,
 } from './hooks/useSettings'
 export { useTokenEstimation, estimateTokenCount } from './hooks/useTokenEstimation'
-export { useVersions, DEFAULT_VERSIONS } from './hooks/useVersions'
 export { usePresetCatalog } from './hooks/usePresetCatalog'
