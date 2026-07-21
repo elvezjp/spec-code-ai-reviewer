@@ -17,6 +17,7 @@ from app.models.schemas import (
     DesignFile,
     ReviewRequest,
     SystemPrompt,
+    TestConnectionRequest as LLMTestConnectionRequest,
 )
 
 
@@ -184,3 +185,31 @@ class TestValidation:
             systemPrompt=create_system_prompt(),
         )
         assert request.designs is not None
+
+
+class TestConnectionRequestSchema:
+    """TestConnectionRequest のテスト"""
+
+    def test_base_url_camel_case(self):
+        """baseUrlを接続テスト設定として受け付ける"""
+        request = LLMTestConnectionRequest(
+            provider="openai",
+            model="moonshot-v1-8k",
+            apiKey="test-key",
+            baseUrl="https://api.moonshot.ai/v1",
+        )
+
+        assert request.baseUrl == "https://api.moonshot.ai/v1"
+
+    def test_base_url_snake_case_alias(self):
+        """base_urlエイリアスでも接続テスト設定として受け付ける"""
+        request = LLMTestConnectionRequest.model_validate(
+            {
+                "provider": "openai",
+                "model": "moonshot-v1-8k",
+                "apiKey": "test-key",
+                "base_url": "https://api.moonshot.ai/v1",
+            }
+        )
+
+        assert request.baseUrl == "https://api.moonshot.ai/v1"

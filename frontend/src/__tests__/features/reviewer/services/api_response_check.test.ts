@@ -281,3 +281,34 @@ describe('fetchHealth', () => {
     }
   })
 })
+
+describe('testLlmConnection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('OpenAI互換APIのbaseUrlをPOST本文に含める', async () => {
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ status: 'connected', provider: 'openai', model: 'moonshot-v1-8k' }),
+    })
+
+    await testLlmConnection({
+      provider: 'openai',
+      model: 'moonshot-v1-8k',
+      apiKey: 'test-key',
+      baseUrl: 'https://api.moonshot.ai/v1',
+    })
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/test-connection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: 'openai',
+        model: 'moonshot-v1-8k',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.moonshot.ai/v1',
+      }),
+    })
+  })
+})
