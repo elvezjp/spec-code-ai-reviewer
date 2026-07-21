@@ -795,6 +795,7 @@ export function Reviewer() {
           provider: llmConfig.provider,
           model: selectedModel || llmConfig.model,
           apiKey: llmConfig.apiKey,
+          baseUrl: llmConfig.baseUrl,
           accessKeyId: llmConfig.accessKeyId,
           secretAccessKey: llmConfig.secretAccessKey,
           region: llmConfig.region,

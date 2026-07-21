@@ -225,9 +225,15 @@ class TestConnectionRequest(BaseModel):
     provider/modelが未指定の場合はシステムLLM（Bedrock）をテストする。
     """
 
+    model_config = ConfigDict(populate_by_name=True)
+
     provider: Literal["anthropic", "bedrock", "openai"] | None = None
     model: str | None = None
     apiKey: str | None = None
+    baseUrl: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("baseUrl", "base_url"),
+    )
     accessKeyId: str | None = None
     secretAccessKey: str | None = None
     region: str | None = None

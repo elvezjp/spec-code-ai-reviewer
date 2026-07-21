@@ -149,6 +149,7 @@ export interface TestConnectionRequest {
   provider?: string
   model?: string
   apiKey?: string
+  baseUrl?: string
   accessKeyId?: string
   secretAccessKey?: string
   region?: string
