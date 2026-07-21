@@ -47,6 +47,8 @@ This application splits Markdown-converted design documents and source code into
 
 ## Usage
 
+Sample files (an Excel design document and Java code) for trying out the AI review are available in [docs/sample](docs/sample/). See [docs/sample/README.md](docs/sample/README.md) (Japanese) for usage and the list of seeded inconsistencies.
+
 1. **Upload design documents**: Select Excel (.xlsx, .xls) or Word (.docx) files (multiple allowed)
    - **Role**: Select one main design document (others are treated as reference materials)
    - **Type**: Choose from 9 types such as design doc, requirements doc, coding guidelines, etc.
