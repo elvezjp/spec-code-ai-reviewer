@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.10.0] - Unreleased
 
+### Added
+- **Base URL support for OpenAI-compatible APIs (Kimi / Moonshot AI, etc.)** (#123): The config file generator's `openai` provider now has an optional "Base URL" field, passed through the config file to the backend as part of `llmConfig`. When set, the OpenAI client connects to the specified endpoint (e.g. `https://api.moonshot.ai/v1`) and sends `max_tokens` instead of `max_completion_tokens` for compatibility. When left empty, behavior is unchanged (official OpenAI API)
+
 ### Changed
 - **Repository restructured to keep only the latest code at the root** (#103): The `versions/` directory (v0.5.0–v0.9.9 snapshots) has been removed; `versions/v0.9.9/backend` and `versions/v0.9.9/frontend` were promoted to `backend/` and `frontend/` at the repository root. Version management now uses git tags — to use the old multi-version layout, check out the `v0.9.9` tag
 - **excel2md is now installed from PyPI** (#100): Replaced the `sys.path` injection of the local `excel2md/` directory with a normal dependency (`excel2md>=2.2.1`) and direct imports of `excel2md.cli` / `excel2md.runner`

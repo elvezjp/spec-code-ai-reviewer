@@ -213,3 +213,104 @@ class TestOpenAIProviderExecuteReview:
 
         assert result.success is False
         assert "認証エラー" in result.error
+
+
+class TestOpenAIProviderBaseUrl:
+    """baseUrl指定時（OpenAI互換API）のテスト"""
+
+    @patch("app.services.openai_service.OpenAI")
+    def test_init_with_base_url(self, mock_openai_class):
+        """baseUrl指定時はOpenAIクライアントにbase_urlが渡される"""
+        config = LLMConfig(
+            provider="openai",
+            model="kimi-k2-0711-preview",
+            apiKey="test-api-key",
+            baseUrl="https://api.moonshot.ai/v1",
+        )
+
+        OpenAIProvider(config)
+
+        mock_openai_class.assert_called_once_with(
+            api_key="test-api-key", base_url="https://api.moonshot.ai/v1"
+        )
+
+    @patch("app.services.openai_service.OpenAI")
+    def test_init_without_base_url(self, mock_openai_class):
+        """baseUrl未指定時はbase_urlを渡さない（OpenAI公式API）"""
+        config = LLMConfig(
+            provider="openai",
+            model="gpt-4o",
+            apiKey="test-api-key",
+        )
+
+        OpenAIProvider(config)
+
+        mock_openai_class.assert_called_once_with(api_key="test-api-key")
+
+    def test_base_url_snake_case_alias(self):
+        """base_url（スネークケース）エイリアスでも受け付ける"""
+        config = LLMConfig.model_validate(
+            {
+                "provider": "openai",
+                "model": "kimi-k2-0711-preview",
+                "api_key": "test-api-key",
+                "base_url": "https://api.moonshot.ai/v1",
+            }
+        )
+
+        assert config.baseUrl == "https://api.moonshot.ai/v1"
+
+    @patch("app.services.openai_service.OpenAI")
+    def test_send_message_uses_max_tokens_with_base_url(self, mock_openai_class):
+        """baseUrl指定時はmax_completion_tokensではなくmax_tokensを使用する"""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "ok"
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 5
+        mock_client.chat.completions.create.return_value = mock_response
+
+        config = LLMConfig(
+            provider="openai",
+            model="kimi-k2-0711-preview",
+            apiKey="test-api-key",
+            baseUrl="https://api.moonshot.ai/v1",
+            maxTokens=8192,
+        )
+        provider = OpenAIProvider(config)
+
+        provider.send_message("system", "user")
+
+        kwargs = mock_client.chat.completions.create.call_args.kwargs
+        assert kwargs["max_tokens"] == 8192
+        assert "max_completion_tokens" not in kwargs
+
+    @patch("app.services.openai_service.OpenAI")
+    def test_send_message_uses_max_completion_tokens_without_base_url(
+        self, mock_openai_class
+    ):
+        """baseUrl未指定時は従来どおりmax_completion_tokensを使用する"""
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "ok"
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 5
+        mock_client.chat.completions.create.return_value = mock_response
+
+        config = LLMConfig(
+            provider="openai",
+            model="gpt-4o",
+            apiKey="test-api-key",
+            maxTokens=8192,
+        )
+        provider = OpenAIProvider(config)
+
+        provider.send_message("system", "user")
+
+        kwargs = mock_client.chat.completions.create.call_args.kwargs
+        assert kwargs["max_completion_tokens"] == 8192
+        assert "max_tokens" not in kwargs

@@ -17,6 +17,7 @@ export type LlmProvider = 'anthropic' | 'bedrock' | 'openai'
 export interface LlmSettings {
   provider: LlmProvider
   apiKey?: string
+  baseUrl?: string
   accessKeyId?: string
   secretAccessKey?: string
   region?: string

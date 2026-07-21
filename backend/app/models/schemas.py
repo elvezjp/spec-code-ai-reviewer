@@ -55,6 +55,10 @@ class LLMConfig(BaseModel):
     provider: Literal["anthropic", "bedrock", "openai"]
     model: str
     apiKey: str | None = Field(default=None, validation_alias=AliasChoices("apiKey", "api_key"))  # Anthropic/OpenAI用
+    baseUrl: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("baseUrl", "base_url"),
+    )  # OpenAI互換API（Moonshot AI等）の接続先URL。未指定時はOpenAI公式API
     accessKeyId: str | None = Field(
         default=None,
         validation_alias=AliasChoices("accessKeyId", "access_key_id"),

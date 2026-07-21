@@ -81,6 +81,12 @@ export const CONFIG_SCHEMA: ConfigSchema = {
             fields: [
               { id: 'provider', type: 'fixed', value: 'openai' },
               { id: 'apiKey', label: 'API Key', type: 'password', required: true },
+              {
+                id: 'baseUrl',
+                label: 'Base URL（OpenAI互換APIを使う場合のみ）',
+                type: 'text',
+                placeholder: 'https://api.moonshot.ai/v1',
+              },
               { id: 'maxTokens', label: 'Max Tokens', type: 'number', default: 16384, required: true },
               {
                 id: 'models',

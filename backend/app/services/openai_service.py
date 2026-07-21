@@ -15,13 +15,14 @@ class OpenAIProvider(LLMProvider):
     """OpenAI API プロバイダー
 
     ユーザー指定のAPIキーを使用してOpenAI APIを呼び出す。
+    baseUrlを指定した場合はOpenAI互換API（Moonshot AI等）に接続する。
     """
 
     def __init__(self, llm_config: LLMConfig):
         """OpenAIProviderを初期化する
 
         Args:
-            llm_config: LLM設定（apiKeyが必須）
+            llm_config: LLM設定（apiKeyが必須、baseUrlは任意）
 
         Raises:
             ValueError: APIキーが指定されていない場合
@@ -29,9 +30,33 @@ class OpenAIProvider(LLMProvider):
         if not llm_config.apiKey:
             raise ValueError("OpenAI APIキーが指定されていません")
 
-        self._client = OpenAI(api_key=llm_config.apiKey)
+        self._base_url = llm_config.baseUrl
+        if llm_config.baseUrl:
+            self._client = OpenAI(
+                api_key=llm_config.apiKey, base_url=llm_config.baseUrl
+            )
+        else:
+            self._client = OpenAI(api_key=llm_config.apiKey)
         self._model_id = llm_config.model
         self._max_tokens = llm_config.maxTokens
+
+    def _create_chat_completion(self, messages: list[dict], max_tokens: int):
+        """Chat Completions APIを呼び出す
+
+        OpenAI互換APIにはmax_completion_tokens未対応のものがあるため、
+        baseUrl指定時は従来のmax_tokensパラメータを使用する。
+        """
+        if self._base_url:
+            return self._client.chat.completions.create(
+                model=self._model_id,
+                max_tokens=max_tokens,
+                messages=messages,
+            )
+        return self._client.chat.completions.create(
+            model=self._model_id,
+            max_completion_tokens=max_tokens,
+            messages=messages,
+        )
 
     @property
     def provider_name(self) -> str:
@@ -58,13 +83,12 @@ class OpenAIProvider(LLMProvider):
         system_prompt, user_message = self._build_prompts(request)
 
         try:
-            response = self._client.chat.completions.create(
-                model=self._model_id,
-                max_completion_tokens=self._max_tokens,
+            response = self._create_chat_completion(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message},
                 ],
+                max_tokens=self._max_tokens,
             )
 
             usage = response.usage
@@ -92,13 +116,12 @@ class OpenAIProvider(LLMProvider):
         self, system_prompt: str, user_message: str
     ) -> tuple[str, int, int]:
         try:
-            response = self._client.chat.completions.create(
-                model=self._model_id,
-                max_completion_tokens=self._max_tokens,
+            response = self._create_chat_completion(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message},
                 ],
+                max_tokens=self._max_tokens,
             )
             usage = response.usage
             return (
@@ -118,10 +141,9 @@ class OpenAIProvider(LLMProvider):
         try:
             # 最小限のトークンでAPIを呼び出して接続確認
             # GPT-5.2系は出力トークン数が少なすぎるとエラーになるため、余裕を持たせる
-            self._client.chat.completions.create(
-                model=self._model_id,
-                max_completion_tokens=16,
+            self._create_chat_completion(
                 messages=[{"role": "user", "content": "Hi"}],
+                max_tokens=16,
             )
             return {"status": "connected"}
         except AuthenticationError:
@@ -138,13 +160,12 @@ class OpenAIProvider(LLMProvider):
         )
 
         try:
-            response = self._client.chat.completions.create(
-                model=self._model_id,
-                max_completion_tokens=self._max_tokens,
+            response = self._create_chat_completion(
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message},
                 ],
+                max_tokens=self._max_tokens,
             )
             return response.choices[0].message.content or ""
         except Exception as e:
