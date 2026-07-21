@@ -9,6 +9,9 @@
 
 ## [0.10.0] - Unreleased
 
+### Added
+- **OpenAI互換API（Kimi / Moonshot AI 等）向けの Base URL 設定に対応** (#123): 設定ファイルジェネレーターの `openai` プロバイダーに任意の「Base URL」欄を追加し、設定ファイル経由で `llmConfig` の一部としてバックエンドに受け渡す。指定時は OpenAI クライアントが指定エンドポイント（例: `https://api.moonshot.ai/v1`）に接続し、互換性のため `max_completion_tokens` の代わりに `max_tokens` を送信する。未入力時は従来どおり OpenAI 公式 API に接続（既存動作に影響なし）
+
 ### Changed
 - **最新コードのみをルートで保持する構成に変更** (#103): `versions/` ディレクトリ（v0.5.0〜v0.9.9 のスナップショット）を廃止し、`versions/v0.9.9/backend` / `versions/v0.9.9/frontend` をリポジトリルートの `backend/` / `frontend/` に昇格。バージョン管理は git tag に移行し、旧構成を利用する場合は `v0.9.9` タグを checkout する
 - **excel2md を PyPI からインストールする方式に変更** (#100): ローカル `excel2md/` ディレクトリの `sys.path` 注入を廃止し、通常の依存関係（`excel2md>=2.2.1`）と `excel2md.cli` / `excel2md.runner` の直接 import に置き換え
