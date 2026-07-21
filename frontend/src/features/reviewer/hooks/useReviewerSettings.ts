@@ -117,6 +117,7 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
         model: selectedModel || reviewerConfig.llm.models?.[0] || '',
         maxTokens: reviewerConfig.llm.maxTokens || DEFAULT_LLM_SETTINGS.maxTokens,
         apiKey: reviewerConfig.llm.apiKey,
+        baseUrl: reviewerConfig.llm.baseUrl,
         accessKeyId: reviewerConfig.llm.accessKeyId,
         secretAccessKey: reviewerConfig.llm.secretAccessKey,
         region: reviewerConfig.llm.region,
@@ -194,6 +195,7 @@ export function useReviewerSettings(): UseReviewerSettingsReturn {
 
     const llmKeyMap: Record<string, string> = {
       api_key: 'apiKey',
+      base_url: 'baseUrl',
       access_key_id: 'accessKeyId',
       secret_access_key: 'secretAccessKey',
       max_tokens: 'maxTokens',

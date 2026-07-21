@@ -71,6 +71,10 @@ function generateLlmSection(formState: ConfigFormState): string {
         })
       }
     } else {
+      // 任意フィールドが未入力の場合は出力しない
+      const isRequired = 'required' in field && field.required
+      const isEmpty = value === undefined || value === null || String(value).trim() === ''
+      if (field.type !== 'fixed' && !isRequired && isEmpty) return
       md += `- ${field.id}: ${value ?? ''}\n`
     }
   })

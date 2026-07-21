@@ -12,6 +12,7 @@ export interface ConfigFormState {
 export interface LlmFieldValues {
   provider: LlmProvider
   apiKey?: string
+  baseUrl?: string
   accessKeyId?: string
   secretAccessKey?: string
   region?: string
