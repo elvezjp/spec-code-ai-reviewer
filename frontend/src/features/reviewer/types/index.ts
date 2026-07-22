@@ -78,6 +78,7 @@ export interface LlmConfig {
   maxTokens: number
   apiKey?: string
   baseUrl?: string
+  reasoningEffort?: string
   accessKeyId?: string
   secretAccessKey?: string
   region?: string

@@ -59,6 +59,10 @@ class LLMConfig(BaseModel):
         default=None,
         validation_alias=AliasChoices("baseUrl", "base_url"),
     )  # OpenAI互換API（Moonshot AI等）の接続先URL。未指定時はOpenAI公式API
+    reasoningEffort: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("reasoningEffort", "reasoning_effort"),
+    )  # 推論モデルの思考量（OpenAI用）。許容値はモデル依存のため検証せずAPIへパススルー
     accessKeyId: str | None = Field(
         default=None,
         validation_alias=AliasChoices("accessKeyId", "access_key_id"),
@@ -233,6 +237,10 @@ class TestConnectionRequest(BaseModel):
     baseUrl: str | None = Field(
         default=None,
         validation_alias=AliasChoices("baseUrl", "base_url"),
+    )
+    reasoningEffort: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("reasoningEffort", "reasoning_effort"),
     )
     accessKeyId: str | None = None
     secretAccessKey: str | None = None

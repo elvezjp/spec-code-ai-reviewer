@@ -78,6 +78,10 @@ export const CONFIG_SCHEMA: ConfigSchema = {
             ],
           },
           openai: {
+            notes: [
+              'Reasoning Effort は推論モデル（Kimi K3、GPT-5系等）の思考量を調整します。値が小さいほど高速です。許容値はモデルにより異なります（Kimi K3: low/high/max、OpenAI: モデルごとに none/minimal/low/medium/high/xhigh/max のサブセット）。',
+              'gpt-4o 等の非推論モデルでは Reasoning Effort を指定しないでください（APIエラーになります）。',
+            ],
             fields: [
               { id: 'provider', type: 'fixed', value: 'openai' },
               { id: 'apiKey', label: 'API Key', type: 'password', required: true },
@@ -86,6 +90,12 @@ export const CONFIG_SCHEMA: ConfigSchema = {
                 label: 'Base URL（OpenAI互換APIを使う場合のみ）',
                 type: 'text',
                 placeholder: 'https://api.moonshot.ai/v1',
+              },
+              {
+                id: 'reasoningEffort',
+                label: 'Reasoning Effort（推論モデルのみ・任意）',
+                type: 'text',
+                placeholder: 'low / medium / high / max など（モデルにより異なる）',
               },
               { id: 'maxTokens', label: 'Max Tokens', type: 'number', default: 16384, required: true },
               {

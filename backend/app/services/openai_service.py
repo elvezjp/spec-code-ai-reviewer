@@ -39,23 +39,31 @@ class OpenAIProvider(LLMProvider):
             self._client = OpenAI(api_key=llm_config.apiKey)
         self._model_id = llm_config.model
         self._max_tokens = llm_config.maxTokens
+        self._reasoning_effort = llm_config.reasoningEffort
 
     def _create_chat_completion(self, messages: list[dict], max_tokens: int):
         """Chat Completions APIを呼び出す
 
         OpenAI互換APIにはmax_completion_tokens未対応のものがあるため、
         baseUrl指定時は従来のmax_tokensパラメータを使用する。
+        reasoningEffort指定時のみreasoning_effortを送信する
+        （未指定時は各モデルのデフォルト思考量で動作。非推論モデルは未指定にすること）。
         """
+        extra_kwargs = {}
+        if self._reasoning_effort:
+            extra_kwargs["reasoning_effort"] = self._reasoning_effort
         if self._base_url:
             return self._client.chat.completions.create(
                 model=self._model_id,
                 max_tokens=max_tokens,
                 messages=messages,
+                **extra_kwargs,
             )
         return self._client.chat.completions.create(
             model=self._model_id,
             max_completion_tokens=max_tokens,
             messages=messages,
+            **extra_kwargs,
         )
 
     @property

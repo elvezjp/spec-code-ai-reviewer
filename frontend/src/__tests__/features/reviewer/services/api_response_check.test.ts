@@ -311,4 +311,31 @@ describe('testLlmConnection', () => {
       }),
     })
   })
+
+  it('reasoningEffortをPOST本文に含める', async () => {
+    ;(global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ status: 'connected', provider: 'openai', model: 'kimi-k3' }),
+    })
+
+    await testLlmConnection({
+      provider: 'openai',
+      model: 'kimi-k3',
+      apiKey: 'test-key',
+      baseUrl: 'https://api.moonshot.ai/v1',
+      reasoningEffort: 'low',
+    })
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/test-connection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: 'openai',
+        model: 'kimi-k3',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.moonshot.ai/v1',
+        reasoningEffort: 'low',
+      }),
+    })
+  })
 })
