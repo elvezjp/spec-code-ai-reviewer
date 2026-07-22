@@ -11,8 +11,10 @@
 
 ### Added
 - **OpenAI互換API（Kimi / Moonshot AI 等）向けの Base URL 設定に対応** (#123): 設定ファイルジェネレーターの `openai` プロバイダーに任意の「Base URL」欄を追加し、設定ファイル経由で `llmConfig` の一部としてバックエンドに受け渡す。指定時は OpenAI クライアントが指定エンドポイント（例: `https://api.moonshot.ai/v1`）に接続し、互換性のため `max_completion_tokens` の代わりに `max_tokens` を送信する。未入力時は従来どおり OpenAI 公式 API に接続（既存動作に影響なし）
+- **推論モデルの思考量（Reasoning Effort）設定に対応** (#128): 設定ファイルジェネレーターの `openai` プロバイダーに任意の「Reasoning Effort」欄を追加し、指定時のみ `reasoning_effort` を API に送信する（一括・分割レビュー、Markdown整理、接続テスト、および md2map 経由の分割プレビューの AI サマリー生成・AI 分割に適用）。設定可能な値はモデル依存のため検証せずパススルーする。Kimi K3 では `low` 指定でレビュー時間を約1/4に短縮できる（測定結果: `docs/20260722-kimi-k3-reasoning-effort-benchmark.md`）。未指定時はパラメータを送信せず従来どおり動作
 
 ### Changed
+- **設定ファイルジェネレーターの OpenAI デフォルトモデルを整理** (#128): `gpt-5.2` / `gpt-5.2-pro` の2つに変更（`gpt-5.2-chat-latest` / `gpt-5.1` / `gpt-4o` / `gpt-4o-mini` を削除）
 - **最新コードのみをルートで保持する構成に変更** (#103): `versions/` ディレクトリ（v0.5.0〜v0.9.9 のスナップショット）を廃止し、`versions/v0.9.9/backend` / `versions/v0.9.9/frontend` をリポジトリルートの `backend/` / `frontend/` に昇格。バージョン管理は git tag に移行し、旧構成を利用する場合は `v0.9.9` タグを checkout する
 - **excel2md を PyPI からインストールする方式に変更** (#100): ローカル `excel2md/` ディレクトリの `sys.path` 注入を廃止し、通常の依存関係（`excel2md>=2.2.1`）と `excel2md.cli` / `excel2md.runner` の直接 import に置き換え
 - `spec.md` と `config-file-generator-spec.md` を `docs/` に移動
@@ -22,6 +24,9 @@
 - **マルチバージョン用インフラ** (#118): `nginx/`（`version-map.conf` 含む）、`docker-compose.yml`、`Dockerfile.dev`、`docker-entrypoint.sh`、`ecosystem.config.js`、`dev.ecosystem.config.js`。今後は uvicorn + Vite による単一バージョン起動
 - **未使用の subtree ディレクトリ** (#96, #100, #103): `markitdown/`、`excel2md/`、`add-line-numbers/`、`code2map/`、`md2map/`。いずれも PyPI または uv の git ソースから取得する。ソース参照が必要な場合は各上流リポジトリを clone する
 - `latest` シンボリックリンクと `scripts/sync_version.py`（単一バージョン構成では不要）
+
+### Fixed
+- **分割プレビューの AI サマリー生成に設定ファイルの Base URL / Max Tokens が引き継がれない問題を修正** (#127): md2map への変換で `baseUrl` が渡されず、OpenAI 互換 API のキーのまま公式 API に接続して 401 エラーになっていた。あわせて固定値 800 だった `max_tokens` を設定ファイルの `maxTokens` を引き継ぐよう変更し、思考型モデル（kimi-k3 等）で思考トークンが上限を消費して空レスポンス（`OpenAI API returned empty response`）になる問題も解消。md2map を base_url 対応版（v0.5.0）に更新
 
 ## [0.9.9] - 2026-06-17
 
