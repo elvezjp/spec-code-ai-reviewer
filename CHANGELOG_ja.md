@@ -14,6 +14,7 @@
 - **推論モデルの思考量（Reasoning Effort）設定に対応** (#128): 設定ファイルジェネレーターの `openai` プロバイダーに任意の「Reasoning Effort」欄を追加し、指定時のみ `reasoning_effort` を API に送信する（一括・分割レビュー、Markdown整理、接続テスト、および md2map 経由の分割プレビューの AI サマリー生成・AI 分割に適用）。設定可能な値はモデル依存のため検証せずパススルーする。Kimi K3 では `low` 指定でレビュー時間を約1/4に短縮できる（測定結果: `docs/20260722-kimi-k3-reasoning-effort-benchmark.md`）。未指定時はパラメータを送信せず従来どおり動作
 
 ### Changed
+- **分割プレビューの AI 呼び出しを並列実行** (#129): 分割プレビューのセクション単位 AI 呼び出し（AI サマリー生成・AI 分割）を並列実行し、応答時間を短縮する。md2map の並列実行機能を固定並列度 4（定数 `AI_CONCURRENCY`）で有効化する。実効並列度は `min(4, セクション数)`
 - **設定ファイルジェネレーターの OpenAI デフォルトモデルを整理** (#128): `gpt-5.2` / `gpt-5.2-pro` の2つに変更（`gpt-5.2-chat-latest` / `gpt-5.1` / `gpt-4o` / `gpt-4o-mini` を削除）
 - **最新コードのみをルートで保持する構成に変更** (#103): `versions/` ディレクトリ（v0.5.0〜v0.9.9 のスナップショット）を廃止し、`versions/v0.9.9/backend` / `versions/v0.9.9/frontend` をリポジトリルートの `backend/` / `frontend/` に昇格。バージョン管理は git tag に移行し、旧構成を利用する場合は `v0.9.9` タグを checkout する
 - **excel2md を PyPI からインストールする方式に変更** (#100): ローカル `excel2md/` ディレクトリの `sys.path` 注入を廃止し、通常の依存関係（`excel2md>=2.2.1`）と `excel2md.cli` / `excel2md.runner` の直接 import に置き換え
