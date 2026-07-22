@@ -150,6 +150,7 @@ export interface TestConnectionRequest {
   model?: string
   apiKey?: string
   baseUrl?: string
+  reasoningEffort?: string
   accessKeyId?: string
   secretAccessKey?: string
   region?: string

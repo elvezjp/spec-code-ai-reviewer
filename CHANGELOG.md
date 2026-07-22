@@ -11,8 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Base URL support for OpenAI-compatible APIs (Kimi / Moonshot AI, etc.)** (#123): The config file generator's `openai` provider now has an optional "Base URL" field, passed through the config file to the backend as part of `llmConfig`. When set, the OpenAI client connects to the specified endpoint (e.g. `https://api.moonshot.ai/v1`) and sends `max_tokens` instead of `max_completion_tokens` for compatibility. When left empty, behavior is unchanged (official OpenAI API)
+- **Reasoning effort setting for reasoning models** (#128): The config file generator's `openai` provider now has an optional "Reasoning Effort" field; `reasoning_effort` is sent to the API only when specified (applies to bulk/split reviews, Markdown organizing, the connection test, and the split preview's AI summary generation / AI split via md2map). Allowed values are model-dependent and passed through without validation. With Kimi K3, setting `low` cuts review time to roughly a quarter (measurements: `docs/20260722-kimi-k3-reasoning-effort-benchmark.md`). When unset, the parameter is not sent and behavior is unchanged
 
 ### Changed
+- **Trimmed the config file generator's default OpenAI models** (#128): Now `gpt-5.2` / `gpt-5.2-pro` only (removed `gpt-5.2-chat-latest`, `gpt-5.1`, `gpt-4o`, and `gpt-4o-mini`)
 - **Repository restructured to keep only the latest code at the root** (#103): The `versions/` directory (v0.5.0–v0.9.9 snapshots) has been removed; `versions/v0.9.9/backend` and `versions/v0.9.9/frontend` were promoted to `backend/` and `frontend/` at the repository root. Version management now uses git tags — to use the old multi-version layout, check out the `v0.9.9` tag
 - **excel2md is now installed from PyPI** (#100): Replaced the `sys.path` injection of the local `excel2md/` directory with a normal dependency (`excel2md>=2.2.1`) and direct imports of `excel2md.cli` / `excel2md.runner`
 - `spec.md` and `config-file-generator-spec.md` moved to `docs/`
@@ -22,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Multi-version infrastructure** (#118): `nginx/` (including `version-map.conf`), `docker-compose.yml`, `Dockerfile.dev`, `docker-entrypoint.sh`, `ecosystem.config.js`, and `dev.ecosystem.config.js`. The app now starts as a single version via uvicorn + Vite
 - **Unused subtree directories** (#96, #100, #103): `markitdown/`, `excel2md/`, `add-line-numbers/`, `code2map/`, and `md2map/` — all are consumed from PyPI or git sources via uv. Clone the upstream repositories if you need the sources for reference
 - `latest` symlink and `scripts/sync_version.py` (no longer needed with a single version at the root)
+
+### Fixed
+- **Config-file Base URL / Max Tokens were not propagated to the split preview's AI summary generation** (#127): The md2map conversion dropped `baseUrl`, so requests went to the official OpenAI API with an OpenAI-compatible API key and failed with 401. Also replaced the hard-coded `max_tokens=800` with the config file's `maxTokens`, fixing empty responses (`OpenAI API returned empty response`) from thinking models (kimi-k3, etc.) whose reasoning tokens consumed the limit. md2map updated to the base_url-capable version (v0.5.0)
 
 ## [0.9.9] - 2026-06-17
 

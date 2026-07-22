@@ -78,6 +78,10 @@ export const CONFIG_SCHEMA: ConfigSchema = {
             ],
           },
           openai: {
+            notes: [
+              'Reasoning Effort は推論モデル（Kimi K3、GPT-5系等）の思考量を調整します。値が小さいほど高速になり、値が大きいほど深く思考するため時間とトークン消費が増えます。設定可能な値はモデルにより異なります。',
+              'gpt-4o 等の非推論モデルでは Reasoning Effort を指定しないでください（APIエラーになります）。',
+            ],
             fields: [
               { id: 'provider', type: 'fixed', value: 'openai' },
               { id: 'apiKey', label: 'API Key', type: 'password', required: true },
@@ -89,12 +93,18 @@ export const CONFIG_SCHEMA: ConfigSchema = {
               },
               { id: 'maxTokens', label: 'Max Tokens', type: 'number', default: 16384, required: true },
               {
+                id: 'reasoningEffort',
+                label: 'Reasoning Effort（推論モデルのみ・任意）',
+                type: 'text',
+                placeholder: 'low / medium / high / max など（モデルにより異なる）',
+              },
+              {
                 id: 'models',
                 label: 'モデル',
                 type: 'array',
                 itemType: 'text',
                 placeholder: 'gpt-5.2',
-                defaults: ['gpt-5.2', 'gpt-5.2-chat-latest', 'gpt-5.2-pro', 'gpt-5.1', 'gpt-4o', 'gpt-4o-mini'],
+                defaults: ['gpt-5.2', 'gpt-5.2-pro'],
               },
             ],
           },

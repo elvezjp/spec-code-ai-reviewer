@@ -314,3 +314,85 @@ class TestOpenAIProviderBaseUrl:
         kwargs = mock_client.chat.completions.create.call_args.kwargs
         assert kwargs["max_completion_tokens"] == 8192
         assert "max_tokens" not in kwargs
+
+
+class TestOpenAIProviderReasoningEffort:
+    """reasoningEffort指定時のテスト"""
+
+    def _mock_client(self, mock_openai_class):
+        mock_client = MagicMock()
+        mock_openai_class.return_value = mock_client
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = "ok"
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 5
+        mock_client.chat.completions.create.return_value = mock_response
+        return mock_client
+
+    @patch("app.services.openai_service.OpenAI")
+    def test_reasoning_effort_sent_with_base_url(self, mock_openai_class):
+        """baseUrl指定時（OpenAI互換API）にreasoning_effortが送信される"""
+        mock_client = self._mock_client(mock_openai_class)
+
+        config = LLMConfig(
+            provider="openai",
+            model="kimi-k3",
+            apiKey="test-api-key",
+            baseUrl="https://api.moonshot.ai/v1",
+            reasoningEffort="low",
+        )
+        provider = OpenAIProvider(config)
+
+        provider.send_message("system", "user")
+
+        kwargs = mock_client.chat.completions.create.call_args.kwargs
+        assert kwargs["reasoning_effort"] == "low"
+
+    @patch("app.services.openai_service.OpenAI")
+    def test_reasoning_effort_sent_without_base_url(self, mock_openai_class):
+        """baseUrl未指定時（OpenAI公式API）でもreasoning_effortが送信される"""
+        mock_client = self._mock_client(mock_openai_class)
+
+        config = LLMConfig(
+            provider="openai",
+            model="gpt-5.2",
+            apiKey="test-api-key",
+            reasoningEffort="medium",
+        )
+        provider = OpenAIProvider(config)
+
+        provider.send_message("system", "user")
+
+        kwargs = mock_client.chat.completions.create.call_args.kwargs
+        assert kwargs["reasoning_effort"] == "medium"
+
+    @patch("app.services.openai_service.OpenAI")
+    def test_reasoning_effort_omitted_when_unset(self, mock_openai_class):
+        """reasoningEffort未指定時はreasoning_effortを送信しない（従来動作）"""
+        mock_client = self._mock_client(mock_openai_class)
+
+        config = LLMConfig(
+            provider="openai",
+            model="gpt-4o",
+            apiKey="test-api-key",
+        )
+        provider = OpenAIProvider(config)
+
+        provider.send_message("system", "user")
+
+        kwargs = mock_client.chat.completions.create.call_args.kwargs
+        assert "reasoning_effort" not in kwargs
+
+    def test_reasoning_effort_snake_case_alias(self):
+        """reasoning_effort（スネークケース）エイリアスでも受け付ける"""
+        config = LLMConfig.model_validate(
+            {
+                "provider": "openai",
+                "model": "kimi-k3",
+                "api_key": "test-api-key",
+                "reasoning_effort": "low",
+            }
+        )
+
+        assert config.reasoningEffort == "low"

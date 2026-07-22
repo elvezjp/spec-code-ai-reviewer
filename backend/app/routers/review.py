@@ -116,6 +116,7 @@ async def test_llm_connection(request: TestConnectionRequest):
             model=request.model or "",
             apiKey=request.apiKey,
             baseUrl=request.baseUrl,
+            reasoningEffort=request.reasoningEffort,
             accessKeyId=request.accessKeyId,
             secretAccessKey=request.secretAccessKey,
             region=request.region,
