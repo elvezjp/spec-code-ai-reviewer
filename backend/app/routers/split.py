@@ -52,10 +52,13 @@ def _convert_to_md2map_llm_config(llm_config: LLMConfig | None):
         provider=llm_config.provider,
         model=llm_config.model,
         api_key=llm_config.apiKey,
+        base_url=llm_config.baseUrl,
         access_key_id=llm_config.accessKeyId,
         secret_access_key=llm_config.secretAccessKey,
         region=llm_config.region,
-        max_tokens=800,
+        # 思考型モデルは思考トークンも max_tokens を消費するため、
+        # 固定値ではなく設定ファイルの maxTokens を引き継ぐ
+        max_tokens=llm_config.maxTokens,
     )
 
 

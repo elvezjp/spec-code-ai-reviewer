@@ -25,6 +25,8 @@
 - UT-SPL-022: split_markdown() - summaryMode/summaryMaxChars を section_overrides に渡す
 - UT-SPL-023: split_markdown() - summaryMode "ai" で LLM 設定が初期化される
 - UT-SPL-024: split_markdown() - parse() の warnings がレスポンスに含まれる
+- UT-SPL-025: _convert_to_md2map_llm_config() - baseUrl が md2map に引き継がれる
+- UT-SPL-026: _convert_to_md2map_llm_config() - baseUrl 未指定時は None
 """
 
 from unittest.mock import MagicMock, patch
@@ -1509,3 +1511,45 @@ class TestSplitMarkdownSummaryAPI:
         assert len(data["warnings"]) == 2
         assert "AI API call failed" in data["warnings"][0]
         assert "ルールベース" in data["warnings"][1]
+
+
+class TestConvertToMd2mapLLMConfig:
+    """_convert_to_md2map_llm_config() のテスト"""
+
+    def test_ut_spl_025_base_url_passed(self):
+        """UT-SPL-025: baseUrl が md2map の LLMConfig に引き継がれる"""
+        from app.models.schemas import LLMConfig
+        from app.routers.split import _convert_to_md2map_llm_config
+
+        llm_config = LLMConfig(
+            provider="openai",
+            model="kimi-k2-turbo-preview",
+            apiKey="sk-test",
+            baseUrl="https://api.moonshot.ai/v1",
+            maxTokens=32768,
+        )
+
+        result = _convert_to_md2map_llm_config(llm_config)
+
+        assert result.provider == "openai"
+        assert result.model == "kimi-k2-turbo-preview"
+        assert result.api_key == "sk-test"
+        assert result.base_url == "https://api.moonshot.ai/v1"
+        assert result.max_tokens == 32768
+
+    def test_ut_spl_026_base_url_default_none(self):
+        """UT-SPL-026: baseUrl 未指定時は base_url が None（OpenAI公式API）"""
+        from app.models.schemas import LLMConfig
+        from app.routers.split import _convert_to_md2map_llm_config
+
+        llm_config = LLMConfig(
+            provider="openai",
+            model="gpt-4o-mini",
+            apiKey="sk-test",
+        )
+
+        result = _convert_to_md2map_llm_config(llm_config)
+
+        assert result.base_url is None
+        # maxTokens 未指定時はスキーマのデフォルト値（16384）が引き継がれる
+        assert result.max_tokens == 16384
