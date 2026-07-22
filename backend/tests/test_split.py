@@ -1527,6 +1527,7 @@ class TestConvertToMd2mapLLMConfig:
             apiKey="sk-test",
             baseUrl="https://api.moonshot.ai/v1",
             maxTokens=32768,
+            reasoningEffort="low",
         )
 
         result = _convert_to_md2map_llm_config(llm_config)
@@ -1536,6 +1537,7 @@ class TestConvertToMd2mapLLMConfig:
         assert result.api_key == "sk-test"
         assert result.base_url == "https://api.moonshot.ai/v1"
         assert result.max_tokens == 32768
+        assert result.reasoning_effort == "low"
 
     def test_ut_spl_026_base_url_default_none(self):
         """UT-SPL-026: baseUrl 未指定時は base_url が None（OpenAI公式API）"""
@@ -1551,5 +1553,6 @@ class TestConvertToMd2mapLLMConfig:
         result = _convert_to_md2map_llm_config(llm_config)
 
         assert result.base_url is None
+        assert result.reasoning_effort is None
         # maxTokens 未指定時はスキーマのデフォルト値（16384）が引き継がれる
         assert result.max_tokens == 16384

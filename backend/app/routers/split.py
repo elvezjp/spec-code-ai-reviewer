@@ -53,6 +53,7 @@ def _convert_to_md2map_llm_config(llm_config: LLMConfig | None):
         model=llm_config.model,
         api_key=llm_config.apiKey,
         base_url=llm_config.baseUrl,
+        reasoning_effort=llm_config.reasoningEffort,
         access_key_id=llm_config.accessKeyId,
         secret_access_key=llm_config.secretAccessKey,
         region=llm_config.region,
