@@ -25,6 +25,11 @@ from app.models.schemas import (
 
 router = APIRouter()
 
+# md2map のセクション単位 AI 呼び出し（要約・AI分割）の並列度。
+# 分割プレビューの応答時間短縮のため、逐次（1）ではなく固定値で並列実行する。
+# 同時リクエスト数の増加によるレート制限（429）を避けるため控えめな値とする。
+AI_CONCURRENCY = 4
+
 
 # ---------------------------------------------------------------------------
 # ユーティリティ
@@ -202,6 +207,7 @@ async def split_markdown(request: SplitMarkdownRequest):
                 section_overrides=section_overrides,
                 summary_mode=summary_mode,
                 summary_max_chars=summary_max_chars,
+                ai_concurrency=AI_CONCURRENCY,
             )
             sections, warnings = parser.parse(input_path, request.maxDepth)
 
