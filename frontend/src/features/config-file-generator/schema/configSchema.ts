@@ -79,7 +79,7 @@ export const CONFIG_SCHEMA: ConfigSchema = {
           },
           openai: {
             notes: [
-              'Reasoning Effort は推論モデル（Kimi K3、GPT-5系等）の思考量を調整します。値が小さいほど高速です。許容値はモデルにより異なります（Kimi K3: low/high/max、OpenAI: モデルごとに none/minimal/low/medium/high/xhigh/max のサブセット）。',
+              'Reasoning Effort は推論モデル（Kimi K3、GPT-5系等）の思考量を調整します。値が小さいほど高速になり、値が大きいほど深く思考するため時間とトークン消費が増えます。設定可能な値はモデルにより異なります。',
               'gpt-4o 等の非推論モデルでは Reasoning Effort を指定しないでください（APIエラーになります）。',
             ],
             fields: [
