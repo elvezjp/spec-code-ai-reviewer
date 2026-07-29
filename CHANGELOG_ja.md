@@ -29,6 +29,10 @@
 ### Fixed
 - **分割プレビューの AI サマリー生成に設定ファイルの Base URL / Max Tokens が引き継がれない問題を修正** (#127): md2map への変換で `baseUrl` が渡されず、OpenAI 互換 API のキーのまま公式 API に接続して 401 エラーになっていた。あわせて固定値 800 だった `max_tokens` を設定ファイルの `maxTokens` を引き継ぐよう変更し、思考型モデル（kimi-k3 等）で思考トークンが上限を消費して空レスポンス（`OpenAI API returned empty response`）になる問題も解消。md2map を base_url 対応版（v0.5.0）に更新
 
+### Security
+- **認証なし API のパストラバーサルによる任意ファイル書き込みを修正**（GHSA-97h8-c8cg-hwm2）: `POST /api/split/markdown` / `POST /api/split/code` / `POST /api/convert/excel-to-markdown` がクライアント指定のファイル名を一時ディレクトリのパスへそのまま結合していたため、絶対パスや `../` を含む値で一時ディレクトリ外にファイルを作成・上書きできた。クライアント由来のファイル名は `safe_filename()`（`backend/app/safe_path.py` に追加）でディレクトリ成分を除去してから使用するよう修正し、回帰テストを追加。追加テストの Windows 環境での失敗はフォローアップ（#130）で修正
+- **フロントエンド依存関係を更新し Dependabot アラートを解消**（#131）: `react-router-dom` を 7.17.0 → 7.18.2 に更新してアラート [#966](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/966) / [#968](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/968) / [#969](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/969) / [#970](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/970)（オープンリダイレクト、ルートマッチング DoS、XSS、コンストラクタインジェクション）を解消。あわせて推移的な開発依存 `js-yaml` → 4.3.0（アラート [#965](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/965)）と `brace-expansion` → 1.1.16 / 5.0.8（アラート [#963](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/963) / [#964](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/964)、いずれも CPU 消費型 DoS）を更新。アラート [#967](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/967)（GHSA-qwww-vcr4-c8h2、RSC モードの CSRF）は、本アプリでは unstable RSC API を使用しておらず 7.x 系の修正版も存在しないため、「該当機能未使用」として dismiss
+
 ## [0.9.9] - 2026-06-17
 
 ### Changed
