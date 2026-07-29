@@ -65,5 +65,7 @@ class TestJoinIsContained:
         """サニタイズしない場合は脱出できることを確認（回帰検知用）。"""
         with tempfile.TemporaryDirectory() as tmpdir:
             escaped = os.path.join(tmpdir, "/etc/evil.conf")
-            assert escaped == "/etc/evil.conf"
+            # Windows では join 結果にドライブ文字が付くため、厳密一致は POSIX のみ検証
+            if os.name != "nt":
+                assert escaped == "/etc/evil.conf"
             assert Path(escaped).resolve().parent != Path(tmpdir).resolve()
