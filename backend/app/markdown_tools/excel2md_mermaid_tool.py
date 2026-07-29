@@ -7,6 +7,7 @@ from excel2md.cli import build_argparser
 from excel2md.runner import run
 
 from .base import MarkdownTool
+from ..safe_path import safe_filename
 
 
 class Excel2mdMermaidTool(MarkdownTool):
@@ -33,7 +34,7 @@ class Excel2mdMermaidTool(MarkdownTool):
             tmpdir_path = Path(tmpdir)
 
             # 入力ファイルを作成
-            input_path = tmpdir_path / filename
+            input_path = tmpdir_path / safe_filename(filename)
             input_path.write_bytes(file_content)
 
             # 出力パスを設定（run()がファイルを生成する）

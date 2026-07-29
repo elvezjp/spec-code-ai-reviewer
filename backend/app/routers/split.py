@@ -22,6 +22,7 @@ from app.models.schemas import (
     HeadingsResponse,
     HeadingInfo,
 )
+from app.safe_path import safe_filename
 
 router = APIRouter()
 
@@ -135,7 +136,7 @@ async def split_markdown(request: SplitMarkdownRequest):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # 入力ファイルを書き込み
-            input_path = os.path.join(tmpdir, request.filename or "input.md")
+            input_path = os.path.join(tmpdir, safe_filename(request.filename, "input.md"))
             with open(input_path, "w", encoding="utf-8") as f:
                 f.write(request.content)
 
@@ -358,7 +359,7 @@ async def split_code(request: SplitCodeRequest):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # 入力ファイルを書き込み
-            input_path = os.path.join(tmpdir, request.filename)
+            input_path = os.path.join(tmpdir, safe_filename(request.filename))
             with open(input_path, "w", encoding="utf-8") as f:
                 f.write(request.content)
 
