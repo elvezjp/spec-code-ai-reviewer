@@ -11,6 +11,28 @@ The latest version is supported:
 | 0.10.0   | :white_check_mark: |
 | < 0.10.0 | :x:                |
 
+## Intended Environment
+
+**spec-code-ai-reviewer is meant to be run locally, and the application itself has no authentication or authorization.** This is a deliberate design decision, recorded as "option A: no authentication" in [Issue #134](https://github.com/elvezjp/spec-code-ai-reviewer/issues/134).
+
+### What is not guaranteed
+
+Every API endpoint can be called without credentials. Network reachability is the only line of defense, and anyone who can reach the service can:
+
+- Call the configured LLM without limit (cost abuse)
+- Read the uploaded design documents, source code, and review results
+- Invoke any of the conversion, split, and review APIs
+
+### What we ask of operators
+
+1. **Do not expose it on a network.** Start the backend bound to `127.0.0.1` (see "Launch" in the README). Binding to `0.0.0.0` lets anyone on the same network call every endpoint
+2. **Put authentication in front of it if you do expose it.** When the service has to sit on a network, require authentication at a reverse proxy. [docs/ec2-deployment-spec.md](docs/ec2-deployment-spec.md) describes a setup using nginx Basic authentication (`auth_basic`)
+3. **Do not widen the CORS allowlist.** The default is local development origins only. Avoid `CORS_ORIGINS=*`, which lets any site read this API's responses from a browser
+
+### Background
+
+Up to v0.9.9, the multi-version layout shipped an nginx configuration (`nginx/spec-code-ai-reviewer.conf`) that performed Basic authentication. That configuration was removed in v0.10.0 along with the rest of the multi-version infrastructure ([#118](https://github.com/elvezjp/spec-code-ai-reviewer/issues/118)), so the front-facing authentication is now the operator's responsibility.
+
 ## Reporting a Vulnerability
 
 If you discover a security vulnerability in spec-code-ai-reviewer, please follow these steps for responsible disclosure:
@@ -152,10 +174,11 @@ Recommendations when using spec-code-ai-reviewer:
 
 ## Known Security Limitations
 
-1. **Macro detection**: Excel file macros are not executed but their presence is not warned about
-2. **External links**: External links in Excel files are processed but not validated
-3. **File size**: Very large files may cause memory issues
-4. **LLM output**: AI-generated output is not always accurate. Human review is required for critical decisions
+1. **No authentication or authorization** (CWE-306): Every API endpoint is open. This is by design — see "Intended Environment" above for what it means and how to operate the tool safely
+2. **Macro detection**: Excel file macros are not executed but their presence is not warned about
+3. **External links**: External links in Excel files are processed but not validated
+4. **File size**: Very large files may cause memory issues
+5. **LLM output**: AI-generated output is not always accurate. Human review is required for critical decisions
 
 ## Security Updates
 

@@ -68,6 +68,18 @@ By default, the system LLM (AWS Bedrock configured on the server side) is used. 
 3. Return to the settings modal and upload the configuration file
 4. Select the LLM models to use (multiple can be specified)
 
+## Intended environment
+
+**This tool is meant to be run locally, and the application itself has no authentication or authorization.**
+
+Every API endpoint can be called without credentials. Anyone who can reach it can run the LLM without limit and read the design documents and code that have been uploaded.
+
+For that reason, **do not expose it on a network.** Start the backend bound to `127.0.0.1` (see [Launch](#launch)).
+
+If you deliberately do expose it, **put authentication in front of it.** [docs/ec2-deployment-spec.md](docs/ec2-deployment-spec.md) describes a reverse-proxy setup with Basic authentication (nginx `auth_basic`). Leaving authentication out of the application is a deliberate decision, recorded as option A in [Issue #134](https://github.com/elvezjp/spec-code-ai-reviewer/issues/134).
+
+See [SECURITY.md](SECURITY.md) for details.
+
 ## Setup
 
 ### Prerequisites
