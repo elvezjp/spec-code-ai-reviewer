@@ -1,6 +1,7 @@
 """レビューAPI"""
 
 import json
+import logging
 import re
 from importlib.metadata import version
 
@@ -34,6 +35,8 @@ from app.services.prompt_builder import build_system_prompt, build_review_meta, 
 
 # pyproject.tomlからバージョンを取得
 APP_VERSION = version("spec-code-ai-reviewer-backend")
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -372,12 +375,11 @@ async def structure_matching(request: StructureMatchingRequest):
             system_prompt, user_message
         )
 
-        # デバッグ: LLMレスポンスを標準出力に表示
-        print("=" * 80)
-        print("[DEBUG] 構造マッチング LLMレスポンス:")
-        print("=" * 80)
-        print(response_text)
-        print("=" * 80)
+        # LLM レスポンスにはレビュー対象の設計書・コードの内容が含まれる。
+        # 常時 print すると、標準出力の閲覧権限を持つ相手や、コンテナログを
+        # 収集している基盤に、レビュー対象がそのまま渡ってしまう。
+        # DEBUG レベルでのみ出力し、既定では出さない。
+        logger.debug("構造マッチング LLMレスポンス: %s", response_text)
 
         # JSON応答パース（IDのみ返却、フロントエンドで復元）
         result = _extract_json(response_text)
