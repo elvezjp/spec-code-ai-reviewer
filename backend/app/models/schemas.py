@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, AliasChoices, ConfigDict, model_validator
 
+from app.url_guard import validate_llm_base_url
+
 
 class ConvertResponse(BaseModel):
     """変換APIのレスポンス"""
@@ -76,6 +78,16 @@ class LLMConfig(BaseModel):
         default=16384,
         validation_alias=AliasChoices("maxTokens", "max_tokens"),
     )
+
+    @model_validator(mode="after")
+    def validate_base_url(self):
+        """接続先が内部ネットワークを向いていないことを確認する。
+
+        baseUrl は複数の経路（レビュー実行・接続テスト・分割レビュー）から
+        利用されるため、個々の呼び出し元ではなくモデル側で一度だけ検証する。
+        """
+        validate_llm_base_url(self.baseUrl)
+        return self
 
 
 class ReviewRequest(BaseModel):

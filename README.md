@@ -181,6 +181,25 @@ These environment variables are used to run the system LLM (AWS Bedrock).
 | `BEDROCK_MODEL_ID` | Model ID to use | `global.anthropic.claude-haiku-4-5-20251001-v1:0` |
 | `BEDROCK_MAX_TOKENS` | Max response tokens | `16384` |
 
+### Local LLM connections
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `LLM_ALLOW_PRIVATE_BASE_URL` | Allow `baseUrl` to point at internal addresses (`127.0.0.1`, `192.168.x.x`, etc.) | `false` |
+
+The OpenAI-compatible endpoint (`baseUrl`) rejects internal network
+addresses by default. This API is served without authentication, so an
+unvalidated `baseUrl` would let anyone use the server to reach internal
+services or a cloud metadata endpoint.
+
+**Set this variable when connecting to an LLM running locally:**
+
+```bash
+LLM_ALLOW_PRIVATE_BASE_URL=1
+```
+
+Do not enable it where untrusted callers can reach this API.
+
 ---
 
 ## FAQ / Troubleshooting
