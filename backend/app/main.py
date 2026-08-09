@@ -19,10 +19,31 @@ app = FastAPI(
     version=APP_VERSION,
 )
 
-# CORS設定（環境変数で制御、デフォルトは全許可）
-# 本番環境では CORS_ORIGINS=https://example.com を設定
-cors_origins_str = os.getenv("CORS_ORIGINS", "*")
-cors_origins = ["*"] if cors_origins_str == "*" else [o.strip() for o in cors_origins_str.split(",")]
+# CORS設定（環境変数 CORS_ORIGINS で制御）
+# 既定はローカル開発用オリジンのみを許可する。この API は認証がないため、
+# 既定を全許可にすると、任意のサイトがブラウザ経由でこの API を呼び出し、
+# 応答（レビュー対象のコードや設計書）を読めてしまう。
+# 本番環境では CORS_ORIGINS=https://example.com のように明示的に指定する。
+#
+# なお、このアプリのフロントエンドは常に同一オリジンから API を呼ぶため
+# （開発時は Vite の proxy、本番は同じ FastAPI が StaticFiles で配信）、
+# 既定の許可リストは、フロントエンドを別ホストで動かす構成向けの保険である。
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:5173",  # Vite 開発サーバー
+    "http://127.0.0.1:5173",
+    "http://localhost:4173",  # Vite プレビュー（npm run preview）
+    "http://127.0.0.1:4173",
+]
+
+cors_origins_str = os.getenv("CORS_ORIGINS", "").strip()
+if not cors_origins_str:
+    cors_origins = DEFAULT_CORS_ORIGINS
+elif cors_origins_str == "*":
+    # 全許可は明示的に指定された場合のみ。下の allow_credentials で
+    # 認証情報の許可を落とす。
+    cors_origins = ["*"]
+else:
+    cors_origins = [o.strip() for o in cors_origins_str.split(",") if o.strip()]
 # オリジンを限定していない状態で認証情報を許可すると、Starlette は
 # Access-Control-Allow-Origin にリクエスト元の Origin をそのまま返す
 # （ワイルドカードと認証情報は併用できない仕様のため）。結果として
