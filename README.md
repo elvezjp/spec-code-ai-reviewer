@@ -68,6 +68,18 @@ By default, the system LLM (AWS Bedrock configured on the server side) is used. 
 3. Return to the settings modal and upload the configuration file
 4. Select the LLM models to use (multiple can be specified)
 
+## Intended environment
+
+**This tool is meant to be run locally, and the application itself has no authentication or authorization.**
+
+Every API endpoint can be called without credentials. Anyone who can reach it can run the LLM without limit and read the design documents and code that have been uploaded.
+
+For that reason, **do not expose it on a network.** Start the backend bound to `127.0.0.1` (see [Launch](#launch)).
+
+If you deliberately do expose it, **put authentication in front of it.** [docs/ec2-deployment-spec.md](docs/ec2-deployment-spec.md) describes a reverse-proxy setup with Basic authentication (nginx `auth_basic`). Leaving authentication out of the application is a deliberate decision, recorded as option A in [Issue #134](https://github.com/elvezjp/spec-code-ai-reviewer/issues/134).
+
+See [SECURITY.md](SECURITY.md) for details.
+
 ## Setup
 
 ### Prerequisites
@@ -138,8 +150,10 @@ Start frontend and backend separately.
 ```bash
 cd backend
 uv sync
-uv run uvicorn app.main:app --reload --port 8000
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
+
+**Note**: `--host 127.0.0.1` is specified explicitly. This API is served without authentication, so binding to `0.0.0.0` lets anyone on the same network call every endpoint. Do not change it unless you intend to expose the service on a network.
 
 **Terminal 2: Start frontend**
 
@@ -199,6 +213,32 @@ LLM_ALLOW_PRIVATE_BASE_URL=1
 ```
 
 Do not enable it where untrusted callers can reach this API.
+
+### CORS
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CORS_ORIGINS` | Comma-separated origins allowed to make cross-origin browser requests | Local development origins only |
+
+When unset, only the Vite development server and preview origins are allowed
+(`http://localhost:5173`, `http://127.0.0.1:5173`, `http://localhost:4173`,
+`http://127.0.0.1:4173`). This API is served without authentication, so the
+allowed set directly determines who can reach it from a browser.
+
+In production, name the origin that serves the frontend:
+
+```bash
+CORS_ORIGINS=https://example.com
+```
+
+`*` (allow all) is accepted, but credentials are then disabled. It lets any
+site read the responses, so it is not recommended.
+
+**Note**: a normal setup does not need this variable. In development the Vite
+proxy forwards `/api` requests server-side, and in production the same FastAPI
+app serves the frontend — in both cases the browser sees a single origin and no
+CORS exchange takes place. Set it only when the frontend runs on a different
+host.
 
 ---
 

@@ -1,9 +1,14 @@
 """CORS 設定のテスト。
 
-オリジンを限定していない状態で認証情報を許可すると、Starlette は
-Access-Control-Allow-Origin にリクエスト元 Origin をそのまま返す。
-その結果、任意のサイトがこの API に資格情報付きで到達し、応答を
-読めてしまうため、全許可時は認証情報を許可しないことを検証する。
+この API は認証がないため、CORS の許可範囲がブラウザ経由の到達可否を
+そのまま決める。以下の2点を検証する。
+
+- 既定（CORS_ORIGINS 未設定）ではローカル開発用オリジンのみを許可し、
+  任意のサイトからは応答を読めないこと
+- 全許可を明示した場合に認証情報を許可しないこと。オリジンを限定して
+  いない状態で認証情報を許可すると、Starlette は
+  Access-Control-Allow-Origin にリクエスト元 Origin をそのまま返し、
+  任意のサイトが資格情報付きで応答を読めてしまう
 """
 
 import importlib
@@ -12,6 +17,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 EVIL_ORIGIN = "https://evil.example.com"
+DEV_ORIGIN = "http://localhost:5173"
 
 
 def _load_app(monkeypatch, cors_origins: str | None):
@@ -25,10 +31,49 @@ def _load_app(monkeypatch, cors_origins: str | None):
     return importlib.reload(app.main).app
 
 
+class TestCorsDefault:
+    """CORS_ORIGINS 未設定時の既定挙動。"""
+
+    def test_default_rejects_arbitrary_origin(self, monkeypatch):
+        """既定では任意のサイトに許可を返さない。"""
+        client = TestClient(_load_app(monkeypatch, None))
+        res = client.get("/health", headers={"Origin": EVIL_ORIGIN})
+
+        assert res.headers.get("access-control-allow-origin") is None
+
+    def test_default_rejects_arbitrary_origin_preflight(self, monkeypatch):
+        """プリフライトでも既定で任意のサイトを拒否する。"""
+        client = TestClient(_load_app(monkeypatch, None))
+        res = client.options(
+            "/api/review",
+            headers={
+                "Origin": EVIL_ORIGIN,
+                "Access-Control-Request-Method": "POST",
+            },
+        )
+
+        assert res.headers.get("access-control-allow-origin") is None
+
+    def test_default_allows_local_dev_origin(self, monkeypatch):
+        """既定でローカル開発サーバーからは許可する。"""
+        client = TestClient(_load_app(monkeypatch, None))
+        res = client.get("/health", headers={"Origin": DEV_ORIGIN})
+
+        assert res.headers.get("access-control-allow-origin") == DEV_ORIGIN
+        assert res.headers.get("access-control-allow-credentials") == "true"
+
+    def test_empty_value_is_treated_as_unset(self, monkeypatch):
+        """空文字を設定した場合も既定として扱う（全許可に落とさない）。"""
+        client = TestClient(_load_app(monkeypatch, "   "))
+        res = client.get("/health", headers={"Origin": EVIL_ORIGIN})
+
+        assert res.headers.get("access-control-allow-origin") is None
+
+
 class TestCorsCredentials:
     def test_wildcard_does_not_allow_credentials(self, monkeypatch):
-        """既定（全許可）では認証情報を許可しない。"""
-        client = TestClient(_load_app(monkeypatch, None))
+        """全許可を明示した場合は認証情報を許可しない。"""
+        client = TestClient(_load_app(monkeypatch, "*"))
         res = client.get("/health", headers={"Origin": EVIL_ORIGIN})
 
         assert res.headers.get("access-control-allow-credentials") is None
