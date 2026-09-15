@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Updated backend dependencies** (#133): Regenerated `uv.lock` with `uv lock --upgrade`, updating 28 packages — including `anthropic` 0.109.2 → 0.121.0, `openai` 2.42.0 → 2.53.0, `fastapi` 0.137.1 → 0.141.1, `starlette` 1.3.1 → 1.6.0, `uvicorn` 0.49.0 → 0.52.1, `pandas` 3.0.3 → 3.0.5, and `markitdown` 0.1.6 → 0.1.7. No advisory prompted this; it is a routine refresh. The tag-pinned git dependencies are unaffected, since a tag rather than the lockfile determines what they resolve to
 - **Updated the supported version in SECURITY** (#134): The supported-version table listed 0.9.9; it now lists 0.10.0 (English and Japanese)
 - `spec.md` and `config-file-generator-spec.md` moved to `docs/`
+- **Changed the frontend CI Node.js matrix from `["20", "23"]` to `["20", "24"]`**: Node.js 23 is an odd-numbered release that has reached end of life and is outside the range supported by `vitest` 4.1.11 (`^20.0.0 || ^22.0.0 || >=24.0.0`). CI now tests on Node.js 20 and the Node.js 24 LTS line.
 
 ### Removed
 - **Runtime version switching** (#118): The version-selector balloon UI (`VersionSelector` / `useVersions`), the `app_version` cookie, and the Cookie + Nginx map routing have been removed. The settings modal still shows the running version

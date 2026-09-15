@@ -32,7 +32,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: ["20", "23"]
+        node-version: ["20", "24"]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
