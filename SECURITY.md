@@ -4,12 +4,12 @@
 
 ## Supported Versions
 
-The latest version is supported:
+Only the latest version, 0.10.0, is supported.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.10.0   | :white_check_mark: |
-| < 0.10.0 | :x:                |
+| Version | Supported |
+| --- | --- |
+| 0.10.0 | Yes |
+| < 0.10.0 | No |
 
 ## Intended Environment
 
@@ -39,10 +39,9 @@ If you discover a security vulnerability in spec-code-ai-reviewer, please follow
 
 ### How to Report
 
-1. **Do not** create a public GitHub Issue for security vulnerabilities
-2. Send a detailed report to the maintainers using one of the following methods:
-   - Create a private security advisory on GitHub (recommended)
-   - For low-severity issues, create an Issue with the "security" label
+1. Do not post vulnerability details in public GitHub Issues, regardless of severity.
+2. Use [GitHub private vulnerability reporting](https://github.com/elvezjp/spec-code-ai-reviewer/security/advisories/new).
+3. If private reporting is unavailable, email info@elvez.co.jp.
 
 ### What to Include
 
@@ -121,7 +120,7 @@ This application may use the following APIs:
 
 spec-code-ai-reviewer includes the following security measures:
 
-- Uses `read_only=True` mode for Excel file processing
+- Excel loading behavior depends on the conversion tool. The excel2md path uses `read_only=False`; read-only loading is not guaranteed for all conversions
 - File size limits
 - Input file validation
 

@@ -79,7 +79,7 @@ We welcome enhancement suggestions! Please create an Issue with:
 ### Prerequisites
 
 - Python 3.11 or later
-- Node.js 20 or later
+- Node.js 20.19+ (20.x), 22.12+ (22.x), or 24+
 - [uv](https://docs.astral.sh/uv/) package manager
 - AWS account (with Bedrock access) or Anthropic/OpenAI API key
 
@@ -107,7 +107,7 @@ cd backend
 uv run pytest tests/ -v
 
 # Backend: Run a specific test file
-uv run pytest tests/test_convert.py -v
+uv run pytest tests/test_health.py -v
 
 # Backend: Run with coverage
 uv run pytest tests/ --cov=app --cov-report=html

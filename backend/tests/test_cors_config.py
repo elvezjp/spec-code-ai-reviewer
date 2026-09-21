@@ -1,7 +1,7 @@
 """CORS 設定のテスト。
 
-この API は認証がないため、CORS の許可範囲がブラウザ経由の到達可否を
-そのまま決める。以下の2点を検証する。
+CORS はブラウザによるクロスオリジン応答の読み取りを制御する。
+認証やネットワークアクセス制限の代替ではない。以下の2点を検証する。
 
 - 既定（CORS_ORIGINS 未設定）ではローカル開発用オリジンのみを許可し、
   任意のサイトからは応答を読めないこと
@@ -81,6 +81,26 @@ class TestCorsCredentials:
     def test_wildcard_does_not_echo_arbitrary_origin(self, monkeypatch):
         """全許可時に任意 Origin をそのまま返さない（返すなら '*' のみ）。"""
         client = TestClient(_load_app(monkeypatch, "*"))
+        res = client.get("/health", headers={"Origin": EVIL_ORIGIN})
+
+        allow_origin = res.headers.get("access-control-allow-origin")
+        assert allow_origin != EVIL_ORIGIN
+        assert allow_origin in (None, "*")
+
+    def test_wildcard_in_list_does_not_allow_credentials(self, monkeypatch):
+        """ワイルドカード混在時も認証情報を許可しない。
+
+        Starlette は "*" がリストに含まれれば全許可と判定するため、
+        限定オリジンと "*" が併記された設定も全許可として扱う必要がある。
+        """
+        client = TestClient(_load_app(monkeypatch, "https://app.example.com,*"))
+        res = client.get("/health", headers={"Origin": EVIL_ORIGIN})
+
+        assert res.headers.get("access-control-allow-credentials") is None
+
+    def test_wildcard_in_list_does_not_echo_arbitrary_origin(self, monkeypatch):
+        """ワイルドカード混在時に任意 Origin をそのまま返さない。"""
+        client = TestClient(_load_app(monkeypatch, "https://app.example.com,*"))
         res = client.get("/health", headers={"Origin": EVIL_ORIGIN})
 
         allow_origin = res.headers.get("access-control-allow-origin")
