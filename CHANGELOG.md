@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.10.0] - Unreleased
+## [0.10.0] - 2026-09-21
 
 ### Added
 - **Base URL support for OpenAI-compatible APIs (Kimi / Moonshot AI, etc.)** (#123): The config file generator's `openai` provider now has an optional "Base URL" field, passed through the config file to the backend as part of `llmConfig`. When set, the OpenAI client connects to the specified endpoint (e.g. `https://api.moonshot.ai/v1`) and sends `max_tokens` instead of `max_completion_tokens` for compatibility. When left empty, behavior is unchanged (official OpenAI API)

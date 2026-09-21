@@ -7,7 +7,7 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/spec/v2.0.0.html) に準拠しています。
 
-## [0.10.0] - Unreleased
+## [0.10.0] - 2026-09-21
 
 ### Added
 - **OpenAI互換API（Kimi / Moonshot AI 等）向けの Base URL 設定に対応** (#123): 設定ファイルジェネレーターの `openai` プロバイダーに任意の「Base URL」欄を追加し、設定ファイル経由で `llmConfig` の一部としてバックエンドに受け渡す。指定時は OpenAI クライアントが指定エンドポイント（例: `https://api.moonshot.ai/v1`）に接続し、互換性のため `max_completion_tokens` の代わりに `max_tokens` を送信する。未入力時は従来どおり OpenAI 公式 API に接続（既存動作に影響なし）
