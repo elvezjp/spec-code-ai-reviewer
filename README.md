@@ -94,8 +94,8 @@ uv automatically uses an appropriate Python version. The installed Python 3.11+ 
 
 #### Node.js Version
 
-- **Required**: Node.js 20 or later
-- **Recommended**: Node.js 22 LTS
+- **Required**: Node.js 20.19+ (20.x), 22.12+ (22.x), or 24+
+- **Recommended**: Node.js 22.12+ (22.x)
 - **How to check**: Run `node --version`
 
 Required for developing/building the frontend (Vite + React + TypeScript).
@@ -222,8 +222,8 @@ Do not enable it where untrusted callers can reach this API.
 
 When unset, only the Vite development server and preview origins are allowed
 (`http://localhost:5173`, `http://127.0.0.1:5173`, `http://localhost:4173`,
-`http://127.0.0.1:4173`). This API is served without authentication, so the
-allowed set directly determines who can reach it from a browser.
+`http://127.0.0.1:4173`). CORS controls cross-origin response access in
+browsers; it does not replace authentication or network access controls.
 
 In production, name the origin that serves the frontend:
 

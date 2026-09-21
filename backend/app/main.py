@@ -50,7 +50,7 @@ else:
 # 任意のサイトがこの API へ資格情報付きで到達し、応答を読めてしまう。
 # ローカル起動中に利用者が悪意あるページを開くと、レビュー対象の
 # コードや設計書が読み取られうるため、全許可のときは認証情報を許可しない。
-allow_credentials = cors_origins != ["*"]
+allow_credentials = "*" not in cors_origins
 
 app.add_middleware(
     CORSMiddleware,
