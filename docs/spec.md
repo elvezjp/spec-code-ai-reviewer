@@ -3328,7 +3328,7 @@ Markdownをセクション単位で分割する（md2map使用）。分割モー
 | 対象 | OS | バージョン |
 |------|-----|-----------|
 | バックエンド | ubuntu / windows / macos | Python 3.10, 3.13 |
-| フロントエンド | ubuntu / windows / macos | Node.js 20, 23 |
+| フロントエンド | ubuntu / windows / macos | Node.js 20, 24 |
 
 #### AIレビュー・シナリオテスト
 

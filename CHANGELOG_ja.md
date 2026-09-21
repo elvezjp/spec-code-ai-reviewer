@@ -21,6 +21,7 @@
 - **バックエンドの依存パッケージを更新**（#133）: `uv lock --upgrade` により `uv.lock` を再生成し、28件を更新（`anthropic` 0.109.2 → 0.121.0、`openai` 2.42.0 → 2.53.0、`fastapi` 0.137.1 → 0.141.1、`starlette` 1.3.1 → 1.6.0、`uvicorn` 0.49.0 → 0.52.1、`pandas` 3.0.3 → 3.0.5、`markitdown` 0.1.6 → 0.1.7 ほか）。特定のアドバイザリに対応するものではなく定期更新。タグ指定した git 依存は、解決先を決めるのがロックファイルではなくタグのため影響を受けない
 - **SECURITY のサポートバージョンを更新**（#134）: サポート対象が 0.9.9 のままだったため、0.10.0 に更新（日英）
 - `spec.md` と `config-file-generator-spec.md` を `docs/` に移動
+- **フロントエンド CI の Node.js マトリクスを `["20", "23"]` → `["20", "24"]` に変更**: Node.js 23 はサポートが終了した奇数版で、`vitest` 4.1.11 の対応範囲（`^20.0.0 || ^22.0.0 || >=24.0.0`）外のため。Node.js 20 と LTS 系の Node.js 24 でテストする。
 
 ### Removed
 - **ランタイムバージョン切替機能** (#118): バージョン切替バルーン UI（`VersionSelector` / `useVersions`）、`app_version` Cookie、Cookie + Nginx map によるルーティングを削除。設定モーダルの起動中バージョン表示は維持
@@ -32,6 +33,7 @@
 - **分割プレビューの AI サマリー生成に設定ファイルの Base URL / Max Tokens が引き継がれない問題を修正** (#127): md2map への変換で `baseUrl` が渡されず、OpenAI 互換 API のキーのまま公式 API に接続して 401 エラーになっていた。あわせて固定値 800 だった `max_tokens` を設定ファイルの `maxTokens` を引き継ぐよう変更し、思考型モデル（kimi-k3 等）で思考トークンが上限を消費して空レスポンス（`OpenAI API returned empty response`）になる問題も解消。md2map を base_url 対応版（v0.5.0）に更新
 
 ### Security
+- **フロントエンド開発依存の `vitest` を 4.1.9 → 4.1.11 に更新**: `@vitest/mocker` のリダイレクトモックを経由したパストラバーサル／任意ファイル読み取り（GHSA-82fw-gwwq-j7x9、Dependabot [#982](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/982) / [#981](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/981)）に対応。現行版のロックファイルを更新し、`@vitest/mocker` を含む9パッケージを更新。
 - **フロントエンド開発依存の `browserslist` を 4.28.2 → 4.28.9 に更新**: 信頼できないカスタム統計JSONによるクラッシュ／プロトタイプへの書き込み（GHSA-73wf-gq98-2v4g、Dependabot [#979](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/979)）に対応。現行版のロックファイルと関連する5つの依存パッケージを更新。
 - **フロントエンド開発依存の `js-yaml` を 4.3.0 → 4.3.2 に更新**: `!!omap` の処理による過剰な CPU 消費（GHSA-5p4m-2wfm-xmqj、Dependabot [#976](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/976)）に対応。現行版のロックファイルを更新。
 - **認証なし API のパストラバーサルによる任意ファイル書き込みを修正**（GHSA-97h8-c8cg-hwm2）: `POST /api/split/markdown` / `POST /api/split/code` / `POST /api/convert/excel-to-markdown` がクライアント指定のファイル名を一時ディレクトリのパスへそのまま結合していたため、絶対パスや `../` を含む値で一時ディレクトリ外にファイルを作成・上書きできた。クライアント由来のファイル名は `safe_filename()`（`backend/app/safe_path.py` に追加）でディレクトリ成分を除去してから使用するよう修正し、回帰テストを追加。追加テストの Windows 環境での失敗はフォローアップ（#130）で修正
