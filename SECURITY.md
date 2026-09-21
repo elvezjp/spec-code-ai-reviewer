@@ -4,11 +4,11 @@
 
 ## Supported Versions
 
-Only the upcoming latest version, 0.10.0, is supported. It has not been released yet.
+Only the latest version, 0.10.0, is supported.
 
 | Version | Supported |
 | --- | --- |
-| 0.10.0 (upcoming) | Yes |
+| 0.10.0 | Yes |
 | < 0.10.0 | No |
 
 ## Intended Environment
@@ -120,7 +120,7 @@ This application may use the following APIs:
 
 spec-code-ai-reviewer includes the following security measures:
 
-- Uses `read_only=True` mode for Excel file processing
+- Excel loading behavior depends on the conversion tool. The excel2md path uses `read_only=False`; read-only loading is not guaranteed for all conversions
 - File size limits
 - Input file validation
 
