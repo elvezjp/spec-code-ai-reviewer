@@ -7,6 +7,21 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) に基づいており、
 このプロジェクトは [セマンティックバージョニング](https://semver.org/spec/v2.0.0.html) に準拠しています。
 
+## [0.10.1] - 未リリース
+
+### セキュリティ
+
+- **推移的依存の `certifi` と `urllib3` の下限を引き上げ**（Dependabot [#1005](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/1005) / [#996](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/996)）
+  - [GHSA-6q48-6c7w-9gw2](https://github.com/advisories/GHSA-6q48-6c7w-9gw2)（critical）: `certifi` < 2026.10.18 が、中間 CA の鍵が漏えいした emSign のルート CA を同梱していた
+  - [GHSA-vxq7-64xx-v4gw](https://github.com/advisories/GHSA-vxq7-64xx-v4gw)（high）/ [GHSA-gh4c-6fx4-qh6g](https://github.com/advisories/GHSA-gh4c-6fx4-qh6g)（medium）: `urllib3` < 2.8.0 で、チャンクサイズ行を上限なくメモリに読み込む可能性と、Deflate のチャンクストリーミングで無限ループに陥る可能性があった
+  - いずれも `backend/pyproject.toml` の `[tool.uv]` `constraint-dependencies`（`certifi>=2026.10.18`、`urllib3>=2.8.0`）として宣言する
+  - `backend/uv.lock` を再生成: `certifi` 2026.7.22 → 2026.10.23、`urllib3` 2.7.0 → 2.8.0
+- **フロントエンドの開発用依存を更新**（Dependabot [#1004](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/1004) / [#1003](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/1003) / [#1002](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/1002) / [#1001](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/1001) / [#1000](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/1000) / [#999](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/999) / [#998](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/998) / [#997](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/997)）: `vite` 8.0.16 → 8.1.6、`vitest` 4.1.11 → 4.1.12、`source-map-js` 1.2.1 → 1.2.2、`brace-expansion` 1.1.16 → 1.1.21 / 5.0.8 → 5.0.12
+  - `vite`: [GHSA-587h-7wmj-h5pm](https://github.com/advisories/GHSA-587h-7wmj-h5pm)（high）、[GHSA-r825-w8mm-5pxw](https://github.com/advisories/GHSA-r825-w8mm-5pxw)（medium）、[GHSA-698v-4r3x-3vcv](https://github.com/advisories/GHSA-698v-4r3x-3vcv)（medium）、[GHSA-rq7h-c2jc-7f22](https://github.com/advisories/GHSA-rq7h-c2jc-7f22)（medium）、[GHSA-9jrq-w75r-8gcw](https://github.com/advisories/GHSA-9jrq-w75r-8gcw)（low）（バンドルされた launch-editor の Windows でのコマンド実行関連、`server.fs.allow` の回避、カスタムミドルウェア経由のクロスオリジンでのスクリプト実行）
+  - `@vitest/mocker`（`vitest` 経由）: [GHSA-xp26-3454-mjgp](https://github.com/advisories/GHSA-xp26-3454-mjgp)（medium）（Windows でのパス走査）
+  - `source-map-js`: [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q)（high、イベントループの DoS）、`brace-expansion`: [GHSA-q2hr-2g5m-vwhr](https://github.com/advisories/GHSA-q2hr-2g5m-vwhr)（medium、CPU の DoS）
+  - いずれも開発サーバー・ビルド・テストでのみ使う開発用依存で、ビルド後のフロントエンドには含まれない
+
 ## [0.10.0] - 2026-09-21
 
 ### Added
