@@ -37,6 +37,16 @@ dev-dependencies = [
     "openpyxl>=3.1.5",
     "python-docx>=1.1.0",
 ]
+# Security: raise the floor of the transitive dependencies `certifi` and `urllib3`.
+#   - certifi < 2026.10.18 bundles emSign root CAs whose intermediate CA keys
+#     were compromised (GHSA-6q48-6c7w-9gw2)
+#   - urllib3 < 2.8.0 buffers an unbounded chunk-size line into memory
+#     (GHSA-vxq7-64xx-v4gw) and can loop forever on chunked deflate streams
+#     (GHSA-gh4c-6fx4-qh6g)
+constraint-dependencies = [
+    "certifi>=2026.10.18",
+    "urllib3>=2.8.0",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
