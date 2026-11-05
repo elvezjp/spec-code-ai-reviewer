@@ -20,6 +20,7 @@
   - `vite`: [GHSA-587h-7wmj-h5pm](https://github.com/advisories/GHSA-587h-7wmj-h5pm)（high）、[GHSA-r825-w8mm-5pxw](https://github.com/advisories/GHSA-r825-w8mm-5pxw)（medium）、[GHSA-698v-4r3x-3vcv](https://github.com/advisories/GHSA-698v-4r3x-3vcv)（medium）、[GHSA-rq7h-c2jc-7f22](https://github.com/advisories/GHSA-rq7h-c2jc-7f22)（medium）、[GHSA-9jrq-w75r-8gcw](https://github.com/advisories/GHSA-9jrq-w75r-8gcw)（low）（バンドルされた launch-editor の Windows でのコマンド実行関連、`server.fs.allow` の回避、カスタムミドルウェア経由のクロスオリジンでのスクリプト実行）
   - `@vitest/mocker`（`vitest` 経由）: [GHSA-xp26-3454-mjgp](https://github.com/advisories/GHSA-xp26-3454-mjgp)（medium）（Windows でのパス走査）
   - `source-map-js`: [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q)（high、イベントループの DoS）、`brace-expansion`: [GHSA-q2hr-2g5m-vwhr](https://github.com/advisories/GHSA-q2hr-2g5m-vwhr)（medium、CPU の DoS）
+  - あわせて `nanoid` 3.3.16 → 3.3.20（`vite` → `postcss` 経由。[GHSA-2v37-7h3g-55p8](https://github.com/advisories/GHSA-2v37-7h3g-55p8)、high、サイズ 0 の独自生成関数で無限ループ）と `zod` 4.4.3 → 4.6.7（`eslint-plugin-react-hooks` 経由。[GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)、high、サイズ制約付きの大きなコレクションの検証でメモリを使い切る）を更新。いずれも `npm audit` が報告したもので、Dependabot アラートは出ていない
   - いずれも開発サーバー・ビルド・テストでのみ使う開発用依存で、ビルド後のフロントエンドには含まれない
 
 ## [0.10.0] - 2026-09-21
