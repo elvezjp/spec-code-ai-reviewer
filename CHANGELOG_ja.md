@@ -22,6 +22,13 @@
   - `source-map-js`: [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q)（high、イベントループの DoS）、`brace-expansion`: [GHSA-q2hr-2g5m-vwhr](https://github.com/advisories/GHSA-q2hr-2g5m-vwhr)（medium、CPU の DoS）
   - あわせて `nanoid` 3.3.16 → 3.3.20（`vite` → `postcss` 経由。[GHSA-2v37-7h3g-55p8](https://github.com/advisories/GHSA-2v37-7h3g-55p8)、high、サイズ 0 の独自生成関数で無限ループ）と `zod` 4.4.3 → 4.6.7（`eslint-plugin-react-hooks` 経由。[GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)、high、サイズ制約付きの大きなコレクションの検証でメモリを使い切る）を更新。いずれも `npm audit` が報告したもので、Dependabot アラートは出ていない
   - いずれも開発サーバー・ビルド・テストでのみ使う開発用依存で、ビルド後のフロントエンドには含まれない
+- **推移的依存の `soupsieve` の下限を 4.0.0 に引き上げ**（Dependabot [#1022](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/1022) / [#1021](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/1021) / [#1020](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/1020) / [#1019](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/1019)）
+  - [GHSA-6655-6qjp-jx7x](https://github.com/advisories/GHSA-6655-6qjp-jx7x)（high）/ [GHSA-mmhr-3c5m-f64f](https://github.com/advisories/GHSA-mmhr-3c5m-f64f)（high）/ [GHSA-7g44-g9rc-x53w](https://github.com/advisories/GHSA-7g44-g9rc-x53w)（medium）/ [GHSA-4j63-6c4x-wfg4](https://github.com/advisories/GHSA-4j63-6c4x-wfg4)（medium）: `soupsieve` < 4.0.0（`markitdown` → `markdownify` → `beautifulsoup4` 経由）で、CSS セレクタのコンパイル時の ReDoS、子孫結合子の多項式時間処理、ネストした疑似クラスによる無制限な再帰、`:has()` 内の一般兄弟結合子の二乗時間処理による DoS の可能性があった
+  - `backend/pyproject.toml` の `[tool.uv]` `constraint-dependencies` に `soupsieve>=4.0.0` を宣言し、`backend/uv.lock` を再生成: `soupsieve` 2.9.2 → 4.1
+  - 修正版の `soupsieve` が Python 3.11.5 以上を要求するため、`requires-python` を `>=3.11` から `>=3.11.5` に引き上げ
+- **`@typescript-eslint/typescript-estree` 配下の `minimatch` を 11.x に強制**（Dependabot [#1006](https://github.com/elvezjp/spec-code-ai-reviewer/security/dependabot/1006)）: [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)（medium、`minimatch` < 11.0.1 で globparts の増幅による DoS）
+  - `typescript-eslint` は最新の 8.72.2 でも `minimatch@^10.2.2` を宣言しているため、npm の `overrides` で当該パッケージ配下に限り `minimatch` を `^11.0.1` に固定: `minimatch` 10.2.5 → 11.0.8
+  - 開発用依存で、ビルド後のフロントエンドには含まれない
 
 ## [0.10.0] - 2026-09-21
 

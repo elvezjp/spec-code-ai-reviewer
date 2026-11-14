@@ -86,11 +86,11 @@ See [SECURITY.md](SECURITY.md) for details.
 
 #### Python Version
 
-- **Required**: Python 3.11 or later
+- **Required**: Python 3.11.5 or later
 - **Recommended**: Python 3.11 or 3.13
 - **How to check**: Run `python --version` or `python3 --version`
 
-uv automatically uses an appropriate Python version. The installed Python 3.11+ on your system will be used as-is.
+uv automatically uses an appropriate Python version. The installed Python 3.11.5+ on your system will be used as-is.
 
 #### Node.js Version
 
